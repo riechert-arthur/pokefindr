@@ -3,9 +3,7 @@ import { useMapContext } from "@/components/providers/MapContextProvider"
 import { Marker } from "react-map-gl"
 import PokeballPinIcon from "@/components/icons/PokeballPinIcon"
 
-interface PokemonCenterLocationPinsProps {}
-
-export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = () => {
+export const PokemonCenterLocationPins: FC = () => {
     const mapContext = useMapContext()
     const { pins, setSelectedLocation } = mapContext
 

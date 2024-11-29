@@ -10,11 +10,9 @@ import { useMapContext } from "@/components/providers/MapContextProvider"
 import { PokemonCenterLocationPins } from "./PokemonCenterLocationPins"
 import { LocationPinPopUps } from "./LocationPinPopUps"
 
-interface MapInstanceProps {}
-
-export const MapInstance: FC<MapInstanceProps> = () => {
+export const MapInstance: FC = () => {
     const mapContext = useMapContext()
-    const { pins, setPins } = mapContext
+    const { setPins } = mapContext
 
     useEffect(() => {
         const fetchCoordinates = async () => {
