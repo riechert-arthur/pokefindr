@@ -1,4 +1,5 @@
-import "./globals.css";
+import "./globals.css"
+import { ContextProviders } from "@/components/providers/ContextProviders";
 
 export default function RootLayout({
   children,
@@ -8,7 +9,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        {children}
+        <ContextProviders>
+          {children}
+        </ContextProviders>
       </body>
     </html>
   );

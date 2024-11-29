@@ -1,9 +1,12 @@
-import Image from "next/image";
+import type { FC } from "react"
+import { MapInstance } from "@/components/map/MapInstance"
 
-export default function Home() {
+interface HomePageProps {}
+
+const HomePage: FC<HomePageProps> = () => {
   return (
-    <main>
-      
-    </main>
-  );
+    <MapInstance />
+  )
 }
+
+export default HomePage
