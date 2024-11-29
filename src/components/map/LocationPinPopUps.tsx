@@ -2,11 +2,9 @@ import type { FC } from "react"
 import { Popup } from "react-map-gl"
 import { useMapContext } from "@/components/providers/MapContextProvider"
 
-interface LocationPinPopUpsProps {}
-
-export const LocationPinPopUps: FC<LocationPinPopUpsProps> = () => {
+export const LocationPinPopUps: FC = () => {
     const mapContext = useMapContext()
-    const { pins, setPins, selectedLocation, setSelectedLocation } = mapContext
+    const { pins, selectedLocation, setSelectedLocation } = mapContext
 
     return (
         <>

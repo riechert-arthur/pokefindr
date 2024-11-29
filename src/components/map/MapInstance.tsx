@@ -1,9 +1,8 @@
 "use client"
 
 import type { FC } from "react"
-import { useEffect, useState } from "react"
-import Map, { Marker, Popup } from "react-map-gl"
-import MapPinIcon from "@heroicons/react/24/solid/MapPinIcon"
+import { useEffect } from "react"
+import Map from "react-map-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import { getPokemonCenterLocations } from "@/lib/map/locations"
 import type { PokemonCenterLocation } from "@/lib/types/locations"
@@ -15,7 +14,7 @@ interface MapInstanceProps {}
 
 export const MapInstance: FC<MapInstanceProps> = () => {
     const mapContext = useMapContext()
-    const { pins, setPins, selectedLocation, setSelectedLocation } = mapContext
+    const { pins, setPins } = mapContext
 
     useEffect(() => {
         const fetchCoordinates = async () => {

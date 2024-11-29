@@ -1,14 +1,13 @@
 import type { FC } from "react"
 import { useMapContext } from "@/components/providers/MapContextProvider"
 import { Marker } from "react-map-gl"
-import { MapPinIcon } from "@heroicons/react/24/solid"
 import PokeballPinIcon from "@/components/icons/PokeballPinIcon"
 
 interface PokemonCenterLocationPinsProps {}
 
 export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = () => {
     const mapContext = useMapContext()
-    const { pins, setPins, selectedLocation, setSelectedLocation } = mapContext
+    const { pins, setSelectedLocation } = mapContext
 
     return (
         <>
