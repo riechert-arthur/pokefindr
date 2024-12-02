@@ -18,10 +18,10 @@ export const PokemonCenterLocationPins: FC = () => {
             pin.style.transform = `scale(${scale})`
             pin.style.transition = "transform 0.2s"
         }
-    };
+    }
 
     useEffect(() => {
-        pins.forEach((pin, index) => {
+        pins.forEach((_, index) => {
             if (index === selectedLocation) {
                 scalePin(index, 1.8)
             } else {
@@ -43,6 +43,10 @@ export const PokemonCenterLocationPins: FC = () => {
                         onClick={(e) => {
                             e.stopPropagation()
                             setSelectedLocation(index)
+                        }}
+                        onMouseEnter={(e) => {
+                          e.stopPropagation()
+                          setSelectedLocation(index)
                         }}
                         className={`size-6 flex items-center justify-center cursor-pointer`}
                         ref={(el) => (pinRefs.current[index] = el)}
