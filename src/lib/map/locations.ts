@@ -1,6 +1,9 @@
 import { PokemonCenterLocation } from "@/lib/types/locations";
-import { pokemonCenterLocations } from "../data/locations";
+import { db } from "@/lib/supabase/db"
 
 export async function getPokemonCenterLocations(): Promise<PokemonCenterLocation[]> {
-    return Promise.resolve(pokemonCenterLocations)
+  const { data } = await db 
+    .from("Vending Machine Locations")
+    .select("retailer, machineID, address, city, state, longitude, latitude")
+  return data || [] 
 }
