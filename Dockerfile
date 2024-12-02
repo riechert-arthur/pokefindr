@@ -1,14 +1,18 @@
 # syntax=docker/dockerfile:1
 
-from archlinux:latest
+FROM archlinux:latest
 
-RUN pacman -Syu --noconfirm && \
+RUN pacman -Sy --noconfirm archlinux-keyring && \
+    pacman-key --init && \
+    pacman-key --populate archlinux && \
+    pacman -Syu --noconfirm && \
     pacman -S --noconfirm \
     curl \
     sudo \
     nodejs \
     npm \
-    && pacman -Scc --noconfirm
+    python && \
+    pacman -Scc --noconfirm
 
 WORKDIR /workspace
 
