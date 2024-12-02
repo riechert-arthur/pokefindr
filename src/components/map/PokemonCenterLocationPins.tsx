@@ -49,7 +49,7 @@ export const PokemonCenterLocationPins: FC = () => {
                           setSelectedLocation(index)
                         }}
                         className={`size-6 flex items-center justify-center cursor-pointer`}
-                        ref={(el) => (pinRefs.current[index] = el)}
+                        ref={(el) => {pinRefs.current[index] = el}}
                     >
                         <PokeballPinIcon />
                     </div>
