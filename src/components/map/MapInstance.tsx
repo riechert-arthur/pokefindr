@@ -12,35 +12,36 @@ import { LocationPinPopUps } from "./LocationPinPopUps"
 import type { MapPin } from "@/lib/types/map"
 
 export const MapInstance: FC = () => {
-    const mapContext = useMapContext()
-    const { setPins } = mapContext
+  const mapContext = useMapContext()
+  const { setPins } = mapContext
 
-    useEffect(() => {
-        const fetchCoordinates = async () => {
-            try {
-                const locations: PokemonCenterLocation[] = await getPokemonCenterLocations()
-                setPins(locations as MapPin[])
-            } catch (error) {
-                throw error
-            }
-        }
+  useEffect(() => {
+    const fetchCoordinates = async () => {
+      try {
+        const locations: PokemonCenterLocation[] =
+          await getPokemonCenterLocations()
+        setPins(locations as MapPin[])
+      } catch (error) {
+        throw error
+      }
+    }
 
-        fetchCoordinates()
-    }, [])
+    fetchCoordinates()
+  }, [])
 
-    return (
-        <Map
-            mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOXGL_API_KEY}
-            initialViewState={{
-                longitude: -84.39,
-                latitude: 33.76,
-                zoom: 8,
-            }}
-            style={{ width: "100vw", height: "100vh" }}
-            mapStyle="mapbox://styles/mapbox/streets-v12"
-        >
-            <PokemonCenterLocationPins />
-            <LocationPinPopUps />
-        </Map>
-    )
+  return (
+    <Map
+      mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOXGL_API_KEY}
+      initialViewState={{
+        longitude: -84.39,
+        latitude: 33.76,
+        zoom: 8,
+      }}
+      style={{ width: "100vw", height: "100vh" }}
+      mapStyle="mapbox://styles/mapbox/streets-v12"
+    >
+      <PokemonCenterLocationPins />
+      <LocationPinPopUps />
+    </Map>
+  )
 }
