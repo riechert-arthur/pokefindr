@@ -33,11 +33,11 @@ export const MapInstance: FC = () => {
     <Map
       mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOXGL_API_KEY}
       initialViewState={{
-        longitude: -84.39,
-        latitude: 33.76,
-        zoom: 8,
+        longitude: -100.00,
+        latitude: 40,
+        zoom: 4,
       }}
-      style={{ width: "100vw", height: "100vh" }}
+      style={{ width: "100vw", height: "100vh", zIndex: 1, position: "relative" }}
       mapStyle="mapbox://styles/mapbox/streets-v12"
     >
       <PokemonCenterLocationPins />
