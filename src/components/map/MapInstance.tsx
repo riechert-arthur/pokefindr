@@ -2,7 +2,7 @@
 
 import type { FC } from "react"
 import { useEffect } from "react"
-import Map from "react-map-gl"
+import Map, {FullscreenControl } from "react-map-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import { getPokemonCenterLocations } from "@/lib/map/locations"
 import type { PokemonCenterLocation } from "@/lib/types/locations"
@@ -42,6 +42,7 @@ export const MapInstance: FC = () => {
     >
       <PokemonCenterLocationPins />
       <LocationPinPopUps />
+      <FullscreenControl position="bottom-right" />
     </Map>
   )
 }
