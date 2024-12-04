@@ -34,6 +34,7 @@ const HomePage: FC = () => {
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta httpEquiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="google-adsense-account" content="ca-pub-5624613492216779" />
       </Head>
       <TopNavBar />
       <MapInstance />
