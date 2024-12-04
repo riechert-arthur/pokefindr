@@ -19,10 +19,7 @@
   },
   "viewport": "width=device-width, initial-scale=1",
   "charset": "UTF-8",
-  "additionalMetaTags": [
-    {
-      "name": "google-adsense-account",
-      "content": "ca-pub-5624613492216779"
+  "other": {
+      "google-adsense-account": "ca-pub-5624613492216779"
     }
-  ]
 }
