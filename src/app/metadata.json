@@ -1,0 +1,28 @@
+{
+  "title": "Find all Pokemon Vending Machine Locations - Free Map | PokeFindr",
+  "description": "See a map with all the Pokemon Vending Machine Locations. Easily send the directions to Google Maps.",
+  "keywords": [
+    "Pokemon vending machines",
+    "Pokemon map",
+    "vending machine locations",
+    "Pokemon merchandise map",
+    "PokeFindr"
+  ],
+  "author": "PokeFindr Developer",
+  "openGraph": {
+    "title": "Find all Pokemon Vending Machine Locations | PokeFindr",
+    "description": "Explore a comprehensive map of Pokemon Vending Machine Locations. Easily find directions to your nearest vending machine!"
+  },
+  "robots": {
+    "index": true,
+    "follow": true
+  },
+  "viewport": "width=device-width, initial-scale=1",
+  "charset": "UTF-8",
+  "additionalMetaTags": [
+    {
+      "name": "google-adsense-account",
+      "content": "ca-pub-5624613492216779"
+    }
+  ]
+}
