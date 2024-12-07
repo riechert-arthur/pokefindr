@@ -1,11 +1,14 @@
 import type { FC } from "react"
 
 interface PokeFindrIconProps {
-  width?: string | number;
-  height?: string | number;
+  width?: string | number
+  height?: string | number
 }
 
-export const PokeFindrIcon: FC<PokeFindrIconProps> = ({ width = 100, height = 100 }) => {
+export const PokeFindrIcon: FC<PokeFindrIconProps> = ({
+  width = 100,
+  height = 100,
+}) => {
   return (
     <svg
       id="fi_17637937"
@@ -20,5 +23,5 @@ export const PokeFindrIcon: FC<PokeFindrIconProps> = ({ width = 100, height = 10
         fill="#bb009a"
       />
     </svg>
-  );
-};
+  )
+}

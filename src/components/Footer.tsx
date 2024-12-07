@@ -1,4 +1,3 @@
-
 import { FC, SVGProps } from "react"
 import { FacebookLogoIcon } from "@/components/icons/FacebookLogoIcon"
 import { InstagramLogoIcon } from "@/components/icons/InstagramLogoIcon"
@@ -19,42 +18,40 @@ interface NavigationLink extends NavigationLinkProps {
 type NavigableSet = Record<string, NavigationLink[]>
 
 const navigation: NavigableSet = {
-  "Support": [
-    { name: 'Submit ticket', href: '#' },
-    { name: 'Documentation', href: '#' },
-    { name: 'Guides', href: '#' },
+  Support: [
+    { name: "Submit ticket", href: "#" },
+    { name: "Documentation", href: "#" },
+    { name: "Guides", href: "#" },
   ],
-  "Learn": [
-    { name: 'Blog', href: '#' },
+  Learn: [{ name: "Blog", href: "#" }],
+  Legal: [
+    { name: "Terms of service", href: "/terms-of-service" },
+    { name: "Privacy policy", href: "/privacy-policy" },
   ],
-  "Legal": [
-    { name: 'Terms of service', href: '/terms-of-service' },
-    { name: 'Privacy policy', href: '/privacy-policy' },
-  ],
-  "Social": [
+  Social: [
     {
-      name: 'Facebook',
-      href: '#',
+      name: "Facebook",
+      href: "#",
       icon: FacebookLogoIcon,
     },
     {
-      name: 'Instagram',
-      href: '#',
+      name: "Instagram",
+      href: "#",
       icon: InstagramLogoIcon,
     },
     {
-      name: 'X',
-      href: '#',
+      name: "X",
+      href: "#",
       icon: XLogoIcon,
     },
     {
-      name: 'GitHub',
-      href: '#',
+      name: "GitHub",
+      href: "#",
       icon: GitHubLogoIcon,
     },
     {
-      name: 'YouTube',
-      href: '#',
+      name: "YouTube",
+      href: "#",
       icon: YouTubeLogoIcon,
     },
   ],
@@ -64,11 +61,13 @@ const SocialLinks: FC = () => {
   return (
     <div className="flex gap-x-6">
       {navigation["Social"].map((item) => (
-        <a key={item.name} href={item.href} className="text-gray-600 hover:text-gray-800">
+        <a
+          key={item.name}
+          href={item.href}
+          className="text-gray-600 hover:text-gray-800"
+        >
           <span className="sr-only">{item.name}</span>
-          {item.icon && (
-            <item.icon aria-hidden="true" className="size-6" />
-          )}
+          {item.icon && <item.icon aria-hidden="true" className="size-6" />}
         </a>
       ))}
     </div>
@@ -96,11 +95,7 @@ const NavigationLinkList: FC<NavigationLinkListProps> = ({ header, links }) => {
       <h3 className="text-sm/6 font-semibold text-gray-900">{header}</h3>
       <ul role="list" className="mt-6 space-y-4">
         {links.map((item) => (
-          <NavigationLink
-            key={item.name}
-            name={item.name}
-            href={item.href}
-          />
+          <NavigationLink key={item.name} name={item.name} href={item.href} />
         ))}
       </ul>
     </div>
@@ -108,8 +103,10 @@ const NavigationLinkList: FC<NavigationLinkListProps> = ({ header, links }) => {
 }
 
 const SiteNavigationLinks: FC = () => {
-  const linkCategories = Object.entries(navigation).filter(([key]) => key !== 'Social')
-  
+  const linkCategories = Object.entries(navigation).filter(
+    ([key]) => key !== "Social"
+  )
+
   return (
     <div className="mt-16 grid grid-cols-4 gap-8 xl:col-span-2 xl:mt-0">
       {linkCategories.map(([header, links]) => (
@@ -127,17 +124,19 @@ export const Footer: FC = () => {
           <div className="space-y-8">
             <PokeFindrIcon width="64px" height="64px" />
             <p className="text-balance text-sm/6 text-gray-600">
-              Helping users find the Pokemon Card Vending Machines in their area with interactive maps.
+              Helping users find the Pokemon Card Vending Machines in their area
+              with interactive maps.
             </p>
             <SocialLinks />
           </div>
           <SiteNavigationLinks />
         </div>
         <div className="mt-16 border-t border-gray-900/10 pt-8 sm:mt-20 lg:mt-24">
-          <p className="text-sm/6 text-gray-600">&copy; 2024 PokeFindr, Inc. All rights reserved.</p>
+          <p className="text-sm/6 text-gray-600">
+            &copy; 2024 PokeFindr, Inc. All rights reserved.
+          </p>
         </div>
       </div>
     </footer>
   )
 }
-
