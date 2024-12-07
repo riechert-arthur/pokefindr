@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "@mapbox/mapbox-sdk": "^0.16.1",
     "@supabase/supabase-js": "^2.46.2",

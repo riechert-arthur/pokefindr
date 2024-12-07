@@ -1,0 +1,72 @@
+[
+  {
+    "id": 1,
+    "question": "What is a Pokémon Vending Machine?",
+    "answer": "A Pokémon vending machine is an automated retail device that dispenses official Pokémon Trading Card Game (TCG) products and merchandise. These machines are stocked with items like booster packs, Elite Trainer Boxes, and other collectibles, providing fans with an easy and convenient way to purchase Pokémon cards without visiting a traditional store. They ensure authenticity as all products are supplied directly by The Pokémon Company International."
+  },
+  {
+    "id": 2,
+    "question": "What is this website about?",
+    "answer": "This website provides an interactive map with pins marking the locations of Pokémon card vending machines across the United States. It's designed to help fans easily find the nearest vending machines."
+  },
+  {
+    "id": 3,
+    "question": "How do I use the map?",
+    "answer": "Simply navigate the map by dragging, zooming, or searching for a specific location using the search bar. Click on a pin to view details about the vending machine, including its exact address and additional notes."
+  },
+  {
+    "id": 4,
+    "question": "Are all the vending machine locations verified?",
+    "answer": "Yes, the locations on the map are curated directly from the Pokemon Center website. Locations are for official retailers in the U.S., and you can find them directly from <a style='color: blue;' href='https://support.pokemoncenter.com/hc/en-us/sections/13360842288916-Pok%C3%A9mon-Automated-Retail-Vending-Machines'>here</a>."
+  },
+  {
+    "id": 5,
+    "question": "What information is available for each vending machine?",
+    "answer": "Each pin includes the vending machine’s address, vending machine's id, retailer, and a shortcut to Google Maps."
+  },
+  {
+    "id": 6,
+    "question": "Can I get directions to a vending machine?",
+    "answer": "Yes! Click on a pin and open in Google Maps."
+  },
+  {
+    "id": 7,
+    "question": "Can I filter locations by state or product availability?",
+    "answer": "This is a feature we are working on."
+  },
+  {
+    "id": 8,
+    "question": "How can I add a new vending machine location?",
+    "answer": "There is currently not a way to add new locations, but we are working on adding support for unofficial locations."
+  },
+  {
+    "id": 10,
+    "question": "Can I report outdated or incorrect information?",
+    "answer": "Yes! Please, feel free to submit a ticket."
+  },
+  {
+    "id": 11,
+    "question": "Why isn’t the map loading properly?",
+    "answer": "Make sure you have a stable internet connection and an updated web browser. If the issue persists, try refreshing the page or clearing your browser cache."
+  },
+  {
+    "id": 12,
+    "question": "Is the website mobile-friendly?",
+    "answer": "Absolutely! The website is optimized for both desktop and mobile devices, so you can use it on the go."
+  },
+  {
+    "id": 13,
+    "question": "Do I need to create an account to use the map?",
+    "answer": "No account is necessary to browse the map. However, creating an account lets you save favorite locations and contribute new ones."
+  },
+  {
+    "id": 14,
+    "question": "Who can I contact if I have more questions?",
+    "answer": "Feel free to use the 'Contact Us' page to send us any questions, suggestions, or concerns. We’ll get back to you as soon as possible."
+  },
+  {
+    "id": 15,
+    "question": "Is this an official Pokémon website?",
+    "answer": "No, this is a fan-created resource and is not affiliated with The Pokémon Company International."
+  }
+]
