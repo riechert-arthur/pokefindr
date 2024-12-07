@@ -1,6 +1,6 @@
-import type { FC } from "react"
+import type { FC, SVGProps } from "react"
 
-export const FacebookLogoIcon: FC = (props: any) => (
+export const FacebookLogoIcon: FC<SVGProps<SVGSVGElement>> = (props) => (
   <svg fill="currentColor" viewBox="0 0 24 24" {...props}>
     <path
       fillRule="evenodd"
