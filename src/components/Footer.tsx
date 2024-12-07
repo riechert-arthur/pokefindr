@@ -28,7 +28,7 @@ const navigation: NavigableSet = {
     { name: 'Blog', href: '#' },
   ],
   "Legal": [
-    { name: 'Terms of service', href: '#' },
+    { name: 'Terms of service', href: '/terms-of-service' },
     { name: 'Privacy policy', href: '/privacy-policy' },
   ],
   "Social": [
