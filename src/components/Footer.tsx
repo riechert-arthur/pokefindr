@@ -20,10 +20,8 @@ type NavigableSet = Record<string, NavigationLink[]>
 const navigation: NavigableSet = {
   Support: [
     { name: "Submit ticket", href: "#" },
-    { name: "Documentation", href: "#" },
-    { name: "Guides", href: "#" },
   ],
-  Learn: [{ name: "Blog", href: "#" }],
+  Learn: [{ name: "Blog", href: "/blog" }],
   Legal: [
     { name: "Terms of service", href: "/terms-of-service" },
     { name: "Privacy policy", href: "/privacy-policy" },
