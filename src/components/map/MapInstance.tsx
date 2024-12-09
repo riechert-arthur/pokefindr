@@ -1,7 +1,7 @@
 "use client"
 
 import type { FC } from "react"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import Map, { FullscreenControl, NavigationControl } from "react-map-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import { getPokemonCenterLocations } from "@/lib/map/locations"
@@ -11,10 +11,26 @@ import { PokemonCenterLocationPins } from "./PokemonCenterLocationPins"
 import { LocationPinPopUps } from "./LocationPinPopUps"
 import type { MapPin } from "@/lib/types/map"
 import { UserLocationPin } from "./UserLocationPin"
+import { useUserLocationContext } from "@/components/providers/UserLocationContextProvider"
+
+interface ViewState {
+  longitude: number
+  latitude: number
+  zoom: number
+}
+
+const initialViewState: ViewState = {
+  longitude: -100.0,
+  latitude: 40,
+  zoom: 4,
+}
 
 export const MapInstance: FC = () => {
   const mapContext = useMapContext()
   const { setPins } = mapContext
+  const userLocationContext = useUserLocationContext()
+  const [viewState, setViewState] = useState<ViewState>(initialViewState)
+  const { userLocation, userLocationError } = userLocationContext
 
   useEffect(() => {
     const fetchCoordinates = async () => {
@@ -30,14 +46,22 @@ export const MapInstance: FC = () => {
     fetchCoordinates()
   }, [])
 
+  useEffect(() => {
+    if (userLocation && !userLocationError) {
+      const newViewState: ViewState = {
+        longitude: userLocation.longitude,
+        latitude: userLocation.latitude,
+        zoom: 10,
+      } 
+
+      setViewState(newViewState)
+    }
+  }, [userLocation, userLocationError])
+
   return (
     <Map
+      {...viewState}
       mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOXGL_API_KEY}
-      initialViewState={{
-        longitude: -100.0,
-        latitude: 40,
-        zoom: 4,
-      }}
       style={{
         width: "100vw",
         height: "100vh",
