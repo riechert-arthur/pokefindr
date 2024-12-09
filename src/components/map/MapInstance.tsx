@@ -61,6 +61,7 @@ export const MapInstance: FC = () => {
   return (
     <Map
       {...viewState}
+      onMove={(evt) => setViewState(evt.viewState)}
       mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOXGL_API_KEY}
       style={{
         width: "100vw",
