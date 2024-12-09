@@ -11,7 +11,6 @@ export const TopNavBar: FC = () => {
           PokeFindr
         </span>
       </Link>
-      
     </div>
   )
 }

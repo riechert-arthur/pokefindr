@@ -10,6 +10,7 @@ import { useMapContext } from "@/components/providers/MapContextProvider"
 import { PokemonCenterLocationPins } from "./PokemonCenterLocationPins"
 import { LocationPinPopUps } from "./LocationPinPopUps"
 import type { MapPin } from "@/lib/types/map"
+import { UserLocationPin } from "./UserLocationPin"
 
 export const MapInstance: FC = () => {
   const mapContext = useMapContext()
@@ -49,6 +50,7 @@ export const MapInstance: FC = () => {
       <LocationPinPopUps />
       <FullscreenControl position="bottom-right" />
       <NavigationControl position="bottom-right" />
+      <UserLocationPin />
     </Map>
   )
 }
