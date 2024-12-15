@@ -1,8 +1,9 @@
-'use client'
-
 import type { FC } from "react"
 import faqs from './faqs.json'
 import Link from "next/link"
+import homePageMetadata from "./metadata.json"
+
+export const metadata = homePageMetadata
 
 interface FAQ {
   id: number

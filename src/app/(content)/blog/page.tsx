@@ -1,6 +1,9 @@
 import type { FC } from "react"
 import type { BlogPostMetadata } from "@/lib/utils"
 import { readAllBlogPostMetadata } from "@/lib/utils"
+import blogPageMetadata from "./metadata.json"
+
+export const metadata = blogPageMetadata
 
 const BlogPage: FC = async () => {
   const metadata: BlogPostMetadata[] = await readAllBlogPostMetadata() 
