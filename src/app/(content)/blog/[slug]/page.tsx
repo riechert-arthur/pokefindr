@@ -4,7 +4,7 @@ import remarkGfm from "remark-gfm"
 import { readBlogPostMarkdownFile, readBlogPostMetadata } from "@/lib/utils"
 import type { BlogPostMetadata } from "@/lib/utils"
 import { BlogPostHero } from "@/components/BlogPostHero"
-import type { Metadata, ResolvingMetadata } from "next"
+import type { Metadata } from "next"
 
 interface BlogPostPageProps {
   params: Promise<{
