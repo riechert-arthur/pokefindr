@@ -17,7 +17,7 @@
   {
     "id": 4,
     "question": "Are all the vending machine locations verified?",
-    "answer": "Yes, the locations on the map are curated directly from the Pokemon Center website. Locations are for official retailers in the U.S., and you can find them directly from <a style='color: blue;' href='https://support.pokemoncenter.com/hc/en-us/sections/13360842288916-Pok%C3%A9mon-Automated-Retail-Vending-Machines'>here</a>."
+    "answer": "Yes, the locations on the map are curated directly from the Pokemon Center website. Locations are for official retailers in the U.S., and you can find them directly on the <a style='color: blue;' href='https://support.pokemoncenter.com/hc/en-us/sections/13360842288916-Pok%C3%A9mon-Automated-Retail-Vending-Machines'>Pokemon Center website</a>."
   },
   {
     "id": 5,
