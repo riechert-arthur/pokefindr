@@ -59,6 +59,7 @@ function HeroSection() {
                 width="100%"
                 height="700"
                 className="w-full overflow-hidden"
+                loading="lazy"
                 style={{
                   borderRadius: '0.375rem',
                   boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1), 0px 1px 3px rgba(0, 0, 0, 0.06)',
