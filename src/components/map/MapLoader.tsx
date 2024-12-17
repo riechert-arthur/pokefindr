@@ -11,6 +11,8 @@ const MapInstance = dynamic(() => import("./MapInstance"), {
 
 export const MapLoader: FC = () => {
     return (
-        <MapInstance />
+        <div className="h-screen">
+            <MapInstance />
+        </div>
     )
 }
