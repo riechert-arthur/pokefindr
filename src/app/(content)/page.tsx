@@ -16,7 +16,6 @@ const FAQSection = dynamic(async () => {
   return (props: any) => <FAQSectionComponent {...props} faqs={faqs.default} />;
 }, {
   loading: () => <LoadSpinner text="Loading FAQs..." />,
-  ssr: false,
 })
 
 const HeroSection: FC = () => {
