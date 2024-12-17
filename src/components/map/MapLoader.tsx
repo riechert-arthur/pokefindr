@@ -7,7 +7,7 @@ import { LoadSpinner } from "@/components/LoadSpinner"
 const MapInstance = dynamic(() => import("./MapInstance"), {
     loading: () => <LoadSpinner text="Loading map..." />,
     ssr: false,
-  })
+})
 
 export const MapLoader: FC = () => {
     return (

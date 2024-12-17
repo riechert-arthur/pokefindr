@@ -64,8 +64,8 @@ const MapInstance: FC = () => {
       onMove={(evt) => setViewState(evt.viewState)}
       mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOXGL_API_KEY}
       style={{
-        width: "100vw",
-        height: "100vh",
+        width: "100%",
+        height: "100%",
         zIndex: 1,
         position: "relative",
       }}
