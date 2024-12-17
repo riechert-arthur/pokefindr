@@ -1,13 +1,29 @@
 import type { FC } from "react"
-import faqs from './faqs.json'
 import Link from "next/link"
 import homePageMetadata from "./metadata.json"
 import dynamic from "next/dynamic"
 import { LoadSpinner } from "@/components/LoadSpinner"
+import type { FAQSectionProps } from "./FAQSection"
 
 export const metadata = homePageMetadata
 
-const FAQSection = dynamic(() => import("./FAQSection"), {
+type LazyFAQSectionProps = Omit<FAQSectionProps, 'faqs'>;
+
+const FAQSection = dynamic<LazyFAQSectionProps>(async () => {
+  const [FAQSectionModule, faqs] = await Promise.all([
+    import('./FAQSection'),
+    import('./faqs.json'),
+  ])
+
+  const FAQSectionComponent = FAQSectionModule.default;
+
+  const LazyFAQSection: React.FC<LazyFAQSectionProps> = (props) => {
+    return <FAQSectionComponent {...props} faqs={faqs.default} />
+  }
+
+  LazyFAQSection.displayName = "LazyFAQSection";
+  return LazyFAQSection
+}, {
   loading: () => <LoadSpinner text="Loading FAQs..." />,
 })
 
@@ -93,7 +109,7 @@ const LandingPage: FC = () => {
   return (
     <div className="isolate">
       <HeroSection />
-      <FAQSection faqs={faqs} />
+      <FAQSection />
     </div>
   )
 }

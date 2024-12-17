@@ -1,9 +1,9 @@
 import "./globals.css"
 import { ContextProviders } from "@/components/providers/ContextProviders"
-import homePageMetadata from "./metadata.json"
+import siteMetadata from "./metadata.json"
 import { Footer } from "@/components/Footer"
 
-export const metadata = homePageMetadata
+export const metadata = siteMetadata
 
 export default function RootLayout({
   children,
