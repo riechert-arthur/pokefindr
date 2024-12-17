@@ -14,8 +14,9 @@ export const LocationPinPopUps: FC = () => {
           latitude={pins[selectedLocation].latitude}
           anchor="top"
           onClose={() => setSelectedLocation(null)}
+          closeButton={false}
         >
-          <div>
+          <div className="p-2">
             <h3>{pins[selectedLocation].retailer}</h3>
             <p>{pins[selectedLocation].address}</p>
             <p>
