@@ -25,7 +25,7 @@ const initialViewState: ViewState = {
   zoom: 4,
 }
 
-export const MapInstance: FC = () => {
+const MapInstance: FC = () => {
   const mapContext = useMapContext()
   const { setPins } = mapContext
   const userLocationContext = useUserLocationContext()
@@ -79,3 +79,5 @@ export const MapInstance: FC = () => {
     </Map>
   )
 }
+
+export default MapInstance
