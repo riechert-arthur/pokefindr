@@ -1,5 +1,4 @@
 import type { FC } from "react"
-import faqs from './faqs.json'
 import Link from "next/link"
 import homePageMetadata from "./metadata.json"
 import dynamic from "next/dynamic"
@@ -7,8 +6,17 @@ import { LoadSpinner } from "@/components/LoadSpinner"
 
 export const metadata = homePageMetadata
 
-const FAQSection = dynamic(() => import("./FAQSection"), {
+const FAQSection = dynamic(async () => {
+  const [FAQSectionModule, faqs] = await Promise.all([
+    import('./FAQSection'),
+    import('./faqs.json'),
+  ])
+
+  const FAQSectionComponent = FAQSectionModule.default;
+  return (props: any) => <FAQSectionComponent {...props} faqs={faqs.default} />;
+}, {
   loading: () => <LoadSpinner text="Loading FAQs..." />,
+  ssr: false,
 })
 
 const HeroSection: FC = () => {
@@ -93,7 +101,7 @@ const LandingPage: FC = () => {
   return (
     <div className="isolate">
       <HeroSection />
-      <FAQSection faqs={faqs} />
+      <FAQSection />
     </div>
   )
 }
