@@ -28,6 +28,7 @@ const FAQSection = dynamic<LazyFAQSectionProps>(
   },
   {
     loading: () => <LoadSpinner text="Loading FAQs..." />,
+    ssr: false,
   }
 )
 
