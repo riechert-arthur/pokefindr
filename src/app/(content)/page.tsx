@@ -122,6 +122,7 @@ const LandingPage: FC = () => {
   return (
     <>
       <Script
+        id="webpage-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
@@ -135,6 +136,7 @@ const LandingPage: FC = () => {
         }}
       />
       <Script
+        id="faq-schema"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
