@@ -1,8 +1,9 @@
 "use client"
 
 import type { FC } from "react"
-import { useEffect, useState } from "react"
+import { useEffect, useRef } from "react"
 import Map, { FullscreenControl, NavigationControl } from "react-map-gl"
+import type { MapRef } from "react-map-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 import { getPokemonCenterLocations } from "@/lib/map/locations"
 import type { PokemonCenterLocation } from "@/lib/types/locations"
@@ -29,8 +30,8 @@ const MapInstance: FC = () => {
   const mapContext = useMapContext()
   const { setPins } = mapContext
   const userLocationContext = useUserLocationContext()
-  const [viewState, setViewState] = useState<ViewState>(initialViewState)
   const { userLocation, userLocationError } = userLocationContext
+  const mapRef = useRef<MapRef>(null)
 
   useEffect(() => {
     const fetchCoordinates = async () => {
@@ -47,21 +48,19 @@ const MapInstance: FC = () => {
   }, [])
 
   useEffect(() => {
-    if (userLocation && !userLocationError) {
-      const newViewState: ViewState = {
-        longitude: userLocation.longitude,
-        latitude: userLocation.latitude,
+    if (userLocation && !userLocationError && mapRef.current) {
+      mapRef.current.flyTo({
+        center: [userLocation.longitude, userLocation.latitude],
         zoom: 10,
-      }
-
-      setViewState(newViewState)
+        essential: true,
+      })
     }
   }, [userLocation, userLocationError])
 
   return (
     <Map
-      {...viewState}
-      onMove={(evt) => setViewState(evt.viewState)}
+      ref={mapRef}
+      initialViewState={initialViewState}
       mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOXGL_API_KEY}
       style={{
         width: "100%",
