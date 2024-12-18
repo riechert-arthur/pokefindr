@@ -1,3 +1,5 @@
+"use server"
+
 import { PokemonCenterLocation } from "@/lib/types/locations"
 import { db } from "@/lib/supabase/db"
 
