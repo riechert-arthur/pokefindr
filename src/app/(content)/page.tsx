@@ -58,7 +58,10 @@ const HeroSection: FC = () => {
           </div>
           <div className="mt-16 flow-root sm:mt-24">
             <div className="relative overflow-hidden rounded-md ring-1 ring-gray-900/10">
-            <Link href="/map">
+            <Link
+              href="/map"
+              aria-label="Goes to map app"
+            >
               <Image
                 src="/hero-image.webp"
                 width={700}
