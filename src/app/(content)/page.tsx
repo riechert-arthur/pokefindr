@@ -4,6 +4,7 @@ import homePageMetadata from "./metadata.json"
 import dynamic from "next/dynamic"
 import { LoadSpinner } from "@/components/LoadSpinner"
 import type { FAQSectionProps } from "./FAQSection"
+import Script from "next/script"
 
 export const metadata = homePageMetadata
 
@@ -112,10 +113,38 @@ const HeroSection: FC = () => {
 
 const LandingPage: FC = () => {
   return (
-    <div className="isolate">
-      <HeroSection />
-      <FAQSection />
-    </div>
+    <>
+      <Script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            name: "Find Pokemon Vending Machines Near You",
+            description:
+              "View our interactive map to locate Pokemon Card vending machines near you in the United States.",
+            url: "https://pokefindr.app/map",
+            mainEntity: {
+              "@type": "FAQPage",
+              mainEntity: [
+                {
+                  "@type": "Question",
+                  name: "How do I find a Pokemon vending machine?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "Use our interactive map to find the nearest Pokemon vending machines near you.",
+                  },
+                },
+              ],
+            },
+          }),
+        }}
+      />
+      <div className="isolate">
+        <HeroSection />
+        <FAQSection />
+      </div>
+    </>
   )
 }
 
