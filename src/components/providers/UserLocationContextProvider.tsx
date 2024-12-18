@@ -9,7 +9,7 @@ export interface UserLocation {
 }
 
 export interface UserLocationContextType {
-  userLocation: UserLocation | null 
+  userLocation: UserLocation | null
   userLocationError: string
 }
 
@@ -17,9 +17,13 @@ interface UserLocationContextProviderProps {
   children: ReactNode
 }
 
-export const UserLocationContext = createContext<UserLocationContextType | undefined>(undefined) 
+export const UserLocationContext = createContext<
+  UserLocationContextType | undefined
+>(undefined)
 
-export const UserLocationContextProvider: FC<UserLocationContextProviderProps> = ({ children }) => {
+export const UserLocationContextProvider: FC<
+  UserLocationContextProviderProps
+> = ({ children }) => {
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null)
   const [userLocationError, setUserLocationError] = useState<string>("")
 
@@ -35,18 +39,16 @@ export const UserLocationContextProvider: FC<UserLocationContextProviderProps> =
     }
 
     const failure = (err: GeolocationPositionError) => {
-      setUserLocationError(`Failed to retrieve location: ${err.message}`) 
+      setUserLocationError(`Failed to retrieve location: ${err.message}`)
     }
 
     navigator.geolocation.getCurrentPosition(success, failure)
-  }, []) 
+  }, [])
 
   return (
-    <UserLocationContext.Provider 
-      value={{ userLocation, userLocationError }}
-    >
+    <UserLocationContext.Provider value={{ userLocation, userLocationError }}>
       {children}
-    </UserLocationContext.Provider> 
+    </UserLocationContext.Provider>
   )
 }
 

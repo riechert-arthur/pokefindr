@@ -52,7 +52,7 @@ const MapInstance: FC = () => {
         longitude: userLocation.longitude,
         latitude: userLocation.latitude,
         zoom: 10,
-      } 
+      }
 
       setViewState(newViewState)
     }

@@ -5,10 +5,10 @@ import { UserLocationPinIcon } from "@/components/icons/UserLocationPinIcon"
 
 export const UserLocationPin: FC = () => {
   const userLocationContext = useUserLocationContext()
-  const { userLocation, userLocationError } = userLocationContext 
+  const { userLocation, userLocationError } = userLocationContext
 
-  if (!userLocation || userLocationError ) {
-    console.log("No user location returned!") 
+  if (!userLocation || userLocationError) {
+    console.log("No user location returned!")
     return null
   }
 
