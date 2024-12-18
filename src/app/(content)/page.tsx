@@ -51,19 +51,24 @@ const HeroSection: FC = () => {
               Find Pokémon vending machine locations near you
             </h1>
             <p className="mt-8 text-pretty text-lg font-medium text-gray-500 sm:text-xl/8">
-              View our interactive map to find the nearest vending machines in your area.
+              View our interactive map to find the nearest Pokemon Card vending machines in your area.
               Our map includes all card vending machines from U.S. retailers. 
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
               <Link
                 href="/map"
+                aria-label="View the full map of Pokemon vending machines"
                 className="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm
                 hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2
                 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
               >
                 View full map
               </Link>
-              <Link href="/blog" className="text-sm/6 font-semibold text-gray-900">
+              <Link
+                href="/blog"
+                aria-label="View available articles on our blog"
+                className="text-sm/6 font-semibold text-gray-900"
+              >
                 Learn more <span aria-hidden="true">→</span>
               </Link>
             </div>
