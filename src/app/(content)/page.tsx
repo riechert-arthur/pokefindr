@@ -1,35 +1,10 @@
 import type { FC } from "react"
 import Link from "next/link"
 import homePageMetadata from "./metadata.json"
-import dynamic from "next/dynamic"
-import { LoadSpinner } from "@/components/LoadSpinner"
-import type { FAQSectionProps } from "./FAQSection"
-import Script from "next/script"
+import Head from "next/head"
+import { FAQLoader } from "./FAQLoader"
 
 export const metadata = homePageMetadata
-
-type LazyFAQSectionProps = Omit<FAQSectionProps, "faqs">
-
-const FAQSection = dynamic<LazyFAQSectionProps>(
-  async () => {
-    const [FAQSectionModule, faqs] = await Promise.all([
-      import("./FAQSection"),
-      import("./faqs.json"),
-    ])
-
-    const FAQSectionComponent = FAQSectionModule.default
-
-    const LazyFAQSection: React.FC<LazyFAQSectionProps> = (props) => {
-      return <FAQSectionComponent {...props} faqs={faqs.default} />
-    }
-
-    LazyFAQSection.displayName = "LazyFAQSection"
-    return LazyFAQSection
-  },
-  {
-    loading: () => <LoadSpinner text="Loading FAQs..." />,
-  }
-)
 
 const HeroSection: FC = () => {
   return (
@@ -121,43 +96,45 @@ const HeroSection: FC = () => {
 const LandingPage: FC = () => {
   return (
     <>
-      <Script
-        id="webpage-schema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebPage",
-            name: "Find Pokemon Vending Machines Near You",
-            description:
-              "View our interactive map to locate Pokemon Card vending machines.",
-            url: "https://pokefindr.app/map",
-          }),
-        }}
-      />
-      <Script
-        id="faq-schema"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "FAQPage",
-            mainEntity: [
-              {
-                "@type": "Question",
-                name: "How do I find a Pokemon vending machine?",
-                acceptedAnswer: {
-                  "@type": "Answer",
-                  text: "Use our interactive map to find the nearest Pokemon vending machines near you.",
+      <Head>
+        <script
+          id="webpage-schema"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebPage",
+              name: "Find Pokemon Vending Machines Near You",
+              description:
+                "View our interactive map to locate Pokemon Card vending machines.",
+              url: "https://pokefindr.app/map",
+            }),
+          }}
+        />
+        <script
+          id="faq-schema"
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: [
+                {
+                  "@type": "Question",
+                  name: "How do I find a Pokemon vending machine?",
+                  acceptedAnswer: {
+                    "@type": "Answer",
+                    text: "Use our interactive map to find the nearest Pokemon vending machines near you.",
+                  },
                 },
-              },
-            ],
-          }),
-        }}
-      />
+              ],
+            }),
+          }}
+        />
+      </Head>
       <div className="isolate">
         <HeroSection />
-        <FAQSection />
+        <FAQLoader />
       </div>
     </>
   )
