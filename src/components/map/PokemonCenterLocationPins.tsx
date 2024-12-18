@@ -1,5 +1,5 @@
 import type { FC } from "react"
-import { useRef, useEffect } from "react"
+import { useRef, useEffect, useMemo } from "react"
 import { useMapContext } from "@/components/providers/MapContextProvider"
 import { Marker } from "react-map-gl"
 import PokeballPinIcon from "@/components/icons/PokeballPinIcon"
@@ -28,9 +28,8 @@ export const PokemonCenterLocationPins: FC = () => {
     })
   }, [selectedLocation])
 
-  return (
-    <>
-      {pins.map((pin, index) => (
+  const RenderedPins = useMemo(() => {
+    return pins.map((pin, index) => (
         <Marker
           key={index}
           longitude={pin.longitude}
@@ -54,7 +53,8 @@ export const PokemonCenterLocationPins: FC = () => {
             <PokeballPinIcon />
           </div>
         </Marker>
-      ))}
-    </>
-  )
+      ))
+  }, [pins, setSelectedLocation])
+
+  return <>{RenderedPins}</>
 }
