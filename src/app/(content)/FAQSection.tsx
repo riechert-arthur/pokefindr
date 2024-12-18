@@ -1,7 +1,7 @@
 import type { FC } from "react"
 
 export interface FAQSectionProps {
-    faqs: FAQ[]
+  faqs: FAQ[]
 }
 
 interface FAQ {
@@ -9,7 +9,7 @@ interface FAQ {
   question: string
   answer: string
 }
-  
+
 const FAQSection: FC<FAQSectionProps> = ({ faqs }) => {
   return (
     <div className="mx-auto max-w-2xl divide-y divide-gray-900/10 px-6 pb-8 sm:pb-24 sm:pt-12 lg:max-w-7xl lg:px-8 lg:pb-32">
@@ -19,9 +19,14 @@ const FAQSection: FC<FAQSectionProps> = ({ faqs }) => {
       <dl className="mt-10 space-y-8 divide-y divide-gray-900/10">
         {faqs.map((faq) => (
           <div key={faq.id} className="pt-8 lg:grid lg:grid-cols-12 lg:gap-8">
-            <dt className="text-base/7 font-semibold text-gray-900 lg:col-span-5">{faq.question}</dt>
+            <dt className="text-base/7 font-semibold text-gray-900 lg:col-span-5">
+              {faq.question}
+            </dt>
             <dd className="mt-4 lg:col-span-7 lg:mt-0">
-              <p className="text-base/7 text-gray-600" dangerouslySetInnerHTML={{ __html: faq.answer }} />
+              <p
+                className="text-base/7 text-gray-600"
+                dangerouslySetInnerHTML={{ __html: faq.answer }}
+              />
             </dd>
           </div>
         ))}

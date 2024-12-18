@@ -1,21 +1,21 @@
-"use client";
+"use client"
 
-import { FC, ReactNode, useState } from "react";
-import { PokeFindrIcon } from "@/components/icons/PokeFindrIcon";
-import Link from "next/link";
+import { FC, ReactNode, useState } from "react"
+import { PokeFindrIcon } from "@/components/icons/PokeFindrIcon"
+import Link from "next/link"
 import {
   ChevronDoubleRightIcon,
   ChevronDoubleLeftIcon,
-} from "@heroicons/react/24/outline";
+} from "@heroicons/react/24/outline"
 
 interface SidebarLayoutProps {
-  children: ReactNode;
+  children: ReactNode
 }
 
 export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
-  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev)
 
   return (
     <div className="flex h-screen relative">
@@ -50,7 +50,9 @@ export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
             </Link>
           </nav>
           <div className="mt-auto w-full">
-            <p className="text-gray-500 text-sm text-center">&copy; 2024 PokeFindr</p>
+            <p className="text-gray-500 text-sm text-center">
+              &copy; 2024 PokeFindr
+            </p>
           </div>
         </div>
       </aside>
@@ -74,5 +76,5 @@ export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
         {children}
       </main>
     </div>
-  );
-};
+  )
+}

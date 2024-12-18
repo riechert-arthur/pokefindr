@@ -16,11 +16,11 @@ export const BlogPostHero: FC<BlogPostHeroProps> = ({ metadata }) => {
         <div className="mx-auto max-w-7xl px-6 py-32 sm:py-40 lg:px-8">
           <div className="mx-auto max-w-2xl lg:mx-0 lg:grid lg:max-w-none lg:grid-cols-2 lg:gap-x-16 lg:gap-y-8 xl:grid-cols-1 xl:grid-rows-1 xl:gap-x-8">
             <h1 className="max-w-2xl text-balance text-5xl font-semibold tracking-tight text-gray-900 sm:text-7xl lg:col-span-2 xl:col-auto">
-              {metadata.title} 
+              {metadata.title}
             </h1>
             <div className="mt-6 max-w-xl lg:mt-0 xl:col-end-1 xl:row-start-1">
               <p className="text-pretty text-lg font-medium text-gray-500 sm:text-xl/8">
-                {metadata.description} 
+                {metadata.description}
               </p>
             </div>
             <img

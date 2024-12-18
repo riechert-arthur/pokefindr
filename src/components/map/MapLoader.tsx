@@ -5,14 +5,14 @@ import dynamic from "next/dynamic"
 import { LoadSpinner } from "@/components/LoadSpinner"
 
 const MapInstance = dynamic(() => import("./MapInstance"), {
-    loading: () => <LoadSpinner text="Loading map..." />,
-    ssr: false,
+  loading: () => <LoadSpinner text="Loading map..." />,
+  ssr: false,
 })
 
 export const MapLoader: FC = () => {
-    return (
-        <div className="h-screen">
-            <MapInstance />
-        </div>
-    )
+  return (
+    <div className="h-screen">
+      <MapInstance />
+    </div>
+  )
 }

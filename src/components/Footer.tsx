@@ -18,9 +18,7 @@ interface NavigationLink extends NavigationLinkProps {
 type NavigableSet = Record<string, NavigationLink[]>
 
 const navigation: NavigableSet = {
-  Support: [
-    { name: "Submit ticket", href: "#" },
-  ],
+  Support: [{ name: "Submit ticket", href: "#" }],
   Learn: [{ name: "Blog", href: "/blog" }],
   Legal: [
     { name: "Terms of service", href: "/terms-of-service" },

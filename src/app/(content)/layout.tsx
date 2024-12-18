@@ -3,22 +3,22 @@ import { ContentPageHeader } from "@/components/ContentPageHeader"
 import type { NavigationLink } from "@/components/ContentPageHeader"
 
 const navigation: NavigationLink[] = [
-  { name: 'Map', href: '/map' },
-  { name: 'Blog', href: '/blog' },
-  { name: 'Contact', href: '#' },
-  { name: 'Contribute', href: '#' },
+  { name: "Map", href: "/map" },
+  { name: "Blog", href: "/blog" },
+  { name: "Contact", href: "#" },
+  { name: "Contribute", href: "#" },
 ]
 
 interface ContentPageLayoutProps {
-  children: ReactNode 
+  children: ReactNode
 }
 
 const ContentPageLayout: FC<ContentPageLayoutProps> = ({ children }) => {
   return (
     <div className="bg-white relative">
       <ContentPageHeader navigation={navigation} />
-      {children} 
-    </div> 
+      {children}
+    </div>
   )
 }
 
