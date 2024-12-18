@@ -3,6 +3,7 @@ import Link from "next/link"
 import homePageMetadata from "./metadata.json"
 import Head from "next/head"
 import { FAQLoader } from "./FAQLoader"
+import Image from "next/image"
 
 export const metadata = homePageMetadata
 
@@ -57,20 +58,19 @@ const HeroSection: FC = () => {
           </div>
           <div className="mt-16 flow-root sm:mt-24">
             <div className="relative overflow-hidden rounded-md ring-1 ring-gray-900/10">
-              <iframe
-                src="/map"
-                width="100%"
-                height="700"
-                className="w-full overflow-hidden"
+            <Link
+              href="/map"
+              aria-label="Goes to map app"
+            >
+              <Image
+                src="/hero-image.webp"
+                width={700}
+                height={700}
+                className="w-full h-auto rounded-md shadow-lg border border-gray-300"
                 loading="lazy"
-                style={{
-                  borderRadius: "0.375rem",
-                  boxShadow:
-                    "0px 4px 6px rgba(0, 0, 0, 0.1), 0px 1px 3px rgba(0, 0, 0, 0.06)",
-                  border: "1px solid rgba(0, 0, 0, 0.1)",
-                }}
-                title="App screenshot"
+                alt="App screenshot"
               />
+            </Link>
             </div>
           </div>
         </div>
