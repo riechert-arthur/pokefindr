@@ -59,7 +59,7 @@ const PrivacyPolicyPage: FC = () => {
       <p className="mb-4">
         <strong>Do we use cookies or third-party tracking?</strong> We do not
         deploy first-party cookies ourselves. However, third-party services such
-        as Google Analytics and Google AdSense may use cookies or similar
+        as Vercel Analytics and Google AdSense may use cookies or similar
         technologies. We may also incorporate affiliate marketing links in the
         future, and affiliates or their networks may place cookies or similar
         tracking technologies.
@@ -81,7 +81,7 @@ const PrivacyPolicyPage: FC = () => {
           information?
         </strong>{" "}
         We may share information with service providers (such as hosting
-        providers, analytics providers like Google Analytics, ad networks like
+        providers, analytics providers like Vercel Analytics, ad networks like
         Google AdSense, and in the future, affiliate partners) and as required
         by law.
       </p>
@@ -134,7 +134,7 @@ const PrivacyPolicyPage: FC = () => {
         <strong>Cookies and Similar Technologies:</strong>
         <br />
         While we do not deploy first-party cookies, third-party services such as
-        Google Analytics and Google AdSense may use cookies or similar
+        Vercel Analytics and Google AdSense may use cookies or similar
         technologies. Future affiliate marketing partners may also use these
         technologies.
       </p>
@@ -144,7 +144,7 @@ const PrivacyPolicyPage: FC = () => {
       </h2>
       <p className="mb-4">
         We process your information to operate, maintain, and improve our
-        Services; provide location-based features; analyze usage through Google
+        Services; provide location-based features; analyze usage through Vercel
         Analytics; serve advertisements through Google AdSense; potentially
         provide affiliate marketing links; and respond to your inquiries.
       </p>
@@ -163,7 +163,7 @@ const PrivacyPolicyPage: FC = () => {
       </h2>
       <p className="mb-4">
         We may share your personal information with service providers (hosting,
-        Google Analytics, Google AdSense, Mapbox, and in the future affiliate
+        Vercel Analytics, Google AdSense, Mapbox, and in the future affiliate
         partners) and legal authorities as required.
       </p>
 
@@ -180,7 +180,7 @@ const PrivacyPolicyPage: FC = () => {
         6. DO WE USE COOKIES AND OTHER TRACKING TECHNOLOGIES?
       </h2>
       <p className="mb-4">
-        Third-party services like Google Analytics and Google AdSense may use
+        Third-party services like Vercel Analytics and Google AdSense may use
         cookies or similar technologies. You can manage your cookie preferences
         through your browser settings.
       </p>
