@@ -5,6 +5,7 @@ import { XLogoIcon } from "@/components/icons/XLogoIcon"
 import { GitHubLogoIcon } from "@/components/icons/GitHubLogoIcon"
 import { YouTubeLogoIcon } from "@/components/icons/YouTubeLogoIcon"
 import { PokeFindrIcon } from "@/components/icons/PokeFindrIcon"
+import Link from "next/link"
 
 interface NavigationLinkProps {
   name: string
@@ -57,14 +58,14 @@ const SocialLinks: FC = () => {
   return (
     <div className="flex gap-x-6">
       {navigation["Social"].map((item) => (
-        <a
+        <Link
           key={item.name}
           href={item.href}
           className="text-gray-600 hover:text-gray-800"
         >
           <span className="sr-only">{item.name}</span>
           {item.icon && <item.icon aria-hidden="true" className="size-6" />}
-        </a>
+        </Link>
       ))}
     </div>
   )
@@ -73,9 +74,9 @@ const SocialLinks: FC = () => {
 const NavigationLink: FC<NavigationLinkProps> = ({ name, href }) => {
   return (
     <li>
-      <a href={href} className="text-sm/6 text-gray-600 hover:text-gray-900">
+      <Link href={href} className="text-sm/6 text-gray-600 hover:text-gray-900">
         {name}
-      </a>
+      </Link>
     </li>
   )
 }

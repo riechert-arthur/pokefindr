@@ -1,6 +1,7 @@
 import type { FC } from "react"
 import type { BlogPostMetadata } from "@/lib/utils"
 import { readAllBlogPostMetadata } from "@/lib/utils"
+import Link from "next/link"
 import blogPageMetadata from "./metadata.json"
 
 export const metadata = blogPageMetadata
@@ -40,10 +41,10 @@ const BlogPage: FC = async () => {
                 </time>
               </div>
               <h3 className="mt-3 text-lg/6 font-semibold text-white">
-                <a href={post.link}>
+                <Link href={post.link}>
                   <span className="absolute inset-0" />
                   {post.title}
-                </a>
+                </Link>
               </h3>
             </article>
           ))}

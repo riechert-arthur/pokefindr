@@ -1,10 +1,11 @@
 "use client"
 
 import React, { useState, memo } from "react"
+import { useAdContext } from "./providers/AdContextProvider"
 
 const AffiliateBanner: React.FC = () => {
-  const [isVisible, setIsVisible] = useState(true)
-  if (!isVisible) return null
+  const { showBanner, setShowBanner } = useAdContext()
+  if (!showBanner) return null
 
   const isProd = process.env.NODE_ENV === "production"
   const pixelTrackingURL = process.env.NEXT_PUBLIC_PIXEL_TRACKING_URL_1
@@ -44,7 +45,7 @@ const AffiliateBanner: React.FC = () => {
         "
       >
         <button
-          onClick={() => setIsVisible(false)}
+          onClick={() => setShowBanner(false)}
           aria-label="Close ad"
           className="
             absolute
