@@ -30,9 +30,9 @@ The **Pokémon Trading Card Game** is a collectible card game based on the immen
 
 Before diving in, it’s helpful to recognize the various types of cards you’ll come across:
 
-1. **Pokémon Cards**: These cards feature different Pokémon, each with its own HP, attacks, and weaknesses.  
-2. **Trainer Cards**: These include Supporter, Stadium, and Item cards that give strategic advantages during a game (or simply function as collectible items).  
-3. **Energy Cards**: Basic energies (Water, Fire, Grass, etc.) and special energies power a Pokémon’s attacks.  
+1. **Pokémon Cards**: These cards feature different Pokémon, each with its own HP, attacks, and weaknesses.
+2. **Trainer Cards**: These include Supporter, Stadium, and Item cards that give strategic advantages during a game (or simply function as collectible items).
+3. **Energy Cards**: Basic energies (Water, Fire, Grass, etc.) and special energies power a Pokémon’s attacks.
 
 Within these categories, you’ll find numerous designs and rarities (ex: Pokémon V, VMAX, EX, GX, and more).
 
@@ -68,12 +68,15 @@ Ready to start collecting? Here are a few strategies:
 You can find Pokémon cards through several different channels:
 
 ### Local Game Stores
+
 Your neighborhood game or hobby store is a fantastic place to start collecting. These stores often host events such as **Pokémon League**, where you can meet other trainers, trade cards, or play in friendly tournaments.
 
 ### Online Retailers
+
 Mainstream online marketplaces (e.g., Amazon, TCGPlayer) carry a broad range of Pokémon cards. They often have deals on booster boxes and themed bundles, but be cautious when buying from third-party sellers. Always check seller ratings and product descriptions to avoid counterfeits.
 
 ### Pokémon Card Vending Machines
+
 A newer, exciting way to purchase Pokémon TCG products is through **Pokémon card vending machines**. These are conveniently located in high-traffic areas like shopping malls and retail stores.
 
 If you want to learn more about Pokémon card vending machines, how they work, and where to find them, check out our in-depth post here:  
