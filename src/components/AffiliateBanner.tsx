@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, memo } from "react"
+import React, { memo } from "react"
 import { useAdContext } from "./providers/AdContextProvider"
 
 const AffiliateBanner: React.FC = () => {
