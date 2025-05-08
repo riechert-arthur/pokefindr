@@ -30,7 +30,5 @@ const FAQSection = dynamic<LazyFAQSectionProps>(
 )
 
 export const FAQLoader: FC = () => {
-    return (
-        <FAQSection />
-    )
+  return <FAQSection />
 }

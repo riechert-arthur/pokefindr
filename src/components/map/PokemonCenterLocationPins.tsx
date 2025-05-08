@@ -30,30 +30,30 @@ export const PokemonCenterLocationPins: FC = () => {
 
   const RenderedPins = useMemo(() => {
     return pins.map((pin, index) => (
-        <Marker
-          key={index}
-          longitude={pin.longitude}
-          latitude={pin.latitude}
-          anchor="bottom"
+      <Marker
+        key={index}
+        longitude={pin.longitude}
+        latitude={pin.latitude}
+        anchor="bottom"
+      >
+        <div
+          onClick={(e) => {
+            e.stopPropagation()
+            setSelectedLocation(index)
+          }}
+          onMouseEnter={(e) => {
+            e.stopPropagation()
+            setSelectedLocation(index)
+          }}
+          className={`size-6 flex items-center justify-center cursor-pointer`}
+          ref={(el) => {
+            pinRefs.current[index] = el
+          }}
         >
-          <div
-            onClick={(e) => {
-              e.stopPropagation()
-              setSelectedLocation(index)
-            }}
-            onMouseEnter={(e) => {
-              e.stopPropagation()
-              setSelectedLocation(index)
-            }}
-            className={`size-6 flex items-center justify-center cursor-pointer`}
-            ref={(el) => {
-              pinRefs.current[index] = el
-            }}
-          >
-            <PokeballPinIcon />
-          </div>
-        </Marker>
-      ))
+          <PokeballPinIcon />
+        </div>
+      </Marker>
+    ))
   }, [pins, setSelectedLocation])
 
   return <>{RenderedPins}</>
