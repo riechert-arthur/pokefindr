@@ -33,13 +33,14 @@ const AffiliateBanner: React.FC = () => {
           backdrop-blur-sm
           rounded-2xl
           shadow-xl
-          max-w-[90vw]
-          sm:max-w-lg
+          max-w-[95vw]
           z-50
           hover:scale-105
           ease-out
           duration-200
           transition-transform
+          w-full
+          md:w-2/5
         "
       >
         <button
@@ -58,6 +59,7 @@ const AffiliateBanner: React.FC = () => {
             hover:scale-110
             ease-out
             duration-200
+            max-w-1/6
           "
         >
           &times;
