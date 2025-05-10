@@ -211,22 +211,15 @@ export const PokemonCenterLocationPins: FC = () => {
             anchor="bottom"
             onClick={(e) => {
               e.originalEvent.stopPropagation()
-              if (
-                clickedInfo?.longitude === longitude &&
-                clickedInfo?.latitude === latitude
-              ) {
-                setClickedInfo(null)
-              } else {
-                setClickedInfo({
-                  longitude,
-                  latitude,
-                  retailer,
-                  address,
-                  city,
-                  state,
-                  machineID,
-                })
-              }
+              setClickedInfo({
+                longitude,
+                latitude,
+                retailer,
+                address,
+                city,
+                state,
+                machineID,
+              })
             }}
           >
             <img
@@ -261,6 +254,7 @@ export const PokemonCenterLocationPins: FC = () => {
         <LocationPopup
           {...activeInfo}
           onClose={() => {
+            setClickedInfo(null)
             setHoveredInfo(null)
             clearHide()
           }}
