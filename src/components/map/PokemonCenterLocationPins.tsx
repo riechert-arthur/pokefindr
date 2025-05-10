@@ -1,4 +1,4 @@
-import type { FC } from "react"
+import type { FC, SetStateAction, Dispatch } from "react"
 import { useState, useEffect, useMemo, useRef } from "react"
 import {
   Source,
@@ -8,17 +8,28 @@ import {
   type MapboxGeoJSONFeature,
 } from "react-map-gl"
 import type { LayerProps } from "react-map-gl"
-import vendingMachines from "@/data/vending_machines.json"
 import LocationPopup, { LocationPopupProps } from "./LocationPinPopUps"
-import type { Feature, Point } from "geojson"
+import type { Feature, Point, FeatureCollection } from "geojson"
 import { MapLayerMouseEvent } from "mapbox-gl"
 
-interface MachineProperties {
+export interface MachineProperties {
   retailer: string;
   machineID: string;
   address: string;
   city: string;
   state: string;
+}
+
+interface PokemonCenterLocationPinsProps {
+  collection: FeatureCollection<Point, MachineProperties>
+  clickedInfo: Omit<
+    LocationPopupProps,
+    "onClose"
+  > | null
+  setClickedInfo: Dispatch<SetStateAction<Omit<
+    LocationPopupProps,
+    "onClose"
+  > | null>>
 }
 
 const CLUSTER_MAX_ZOOM = 8
@@ -75,15 +86,12 @@ const unclusteredLayer: LayerProps = {
   },
 }
 
-export const PokemonCenterLocationPins: FC = () => {
+export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ collection, clickedInfo, setClickedInfo }) => {
   const mapRef = useMap()
   const [unclusteredPoints, setUnclusteredPoints] = useState<
     Feature<Point, MachineProperties>[]
   >([])
-  const [clickedInfo, setClickedInfo] = useState<Omit<
-    LocationPopupProps,
-    "onClose"
-  > | null>(null)
+  
   const [hoveredInfo, setHoveredInfo] = useState<Omit<
     LocationPopupProps,
     "onClose"
@@ -174,7 +182,7 @@ export const PokemonCenterLocationPins: FC = () => {
       <Source
         id="machines"
         type="geojson"
-        data={vendingMachines}
+        data={collection}
         cluster
         clusterMaxZoom={CLUSTER_MAX_ZOOM}
         clusterRadius={30}
