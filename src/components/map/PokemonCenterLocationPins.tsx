@@ -10,8 +10,16 @@ import {
 import type { LayerProps } from "react-map-gl"
 import vendingMachines from "@/data/vending_machines.json"
 import LocationPopup, { LocationPopupProps } from "./LocationPinPopUps"
-import type { Feature, Point, GeoJsonProperties } from "geojson"
+import type { Feature, Point } from "geojson"
 import { MapLayerMouseEvent } from "mapbox-gl"
+
+interface MachineProperties {
+  retailer: string;
+  machineID: string;
+  address: string;
+  city: string;
+  state: string;
+}
 
 const CLUSTER_MAX_ZOOM = 8
 
@@ -70,7 +78,7 @@ const unclusteredLayer: LayerProps = {
 export const PokemonCenterLocationPins: FC = () => {
   const mapRef = useMap()
   const [unclusteredPoints, setUnclusteredPoints] = useState<
-    GeoJSON.Feature<GeoJSON.Point>[]
+    Feature<Point, MachineProperties>[]
   >([])
   const [clickedInfo, setClickedInfo] = useState<Omit<
     LocationPopupProps,
@@ -142,13 +150,13 @@ export const PokemonCenterLocationPins: FC = () => {
           f.geometry.type === "Point"
       )
 
-      const pts: Feature<Point, GeoJsonProperties>[] = onlyPoints.map((f) => ({
+      const pts: Feature<Point, MachineProperties>[] = onlyPoints.map((f) => ({
         type: "Feature",
         geometry: {
           type: "Point",
           coordinates: f.geometry.coordinates,
         },
-        properties: f.properties ?? {},
+        properties: f.properties as MachineProperties,
       }))
 
       setUnclusteredPoints(pts)
@@ -187,7 +195,7 @@ export const PokemonCenterLocationPins: FC = () => {
       {unclusteredPoints.map((feature, i) => {
         const [longitude, latitude] = feature.geometry.coordinates
         const { retailer, machineID, address, city, state } =
-          feature.properties as Record<string, any>
+          feature.properties
 
         const isActive =
           (clickedInfo?.longitude === longitude &&
