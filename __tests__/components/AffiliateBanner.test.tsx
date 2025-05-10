@@ -5,14 +5,18 @@ import { render, fireEvent, screen, cleanup } from "@testing-library/react"
 async function renderBanner() {
   vi.resetModules()
 
-  vi.stubEnv("NEXT_PUBLIC_AFFILIATE_LINK_1",     "https://example.com")
-  vi.stubEnv("NEXT_PUBLIC_IMAGE_1",              "https://example.com/ad.png")
-  vi.stubEnv("NEXT_PUBLIC_PIXEL_TRACKING_URL_1", "https://pixel.example.com/track")
+  vi.stubEnv("NEXT_PUBLIC_AFFILIATE_LINK_1", "https://example.com")
+  vi.stubEnv("NEXT_PUBLIC_IMAGE_1", "https://example.com/ad.png")
+  vi.stubEnv(
+    "NEXT_PUBLIC_PIXEL_TRACKING_URL_1",
+    "https://pixel.example.com/track"
+  )
 
-  const [{ AdContextProvider }, { default: AffiliateBanner }] = await Promise.all([
-    import("@/components/providers/AdContextProvider"),
-    import("@/components/AffiliateBanner"),
-  ])
+  const [{ AdContextProvider }, { default: AffiliateBanner }] =
+    await Promise.all([
+      import("@/components/providers/AdContextProvider"),
+      import("@/components/AffiliateBanner"),
+    ])
 
   return render(
     <AdContextProvider>
