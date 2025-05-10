@@ -9,9 +9,7 @@ interface ContextProvidersProps {
 export const ContextProviders: FC<ContextProvidersProps> = ({ children }) => {
   return (
     <MapContextProvider>
-      <AdContextProvider>
-        {children}
-      </AdContextProvider>
+      <AdContextProvider>{children}</AdContextProvider>
     </MapContextProvider>
   )
 }

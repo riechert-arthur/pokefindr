@@ -14,15 +14,11 @@ export interface AdContextType {
 
 const AdContext = createContext<AdContextType | undefined>(undefined)
 
-export const AdContextProvider: FC<AdContextProviderProps> = ({
-  children,
-}) => {
+export const AdContextProvider: FC<AdContextProviderProps> = ({ children }) => {
   const [showBanner, setShowBanner] = useState(true)
 
   return (
-    <AdContext.Provider
-      value={{ showBanner, setShowBanner }}
-    >
+    <AdContext.Provider value={{ showBanner, setShowBanner }}>
       {children}
     </AdContext.Provider>
   )

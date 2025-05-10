@@ -9,7 +9,6 @@ import { getPokemonCenterLocations } from "@/lib/map/locations"
 import type { PokemonCenterLocation } from "@/lib/types/locations"
 import { useMapContext } from "@/components/providers/MapContextProvider"
 import { PokemonCenterLocationPins } from "./PokemonCenterLocationPins"
-import { LocationPinPopUps } from "./LocationPinPopUps"
 import type { MapPin } from "@/lib/types/map"
 import { UserLocationPin } from "./UserLocationPin"
 import { useUserLocationContext } from "@/components/providers/UserLocationContextProvider"
@@ -71,7 +70,6 @@ const MapInstance: FC = () => {
       mapStyle="mapbox://styles/mapbox/streets-v12"
     >
       <PokemonCenterLocationPins />
-      <LocationPinPopUps />
       <FullscreenControl position="bottom-right" />
       <NavigationControl position="bottom-right" />
       <UserLocationPin />
