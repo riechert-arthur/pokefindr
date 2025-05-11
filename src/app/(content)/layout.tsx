@@ -5,8 +5,8 @@ import type { NavigationLink } from "@/components/ContentPageHeader"
 const navigation: NavigationLink[] = [
   { name: "Map", href: "/map" },
   { name: "Blog", href: "/blog" },
-  { name: "Contact", href: "#" },
-  { name: "Contribute", href: "#" },
+  { name: "Support", href: "https://discord.gg/f2uUR5bAZU" },
+  { name: "Changelog", href: "/changelog" },
 ]
 
 interface ContentPageLayoutProps {

@@ -1,7 +1,7 @@
 "use client"
 
 import type { FC } from "react"
-import { useEffect, useRef, useMemo, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Map, { FullscreenControl, NavigationControl } from "react-map-gl"
 import type { MapRef } from "react-map-gl"
 import "mapbox-gl/dist/mapbox-gl.css"

@@ -123,7 +123,7 @@ export function MapSearchBar({
           )
           .map((feat) => ({
             ...feat,
-            distance: getDistance([lng, lat], feat.geometry.coordinates),
+            distance: getDistance([lng, lat], feat.geometry.coordinates as [number, number]),
           }))
           .filter((f) => f.distance <= radiusMeters)
           .sort((a, b) => a.distance - b.distance)

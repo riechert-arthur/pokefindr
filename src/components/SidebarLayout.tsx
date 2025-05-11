@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { PokeFindrIcon } from '@/components/icons/PokeFindrIcon'
 import { HomeIcon, BookOpenIcon } from '@heroicons/react/24/outline'
 import { useSidebar } from '@/components/providers/SidebarContextProvider'
+import { DiscordIcon } from './icons/DiscordIcon'
 
 interface SidebarLayoutProps {
   children: ReactNode
@@ -34,6 +35,9 @@ export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
           </Link>
           <Link href="/blog" aria-label="Blog" className="p-2 hover:bg-gray-100 rounded-md">
             <BookOpenIcon className="w-6 h-6 text-gray-600" />
+          </Link>
+          <Link href="https://discord.gg/f2uUR5bAZU" aria-label="Discord" target="_blank" className="p-2 hover:bg-gray-100 rounded-md">
+            <DiscordIcon className="w-6 h-6 text-gray-600 font-semibold" />
           </Link>
         </nav>
       </aside>
