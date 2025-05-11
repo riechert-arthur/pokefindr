@@ -32,6 +32,17 @@ const ChangelogPage: FC = () => {
           <strong>Easy Zoom</strong> – Tap any group to zoom in and view each
           machine individually.
         </li>
+        <li>
+          <strong>Search Bar</strong> – Search for any address and find the closest
+          vending machine within a 30-mile radius.
+        </li>
+        <li>
+          <strong>UI Updates</strong> – Made the sidebar less intrusive.
+        </li>
+        <li>
+          <strong>Discord Community</strong> – We now have a discord community for
+          users to ask for support or request new features. Click support on the home page.
+        </li>
       </ul>
     </div>
   )

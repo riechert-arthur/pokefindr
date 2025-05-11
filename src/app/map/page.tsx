@@ -4,6 +4,7 @@ import { UserLocationContextProvider } from "@/components/providers/UserLocation
 import mapPageMetadata from "./metadata.json"
 import { MapLoader } from "@/components/map/MapLoader"
 import ChangelogModal from "@/components/ChangelogModal"
+import { SidebarProvider } from "@/components/providers/SidebarContextProvider"
 
 export const metadata = mapPageMetadata
 
@@ -11,9 +12,11 @@ const MapPage: FC = () => {
   return (
     <UserLocationContextProvider>
       <ChangelogModal />
-      <SidebarLayout>
-        <MapLoader />
-      </SidebarLayout>
+      <SidebarProvider>
+        <SidebarLayout>
+          <MapLoader />
+        </SidebarLayout>
+      </SidebarProvider>
     </UserLocationContextProvider>
   )
 }

@@ -48,8 +48,12 @@ const ChangelogModal: FC = () => {
             are now included in the map.
           </li>
           <li>
-            <strong>Easy Zoom</strong> – Tap any group to zoom in and view
-            each machine individually.
+          <strong>Search Bar</strong> – Search for any address and find the closest
+            vending machine within a 30-mile radius.
+          </li>
+          <li>
+            <strong>Discord Community</strong> – We now have a discord community for
+            users to ask for support or request new features. Click <a className="text-blue-500" target="_blank" href="https://discord.gg/f2uUR5bAZU">here</a> to join.
           </li>
         </ul>
         <button

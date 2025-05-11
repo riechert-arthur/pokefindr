@@ -1,78 +1,48 @@
 "use client"
 
-import { FC, ReactNode, useState } from "react"
-import { PokeFindrIcon } from "@/components/icons/PokeFindrIcon"
-import Link from "next/link"
-import {
-  ChevronDoubleRightIcon,
-  ChevronDoubleLeftIcon,
-} from "@heroicons/react/24/outline"
+import { FC, ReactNode } from 'react'
+import Link from 'next/link'
+import { PokeFindrIcon } from '@/components/icons/PokeFindrIcon'
+import { HomeIcon, BookOpenIcon } from '@heroicons/react/24/outline'
+import { useSidebar } from '@/components/providers/SidebarContextProvider'
+import { DiscordIcon } from './icons/DiscordIcon'
 
 interface SidebarLayoutProps {
   children: ReactNode
 }
 
 export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-
-  const toggleSidebar = () => setIsSidebarOpen((prev) => !prev)
+  const { isSidebarOpen } = useSidebar()
 
   return (
-    <div className="flex h-screen relative">
+    <div className="relative h-screen">
       <aside
-        className={`absolute top-0 left-0 h-full bg-white shadow-lg z-10 flex flex-col px-4 py-6 transform transition-transform duration-300 overflow-hidden ${
-          isSidebarOpen ? "translate-x-0 w-48" : "-translate-x-full w-0"
-        } sm:translate-x-0 sm:w-48`}
+        className={
+          `fixed inset-y-0 left-0 bg-white shadow-xl z-50
+          flex flex-col items-center py-4 space-y-6 w-16
+          transform transition-transform duration-300
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          sm:translate-x-0
+          overflow-hidden`
+        }
       >
-        <div
-          className={`flex flex-col transition-opacity duration-300 h-full ${
-            isSidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-          } sm:opacity-100 sm:pointer-events-auto`}
-        >
-          <Link className="flex items-center mb-6" href="/">
-            <PokeFindrIcon width={30} height={30} />
-            <span className="text-xl font-bold text-gray-800 ml-3 tracking-wide">
-              PokeFindr
-            </span>
+        <Link href="/" aria-label="Home">
+          <PokeFindrIcon width={24} height={24} />
+        </Link>
+        <nav className="flex flex-col space-y-6">
+          <Link href="/" aria-label="Home" className="p-2 hover:bg-gray-100 rounded-md">
+            <HomeIcon className="w-6 h-6 text-gray-600" />
           </Link>
-          <nav className="flex flex-col space-y-4 w-full">
-            <Link
-              href="/"
-              className="text-gray-700 font-medium hover:text-indigo-600 hover:bg-gray-100 rounded-lg px-3 py-2 transition"
-            >
-              Home
-            </Link>
-            <Link
-              href="/blog"
-              className="text-gray-700 font-medium hover:text-indigo-600 hover:bg-gray-100 rounded-lg px-3 py-2 transition"
-            >
-              Blog
-            </Link>
-          </nav>
-          <div className="mt-auto w-full">
-            <p className="text-gray-500 text-sm text-center">
-              &copy; 2024 PokeFindr
-            </p>
-          </div>
-        </div>
+          <Link href="/blog" aria-label="Blog" className="p-2 hover:bg-gray-100 rounded-md">
+            <BookOpenIcon className="w-6 h-6 text-gray-600" />
+          </Link>
+          <Link href="https://discord.gg/f2uUR5bAZU" aria-label="Discord" target="_blank" className="p-2 hover:bg-gray-100 rounded-md">
+            <DiscordIcon className="w-6 h-6 text-gray-600 font-semibold" />
+          </Link>
+        </nav>
       </aside>
-      <button
-        className={`absolute top-4 z-20 bg-white p-2 rounded-md shadow-md transform transition-transform duration-300 ${
-          isSidebarOpen ? "left-52" : "left-4"
-        } sm:hidden`}
-        onClick={toggleSidebar}
-      >
-        {isSidebarOpen ? (
-          <ChevronDoubleLeftIcon width={12} height={12} />
-        ) : (
-          <ChevronDoubleRightIcon width={12} height={12} />
-        )}
-      </button>
-      <main
-        className={`flex-1 bg-gray-50 overflow-auto transform transition-all duration-300 ${
-          isSidebarOpen ? "ml-48" : "ml-0"
-        } sm:ml-48`}
-      >
+
+      <main className="flex-1 bg-gray-50 overflow-auto">
         {children}
       </main>
     </div>
