@@ -1,8 +1,9 @@
 import type { FC } from "react"
 import Markdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import { readBlogPostMarkdownFile, readBlogPostMetadata } from "@/lib/utils"
-import type { BlogPostMetadata } from "@/lib/utils"
+import remarkSlug from "remark-slug"
+import { readBlogPostMarkdownFile, readBlogPostMetadata } from "@/lib/blog-utils"
+import type { BlogPostMetadata } from "@/lib/blog-utils"
 import { BlogPostHero } from "@/components/BlogPostHero"
 import type { Metadata } from "next"
 
@@ -38,7 +39,19 @@ const BlogPostPage: FC<BlogPostPageProps> = async ({ params }) => {
       <BlogPostHero metadata={metadata} />
       <Markdown
         className="px-8 relative top-20 text-xl max-w-prose prose"
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[remarkGfm, remarkSlug as any]}
+        components={{
+          a: ({ href, children }) => (
+            <a href={href} className="text-blue-600 hover:text-blue-800 underline">
+              {children}
+            </a>
+          ),
+          img: ({ src, alt }) => (
+            <div className="flex justify-center">
+              <img src={src} alt={alt} className="w-auto max-w-full mx-auto my-4" />
+            </div>
+          )
+        }}
       >
         {markdown}
       </Markdown>

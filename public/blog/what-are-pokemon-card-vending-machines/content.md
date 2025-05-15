@@ -60,6 +60,8 @@ If you’re in **Georgia**, here are some locations where you can find Pokémon 
 
 For a full list of locations, visit the [official Pokémon Center support page](https://support.pokemoncenter.com).
 
+For an interactive map of all locations, try out our [free app](/map).
+
 ---
 
 ## Why Fans Love Pokémon Card Vending Machines
