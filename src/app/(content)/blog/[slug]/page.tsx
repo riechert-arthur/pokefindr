@@ -6,6 +6,7 @@ import { readBlogPostMarkdownFile, readBlogPostMetadata } from "@/lib/blog-utils
 import type { BlogPostMetadata } from "@/lib/blog-utils"
 import { BlogPostHero } from "@/components/BlogPostHero"
 import type { Metadata } from "next"
+import type { Plugin } from "unified"
 
 interface BlogPostPageProps {
   params: Promise<{
@@ -39,7 +40,7 @@ const BlogPostPage: FC<BlogPostPageProps> = async ({ params }) => {
       <BlogPostHero metadata={metadata} />
       <Markdown
         className="px-8 relative top-20 text-xl max-w-prose prose"
-        remarkPlugins={[remarkGfm, remarkSlug as any]}
+        remarkPlugins={[remarkGfm, remarkSlug as Plugin]}
         components={{
           a: ({ href, children }) => (
             <a href={href} className="text-blue-600 hover:text-blue-800 underline">
