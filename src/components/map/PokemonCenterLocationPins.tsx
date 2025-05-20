@@ -254,7 +254,7 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
                 origin-bottom
                 transform transition-transform duration-200 ease-out
                 cursor-pointer
-                ${isActive ? "scale-110 z-50" : "hover:scale-110 hover:z-50"}
+                ${isActive ? "scale-110 z-50" : "md:hover:scale-110 md:hover:z-50"}
               `}
             />
           </Marker>
