@@ -16,6 +16,7 @@ export const config = {
   matcher: [
     '/home/:path*',
     '/settings/:path*',
+    '/api/reviews',
     '/api/reviews/:id',
     '/api/reviews/:id/:path*',
     '/api/auth/user/:path*',

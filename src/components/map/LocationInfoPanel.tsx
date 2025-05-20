@@ -96,6 +96,8 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
   }, [])
 
   const onPointerDown = (e: React.PointerEvent) => {
+    const tag = (e.target as HTMLElement).tagName
+    if (["INPUT", "TEXTAREA", "BUTTON", "SELECT"].includes(tag)) return
     e.stopPropagation()
     e.preventDefault()
     setDragging(true)
@@ -129,7 +131,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
   const loadReviews = useCallback(
     async (lat: number, lng: number) => {
       try {
-        const res = await axios.get<{ reviews: Review[] }>("/api/reviews", {
+        const res = await axios.get<{ reviews: Review[] }>("/api/get-reviews", {
           params: { lat, lng },
           withCredentials: true,
         })
