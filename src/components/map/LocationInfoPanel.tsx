@@ -55,13 +55,18 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
   const { session, isLoading } = useSessionContext()
   const router = useRouter()
   const peekRatio = 0.33
-  const [height, setHeight] = useState(
+  const peekHeight =
     typeof window !== "undefined"
       ? window.innerHeight * peekRatio
       : 0
-  )
+  const [height, setHeight] = useState(peekHeight)
   const startYRef = useRef(0)
   const startHRef = useRef(0)
+
+  const handleClose = () => {
+    setHeight(peekHeight)
+    onClose()
+  }
 
   useEffect(() => {
     function onResize() {
@@ -82,10 +87,10 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
   }
 
   const onPointerMove = (e: PointerEvent) => {
-    const dy = startYRef.current - e.clientY
+    const dy = e.clientY - startYRef.current 
     const newH = Math.min(
       window.innerHeight,
-      Math.max(window.innerHeight * peekRatio, startHRef.current + dy)
+      Math.max(window.innerHeight * peekRatio, startHRef.current - dy)
     )
     setHeight(newH)
   }
@@ -184,7 +189,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
 
         <div className="flex-shrink-0 flex items-center justify-between p-4 border-b">
           <h2 className="text-lg font-semibold">Location Details</h2>
-          <button onClick={onClose} aria-label="Close panel">
+          <button onClick={handleClose} aria-label="Close panel">
             <XMarkIcon className="h-6 w-6" />
           </button>
         </div>
