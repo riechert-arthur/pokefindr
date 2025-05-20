@@ -48,7 +48,7 @@ export function LoginForm({
       toast.success("Logged in!")
       new BroadcastChannel("auth").postMessage("login")
       router.refresh()
-      router.push("/home")
+      router.push("/")
     } catch (err: unknown) {
       handleSubmitError(err)
     } finally {
