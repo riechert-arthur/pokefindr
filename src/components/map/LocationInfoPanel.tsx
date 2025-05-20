@@ -1,5 +1,5 @@
 
-import React, { FC, useState, useEffect, useCallback } from "react"
+import React, { FC, useState, useEffect, useCallback, useRef } from "react"
 import axios from "axios"
 import { PencilSquareIcon, XMarkIcon } from "@heroicons/react/24/outline"
 import { LocationPopupProps } from "./LocationPinPopUps"
@@ -28,6 +28,7 @@ import machineData from "@/data/vending_machines_mod.json"
 import { handleSubmitError } from "@/lib/forms"
 import { useSessionContext } from "@/components/providers/SessionProvider"
 import { useRouter } from "next/navigation"
+import { argv0 } from "process"
 
 interface InfoPanelProps {
   info: Omit<LocationPopupProps, "onClose"> | null
@@ -54,6 +55,49 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({})
   const { session, isLoading } = useSessionContext()
   const router = useRouter()
+  const peekRatio = 0.33
+  const [height, setHeight] = useState(
+    typeof window !== "undefined"
+      ? window.innerHeight * peekRatio
+      : 0
+  )
+  const startYRef = useRef(0)
+  const startHRef = useRef(0)
+
+  useEffect(() => {
+    function onResize() {
+      const peekH = window.innerHeight * peekRatio
+      setHeight((h) =>
+        h > peekH ? window.innerHeight : peekH
+      )
+    }
+    window.addEventListener("resize", onResize)
+    return () => window.removeEventListener("resize", onResize)
+  }, [])
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    startYRef.current = e.clientY
+    startHRef.current = height
+    document.addEventListener("pointermove", onPointerMove)
+    document.addEventListener("pointerup", onPointerUp, { once: true })
+  }
+
+  const onPointerMove = (e: PointerEvent) => {
+    const dy = startYRef.current - e.clientY
+    const newH = Math.min(
+      window.innerHeight,
+      Math.max(window.innerHeight * peekRatio, startHRef.current + dy)
+    )
+    setHeight(newH)
+  }
+
+  const onPointerUp = () => {
+    document.removeEventListener("pointermove", onPointerMove)
+    const threshold = window.innerHeight * (peekRatio + (1 - peekRatio) / 2)
+    setHeight((h) =>
+      h > threshold ? window.innerHeight : window.innerHeight * peekRatio
+    )
+  }
 
   const reviewForm = useForm<ReviewFormValues>({
     resolver: zodResolver(reviewSchema),
@@ -113,14 +157,28 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
       ? 0
       : reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
 
+  const fullHeight = typeof window !== "undefined" ? window.innerHeight : 0 
+  const isFull = height === fullHeight
+
   return (
     <>
       {/* Mobile panel */}
       <div
-        className={`fixed bottom-0 left-0 w-full h-1/2 bg-white shadow-xl transform transition-transform duration-300 ease-in-out md:hidden z-[900] flex flex-col ${
-          info ? "translate-y-0" : "translate-y-full"
-        }`}
+        className={`
+          fixed bottom-0 left-0 w-full
+          bg-white shadow-xl
+          transform transition-[height] duration-200 ease-in-out
+          md:hidden z-[1100] flex flex-col
+          ${info ? "translate-y-0" : "translate-y-full"}
+        `}
+        style={{ height }}
+        onPointerDown={onPointerDown}
       >
+        <div 
+          className="w-10 h-1.5 bg-gray-300 rounded mx-auto mt-2 cursor-grab"
+          onPointerDown={onPointerDown} 
+        />
+
         <div className="flex-shrink-0 flex items-center justify-between p-4 border-b">
           <h2 className="text-lg font-semibold">Location Details</h2>
           <button onClick={onClose} aria-label="Close panel">
@@ -129,7 +187,14 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
         </div>
 
         {info && (
-          <div className="p-4 space-y-2 flex-1 overflow-y-auto">
+          <div 
+            className={`p-4 space-y-2 flex-1 
+              ${isFull
+                ? "overflow-y-auto overflow-contain"
+                : "overflow-hidden"
+              } 
+            `} 
+          >
             <p>
               <strong>Retailer:</strong> {info.retailer}
             </p>
