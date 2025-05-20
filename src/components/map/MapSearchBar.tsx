@@ -171,10 +171,9 @@ export function MapSearchBar({
         position: "absolute",
         left: pos.x,
         top: pos.y,
-        width: 320,
         zIndex: 1000,
       }}
-      className={`z-100 bg-white shadow-lg cursor-move md:translate-x-16 ${results.length > 0 ? "rounded-xl" : "rounded-full"}`}
+      className={`z-100 w-64 md:w-80 bg-white shadow-lg cursor-move md:translate-x-16 ${results.length > 0 ? "rounded-xl" : "rounded-full"}`}
     >
       <div className={`flex flex-row items-center pl-4 pr-3 border-b ${results.length > 0 ? "rounded-t-xl" : "rounded-full"}`}>
         <button onClick={toggleSidebar} className="md:hidden mr-2 p-1 rounded" aria-label="Toggle menu">

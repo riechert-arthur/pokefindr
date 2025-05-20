@@ -35,7 +35,9 @@ export default function Avatar({
 
   const handleLogout = async () => {
     try {
-      await axios.post('/api/auth/logout')
+      await axios.post('/api/auth/logout', { withCredentials: true })
+      new BroadcastChannel("auth").postMessage("logout")
+      router.refresh()
       router.push('/login')
     } catch (err) {
       console.error('Logout failed', err)

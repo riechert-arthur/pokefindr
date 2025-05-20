@@ -16,7 +16,7 @@ export default function OAuthCallback() {
       const accessToken = params.get("access_token");
 
       if (!accessToken) {
-        return router.push("/auth/auth-code-error");
+        throw Error("No access token!") 
       }
 
       try {

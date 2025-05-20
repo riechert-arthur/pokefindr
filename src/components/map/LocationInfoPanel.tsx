@@ -1,5 +1,5 @@
 
-import React, { FC, useState, useEffect, useCallback, Fragment } from "react"
+import React, { FC, useState, useEffect, useCallback, useRef } from "react"
 import axios from "axios"
 import { PencilSquareIcon, XMarkIcon } from "@heroicons/react/24/outline"
 import { LocationPopupProps } from "./LocationPinPopUps"
@@ -24,7 +24,7 @@ import { Button } from "@/components/ui/Button"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import machineData from "@/data/vending_machines.json"
+import machineData from "@/data/vending_machines_mod.json"
 import { handleSubmitError } from "@/lib/forms"
 import { useSessionContext } from "@/components/providers/SessionProvider"
 import { useRouter } from "next/navigation"
@@ -54,6 +54,72 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({})
   const { session, isLoading } = useSessionContext()
   const router = useRouter()
+  const peekRatio = 0.5
+  const peekHeight =
+    typeof window !== "undefined"
+      ? window.innerHeight * peekRatio
+      : 0
+  const [height, setHeight] = useState(peekHeight)
+  const [dragging, setDragging] = useState(false)
+  const startYRef = useRef(0)
+  const startHRef = useRef(0)
+
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    const onTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+    };
+    panel.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => {
+      panel.removeEventListener("touchmove", onTouchMove);
+    };
+  }, []);
+
+  const handleClose = () => {
+    setHeight(peekHeight)
+    onClose()
+  }
+
+  useEffect(() => {
+    function onResize() {
+      const peekH = window.innerHeight * peekRatio
+      setHeight((h) =>
+        h > peekH ? window.innerHeight : peekH
+      )
+    }
+    window.addEventListener("resize", onResize)
+    return () => window.removeEventListener("resize", onResize)
+  }, [])
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    setDragging(true)
+    startYRef.current = e.clientY
+    startHRef.current = height
+    document.addEventListener("pointermove", onPointerMove)
+    document.addEventListener("pointerup", onPointerUp, { once: true })
+  }
+
+  const onPointerMove = (e: PointerEvent) => {
+    const dy = e.clientY - startYRef.current 
+    const newH = Math.min(
+      window.innerHeight,
+      Math.max(peekHeight, startHRef.current - dy)
+    )
+    setHeight(newH)
+  }
+
+  const onPointerUp = () => {
+    document.removeEventListener("pointermove", onPointerMove)
+    setDragging(false)
+    const threshold = window.innerHeight * 0.85 
+    setHeight(h => (h > threshold ? window.innerHeight : peekHeight))
+  }
 
   const reviewForm = useForm<ReviewFormValues>({
     resolver: zodResolver(reviewSchema),
@@ -113,23 +179,56 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
       ? 0
       : reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
 
+  const fullHeight = typeof window !== "undefined" ? window.innerHeight : 0 
+  const isFull = height === fullHeight
+
   return (
     <>
       {/* Mobile panel */}
       <div
-        className={`fixed bottom-0 left-0 w-full h-1/2 bg-white shadow-xl transform transition-transform duration-300 ease-in-out md:hidden z-[900] flex flex-col ${
-          info ? "translate-y-0" : "translate-y-full"
-        }`}
+        ref={panelRef}
+        className={`
+          fixed bottom-0 left-0 w-full
+          bg-white shadow-xl rounded-t-3xl
+          transform transition-[height] duration-200 ease-in-out
+          md:hidden z-[1100] flex flex-col
+          ${info ? "translate-y-0" : "translate-y-full"}
+          
+          /* prevent overscroll from bubbling out */
+          overscroll-contain
+          
+          /* disable any default touch panning */
+          touch-none
+        `}
+        style={{ height,
+          touchAction: "none",
+          transition: dragging
+            ? "none"
+            : "height 200ms ease-in-out"
+        }}
+        onPointerDown={onPointerDown}
       >
+        {/* drag handle (visual only) */}
+        <div className="w-10 h-1.5 bg-gray-300 rounded mx-auto mt-2" />
+
+        {/* header */}
         <div className="flex-shrink-0 flex items-center justify-between p-4 border-b">
           <h2 className="text-lg font-semibold">Location Details</h2>
-          <button onClick={onClose} aria-label="Close panel">
+          <button onClick={handleClose} aria-label="Close panel">
             <XMarkIcon className="h-6 w-6" />
           </button>
         </div>
 
+        {/* content */}
         {info && (
-          <div className="p-4 space-y-2 flex-1 overflow-y-auto">
+          <div
+            className={`p-4 space-y-2 flex-1 ${
+              isFull
+                ? "overflow-y-auto overscroll-contain"
+                : "overflow-hidden"
+            }`}
+            style={{ touchAction: isFull ? "pan-y" : "none" }}
+          >
             <p>
               <strong>Retailer:</strong> {info.retailer}
             </p>
@@ -143,6 +242,16 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
             <p>
               <strong>Machine ID:</strong> {info.machineID}
             </p>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                `${info.address}, ${info.city}, ${info.state}`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 block underline text-blue-500"
+            >
+              Open in Google Maps
+            </a>
 
             <div className="mt-6 border-t pt-4">
               <h3 className="mb-2 text-lg font-semibold">Review Summary</h3>

@@ -94,8 +94,8 @@ const MapInstance: FC = () => {
       <MapSearchBar selectedLocation={clickedInfo} collection={machineData as FeatureCollection<Point, MachineProperties>} onSelect={handleSelect} />
       <LocationInfoPanel info={clickedInfo} onClose={() => setClickedInfo(null)} />
       {session && (
-        <div className="absolute top-5 right-5 z-50">
-          <Avatar size={40} userName={session.username} />
+        <div className="absolute top-4 right-5 z-50">
+          <Avatar size={45} userName={session.username} />
         </div>
       )}
     </Map>
