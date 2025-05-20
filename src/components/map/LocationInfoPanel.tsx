@@ -54,7 +54,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({})
   const { session, isLoading } = useSessionContext()
   const router = useRouter()
-  const peekRatio = 0.45
+  const peekRatio = 0.5
   const peekHeight =
     typeof window !== "undefined"
       ? window.innerHeight * peekRatio
@@ -189,7 +189,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
         ref={panelRef}
         className={`
           fixed bottom-0 left-0 w-full
-          bg-white shadow-xl
+          bg-white shadow-xl rounded-t-full
           transform transition-[height] duration-200 ease-in-out
           md:hidden z-[1100] flex flex-col
           ${info ? "translate-y-0" : "translate-y-full"}
