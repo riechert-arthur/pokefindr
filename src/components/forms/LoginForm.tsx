@@ -44,7 +44,7 @@ export function LoginForm({
 
   async function onSubmit(values: z.infer<typeof loginSchema>) {
     try {
-      await axios.post("/api/auth/login", values)
+      await axios.post("/api/auth/login", values, { withCredentials: true })
       toast.success("Logged in!")
       new BroadcastChannel("auth").postMessage("login")
       router.refresh()
