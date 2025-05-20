@@ -63,6 +63,21 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
   const startYRef = useRef(0)
   const startHRef = useRef(0)
 
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    const onTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+    };
+    panel.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => {
+      panel.removeEventListener("touchmove", onTouchMove);
+    };
+  }, []);
+
   const handleClose = () => {
     setHeight(peekHeight)
     onClose()
@@ -168,25 +183,31 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
     <>
       {/* Mobile panel */}
       <div
+        ref={panelRef}
         className={`
           fixed bottom-0 left-0 w-full
           bg-white shadow-xl
           transform transition-[height] duration-200 ease-in-out
           md:hidden z-[1100] flex flex-col
           ${info ? "translate-y-0" : "translate-y-full"}
+          
+          /* prevent overscroll from bubbling out */
+          overscroll-contain
+          
+          /* disable any default touch panning */
+          touch-none
         `}
         style={{ height }}
         onPointerDown={(e) => {
-          e.stopPropagation()
-          e.preventDefault()
-          onPointerDown(e)
+          e.stopPropagation();
+          e.preventDefault();
+          onPointerDown(e);
         }}
       >
-        <div 
-          className="w-10 h-1.5 bg-gray-300 rounded mx-auto mt-2 cursor-grab"
-          onPointerDown={onPointerDown} 
-        />
+        {/* drag handle (visual only) */}
+        <div className="w-10 h-1.5 bg-gray-300 rounded mx-auto mt-2" />
 
+        {/* header */}
         <div className="flex-shrink-0 flex items-center justify-between p-4 border-b">
           <h2 className="text-lg font-semibold">Location Details</h2>
           <button onClick={handleClose} aria-label="Close panel">
@@ -194,14 +215,14 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
           </button>
         </div>
 
+        {/* content */}
         {info && (
-          <div 
-            className={`p-4 space-y-2 flex-1 
-              ${isFull
+          <div
+            className={`p-4 space-y-2 flex-1 ${
+              isFull
                 ? "overflow-y-auto overscroll-contain"
                 : "overflow-hidden"
-              } 
-            `}
+            }`}
             style={{ touchAction: isFull ? "pan-y" : "none" }}
           >
             <p>
