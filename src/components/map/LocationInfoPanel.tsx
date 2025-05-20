@@ -60,6 +60,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
       ? window.innerHeight * peekRatio
       : 0
   const [height, setHeight] = useState(peekHeight)
+  const [dragging, setDragging] = useState(false)
   const startYRef = useRef(0)
   const startHRef = useRef(0)
 
@@ -95,6 +96,9 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
   }, [])
 
   const onPointerDown = (e: React.PointerEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    setDragging(true)
     startYRef.current = e.clientY
     startHRef.current = height
     document.addEventListener("pointermove", onPointerMove)
@@ -105,17 +109,16 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
     const dy = e.clientY - startYRef.current 
     const newH = Math.min(
       window.innerHeight,
-      Math.max(window.innerHeight * peekRatio, startHRef.current - dy)
+      Math.max(peekHeight, startHRef.current - dy)
     )
     setHeight(newH)
   }
 
   const onPointerUp = () => {
     document.removeEventListener("pointermove", onPointerMove)
-    const threshold = window.innerHeight * (peekRatio + (1 - peekRatio) / 2)
-    setHeight((h) =>
-      h > threshold ? window.innerHeight : window.innerHeight * peekRatio
-    )
+    setDragging(false)
+    const threshold = window.innerHeight * 0.85 
+    setHeight(h => (h > threshold ? window.innerHeight : peekHeight))
   }
 
   const reviewForm = useForm<ReviewFormValues>({
@@ -197,12 +200,13 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
           /* disable any default touch panning */
           touch-none
         `}
-        style={{ height }}
-        onPointerDown={(e) => {
-          e.stopPropagation();
-          e.preventDefault();
-          onPointerDown(e);
+        style={{ height,
+          touchAction: "none",
+          transition: dragging
+            ? "none"
+            : "height 200ms ease-in-out"
         }}
+        onPointerDown={onPointerDown}
       >
         {/* drag handle (visual only) */}
         <div className="w-10 h-1.5 bg-gray-300 rounded mx-auto mt-2" />
