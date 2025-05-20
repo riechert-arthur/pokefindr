@@ -28,7 +28,6 @@ import machineData from "@/data/vending_machines_mod.json"
 import { handleSubmitError } from "@/lib/forms"
 import { useSessionContext } from "@/components/providers/SessionProvider"
 import { useRouter } from "next/navigation"
-import { argv0 } from "process"
 
 interface InfoPanelProps {
   info: Omit<LocationPopupProps, "onClose"> | null
