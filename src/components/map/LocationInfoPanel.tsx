@@ -54,7 +54,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({})
   const { session, isLoading } = useSessionContext()
   const router = useRouter()
-  const peekRatio = 0.33
+  const peekRatio = 0.4
   const peekHeight =
     typeof window !== "undefined"
       ? window.innerHeight * peekRatio
