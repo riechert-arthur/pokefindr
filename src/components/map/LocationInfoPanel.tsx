@@ -189,7 +189,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
         ref={panelRef}
         className={`
           fixed bottom-0 left-0 w-full
-          bg-white shadow-xl rounded-t-xl
+          bg-white shadow-xl rounded-t-3xl
           transform transition-[height] duration-200 ease-in-out
           md:hidden z-[1100] flex flex-col
           ${info ? "translate-y-0" : "translate-y-full"}
