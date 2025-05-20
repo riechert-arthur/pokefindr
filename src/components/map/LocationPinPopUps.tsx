@@ -9,6 +9,7 @@ export interface LocationPopupProps {
   city: string
   state: string
   machineID: string
+  feature_index: number
   onClose: () => void
   onMouseEnter?: () => void
   onMouseLeave?: () => void
@@ -27,7 +28,7 @@ export const LocationPopup: React.FC<LocationPopupProps> = ({
   onMouseLeave,
 }) => (
   <Popup
-    className="shadow-md rounded-xl"
+    className="shadow-md rounded-xl z-10"
     longitude={longitude}
     latitude={latitude}
     anchor="top"
@@ -39,9 +40,9 @@ export const LocationPopup: React.FC<LocationPopupProps> = ({
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <h3 className="font-semibold">{retailer}</h3>
-      <p>{address}</p>
-      <p>
+      <h3 className="text-lg font-semibold">{retailer}</h3>
+      <p className="text-gray-600">{address}</p>
+      <p className="text-gray-600">
         {city}, {state}
       </p>
       <button

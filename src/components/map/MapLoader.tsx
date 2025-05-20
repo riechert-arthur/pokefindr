@@ -2,7 +2,7 @@
 
 import type { FC } from "react"
 import dynamic from "next/dynamic"
-import { LoadSpinner } from "@/components/LoadSpinner"
+import { LoadSpinner } from "@/components/wrappers/LoadSpinner"
 
 const MapInstance = dynamic(() => import("./MapInstance"), {
   loading: () => <LoadSpinner text="Loading map..." />,

@@ -5,18 +5,17 @@ import { useEffect, useRef, useState } from "react"
 import Map, { FullscreenControl, NavigationControl } from "react-map-gl"
 import type { MapRef } from "react-map-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
-import { getPokemonCenterLocations } from "@/lib/map/locations"
-import type { PokemonCenterLocation } from "@/lib/types/locations"
-import { useMapContext } from "@/components/providers/MapContextProvider"
 import { PokemonCenterLocationPins, type MachineProperties } from "./PokemonCenterLocationPins"
-import type { MapPin } from "@/lib/types/map"
 import { UserLocationPin } from "./UserLocationPin"
 import { useUserLocationContext } from "@/components/providers/UserLocationContextProvider"
 import { MapSearchBar } from "./MapSearchBar"
-import machineData from "@/data/vending_machines.json"
+import machineData from "@/data/vending_machines_mod.json"
 import type { Feature, FeatureCollection, Point } from "geojson"
 import { LocationPopupProps } from "./LocationPinPopUps"
 import { useSidebar } from "../providers/SidebarContextProvider"
+import { LocationInfoPanel } from "./LocationInfoPanel"
+import Avatar from "@/components/ui/Avatar"
+import { useSessionContext } from "../providers/SessionProvider"
 
 interface ViewState {
   longitude: number
@@ -31,8 +30,6 @@ const initialViewState: ViewState = {
 }
 
 const MapInstance: FC = () => {
-  const mapContext = useMapContext()
-  const { setPins } = mapContext
   const userLocationContext = useUserLocationContext()
   const { userLocation, userLocationError } = userLocationContext
   const mapRef = useRef<MapRef>(null)
@@ -41,20 +38,7 @@ const MapInstance: FC = () => {
     "onClose"
   > | null>(null)
   const { isSidebarOpen, toggleSidebar } = useSidebar()
-
-  useEffect(() => {
-    const fetchCoordinates = async () => {
-      try {
-        const locations: PokemonCenterLocation[] =
-          await getPokemonCenterLocations()
-        setPins(locations as MapPin[])
-      } catch (error) {
-        throw error
-      }
-    }
-
-    fetchCoordinates()
-  }, [])
+  const { session } = useSessionContext()
 
   useEffect(() => {
     if (userLocation && !userLocationError && mapRef.current) {
@@ -77,6 +61,7 @@ const MapInstance: FC = () => {
       city: feat.properties.city,
       state: feat.properties.state,
       machineID: feat.properties.machineID,
+      feature_index: feat.properties.feature_index,
     })
   }
 
@@ -106,7 +91,13 @@ const MapInstance: FC = () => {
       <FullscreenControl position="bottom-right" />
       <NavigationControl position="bottom-right" />
       <UserLocationPin />
-      <MapSearchBar collection={machineData as FeatureCollection<Point, MachineProperties>} onSelect={handleSelect} />
+      <MapSearchBar selectedLocation={clickedInfo} collection={machineData as FeatureCollection<Point, MachineProperties>} onSelect={handleSelect} />
+      <LocationInfoPanel info={clickedInfo} onClose={() => setClickedInfo(null)} />
+      {session && (
+        <div className="absolute top-5 right-5 z-50">
+          <Avatar size={40} userName={session.username} />
+        </div>
+      )}
     </Map>
   )
 }

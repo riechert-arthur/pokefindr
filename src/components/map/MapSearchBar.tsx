@@ -11,6 +11,7 @@ interface MapSearchBarProps {
   collection: FeatureCollection<Point, MachineProperties>
   onSelect: (feat: Feature<Point, MachineProperties>) => void
   radiusMeters?: number
+  selectedLocation?: { address: string; city: string; state: string } | null;
 }
 
 const DEBOUNCE_MS = 300
@@ -36,6 +37,7 @@ export function MapSearchBar({
   collection,
   onSelect,
   radiusMeters = 50_000,
+  selectedLocation = null,
 }: MapSearchBarProps) {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<
@@ -44,6 +46,7 @@ export function MapSearchBar({
   const cancelRef = useRef<CancelTokenSource | null>(null)
   const { toggleSidebar } = useSidebar()
   const token = process.env.NEXT_PUBLIC_MAPBOX_GEOCODING_API_KEY
+  const [isFocused, setIsFocused] = useState(false)
 
   const containerRef = useRef<HTMLDivElement>(null)
   const [pos, setPos] = useState({ x: 16, y: 16 })
@@ -77,6 +80,14 @@ export function MapSearchBar({
   const onMouseUp = useCallback(() => {
     if (dragging) setDragging(false)
   }, [dragging])
+
+  useEffect(() => {
+    if (selectedLocation) {
+      setQuery(
+        `${selectedLocation.address}, ${selectedLocation.city}, ${selectedLocation.state}`
+      );
+    }
+  }, [selectedLocation]);
 
   useEffect(() => {
     window.addEventListener("mousemove", onMouseMove)
@@ -163,7 +174,7 @@ export function MapSearchBar({
         width: 320,
         zIndex: 1000,
       }}
-      className={`bg-white shadow-lg cursor-move md:translate-x-16 ${results.length > 0 ? "rounded-xl" : "rounded-full"}`}
+      className={`z-100 bg-white shadow-lg cursor-move md:translate-x-16 ${results.length > 0 ? "rounded-xl" : "rounded-full"}`}
     >
       <div className={`flex flex-row items-center pl-4 pr-3 border-b ${results.length > 0 ? "rounded-t-xl" : "rounded-full"}`}>
         <button onClick={toggleSidebar} className="md:hidden mr-2 p-1 rounded" aria-label="Toggle menu">
@@ -177,6 +188,8 @@ export function MapSearchBar({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onMouseDown={(e) => e.stopPropagation()}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
         />
         {results.length > 0 ? (
           <button onClick={() => { setResults([]); setQuery("") }} className="size-7 z-100 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
@@ -193,7 +206,7 @@ export function MapSearchBar({
           </button>
         }
       </div>
-      {results.length > 0 && (
+      {isFocused && results.length > 0 && (
         <ul
           className="max-h-64 overflow-auto"
           onMouseDown={(e) => e.stopPropagation()}
@@ -208,6 +221,7 @@ export function MapSearchBar({
                 onClick={() => {
                   onSelect(feat)
                 }}
+                onMouseDown={(e) => e.preventDefault()}
               >
                 <div>
                   <strong>{retailer}</strong>
