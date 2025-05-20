@@ -54,7 +54,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({})
   const { session, isLoading } = useSessionContext()
   const router = useRouter()
-  const peekRatio = 0.4
+  const peekRatio = 0.45
   const peekHeight =
     typeof window !== "undefined"
       ? window.innerHeight * peekRatio
@@ -242,6 +242,16 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
             <p>
               <strong>Machine ID:</strong> {info.machineID}
             </p>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                `${info.address}, ${info.city}, ${info.state}`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 block underline text-blue-500"
+            >
+              Open in Google Maps
+            </a>
 
             <div className="mt-6 border-t pt-4">
               <h3 className="mb-2 text-lg font-semibold">Review Summary</h3>
