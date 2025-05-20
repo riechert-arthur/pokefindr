@@ -92,6 +92,10 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
   const [unclusteredPoints, setUnclusteredPoints] = useState<
     Feature<Point, MachineProperties>[]
   >([])
+
+
+  const canHover = typeof window !== 'undefined'
+    && window.matchMedia('(hover: hover) and (pointer: fine)').matches
   
   const [hoveredInfo, setHoveredInfo] = useState<Omit<
     LocationPopupProps,
@@ -235,20 +239,22 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
             <img
               src="/pointer.png"
               alt="Poké-point"
-              onMouseEnter={() => {
-                clearHide()
-                setHoveredInfo({
-                  longitude,
-                  latitude,
-                  retailer,
-                  address,
-                  city,
-                  state,
-                  machineID,
-                  feature_index,
-                })
-              }}
-              onMouseLeave={scheduleHide}
+              {...(canHover && {
+                onMouseEnter: () => {
+                  clearHide()
+                  setHoveredInfo({
+                    longitude,
+                    latitude,
+                    retailer,
+                    address,
+                    city,
+                    state,
+                    machineID,
+                    feature_index,
+                  })
+                },
+                onMouseLeave: scheduleHide,
+              })}
               className={`
                 w-9 h-9
                 origin-bottom
