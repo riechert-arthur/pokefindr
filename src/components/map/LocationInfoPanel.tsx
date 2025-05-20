@@ -171,7 +171,11 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
           ${info ? "translate-y-0" : "translate-y-full"}
         `}
         style={{ height }}
-        onPointerDown={onPointerDown}
+        onPointerDown={(e) => {
+          e.stopPropagation()
+          e.preventDefault()
+          onPointerDown(e)
+        }}
       >
         <div 
           className="w-10 h-1.5 bg-gray-300 rounded mx-auto mt-2 cursor-grab"
@@ -189,10 +193,11 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
           <div 
             className={`p-4 space-y-2 flex-1 
               ${isFull
-                ? "overflow-y-auto overflow-contain"
+                ? "overflow-y-auto overscroll-contain"
                 : "overflow-hidden"
               } 
-            `} 
+            `}
+            style={{ touchAction: isFull ? "pan-y" : "none" }}
           >
             <p>
               <strong>Retailer:</strong> {info.retailer}
