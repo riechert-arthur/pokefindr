@@ -18,6 +18,7 @@ export interface MachineProperties {
   address: string;
   city: string;
   state: string;
+  feature_index: number 
 }
 
 interface PokemonCenterLocationPinsProps {
@@ -202,7 +203,7 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
 
       {unclusteredPoints.map((feature, i) => {
         const [longitude, latitude] = feature.geometry.coordinates
-        const { retailer, machineID, address, city, state } =
+        const { retailer, machineID, address, city, state, feature_index } =
           feature.properties
 
         const isActive =
@@ -227,6 +228,7 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
                 city,
                 state,
                 machineID,
+                feature_index,
               })
             }}
           >
@@ -243,6 +245,7 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
                   city,
                   state,
                   machineID,
+                  feature_index,
                 })
               }}
               onMouseLeave={scheduleHide}

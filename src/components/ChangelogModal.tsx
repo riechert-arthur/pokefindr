@@ -1,9 +1,10 @@
+
 "use client"
 
 import type { FC } from "react"
 import { useState, useEffect } from "react"
 
-const CURRENT_CHANGELOG_VERSION = "1.1"
+const CURRENT_CHANGELOG_VERSION = "1.2"
 
 const ChangelogModal: FC = () => {
   const [isOpen, setIsOpen] = useState(false)
@@ -29,32 +30,13 @@ const ChangelogModal: FC = () => {
         <h2 className="text-xl font-semibold mb-2">
           What&apos;s New in Version {CURRENT_CHANGELOG_VERSION}
         </h2>
-        <p className="text-sm text-gray-600 mb-4">Released May 10, 2025</p>
+        <p className="text-sm text-gray-600 mb-4">Released May 19, 2025</p>
         <ul className="list-disc list-inside space-y-1 mb-6">
-          <li>
-            <strong>Faster Map Load</strong> – The map now opens more quickly
-            and runs smoothly.
-          </li>
-          <li>
-            <strong>Smart Grouping</strong> – Nearby machines are grouped
-            together so the map stays clear.
-          </li>
-          <li>
-            <strong>Precise Locations</strong> – Each machine pin is more
-            accurate to its real-world spot.
-          </li>
-          <li>
-            <strong>Up-to-Date Data</strong> – All known vending machines
-            are now included in the map.
-          </li>
-          <li>
-          <strong>Search Bar</strong> – Search for any address and find the closest
-            vending machine within a 30-mile radius.
-          </li>
-          <li>
-            <strong>Discord Community</strong> – We now have a discord community for
-            users to ask for support or request new features. Click <a className="text-blue-500" target="_blank" href="https://discord.gg/f2uUR5bAZU">here</a> to join.
-          </li>
+          <li><strong>Free User Accounts</strong> – Users can now create accounts for free.</li>
+          <li><strong>Review Management</strong> – Add, edit, and delete reviews for locations.</li>
+          <li><strong>Settings Page</strong> – Manage your profile and account information.</li>
+          <li><strong>SSO (Single Sign-On)</strong> – Log in using Google (more providers coming).</li>
+          <li><strong>Star Ratings</strong> – Locations now have star ratings based on user reviews.</li>
         </ul>
         <button
           onClick={handleClose}
@@ -67,4 +49,5 @@ const ChangelogModal: FC = () => {
   )
 }
 
-export default ChangelogModal
+export default ChangelogModal;
+

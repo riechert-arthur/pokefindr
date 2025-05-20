@@ -1,5 +1,5 @@
 import type { FC } from "react"
-import type { BlogPostMetadata } from "@/lib/utils"
+import type { BlogPostMetadata } from "@/lib/blog-utils"
 
 interface BlogPostHeroProps {
   metadata: BlogPostMetadata
