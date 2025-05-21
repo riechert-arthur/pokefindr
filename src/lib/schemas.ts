@@ -34,3 +34,10 @@ export const registrationSchema = z
     message: "Passwords do not match",
     path: ["passwordVerification"],
   })
+
+export const callbackSchema = z.object({
+  username: z
+    .string()
+    .nonempty({ message: "Please enter a name." })
+    .regex(/^[\p{L} ]+$/u, { message: "Only letters are allowed." }),
+})

@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
 import { serialize } from 'cookie'
@@ -6,12 +7,34 @@ import { adminDB } from '@/lib/supabase/db'
 const JWT_SECRET  = process.env.JWT_SECRET!
 const COOKIE_NAME = 'app_session'
 
+interface OnboardBody {
+  access_token: string
+  username:     string
+}
+
 export async function POST(req: NextRequest) {
-  const { access_token } = await req.json()
+  let body: OnboardBody
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json(
+      { error: 'Invalid JSON' },
+      { status: 400 }
+    )
+  }
+
+  const { access_token, username } = body
+
   if (!access_token) {
     return NextResponse.json(
-      { error: 'Missing access token' },
+      { error: 'Missing access_token' },
       { status: 400 }
+    )
+  }
+  if (!username) {
+    return NextResponse.json(
+      { error: 'username is required' },
+      { status: 422 }
     )
   }
 
@@ -28,40 +51,39 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { data, error } = await adminDB
+  const { error: profileError } = await adminDB
     .from('profiles')
-    .select(`
-      id,
-      full_name,
+    .update({
       username,
-      onboarded, 
-      subscriptions ( plan_name )
-    `)
+      full_name: user.user_metadata.full_name,
+      onboarded: true,
+    })
     .eq('id', user.id)
+
+  if (profileError) {
+    console.error('Onboarding update failed', profileError)
+    return NextResponse.json(
+      { error: profileError.message },
+      { status: 500 }
+    )
+  }
+
+  const { data: subData, error: subError } = await adminDB
+    .from('subscriptions')
+    .select('plan_name')
+    .eq('user_id', user.id)
+    .limit(1)
     .single()
 
-  console.log("User login detected: ", data)
-
-  if (!data) {
+  if (subError && subError.code !== 'PGRST116') { 
+    console.error('Subscription lookup failed', subError)
     return NextResponse.json(
-      { error: "No account found" },
-      { status: 404 },
+      { error: 'Subscription lookup error' },
+      { status: 500 }
     )
   }
 
-  if (error) {
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    )
-  }
-
-  if (!data.onboarded) {
-    return new NextResponse(null, { status: 204 }) 
-  }
-
-  const planName = data.subscriptions?.[0]?.plan_name
-  const tier = planName ? 'paid' : 'free'
+  const tier = subData?.plan_name ? 'paid' : 'free'
 
   const token = jwt.sign(
     { sub: user.id, email: user.email, tier },
@@ -81,7 +103,7 @@ export async function POST(req: NextRequest) {
     { ok: true },
     {
       status: 200,
-      headers: { 'Set-Cookie': cookie }
+      headers: { 'Set-Cookie': cookie },
     }
   )
 }

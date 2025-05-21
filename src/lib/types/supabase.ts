@@ -96,6 +96,7 @@ export type Database = {
           id: string
           is_verified: boolean | null
           metadata: Json | null
+          onboarded: boolean
           rating: number | null
           updated_at: string | null
           username: string
@@ -106,6 +107,7 @@ export type Database = {
           id: string
           is_verified?: boolean | null
           metadata?: Json | null
+          onboarded?: boolean
           rating?: number | null
           updated_at?: string | null
           username: string
@@ -116,6 +118,7 @@ export type Database = {
           id?: string
           is_verified?: boolean | null
           metadata?: Json | null
+          onboarded?: boolean
           rating?: number | null
           updated_at?: string | null
           username?: string
