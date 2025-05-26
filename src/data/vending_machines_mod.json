@@ -118151,7 +118151,13 @@
     },
     {
       "type": "Feature",
-      "geometry": null,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.29046,
+          47.79062
+        ]
+      },
       "properties": {
         "retailer": "QFC",
         "machineID": "Q00808",
