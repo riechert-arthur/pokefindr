@@ -144,18 +144,27 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
   )
 
   useEffect(() => {
-    if (!info) return
-    const [longitude, latitude] =
-      machineData.features[info.feature_index].geometry.coordinates
-    loadReviews(latitude, longitude)
-  }, [info, loadReviews])
+    if (!info) return;
+
+    const feature = machineData.features[info.feature_index];
+    const coords = feature.geometry?.coordinates;
+    if (!coords) {
+      return;
+    }
+
+    const [longitude, latitude] = coords;
+    loadReviews(latitude, longitude);
+  }, [info, loadReviews]);
 
   const onReviewSubmit = async (values: ReviewFormValues) => {
     if (!info) return
 
     try {
-      const [longitude, latitude] =
-        machineData.features[info.feature_index].geometry.coordinates
+      const feature = machineData.features[info.feature_index];
+      const coords = feature.geometry?.coordinates;
+      if (!coords) return;
+
+      const [longitude, latitude] = coords;
 
       await axios.post(
         "/api/reviews",
