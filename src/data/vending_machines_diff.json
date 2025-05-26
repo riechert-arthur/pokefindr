@@ -1,16 +1,5 @@
 {
   "added": [],
-  "updated": [
-    {
-      "machineID": "Q00197",
-      "old": null,
-      "new": "rooftop"
-    },
-    {
-      "machineID": "Q00210",
-      "old": null,
-      "new": "rooftop"
-    }
-  ],
+  "updated": [],
   "removed": []
 }
