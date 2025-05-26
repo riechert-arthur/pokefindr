@@ -18,6 +18,9 @@ import sys
 import requests
 import cloudscraper
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # ─── CONFIG ───────────────────────────────────────────────
 BASE_URL       = "https://support.pokemoncenter.com"
@@ -26,11 +29,11 @@ SEED_URL       = (
     "Pok%C3%A9mon-Automated-Retail-Vending-Machines"
 )
 MAPBOX_API_KEY = os.getenv("MAPBOX_API_KEY")
-OLD_JSON       = "../src/data/vending_machines.json"
-OUT_JSON       = "../src/data/vending_machines.json"
-MOD_JSON       = "../src/data/vending_machines_mod.json"
-DIFF_JSON      = "../src/data/vending_machines_diff.json"
-FLAG_JSON      = "../src/data/vending_machines_flagged.json"
+OLD_JSON       = "src/data/vending_machines.json"
+OUT_JSON       = "src/data/vending_machines.json"
+MOD_JSON       = "src/data/vending_machines_mod.json"
+DIFF_JSON      = "src/data/vending_machines_diff.json"
+FLAG_JSON      = "src/data/vending_machines_flagged.json"
 CHUNK_SIZE     = 50
 
 if not MAPBOX_API_KEY:
