@@ -175,6 +175,16 @@ def main():
     batch = batch_geocode(data)
     geo   = build_geojson(data, batch)
 
+    from collections import Counter
+    mids = [feat["properties"].get("machineID") for feat in geo["features"]]
+    dup_counts = {mid: c for mid, c in Counter(mids).items() if c > 1}
+    if dup_counts:
+        print("⚠️  Found duplicate machineIDs in new scrape:")
+        for mid, count in dup_counts.items():
+            print(f"    • {mid} appears {count} times")
+    else:
+        print("✅ No duplicate machineIDs in new scrape")
+
     old = load_old()
     merged, diff = merge_and_diff(old["features"], geo["features"])
 

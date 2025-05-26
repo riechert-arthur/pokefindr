@@ -12,6 +12,9 @@ import os
 import sys
 import json
 from supabase import create_client, Client
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # ─── Configuration ────────────────────────────────────────
 SUPABASE_URL = os.getenv("SUPABASE_URL")
