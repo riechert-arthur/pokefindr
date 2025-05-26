@@ -7736,7 +7736,7 @@
       "properties": {
         "retailer": "Frys",
         "machineID": "Q00341",
-        "address": "8900 E Vía Linda",
+        "address": "8900 E V\u00eda Linda",
         "city": "Scottsdale",
         "state": "AZ",
         "mapbox_id": "dXJuOm1ieGFkcjoxZTc4NmU0MS03NGY1LTRmZTAtYmQ1NC04Njg4Yzc2YTYzMGE",
@@ -109088,13 +109088,7 @@
     },
     {
       "type": "Feature",
-      "geometry": {
-        "type": "Point", 
-        "coordinates": [
-          -77.26093,
-          38.87139
-        ]
-      },
+      "geometry": null,
       "properties": {
         "retailer": "Safeway",
         "machineID": "Q01482",
@@ -118151,13 +118145,7 @@
     },
     {
       "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -122.29045,
-          47.79065
-        ]
-      },
+      "geometry": null,
       "properties": {
         "retailer": "QFC",
         "machineID": "Q00808",
@@ -122821,8 +122809,8 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          -122.10526,
-          47.94397
+          -122.10544,
+          47.943776
         ]
       },
       "properties": {
@@ -122831,6 +122819,74 @@
         "address": "2801 Bickford Ave",
         "city": "Snohomish",
         "state": "WA",
+        "mapbox_id": "dXJuOm1ieGFkcjo3M2FjMGM0My0zNzVkLTQyMGQtODY4My1mMjVlNDI4MjcwOTk",
+        "feature_type": "address",
+        "full_address": "2801 Bickford Avenue, Snohomish, Washington 98290, United States",
+        "name": "2801 Bickford Avenue",
+        "name_preferred": "2801 Bickford Avenue",
+        "coordinates": {
+          "longitude": -122.10544,
+          "latitude": 47.943776,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 47.943783,
+              "longitude": -122.105982
+            }
+          ]
+        },
+        "place_formatted": "Snohomish, Washington 98290, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjo3M2FjMGM0My0zNzVkLTQyMGQtODY4My1mMjVlNDI4MjcwOTk",
+            "address_number": "2801",
+            "street_name": "Bickford Avenue",
+            "name": "2801 Bickford Avenue"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6NzNhYzBjNDMtMzc1ZC00MjBkLTg2ODMtZjI1ZTQyODI3MDk5",
+            "name": "Bickford Avenue"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpFNHhPN0E",
+            "name": "98290"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpFanBvN0E",
+            "name": "Snohomish",
+            "wikidata_id": "Q1505974"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBVWltN0E",
+            "name": "Snohomish County",
+            "wikidata_id": "Q110403"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBUVRz",
+            "name": "Washington",
+            "wikidata_id": "Q1223",
+            "region_code": "WA",
+            "region_code_full": "US-WA"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        },
         "feature_index": 1387
       }
     },
@@ -124796,8 +124852,8 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
-          -122.64516,
-          45.62033
+          -122.645574,
+          45.620086
         ]
       },
       "properties": {
@@ -124806,6 +124862,78 @@
         "address": "2500 Columbia House Blvd",
         "city": "Vancouver",
         "state": "WA",
+        "mapbox_id": "dXJuOm1ieGFkcjozMzFjM2U3MC1lZDAyLTQzYjctYjEyMy1lZjM4ZTI2MjA0MDQ",
+        "feature_type": "address",
+        "full_address": "2500 Columbia House Boulevard, Vancouver, Washington 98661, United States",
+        "name": "2500 Columbia House Boulevard",
+        "name_preferred": "2500 Columbia House Boulevard",
+        "coordinates": {
+          "longitude": -122.645574,
+          "latitude": 45.620086,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 45.619878,
+              "longitude": -122.645568
+            }
+          ]
+        },
+        "place_formatted": "Vancouver, Washington 98661, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjozMzFjM2U3MC1lZDAyLTQzYjctYjEyMy1lZjM4ZTI2MjA0MDQ",
+            "address_number": "2500",
+            "street_name": "Columbia House Boulevard",
+            "name": "2500 Columbia House Boulevard"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6MzMxYzNlNzAtZWQwMi00M2I3LWIxMjMtZWYzOGUyNjIwNDA0",
+            "name": "Columbia House Boulevard"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpFajZNN0E",
+            "name": "Hudson's Bay"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpFNnZPN0E",
+            "name": "98661"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpIT2JJN0E",
+            "name": "Vancouver",
+            "wikidata_id": "Q234053"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpRV2Jz",
+            "name": "Clark County",
+            "wikidata_id": "Q156287"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBUVRz",
+            "name": "Washington",
+            "wikidata_id": "Q1223",
+            "region_code": "WA",
+            "region_code_full": "US-WA"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        },
         "feature_index": 1416
       }
     },
