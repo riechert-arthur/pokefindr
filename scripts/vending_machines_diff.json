@@ -1,0 +1,4645 @@
+{
+  "added": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -111.199867,
+          32.424943
+        ]
+      },
+      "properties": {
+        "retailer": "Frys",
+        "machineID": "Q01078",
+        "address": "11350 W Tangerine Rd",
+        "city": "Marana",
+        "state": "AZ",
+        "mapbox_id": "dXJuOm1ieGFkcjpjZGExNjJhZi01MDE1LTQ0N2YtODQwOS1jYTNiZWY0MWE5YzU",
+        "feature_type": "address",
+        "full_address": "11350 West Tangerine Road, Marana, Arizona 85653, United States",
+        "name": "11350 West Tangerine Road",
+        "name_preferred": "11350 West Tangerine Road",
+        "coordinates": {
+          "longitude": -111.199867,
+          "latitude": 32.424943,
+          "accuracy": "point",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 32.424917,
+              "longitude": -111.199867
+            }
+          ]
+        },
+        "place_formatted": "Marana, Arizona 85653, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjpjZGExNjJhZi01MDE1LTQ0N2YtODQwOS1jYTNiZWY0MWE5YzU",
+            "address_number": "11350",
+            "street_name": "West Tangerine Road",
+            "name": "11350 West Tangerine Road"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6Y2RhMTYyYWYtNTAxNS00NDdmLTg0MDktY2EzYmVmNDFhOWM1",
+            "name": "West Tangerine Road"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEbnVzN0E",
+            "name": "Gladden Farms"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpFV211N0E",
+            "name": "85653"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpHdEJJN0E",
+            "name": "Marana",
+            "wikidata_id": "Q762743"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBUndHN0E",
+            "name": "Pima County",
+            "wikidata_id": "Q58688"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCZ1Rz",
+            "name": "Arizona",
+            "wikidata_id": "Q816",
+            "region_code": "AZ",
+            "region_code_full": "US-AZ"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.979099,
+          34.068809
+        ]
+      },
+      "properties": {
+        "retailer": "Food 4 Less",
+        "machineID": "Q00573",
+        "address": "3000 Baldwin Park Blvd",
+        "city": "Baldwin Park",
+        "state": "CA",
+        "mapbox_id": "dXJuOm1ieGFkcjo1NDRkOGU3ZS0xMTIyLTRlN2UtOTVhMS02ODkxNjQzNWYxZjE",
+        "feature_type": "address",
+        "full_address": "3000 Baldwin Park Boulevard, Baldwin Park, California 91706, United States",
+        "name": "3000 Baldwin Park Boulevard",
+        "name_preferred": "3000 Baldwin Park Boulevard",
+        "coordinates": {
+          "longitude": -117.979099,
+          "latitude": 34.068809,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 34.069051,
+              "longitude": -117.978793
+            }
+          ]
+        },
+        "place_formatted": "Baldwin Park, California 91706, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjo1NDRkOGU3ZS0xMTIyLTRlN2UtOTVhMS02ODkxNjQzNWYxZjE",
+            "address_number": "3000",
+            "street_name": "Baldwin Park Boulevard",
+            "name": "3000 Baldwin Park Boulevard"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6NTQ0ZDhlN2UtMTEyMi00ZTdlLTk1YTEtNjg5MTY0MzVmMWYx",
+            "name": "Baldwin Park Boulevard"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpFaHRPN0E",
+            "name": "91706"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBUVZJN0E",
+            "name": "Baldwin Park",
+            "wikidata_id": "Q804878",
+            "alternate": {
+              "mapbox_id": "dXJuOm1ieHBsYzpDWmFvN0E",
+              "name": "Irwindale"
+            }
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzoxbWJz",
+            "name": "Los Angeles County",
+            "wikidata_id": "Q104994"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCbVRz",
+            "name": "California",
+            "wikidata_id": "Q99",
+            "region_code": "CA",
+            "region_code_full": "US-CA"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.389588,
+          34.216252
+        ]
+      },
+      "properties": {
+        "retailer": "Food 4 Less",
+        "machineID": "Q00412",
+        "address": "8035 Webb Ave",
+        "city": "Los Angeles",
+        "state": "CA",
+        "mapbox_id": "dXJuOm1ieGFkcjpjZjY3NmQ1OS01MTRlLTQwMzAtOGE2Ni1hMDIzNmY1ZWVkMTM",
+        "feature_type": "address",
+        "full_address": "8035 Webb Avenue, North Hollywood, California 91605, United States",
+        "name": "8035 Webb Avenue",
+        "name_preferred": "8035 Webb Avenue",
+        "coordinates": {
+          "longitude": -118.389588,
+          "latitude": 34.216252,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 34.216252,
+              "longitude": -118.389306
+            }
+          ]
+        },
+        "place_formatted": "North Hollywood, California 91605, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "unmatched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "high"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjpjZjY3NmQ1OS01MTRlLTQwMzAtOGE2Ni1hMDIzNmY1ZWVkMTM",
+            "address_number": "8035",
+            "street_name": "Webb Avenue",
+            "name": "8035 Webb Avenue"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6Y2Y2NzZkNTktNTE0ZS00MDMwLThhNjYtYTAyMzZmNWVlZDEz",
+            "name": "Webb Avenue"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpFaGx1N0E",
+            "name": "91605"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEaUVvN0E",
+            "name": "North Hollywood",
+            "wikidata_id": "Q1319697"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzoxbWJz",
+            "name": "Los Angeles County",
+            "wikidata_id": "Q104994"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCbVRz",
+            "name": "California",
+            "wikidata_id": "Q99",
+            "region_code": "CA",
+            "region_code_full": "US-CA"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.47098,
+          34.413795
+        ]
+      },
+      "properties": {
+        "retailer": "Food 4 Less",
+        "machineID": "Q01656",
+        "address": "19200 Soledad Canyon Rd",
+        "city": "Santa Clarita",
+        "state": "CA",
+        "mapbox_id": "dXJuOm1ieGFkcjowZTA0ODkxZi1kOWZlLTQyZGItOGY0MS1iZjUwNWMzMjAyMDg",
+        "feature_type": "address",
+        "full_address": "19200 Soledad Canyon Road, Santa Clarita, California 91351, United States",
+        "name": "19200 Soledad Canyon Road",
+        "name_preferred": "19200 Soledad Canyon Road",
+        "coordinates": {
+          "longitude": -118.47098,
+          "latitude": 34.413795,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 34.413463,
+              "longitude": -118.470915
+            }
+          ]
+        },
+        "place_formatted": "Santa Clarita, California 91351, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjowZTA0ODkxZi1kOWZlLTQyZGItOGY0MS1iZjUwNWMzMjAyMDg",
+            "address_number": "19200",
+            "street_name": "Soledad Canyon Road",
+            "name": "19200 Soledad Canyon Road"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6MGUwNDg5MWYtZDlmZS00MmRiLThmNDEtYmY1MDVjMzIwMjA4",
+            "name": "Soledad Canyon Road"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpFaEJ1N0E",
+            "name": "91351"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpFWGpvN0E",
+            "name": "Santa Clarita"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzoxbWJz",
+            "name": "Los Angeles County",
+            "wikidata_id": "Q104994"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCbVRz",
+            "name": "California",
+            "wikidata_id": "Q99",
+            "region_code": "CA",
+            "region_code_full": "US-CA"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -116.987062,
+          32.837365
+        ]
+      },
+      "properties": {
+        "retailer": "Vons",
+        "machineID": "Q01655",
+        "address": "9643 Mission Gorge Rd",
+        "city": "Santee",
+        "state": "CA",
+        "mapbox_id": "dXJuOm1ieGFkcjo4NGEwNmI2My04ZDkyLTQ5MjktOTBmNC1kNjUzMDExZWUxZDE",
+        "feature_type": "address",
+        "full_address": "9643 Mission Gorge Road, Santee, California 92071, United States",
+        "name": "9643 Mission Gorge Road",
+        "name_preferred": "9643 Mission Gorge Road",
+        "coordinates": {
+          "longitude": -116.987062,
+          "latitude": 32.837365,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 32.837608,
+              "longitude": -116.987062
+            }
+          ]
+        },
+        "place_formatted": "Santee, California 92071, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjo4NGEwNmI2My04ZDkyLTQ5MjktOTBmNC1kNjUzMDExZWUxZDE",
+            "address_number": "9643",
+            "street_name": "Mission Gorge Road",
+            "name": "9643 Mission Gorge Road"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6ODRhMDZiNjMtOGQ5Mi00OTI5LTkwZjQtZDY1MzAxMWVlMWQx",
+            "name": "Mission Gorge Road"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpFaTV1N0E",
+            "name": "92071"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpFWDdJN0E",
+            "name": "Santee",
+            "wikidata_id": "Q923799"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBVGttN0E",
+            "name": "San Diego County",
+            "wikidata_id": "Q108143"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCbVRz",
+            "name": "California",
+            "wikidata_id": "Q99",
+            "region_code": "CA",
+            "region_code_full": "US-CA"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -104.944561,
+          40.089761
+        ]
+      },
+      "properties": {
+        "retailer": "King Soopers",
+        "machineID": "Q01704",
+        "address": "5801 Silverstone Dr",
+        "city": "Frederick",
+        "state": "CO",
+        "mapbox_id": "dXJuOm1ieGFkcjpiOWUwMzQyMS1lMzNmLTQ1NzEtYWFmMC03NGFkNTBjMjUyMTI",
+        "feature_type": "address",
+        "full_address": "5801 Silverstone Dr, Frederick, Colorado 80514, United States",
+        "name": "5801 Silverstone Dr",
+        "name_preferred": "5801 Silverstone Dr",
+        "coordinates": {
+          "longitude": -104.944561,
+          "latitude": 40.089761,
+          "accuracy": "parcel",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 40.089698,
+              "longitude": -104.944566
+            }
+          ]
+        },
+        "place_formatted": "Frederick, Colorado 80514, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjpiOWUwMzQyMS1lMzNmLTQ1NzEtYWFmMC03NGFkNTBjMjUyMTI",
+            "address_number": "5801",
+            "street_name": "Silverstone Dr",
+            "name": "5801 Silverstone Dr"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6YjllMDM0MjEtZTMzZi00NTcxLWFhZjAtNzRhZDUwYzI1MjEy",
+            "name": "Silverstone Dr"
+          },
+          "postcode": {
+            "mapbox_id": "postcode.8193895842605344",
+            "name": "80514"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCd0pJN0E",
+            "name": "Frederick",
+            "wikidata_id": "Q607417",
+            "alternate": {
+              "mapbox_id": "dXJuOm1ieHBsYzpERlVJN0E",
+              "name": "Mead"
+            }
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBWGttN0E",
+            "name": "Weld County",
+            "wikidata_id": "Q94783"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBVVRz",
+            "name": "Colorado",
+            "wikidata_id": "Q1261",
+            "region_code": "CO",
+            "region_code_full": "US-CO"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -87.721224,
+          41.67236
+        ]
+      },
+      "properties": {
+        "retailer": "Food 4 Less",
+        "machineID": "Q01790",
+        "address": "12150 S Pulaski Rd",
+        "city": "Alsip",
+        "state": "IL",
+        "mapbox_id": "dXJuOm1ieGFkcjpmMmM3MDQwNi1hNjdjLTRmYzUtYTUyMC04YmYwMzk1NjAyODg",
+        "feature_type": "address",
+        "full_address": "12150 South Pulaski Road, Alsip, Illinois 60803, United States",
+        "name": "12150 South Pulaski Road",
+        "name_preferred": "12150 South Pulaski Road",
+        "coordinates": {
+          "longitude": -87.721224,
+          "latitude": 41.67236,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 41.672369,
+              "longitude": -87.720916
+            }
+          ]
+        },
+        "place_formatted": "Alsip, Illinois 60803, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjpmMmM3MDQwNi1hNjdjLTRmYzUtYTUyMC04YmYwMzk1NjAyODg",
+            "address_number": "12150",
+            "street_name": "South Pulaski Road",
+            "name": "12150 South Pulaski Road"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6ZjJjNzA0MDYtYTY3Yy00ZmM1LWE1MjAtOGJmMDM5NTYwMjg4",
+            "name": "South Pulaski Road"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpESEJ1N0E",
+            "name": "60803"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpWZWpz",
+            "name": "Alsip",
+            "wikidata_id": "Q2668403",
+            "alternate": {
+              "mapbox_id": "dXJuOm1ieHBsYzpHdkZvN0E",
+              "name": "Merrionette Park"
+            }
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpUc2Jz",
+            "name": "Cook County",
+            "wikidata_id": "Q108418"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpST3c",
+            "name": "Illinois",
+            "wikidata_id": "Q1204",
+            "region_code": "IL",
+            "region_code_full": "US-IL"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -87.664514,
+          41.765555
+        ]
+      },
+      "properties": {
+        "retailer": "Food 4 Less",
+        "machineID": "Q01728",
+        "address": "7030 S Ashland Ave",
+        "city": "Chicago",
+        "state": "IL",
+        "mapbox_id": "dXJuOm1ieGFkcjowNjE2MTBiYi01OGU0LTRhNTItYWJjYi1hNDRhYjg2ZDYxYjk",
+        "feature_type": "address",
+        "full_address": "7030 South Ashland Avenue, Chicago, Illinois 60636, United States",
+        "name": "7030 South Ashland Avenue",
+        "name_preferred": "7030 South Ashland Avenue",
+        "coordinates": {
+          "longitude": -87.664514,
+          "latitude": 41.765555,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 41.765895,
+              "longitude": -87.664515
+            }
+          ]
+        },
+        "place_formatted": "Chicago, Illinois 60636, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjowNjE2MTBiYi01OGU0LTRhNTItYWJjYi1hNDRhYjg2ZDYxYjk",
+            "address_number": "7030",
+            "street_name": "South Ashland Avenue",
+            "name": "7030 South Ashland Avenue"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6MDYxNjEwYmItNThlNC00YTUyLWFiY2ItYTQ0YWI4NmQ2MWI5",
+            "name": "South Ashland Avenue"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpDOThNN0E",
+            "name": "Englewood",
+            "wikidata_id": "Q2746504"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpER21PN0E",
+            "name": "60636"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBNGxJN0E",
+            "name": "Chicago",
+            "wikidata_id": "Q1297"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpUc2Jz",
+            "name": "Cook County",
+            "wikidata_id": "Q108418"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpST3c",
+            "name": "Illinois",
+            "wikidata_id": "Q1204",
+            "region_code": "IL",
+            "region_code_full": "US-IL"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -87.741294,
+          41.837811
+        ]
+      },
+      "properties": {
+        "retailer": "Food 4 Less",
+        "machineID": "Q01785",
+        "address": "3039 S Cicero Ave",
+        "city": "Cicero",
+        "state": "IL",
+        "mapbox_id": "dXJuOm1ieGFkcjoyMGIzNjNlMC1mNDg0LTQyMTktYThlMC04MTU3OTdiNzJjODU",
+        "feature_type": "address",
+        "full_address": "3039 South Cicero Avenue, Cicero, Illinois 60804, United States",
+        "name": "3039 South Cicero Avenue",
+        "name_preferred": "3039 South Cicero Avenue",
+        "coordinates": {
+          "longitude": -87.741294,
+          "latitude": 41.837811,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 41.837801,
+              "longitude": -87.741662
+            }
+          ]
+        },
+        "place_formatted": "Cicero, Illinois 60804, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjoyMGIzNjNlMC1mNDg0LTQyMTktYThlMC04MTU3OTdiNzJjODU",
+            "address_number": "3039",
+            "street_name": "South Cicero Avenue",
+            "name": "3039 South Cicero Avenue"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6MjBiMzYzZTAtZjQ4NC00MjE5LWE4ZTAtODE1Nzk3YjcyYzg1",
+            "name": "South Cicero Avenue"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpESENPN0E",
+            "name": "60804"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBNkNvN0E",
+            "name": "Cicero",
+            "wikidata_id": "Q578221",
+            "alternate": {
+              "mapbox_id": "dXJuOm1ieHBsYzpHSWpvN0E",
+              "name": "Chicago"
+            }
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpUc2Jz",
+            "name": "Cook County",
+            "wikidata_id": "Q108418"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpST3c",
+            "name": "Illinois",
+            "wikidata_id": "Q1204",
+            "region_code": "IL",
+            "region_code_full": "US-IL"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -87.593295,
+          41.623855
+        ]
+      },
+      "properties": {
+        "retailer": "Food 4 Less",
+        "machineID": "Q01795",
+        "address": "1000 E Sibley Blvd",
+        "city": "Dolton",
+        "state": "IL",
+        "mapbox_id": "dXJuOm1ieGFkcjo1YzRiZjk1Yy04NmI3LTQwMjMtODRiMC0wNTU5YzJkMDYxNGI",
+        "feature_type": "address",
+        "full_address": "1000 East Sibley Boulevard, Dolton, Illinois 60419, United States",
+        "name": "1000 East Sibley Boulevard",
+        "name_preferred": "1000 East Sibley Boulevard",
+        "coordinates": {
+          "longitude": -87.593295,
+          "latitude": 41.623855,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 41.623551,
+              "longitude": -87.593292
+            }
+          ]
+        },
+        "place_formatted": "Dolton, Illinois 60419, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjo1YzRiZjk1Yy04NmI3LTQwMjMtODRiMC0wNTU5YzJkMDYxNGI",
+            "address_number": "1000",
+            "street_name": "East Sibley Boulevard",
+            "name": "1000 East Sibley Boulevard"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6NWM0YmY5NWMtODZiNy00MDIzLTg0YjAtMDU1OWMyZDA2MTRi",
+            "name": "East Sibley Boulevard"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBcWNNN0E",
+            "name": "Berger"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpERlRPN0E",
+            "name": "60419"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCVHRJN0E",
+            "name": "Dolton",
+            "wikidata_id": "Q1236465"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpUc2Jz",
+            "name": "Cook County",
+            "wikidata_id": "Q108418"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpST3c",
+            "name": "Illinois",
+            "wikidata_id": "Q1204",
+            "region_code": "IL",
+            "region_code_full": "US-IL"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -87.865481,
+          41.909476
+        ]
+      },
+      "properties": {
+        "retailer": "Food 4 Less",
+        "machineID": "Q01745",
+        "address": "2525 W North Ave",
+        "city": "Melrose Park",
+        "state": "IL",
+        "mapbox_id": "dXJuOm1ieGFkcjowOWJjMWFhMi1lMThlLTQxMDEtODNmMi1mNmJlYWM3NzVmZTc",
+        "feature_type": "address",
+        "full_address": "2525 North Avenue, Melrose Park, Illinois 60160, United States",
+        "name": "2525 West North Avenue",
+        "name_preferred": "2525 North Avenue",
+        "coordinates": {
+          "longitude": -87.865481,
+          "latitude": 41.909476,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 41.909327,
+              "longitude": -87.865472
+            }
+          ]
+        },
+        "place_formatted": "Melrose Park, Illinois 60160, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "unmatched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "high"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjowOWJjMWFhMi1lMThlLTQxMDEtODNmMi1mNmJlYWM3NzVmZTc",
+            "address_number": "2525",
+            "street_name": "North Avenue",
+            "name": "2525 North Avenue"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6MDliYzFhYTItZTE4ZS00MTAxLTgzZjItZjZiZWFjNzc1ZmU3",
+            "name": "North Avenue"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpERTB1N0E",
+            "name": "60160"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpERzNJN0E",
+            "name": "Melrose Park",
+            "wikidata_id": "Q1020714"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpUc2Jz",
+            "name": "Cook County",
+            "wikidata_id": "Q108418"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpST3c",
+            "name": "Illinois",
+            "wikidata_id": "Q1204",
+            "region_code": "IL",
+            "region_code_full": "US-IL"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.700468,
+          33.102421
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q00454",
+        "address": "1320 W McDermott Dr",
+        "city": "Allen",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjo0ZDFiNWQyZS1jZGU4LTRiNTAtODZkZC1jMzM4NWU1M2ZkMjc",
+        "feature_type": "address",
+        "full_address": "1320 West Mcdermott Drive, Allen, Texas 75013, United States",
+        "name": "1320 West Mcdermott Drive",
+        "name_preferred": "1320 West Mcdermott Drive",
+        "coordinates": {
+          "longitude": -96.700468,
+          "latitude": 33.102421,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 33.102136,
+              "longitude": -96.700468
+            }
+          ]
+        },
+        "place_formatted": "Allen, Texas 75013, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjo0ZDFiNWQyZS1jZGU4LTRiNTAtODZkZC1jMzM4NWU1M2ZkMjc",
+            "address_number": "1320",
+            "street_name": "West Mcdermott Drive",
+            "name": "1320 West Mcdermott Drive"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6NGQxYjVkMmUtY2RlOC00YjUwLTg2ZGQtYzMzODVlNTNmZDI3",
+            "name": "West Mcdermott Drive"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBZy9NN0E",
+            "name": "Beacon Hill",
+            "alternate": {
+              "mapbox_id": "dXJuOm1ieHBsYzpDTlpNN0E",
+              "name": "Cross Creek 4"
+            }
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEMHpPN0E",
+            "name": "75013"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpRNGpz",
+            "name": "Allen",
+            "wikidata_id": "Q33147"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpTMGJz",
+            "name": "Collin County",
+            "wikidata_id": "Q111174"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -97.14871,
+          32.733176
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01660",
+        "address": "301 S Bowen Rd",
+        "city": "Arlington",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjphMzAwNTlhOC02ZDI2LTQzZWUtOWFiMy01M2ZhYzQ3ZGRiNDY",
+        "feature_type": "address",
+        "full_address": "301 South Bowen Road, Arlington, Texas 76013, United States",
+        "name": "301 South Bowen Road",
+        "name_preferred": "301 South Bowen Road",
+        "coordinates": {
+          "longitude": -97.14871,
+          "latitude": 32.733176,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 32.732908,
+              "longitude": -97.148709
+            }
+          ]
+        },
+        "place_formatted": "Arlington, Texas 76013, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjphMzAwNTlhOC02ZDI2LTQzZWUtOWFiMy01M2ZhYzQ3ZGRiNDY",
+            "address_number": "301",
+            "street_name": "South Bowen Road",
+            "name": "301 South Bowen Road"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6YTMwMDU5YTgtNmQyNi00M2VlLTlhYjMtNTNmYWM0N2RkYjQ2",
+            "name": "South Bowen Road"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpHeERzN0E",
+            "name": "Norwood"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpENUl1N0E",
+            "name": "76013"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpxSWpz",
+            "name": "Arlington",
+            "wikidata_id": "Q17943",
+            "alternate": {
+              "mapbox_id": "dXJuOm1ieHBsYzpEdlhJN0E",
+              "name": "Pantego"
+            }
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBVmttN0E",
+            "name": "Tarrant County",
+            "wikidata_id": "Q110412"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -97.117963,
+          32.762579
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01676",
+        "address": "945 W Lamar Blvd",
+        "city": "Arlington",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjpjNDFjZDBmMC02MzdmLTQyZGQtOGNhZS0wN2IxNjUwOTQ2NmE",
+        "feature_type": "address",
+        "full_address": "945 West Lamar Boulevard, Arlington, Texas 76012, United States",
+        "name": "945 West Lamar Boulevard",
+        "name_preferred": "945 West Lamar Boulevard",
+        "coordinates": {
+          "longitude": -97.117963,
+          "latitude": 32.762579,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 32.762432,
+              "longitude": -97.118096
+            }
+          ]
+        },
+        "place_formatted": "Arlington, Texas 76012, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjpjNDFjZDBmMC02MzdmLTQyZGQtOGNhZS0wN2IxNjUwOTQ2NmE",
+            "address_number": "945",
+            "street_name": "West Lamar Boulevard",
+            "name": "945 West Lamar Boulevard"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6YzQxY2QwZjAtNjM3Zi00MmRkLThjYWUtMDdiMTY1MDk0NjZh",
+            "name": "West Lamar Boulevard"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBWEhzN0E",
+            "name": "Avondale Place",
+            "alternate": {
+              "mapbox_id": "dXJuOm1ieHBsYzpHallzN0E",
+              "name": "North Arlington"
+            }
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpENUlPN0E",
+            "name": "76012"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpxSWpz",
+            "name": "Arlington",
+            "wikidata_id": "Q17943"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBVmttN0E",
+            "name": "Tarrant County",
+            "wikidata_id": "Q110412"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -97.066015,
+          32.659284
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01679",
+        "address": "2350 SE Green Oaks Blvd",
+        "city": "Arlington",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjphZmUyNmQ5Ni0wOTRkLTRhMzAtODkzOC1jYzE1N2NjNGY2NDc",
+        "feature_type": "address",
+        "full_address": "2350 Southeast Green Oaks Boulevard, Arlington, Texas 76018, United States",
+        "name": "2350 Southeast Green Oaks Boulevard",
+        "name_preferred": "2350 Southeast Green Oaks Boulevard",
+        "coordinates": {
+          "longitude": -97.066015,
+          "latitude": 32.659284,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 32.659604,
+              "longitude": -97.066116
+            }
+          ]
+        },
+        "place_formatted": "Arlington, Texas 76018, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjphZmUyNmQ5Ni0wOTRkLTRhMzAtODkzOC1jYzE1N2NjNGY2NDc",
+            "address_number": "2350",
+            "street_name": "Southeast Green Oaks Boulevard",
+            "name": "2350 Southeast Green Oaks Boulevard"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6YWZlMjZkOTYtMDk0ZC00YTMwLTg5MzgtY2MxNTdjYzRmNjQ3",
+            "name": "Southeast Green Oaks Boulevard"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpETkZNN0E",
+            "name": "Fish Creek",
+            "alternate": {
+              "mapbox_id": "dXJuOm1ieHBsYzpJNHZNN0E",
+              "name": "Southeast"
+            }
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpENUxPN0E",
+            "name": "76018"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpxSWpz",
+            "name": "Arlington",
+            "wikidata_id": "Q17943"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBVmttN0E",
+            "name": "Tarrant County",
+            "wikidata_id": "Q110412"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -94.982734,
+          29.792505
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01592",
+        "address": "6315 Garth Rd",
+        "city": "Baytown",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjoyMzQwMGNiYi0wNzg0LTQ0NWUtYTkwNC1kNmQxNjUwYzRkMTk",
+        "feature_type": "address",
+        "full_address": "6315 Garth Road, Baytown, Texas 77521, United States",
+        "name": "6315 Garth Road",
+        "name_preferred": "6315 Garth Road",
+        "coordinates": {
+          "longitude": -94.982734,
+          "latitude": 29.792505,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 29.792541,
+              "longitude": -94.982432
+            }
+          ]
+        },
+        "place_formatted": "Baytown, Texas 77521, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjoyMzQwMGNiYi0wNzg0LTQ0NWUtYTkwNC1kNmQxNjUwYzRkMTk",
+            "address_number": "6315",
+            "street_name": "Garth Road",
+            "name": "6315 Garth Road"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6MjM0MDBjYmItMDc4NC00NDVlLWE5MDQtZDZkMTY1MGM0ZDE5",
+            "name": "Garth Road"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpFU0xNN0E",
+            "name": "Highland Farms"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEL2V1N0E",
+            "name": "77521"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBVHlJN0E",
+            "name": "Baytown",
+            "wikidata_id": "Q812646",
+            "alternate": {
+              "mapbox_id": "dXJuOm1ieHBsYzpEUHNvN0E",
+              "name": "Mont Belvieu"
+            }
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpsMGJz",
+            "name": "Harris County",
+            "wikidata_id": "Q26676"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.823371,
+          32.607075
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q00881",
+        "address": "N Beckley Ave",
+        "city": "DeSoto",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkci1zdHI6MTYxNjE2MjctNDVkZS00N2FjLTg4Y2ItNjFiYzgxZjU5ZWQx",
+        "feature_type": "street",
+        "full_address": "North Beckley Avenue, DeSoto, Texas 75115, United States",
+        "name": "North Beckley Avenue",
+        "name_preferred": "North Beckley Avenue",
+        "coordinates": {
+          "longitude": -96.823371,
+          "latitude": 32.607075
+        },
+        "place_formatted": "DeSoto, Texas 75115, United States",
+        "context": {
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6MTYxNjE2MjctNDVkZS00N2FjLTg4Y2ItNjFiYzgxZjU5ZWQx",
+            "name": "North Beckley Avenue"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJK1hNN0E",
+            "name": "Southpointe"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEMWVPN0E",
+            "name": "75115"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCUmFJN0E",
+            "name": "DeSoto",
+            "wikidata_id": "Q981771"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpXT2Jz",
+            "name": "Dallas County",
+            "wikidata_id": "Q111168"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.909239,
+          32.660774
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01667",
+        "address": "200 W Camp Wisdom Rd",
+        "city": "Duncanville",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjo5ZDBkMTZlMC03ZWY4LTQ2NDktODY5YS0zMGRiMTc5NDRjZmY",
+        "feature_type": "address",
+        "full_address": "200 West Camp Wisdom Road, Duncanville, Texas 75116, United States",
+        "name": "200 West Camp Wisdom Road",
+        "name_preferred": "200 West Camp Wisdom Road",
+        "coordinates": {
+          "longitude": -96.909239,
+          "latitude": 32.660774,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 32.661083,
+              "longitude": -96.909247
+            }
+          ]
+        },
+        "place_formatted": "Duncanville, Texas 75116, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjo5ZDBkMTZlMC03ZWY4LTQ2NDktODY5YS0zMGRiMTc5NDRjZmY",
+            "address_number": "200",
+            "street_name": "West Camp Wisdom Road",
+            "name": "200 West Camp Wisdom Road"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6OWQwZDE2ZTAtN2VmOC00NjQ5LTg2OWEtMzBkYjE3OTQ0Y2Zm",
+            "name": "West Camp Wisdom Road"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEUDBNN0E",
+            "name": "Flame West"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEMWV1N0E",
+            "name": "75116"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCVzZvN0E",
+            "name": "Duncanville",
+            "wikidata_id": "Q981394"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpXT2Jz",
+            "name": "Dallas County",
+            "wikidata_id": "Q111168"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.45024,
+          32.7488
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01640",
+        "address": "500 Marketplace Blvd",
+        "city": "Forney",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjphNWQ1YTQ1Ny02Y2U2LTQ5NDAtYjI1Ni1kZjA5Yzg5MGJhMmE",
+        "feature_type": "address",
+        "full_address": "500 Marketplace Boulevard, Forney, Texas 75126, United States",
+        "name": "500 Marketplace Boulevard",
+        "name_preferred": "500 Marketplace Boulevard",
+        "coordinates": {
+          "longitude": -96.45024,
+          "latitude": 32.7488,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 32.748523,
+              "longitude": -96.449705
+            }
+          ]
+        },
+        "place_formatted": "Forney, Texas 75126, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjphNWQ1YTQ1Ny02Y2U2LTQ5NDAtYjI1Ni1kZjA5Yzg5MGJhMmE",
+            "address_number": "500",
+            "street_name": "Marketplace Boulevard",
+            "name": "500 Marketplace Boulevard"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6YTVkNWE0NTctNmNlNi00OTQwLWIyNTYtZGYwOWM4OTBiYTJh",
+            "name": "Marketplace Boulevard"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEMWpPN0E",
+            "name": "75126"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCc2tvN0E",
+            "name": "Forney",
+            "wikidata_id": "Q979126",
+            "alternate": {
+              "mapbox_id": "dXJuOm1ieHBsYzpDS1FvN0E",
+              "name": "Heartland"
+            }
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzp1RWJz",
+            "name": "Kaufman County",
+            "wikidata_id": "Q110486"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -97.32307,
+          32.768791
+        ]
+      },
+      "properties": {
+        "retailer": "Brendamour",
+        "machineID": "Q01633",
+        "address": "633 Mony St",
+        "city": "Fort Worth",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjplZWUxZDY4Ni00ZGZjLTRkMjctYjFhZi1kODI1OGRkYTYzMzE",
+        "feature_type": "address",
+        "full_address": "633 Mony Street, Fort Worth, Texas 76102, United States",
+        "name": "633 Mony Street",
+        "name_preferred": "633 Mony Street",
+        "coordinates": {
+          "longitude": -97.32307,
+          "latitude": 32.768791,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 32.76899,
+              "longitude": -97.322741
+            }
+          ]
+        },
+        "place_formatted": "Fort Worth, Texas 76102, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjplZWUxZDY4Ni00ZGZjLTRkMjctYjFhZi1kODI1OGRkYTYzMzE",
+            "address_number": "633",
+            "street_name": "Mony Street",
+            "name": "633 Mony Street"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6ZWVlMWQ2ODYtNGRmYy00ZDI3LWIxYWYtZDgyNThkZGE2MzMx",
+            "name": "Mony Street"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpENW11N0E",
+            "name": "76102"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCdVpvN0E",
+            "name": "Fort Worth",
+            "wikidata_id": "Q16558"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBVmttN0E",
+            "name": "Tarrant County",
+            "wikidata_id": "Q110412"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.861907,
+          33.151063
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01646",
+        "address": "3205 Main St",
+        "city": "Frisco",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjpkNmYyMGM2Yy0wZmYzLTQ2YjEtYWY1My03NjllZDlhNGRiOTM",
+        "feature_type": "address",
+        "full_address": "3205 Main Street, Frisco, Texas 75034, United States",
+        "name": "3205 Main Street",
+        "name_preferred": "3205 Main Street",
+        "coordinates": {
+          "longitude": -96.861907,
+          "latitude": 33.151063,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 33.151282,
+              "longitude": -96.862183
+            }
+          ]
+        },
+        "place_formatted": "Frisco, Texas 75034, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjpkNmYyMGM2Yy0wZmYzLTQ2YjEtYWY1My03NjllZDlhNGRiOTM",
+            "address_number": "3205",
+            "street_name": "Main Street",
+            "name": "3205 Main Street"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6ZDZmMjBjNmMtMGZmMy00NmIxLWFmNTMtNzY5ZWQ5YTRkYjkz",
+            "name": "Main Street"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEMDh1N0E",
+            "name": "75034"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCeGxvN0E",
+            "name": "Frisco",
+            "wikidata_id": "Q128269"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpYOGJz",
+            "name": "Denton County",
+            "wikidata_id": "Q109265"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.663999,
+          32.977278
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01653",
+        "address": "6850 N Shiloh Rd",
+        "city": "Garland",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjo0Y2Q4Zjc0OC1jNDJjLTQ1MDctODliMS00ZGZhYmEzOGVhZTI",
+        "feature_type": "address",
+        "full_address": "6850 North Shiloh Road, Garland, Texas 75044, United States",
+        "name": "6850 North Shiloh Road",
+        "name_preferred": "6850 North Shiloh Road",
+        "coordinates": {
+          "longitude": -96.663999,
+          "latitude": 32.977278,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 32.977281,
+              "longitude": -96.664273
+            }
+          ]
+        },
+        "place_formatted": "Garland, Texas 75044, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjo0Y2Q4Zjc0OC1jNDJjLTQ1MDctODliMS00ZGZhYmEzOGVhZTI",
+            "address_number": "6850",
+            "street_name": "North Shiloh Road",
+            "name": "6850 North Shiloh Road"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6NGNkOGY3NDgtYzQyYy00NTA3LTg5YjEtNGRmYWJhMzhlYWUy",
+            "name": "North Shiloh Road"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEMUJPN0E",
+            "name": "75044"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCME9JN0E",
+            "name": "Garland",
+            "wikidata_id": "Q49274"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpXT2Jz",
+            "name": "Dallas County",
+            "wikidata_id": "Q111168"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -97.001045,
+          32.708204
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01680",
+        "address": "313 E Pioneer Pkwy",
+        "city": "Grand Prairie",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjphYmM3MjBkYi1hZjhlLTRiNmMtODI0NS1jZDc0MWJkMTY5NzI",
+        "feature_type": "address",
+        "full_address": "313 East Pioneer Parkway, Grand Prairie, Texas 75051, United States",
+        "name": "313 East Pioneer Parkway",
+        "name_preferred": "313 East Pioneer Parkway",
+        "coordinates": {
+          "longitude": -97.001045,
+          "latitude": 32.708204,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 32.708498,
+              "longitude": -97.001043
+            }
+          ]
+        },
+        "place_formatted": "Grand Prairie, Texas 75051, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "unmatched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "high"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjphYmM3MjBkYi1hZjhlLTRiNmMtODI0NS1jZDc0MWJkMTY5NzI",
+            "address_number": "313",
+            "street_name": "East Pioneer Parkway",
+            "name": "313 East Pioneer Parkway"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6YWJjNzIwZGItYWY4ZS00YjZjLTgyNDUtY2Q3NDFiZDE2OTcy",
+            "name": "East Pioneer Parkway"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEMUV1N0E",
+            "name": "75051"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCOHVvN0E",
+            "name": "Grand Prairie",
+            "wikidata_id": "Q51694"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpXT2Jz",
+            "name": "Dallas County",
+            "wikidata_id": "Q111168"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.642513,
+          29.68746
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q00456",
+        "address": "9303 S Texas 6",
+        "city": "Houston",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjpjZGZiYzdmNi01ZTc2LTRlYzItODk3Mi05OGJkMWVmODZiNjg",
+        "feature_type": "address",
+        "full_address": "6 Highway 6 South, Houston, Texas 77083, United States",
+        "name": "6 S Texas",
+        "name_preferred": "6 Highway 6 South",
+        "coordinates": {
+          "longitude": -95.642513,
+          "latitude": 29.68746,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 29.687451,
+              "longitude": -95.642701
+            }
+          ]
+        },
+        "place_formatted": "Houston, Texas 77083, United States",
+        "match_code": {
+          "address_number": "unmatched",
+          "street": "unmatched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "low"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjpjZGZiYzdmNi01ZTc2LTRlYzItODk3Mi05OGJkMWVmODZiNjg",
+            "address_number": "6",
+            "street_name": "Highway 6 South",
+            "name": "6 Highway 6 South"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6Y2RmYmM3ZjYtNWU3Ni00ZWMyLTg5NzItOThiZDFlZjg2YjY4",
+            "name": "Highway 6 South"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEOVh1N0E",
+            "name": "77083"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpDVGNvN0E",
+            "name": "Houston",
+            "wikidata_id": "Q16555"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpsMGJz",
+            "name": "Harris County",
+            "wikidata_id": "Q26676"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.200907,
+          29.789611
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01639",
+        "address": "12620 Woodforest Blvd",
+        "city": "Houston",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjo4NjM4ODI1ZS02MTE0LTRmMDUtOTAzMy04NDUyOTE5YWZlZDk",
+        "feature_type": "address",
+        "full_address": "12620 Woodforest Boulevard, Houston, Texas 77015, United States",
+        "name": "12620 Woodforest Boulevard",
+        "name_preferred": "12620 Woodforest Boulevard",
+        "coordinates": {
+          "longitude": -95.200907,
+          "latitude": 29.789611,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 29.789848,
+              "longitude": -95.20091
+            }
+          ]
+        },
+        "place_formatted": "Houston, Texas 77015, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjo4NjM4ODI1ZS02MTE0LTRmMDUtOTAzMy04NDUyOTE5YWZlZDk",
+            "address_number": "12620",
+            "street_name": "Woodforest Boulevard",
+            "name": "12620 Woodforest Boulevard"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6ODYzODgyNWUtNjExNC00ZjA1LTkwMzMtODQ1MjkxOWFmZWQ5",
+            "name": "Woodforest Boulevard"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJSEFNN0E",
+            "name": "Riviera East"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEODF1N0E",
+            "name": "77015"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpDVGNvN0E",
+            "name": "Houston",
+            "wikidata_id": "Q16555"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpsMGJz",
+            "name": "Harris County",
+            "wikidata_id": "Q26676"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -97.230253,
+          32.932427
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01643",
+        "address": "976 Keller Pkwy",
+        "city": "Keller",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjoyY2ViZDViNy01NWMwLTQ4MDYtOGE5OS00NmUyZjg2NjJiZjk",
+        "feature_type": "address",
+        "full_address": "976 Keller Parkway, Keller, Texas 76248, United States",
+        "name": "976 Keller Parkway",
+        "name_preferred": "976 Keller Parkway",
+        "coordinates": {
+          "longitude": -97.230253,
+          "latitude": 32.932427,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 32.932698,
+              "longitude": -97.230253
+            }
+          ]
+        },
+        "place_formatted": "Keller, Texas 76248, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjoyY2ViZDViNy01NWMwLTQ4MDYtOGE5OS00NmUyZjg2NjJiZjk",
+            "address_number": "976",
+            "street_name": "Keller Parkway",
+            "name": "976 Keller Parkway"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6MmNlYmQ1YjctNTVjMC00ODA2LThhOTktNDZlMmY4NjYyYmY5",
+            "name": "Keller Parkway"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpENlF1N0E",
+            "name": "76248"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpDZ1hJN0E",
+            "name": "Keller",
+            "wikidata_id": "Q26485"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBVmttN0E",
+            "name": "Tarrant County",
+            "wikidata_id": "Q110412"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.889269,
+          33.062287
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01542",
+        "address": "4620 State Hwy 121",
+        "city": "Lewisville",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjplYTE3MDQwZi00ZWRiLTRlNWQtOWJmYi1hOTM4NGVjOTk2NmE",
+        "feature_type": "address",
+        "full_address": "4620 Texas Highway 121, Lewisville, Texas 75056, United States",
+        "name": "4620 State Highway 121",
+        "name_preferred": "4620 Texas Highway 121",
+        "coordinates": {
+          "longitude": -96.889269,
+          "latitude": 33.062287,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 33.06258,
+              "longitude": -96.889404
+            }
+          ]
+        },
+        "place_formatted": "Lewisville, Texas 75056, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "unmatched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "high"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjplYTE3MDQwZi00ZWRiLTRlNWQtOWJmYi1hOTM4NGVjOTk2NmE",
+            "address_number": "4620",
+            "street_name": "Texas Highway 121",
+            "name": "4620 Texas Highway 121"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6ZWExNzA0MGYtNGVkYi00ZTVkLTliZmItYTkzODRlYzk5NjZh",
+            "name": "Texas Highway 121"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCYlRNN0E",
+            "name": "Castle Hills"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEMUd1N0E",
+            "name": "75056"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpDeElJN0E",
+            "name": "Lewisville",
+            "wikidata_id": "Q26495",
+            "alternate": {
+              "mapbox_id": "dXJuOm1ieHBsYzpFMlFvN0E",
+              "name": "The Colony"
+            }
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpYOGJz",
+            "name": "Denton County",
+            "wikidata_id": "Q109265"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -97.118,
+          32.607373
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01657",
+        "address": "3001 Matlock Rd",
+        "city": "Mansfield",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjowY2ZjYTUyZS02ZDM3LTRhMDctOTFiYi01ZTZlMzE2NDIxZTE",
+        "feature_type": "address",
+        "full_address": "3001 Matlock Road, Mansfield, Texas 76063, United States",
+        "name": "3001 Matlock Road",
+        "name_preferred": "3001 Matlock Road",
+        "coordinates": {
+          "longitude": -97.118,
+          "latitude": 32.607373,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 32.60726,
+              "longitude": -97.117632
+            }
+          ]
+        },
+        "place_formatted": "Mansfield, Texas 76063, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjowY2ZjYTUyZS02ZDM3LTRhMDctOTFiYi01ZTZlMzE2NDIxZTE",
+            "address_number": "3001",
+            "street_name": "Matlock Road",
+            "name": "3001 Matlock Road"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6MGNmY2E1MmUtNmQzNy00YTA3LTkxYmItNWU2ZTMxNjQyMWUx",
+            "name": "Matlock Road"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCd2RNN0E",
+            "name": "Claremont Estates",
+            "alternate": {
+              "mapbox_id": "dXJuOm1ieHBsYzpJNDBzN0E",
+              "name": "South East Arlington"
+            }
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpENVp1N0E",
+            "name": "76063"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpDK1lvN0E",
+            "name": "Mansfield",
+            "wikidata_id": "Q974040"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBVmttN0E",
+            "name": "Tarrant County",
+            "wikidata_id": "Q110412"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.681077,
+          33.21609
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q00534",
+        "address": "1801 N Lake Forest Dr",
+        "city": "McKinney",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjozYTEwMzA5MS0xZjRlLTRiNzgtYTFkMC03NzA1NjI2NmNmMzM",
+        "feature_type": "address",
+        "full_address": "1801 North Lake Forest Drive, McKinney, Texas 75071, United States",
+        "name": "1801 North Lake Forest Drive",
+        "name_preferred": "1801 North Lake Forest Drive",
+        "coordinates": {
+          "longitude": -96.681077,
+          "latitude": 33.21609,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 33.216444,
+              "longitude": -96.681088
+            }
+          ]
+        },
+        "place_formatted": "McKinney, Texas 75071, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjozYTEwMzA5MS0xZjRlLTRiNzgtYTFkMC03NzA1NjI2NmNmMzM",
+            "address_number": "1801",
+            "street_name": "North Lake Forest Drive",
+            "name": "1801 North Lake Forest Drive"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6M2ExMDMwOTEtMWY0ZS00Yjc4LWExZDAtNzcwNTYyNjZjZjMz",
+            "name": "North Lake Forest Drive"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEMU51N0E",
+            "name": "75071"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpERkJJN0E",
+            "name": "McKinney",
+            "wikidata_id": "Q51697"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpTMGJz",
+            "name": "Collin County",
+            "wikidata_id": "Q111174"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.992931,
+          32.458523
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01666",
+        "address": "2200 FM 663",
+        "city": "Midlothian",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjpmZDA1Yjk3OS00YTAxLTQ0NTEtYmE4Zi1hZjZjMGUzNWEzZmE",
+        "feature_type": "address",
+        "full_address": "2200 Fm 663, Midlothian, Texas 76065, United States",
+        "name": "2200 Fm 663",
+        "name_preferred": "2200 Fm 663",
+        "coordinates": {
+          "longitude": -96.992931,
+          "latitude": 32.458523,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 32.458702,
+              "longitude": -96.993259
+            }
+          ]
+        },
+        "place_formatted": "Midlothian, Texas 76065, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjpmZDA1Yjk3OS00YTAxLTQ0NTEtYmE4Zi1hZjZjMGUzNWEzZmE",
+            "address_number": "2200",
+            "street_name": "Fm 663",
+            "name": "2200 Fm 663"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6ZmQwNWI5NzktNGEwMS00NDUxLWJhOGYtYWY2YzBlMzVhM2Zh",
+            "name": "Fm 663"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpENWF1N0E",
+            "name": "76065"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpES05JN0E",
+            "name": "Midlothian",
+            "wikidata_id": "Q750795"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpiSWJz",
+            "name": "Ellis County",
+            "wikidata_id": "Q110130"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.74861,
+          33.073374
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q00243",
+        "address": "7100 Independence Pkwy",
+        "city": "Plano",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjpmYTc1NDFkOS04ZTE4LTQzZDktOTRhYi0wZGI1MTkxZWQxY2Y",
+        "feature_type": "address",
+        "full_address": "7100 Independence Parkway, Plano, Texas 75025, United States",
+        "name": "7100 Independence Parkway",
+        "name_preferred": "7100 Independence Parkway",
+        "coordinates": {
+          "longitude": -96.74861,
+          "latitude": 33.073374,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 33.073186,
+              "longitude": -96.748971
+            }
+          ]
+        },
+        "place_formatted": "Plano, Texas 75025, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjpmYTc1NDFkOS04ZTE4LTQzZDktOTRhYi0wZGI1MTkxZWQxY2Y",
+            "address_number": "7100",
+            "street_name": "Independence Parkway",
+            "name": "7100 Independence Parkway"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6ZmE3NTQxZDktOGUxOC00M2Q5LTk0YWItMGRiNTE5MWVkMWNm",
+            "name": "Independence Parkway"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpFbE9zN0E",
+            "name": "Hunters Glen",
+            "alternate": {
+              "mapbox_id": "dXJuOm1ieHBsYzpId2ZzN0E",
+              "name": "Quail Creek"
+            }
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEMDR1N0E",
+            "name": "75025"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpENWJJN0E",
+            "name": "Plano",
+            "wikidata_id": "Q51689"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpTMGJz",
+            "name": "Collin County",
+            "wikidata_id": "Q111174"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.83178,
+          33.046468
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01673",
+        "address": "3305 Dallas Pkwy",
+        "city": "Plano",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjoyNzA0MzMwMS00YTUwLTQ1N2ItYjdjNS0yYTEzNmQwZjYwNzU",
+        "feature_type": "address",
+        "full_address": "3305 Dallas Parkway, Plano, Texas 75093, United States",
+        "name": "3305 Dallas Parkway",
+        "name_preferred": "3305 Dallas Parkway",
+        "coordinates": {
+          "longitude": -96.83178,
+          "latitude": 33.046468,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 33.046513,
+              "longitude": -96.831505
+            }
+          ]
+        },
+        "place_formatted": "Plano, Texas 75093, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjoyNzA0MzMwMS00YTUwLTQ1N2ItYjdjNS0yYTEzNmQwZjYwNzU",
+            "address_number": "3305",
+            "street_name": "Dallas Parkway",
+            "name": "3305 Dallas Parkway"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6MjcwNDMzMDEtNGE1MC00NTdiLWI3YzUtMmExMzZkMGY2MDc1",
+            "name": "Dallas Parkway"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEMVhPN0E",
+            "name": "75093"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpENWJJN0E",
+            "name": "Plano",
+            "wikidata_id": "Q51689"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpTMGJz",
+            "name": "Collin County",
+            "wikidata_id": "Q111174"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.460446,
+          32.9496
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01651",
+        "address": "1950 N Goliad St",
+        "city": "Rockwall",
+        "state": "TX",
+        "mapbox_id": "dXJuOm1ieGFkcjo3ZjAwMmI1Yi05ODRiLTRjOTUtOGU5Ni01MTQ1ZTc3MzNmODM",
+        "feature_type": "address",
+        "full_address": "1950 North Goliad Street, Rockwall, Texas 75087, United States",
+        "name": "1950 North Goliad Street",
+        "name_preferred": "1950 North Goliad Street",
+        "coordinates": {
+          "longitude": -96.460446,
+          "latitude": 32.9496,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 32.949594,
+              "longitude": -96.460797
+            }
+          ]
+        },
+        "place_formatted": "Rockwall, Texas 75087, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjo3ZjAwMmI1Yi05ODRiLTRjOTUtOGU5Ni01MTQ1ZTc3MzNmODM",
+            "address_number": "1950",
+            "street_name": "North Goliad Street",
+            "name": "1950 North Goliad Street"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6N2YwMDJiNWItOTg0Yi00Yzk1LThlOTYtNTE0NWU3NzMzZjgz",
+            "name": "North Goliad Street"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCWnVzN0E",
+            "name": "Caruth Lakes"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEMVVPN0E",
+            "name": "75087"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpFTTBJN0E",
+            "name": "Rockwall",
+            "wikidata_id": "Q383014",
+            "alternate": {
+              "mapbox_id": "dXJuOm1ieHBsYzpCbjlJN0E",
+              "name": "Fate"
+            }
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBVE1tN0E",
+            "name": "Rockwall County",
+            "wikidata_id": "Q111391"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBc1Rz",
+            "name": "Texas",
+            "wikidata_id": "Q1439",
+            "region_code": "TX",
+            "region_code_full": "US-TX"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.93903,
+          46.13676
+        ]
+      },
+      "properties": {
+        "retailer": "Safeway",
+        "machineID": "Q00945",
+        "address": "1227 15th Ave",
+        "city": "Longview",
+        "state": "WA",
+        "mapbox_id": "dXJuOm1ieGFkcjo3YmNkYjZkMS04NjIwLTRlNzUtYmI3Ny0yMTYxMWIwZGVkMDM",
+        "feature_type": "address",
+        "full_address": "1227 15th Avenue, Longview, Washington 98632, United States",
+        "name": "1227 15th Avenue",
+        "name_preferred": "1227 15th Avenue",
+        "coordinates": {
+          "longitude": -122.93903,
+          "latitude": 46.13676,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 46.136658,
+              "longitude": -122.938551
+            }
+          ]
+        },
+        "place_formatted": "Longview, Washington 98632, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjo3YmNkYjZkMS04NjIwLTRlNzUtYmI3Ny0yMTYxMWIwZGVkMDM",
+            "address_number": "1227",
+            "street_name": "15th Avenue",
+            "name": "1227 15th Avenue"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6N2JjZGI2ZDEtODYyMC00ZTc1LWJiNzctMjE2MTFiMGRlZDAz",
+            "name": "15th Avenue"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpHZ3lNN0E",
+            "name": "New West Side"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpFNm11N0E",
+            "name": "98632"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpHcXNvN0E",
+            "name": "Longview",
+            "wikidata_id": "Q983801"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpVWWJz",
+            "name": "Cowlitz County",
+            "wikidata_id": "Q156276"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBUVRz",
+            "name": "Washington",
+            "wikidata_id": "Q1223",
+            "region_code": "WA",
+            "region_code_full": "US-WA"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.287807,
+          47.891849
+        ]
+      },
+      "properties": {
+        "retailer": "QFC",
+        "machineID": "Q01087",
+        "address": "11700 Mukilteo Speedway",
+        "city": "Mukilteo",
+        "state": "WA",
+        "mapbox_id": "dXJuOm1ieGFkcjo1OTkzODhhNi01MzlhLTQ0NWMtOGFkYy02NjM2ZmQyZjIwMWE",
+        "feature_type": "address",
+        "full_address": "11700 Mukilteo Speedway, Mukilteo, Washington 98275, United States",
+        "name": "11700 Mukilteo Speedway",
+        "name_preferred": "11700 Mukilteo Speedway",
+        "coordinates": {
+          "longitude": -122.287807,
+          "latitude": 47.891849,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 47.891791,
+              "longitude": -122.287617
+            }
+          ]
+        },
+        "place_formatted": "Mukilteo, Washington 98275, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjo1OTkzODhhNi01MzlhLTQ0NWMtOGFkYy02NjM2ZmQyZjIwMWE",
+            "address_number": "11700",
+            "street_name": "Mukilteo Speedway",
+            "name": "11700 Mukilteo Speedway"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6NTk5Mzg4YTYtNTM5YS00NDVjLThhZGMtNjYzNmZkMmYyMDFh",
+            "name": "Mukilteo Speedway"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpFREpzN0E",
+            "name": "Harbour Pointe"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpFNHF1N0E",
+            "name": "98275"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEV0ZJN0E",
+            "name": "Mukilteo",
+            "wikidata_id": "Q1507307"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBVWltN0E",
+            "name": "Snohomish County",
+            "wikidata_id": "Q110403"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBUVRz",
+            "name": "Washington",
+            "wikidata_id": "Q1223",
+            "region_code": "WA",
+            "region_code_full": "US-WA"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "retailer": "QFC",
+        "machineID": "Q01317",
+        "address": "23475 NE Novelty Hill Rd",
+        "city": "Redmond",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "retailer": "Metro Market",
+        "machineID": "Q01664",
+        "address": "17630 W Bluemound Rd",
+        "city": "Brookfield",
+        "state": "WI"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -88.260912,
+          43.044413
+        ]
+      },
+      "properties": {
+        "retailer": "Metro Market",
+        "machineID": "Q01654",
+        "address": "2160 Silvernail Rd",
+        "city": "Pewaukee",
+        "state": "WI",
+        "mapbox_id": "dXJuOm1ieGFkcjo5Yjg4MDgzNy01ZWFlLTRlNmMtODUzNi05NjM5MTYwM2Y4OGM",
+        "feature_type": "address",
+        "full_address": "2160 Silvernail Road, Pewaukee, Wisconsin 53072, United States",
+        "name": "2160 Silvernail Road",
+        "name_preferred": "2160 Silvernail Road",
+        "coordinates": {
+          "longitude": -88.260912,
+          "latitude": 43.044413,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 43.044203,
+              "longitude": -88.260469
+            }
+          ]
+        },
+        "place_formatted": "Pewaukee, Wisconsin 53072, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjo5Yjg4MDgzNy01ZWFlLTRlNmMtODUzNi05NjM5MTYwM2Y4OGM",
+            "address_number": "2160",
+            "street_name": "Silvernail Road",
+            "name": "2160 Silvernail Road"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6OWI4ODA4MzctNWVhZS00ZTZjLTg1MzYtOTYzOTE2MDNmODhj",
+            "name": "Silvernail Road"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpDc2ZPN0E",
+            "name": "53072"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpHNlZJN0E",
+            "name": "Pewaukee",
+            "wikidata_id": "Q1992191",
+            "alternate": {
+              "mapbox_id": "dXJuOm1ieHBsYzpBbHJvN0E",
+              "name": "Brookfield"
+            }
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBWFZHN0E",
+            "name": "Waukesha County",
+            "wikidata_id": "Q370654"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBNlRz",
+            "name": "Wisconsin",
+            "wikidata_id": "Q1537",
+            "region_code": "WI",
+            "region_code_full": "US-WI"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    }
+  ],
+  "removed": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -76.79428,
+          38.78659
+        ]
+      },
+      "properties": {
+        "retailer": "Safeway",
+        "machineID": "Q01499",
+        "address": "7605 Crain Hwy",
+        "city": "Upper Marlboro",
+        "state": "MD",
+        "mapbox_id": "dXJuOm1ieGFkcjo1NjU3OWEyMi0wZTYzLTRhYTEtOWEzYS0zMDA1NjZjMGNlOTg",
+        "feature_type": "address",
+        "full_address": "7605 Crain Highway, Upper Marlboro, Maryland 20772, United States",
+        "name": "7605 Crain Highway",
+        "name_preferred": "7605 Crain Highway",
+        "coordinates": {
+          "longitude": -76.79428,
+          "latitude": 38.78659,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 38.786325,
+              "longitude": -76.794024
+            }
+          ]
+        },
+        "place_formatted": "Upper Marlboro, Maryland 20772, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjo1NjU3OWEyMi0wZTYzLTRhYTEtOWEzYS0zMDA1NjZjMGNlOTg",
+            "address_number": "7605",
+            "street_name": "Crain Highway",
+            "name": "7605 Crain Highway"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6NTY1NzlhMjItMGU2My00YWExLTlhM2EtMzAwNTY2YzBjZTk4",
+            "name": "Crain Highway"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBOW9PN0E",
+            "name": "20772"
+          },
+          "locality": {
+            "mapbox_id": "dXJuOm1ieHBsYzpHeHdxN0E",
+            "name": "Queensland"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpFL3dvN0E",
+            "name": "Upper Marlboro",
+            "wikidata_id": "Q753334"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBU1RtN0E",
+            "name": "Prince George's County",
+            "wikidata_id": "Q26807"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBZVRz",
+            "name": "Maryland",
+            "wikidata_id": "Q1391",
+            "region_code": "MD",
+            "region_code_full": "US-MD"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -86.787279,
+          36.032388
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01112",
+        "address": "210 Franklin Rd",
+        "city": "Brentwood",
+        "state": "TN",
+        "mapbox_id": "dXJuOm1ieGFkcjozMzNlYjgzNC05MjcxLTQyMTAtOWM5NC1jN2IxNTBlNDZjNWE",
+        "feature_type": "address",
+        "full_address": "210 Franklin Road, Brentwood, Tennessee 37027, United States",
+        "name": "210 Franklin Road",
+        "name_preferred": "210 Franklin Road",
+        "coordinates": {
+          "longitude": -86.787279,
+          "latitude": 36.032388,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 36.03247,
+              "longitude": -86.787553
+            }
+          ]
+        },
+        "place_formatted": "Brentwood, Tennessee 37027, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjozMzNlYjgzNC05MjcxLTQyMTAtOWM5NC1jN2IxNTBlNDZjNWE",
+            "address_number": "210",
+            "street_name": "Franklin Road",
+            "name": "210 Franklin Road"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6MzMzZWI4MzQtOTI3MS00MjEwLTljOTQtYzdiMTUwZTQ2YzVh",
+            "name": "Franklin Road"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpHUGpPN0E",
+            "name": "37027"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBak1vN0E",
+            "name": "Brentwood",
+            "wikidata_id": "Q3096621"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBWDltN0E",
+            "name": "Williamson County",
+            "wikidata_id": "Q501948"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBMFRz",
+            "name": "Tennessee",
+            "wikidata_id": "Q1509",
+            "region_code": "TN",
+            "region_code_full": "US-TN"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -86.686005,
+          35.994003
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01125",
+        "address": "6690 Nolensville Rd",
+        "city": "Brentwood",
+        "state": "TN",
+        "mapbox_id": "dXJuOm1ieGFkcjpiOTQzY2IwZC03OTM4LTRhMGUtYjE2Ny1lNTg5NTY1OTc2M2I",
+        "feature_type": "address",
+        "full_address": "6690 Nolensville Pike, Brentwood, Tennessee 37013, United States",
+        "name": "6690 Nolensville Road",
+        "name_preferred": "6690 Nolensville Pike",
+        "coordinates": {
+          "longitude": -86.686005,
+          "latitude": 35.994003,
+          "accuracy": "point",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 35.993968,
+              "longitude": -86.686064
+            }
+          ]
+        },
+        "place_formatted": "Brentwood, Tennessee 37013, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "unmatched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "high"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjpiOTQzY2IwZC03OTM4LTRhMGUtYjE2Ny1lNTg5NTY1OTc2M2I",
+            "address_number": "6690",
+            "street_name": "Nolensville Pike",
+            "name": "6690 Nolensville Pike"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6Yjk0M2NiMGQtNzkzOC00YTBlLWIxNjctZTU4OTU2NTk3NjNi",
+            "name": "Nolensville Pike"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCMldPN0E",
+            "name": "37013"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBak1vN0E",
+            "name": "Brentwood",
+            "wikidata_id": "Q3096621"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpXbWJz",
+            "name": "Davidson County",
+            "wikidata_id": "Q1177705"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBMFRz",
+            "name": "Tennessee",
+            "wikidata_id": "Q1509",
+            "region_code": "TN",
+            "region_code_full": "US-TN"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -86.829627,
+          35.917271
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01033",
+        "address": "1203 Murfreesboro Rd",
+        "city": "Franklin",
+        "state": "TN",
+        "mapbox_id": "dXJuOm1ieGFkcjpmNjE2ZDUxOC0wOTVjLTQ5YzEtYWMzMy02OTYyZGFmZGQ4OTY",
+        "feature_type": "address",
+        "full_address": "1203 Murfreesboro Road, Franklin, Tennessee 37067, United States",
+        "name": "1203 Murfreesboro Road",
+        "name_preferred": "1203 Murfreesboro Road",
+        "coordinates": {
+          "longitude": -86.829627,
+          "latitude": 35.917271,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 35.917159,
+              "longitude": -86.829646
+            }
+          ]
+        },
+        "place_formatted": "Franklin, Tennessee 37067, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjpmNjE2ZDUxOC0wOTVjLTQ5YzEtYWMzMy02OTYyZGFmZGQ4OTY",
+            "address_number": "1203",
+            "street_name": "Murfreesboro Road",
+            "name": "1203 Murfreesboro Road"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6ZjYxNmQ1MTgtMDk1Yy00OWMxLWFjMzMtNjk2MmRhZmRkODk2",
+            "name": "Murfreesboro Road"
+          },
+          "postcode": {
+            "mapbox_id": "postcode.6069522808133420",
+            "name": "37067"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCdnBJN0E",
+            "name": "Franklin",
+            "wikidata_id": "Q984264"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBWDltN0E",
+            "name": "Williamson County",
+            "wikidata_id": "Q501948"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBMFRz",
+            "name": "Tennessee",
+            "wikidata_id": "Q1509",
+            "region_code": "TN",
+            "region_code_full": "US-TN"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -86.816692,
+          35.950731
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01224",
+        "address": "2020 Mallory Ln",
+        "city": "Franklin",
+        "state": "TN",
+        "mapbox_id": "dXJuOm1ieGFkcjpjZmZkYjY2ZS05ZTkzLTRiZmItODI4Yy02NjJlY2U2NTIwNGM",
+        "feature_type": "address",
+        "full_address": "2020 Mallory Lane, Franklin, Tennessee 37067, United States",
+        "name": "2020 Mallory Lane",
+        "name_preferred": "2020 Mallory Lane",
+        "coordinates": {
+          "longitude": -86.816692,
+          "latitude": 35.950731,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 35.95047,
+              "longitude": -86.816765
+            }
+          ]
+        },
+        "place_formatted": "Franklin, Tennessee 37067, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjpjZmZkYjY2ZS05ZTkzLTRiZmItODI4Yy02NjJlY2U2NTIwNGM",
+            "address_number": "2020",
+            "street_name": "Mallory Lane",
+            "name": "2020 Mallory Lane"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6Y2ZmZGI2NmUtOWU5My00YmZiLTgyOGMtNjYyZWNlNjUyMDRj",
+            "name": "Mallory Lane"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCMnR1N0E",
+            "name": "37067"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCdnBJN0E",
+            "name": "Franklin",
+            "wikidata_id": "Q984264"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBWDltN0E",
+            "name": "Williamson County",
+            "wikidata_id": "Q501948"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBMFRz",
+            "name": "Tennessee",
+            "wikidata_id": "Q1509",
+            "region_code": "TN",
+            "region_code_full": "US-TN"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -86.698749,
+          36.326318
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01037",
+        "address": "123 Northcreek Blvd",
+        "city": "Goodlettsville",
+        "state": "TN",
+        "mapbox_id": "dXJuOm1ieGFkcjoyMWEzMjY4NS01ZWMxLTQzZmYtYmVlNy01Mjc0NmNlMjNmNTA",
+        "feature_type": "address",
+        "full_address": "123 Northcreek Boulevard, Goodlettsville, Tennessee 37072, United States",
+        "name": "123 Northcreek Boulevard",
+        "name_preferred": "123 Northcreek Boulevard",
+        "coordinates": {
+          "longitude": -86.698749,
+          "latitude": 36.326318,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 36.326125,
+              "longitude": -86.698937
+            }
+          ]
+        },
+        "place_formatted": "Goodlettsville, Tennessee 37072, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjoyMWEzMjY4NS01ZWMxLTQzZmYtYmVlNy01Mjc0NmNlMjNmNTA",
+            "address_number": "123",
+            "street_name": "Northcreek Boulevard",
+            "name": "123 Northcreek Boulevard"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6MjFhMzI2ODUtNWVjMS00M2ZmLWJlZTctNTI3NDZjZTIzZjUw",
+            "name": "Northcreek Boulevard"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCMndPN0E",
+            "name": "37072"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCNnVvN0E",
+            "name": "Goodlettsville",
+            "wikidata_id": "Q2273185"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpXbWJz",
+            "name": "Davidson County",
+            "wikidata_id": "Q1177705"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBMFRz",
+            "name": "Tennessee",
+            "wikidata_id": "Q1509",
+            "region_code": "TN",
+            "region_code_full": "US-TN"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -86.491705,
+          35.84474
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q00992",
+        "address": "4432 Veterans Pkwy",
+        "city": "Murfreesboro",
+        "state": "TN",
+        "mapbox_id": "dXJuOm1ieGFkcjphODJjZmQ2Yi1iZTQ5LTQ1MDUtODczMy0zZTRkMzliOTA5NjU",
+        "feature_type": "address",
+        "full_address": "4432 Veterans Parkway, Murfreesboro, Tennessee 37128, United States",
+        "name": "4432 Veterans Parkway",
+        "name_preferred": "4432 Veterans Parkway",
+        "coordinates": {
+          "longitude": -86.491705,
+          "latitude": 35.84474,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 35.844776,
+              "longitude": -86.492075
+            }
+          ]
+        },
+        "place_formatted": "Murfreesboro, Tennessee 37128, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjphODJjZmQ2Yi1iZTQ5LTQ1MDUtODczMy0zZTRkMzliOTA5NjU",
+            "address_number": "4432",
+            "street_name": "Veterans Parkway",
+            "name": "4432 Veterans Parkway"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6YTgyY2ZkNmItYmU0OS00NTA1LTg3MzMtM2U0ZDM5YjkwOTY1",
+            "name": "Veterans Parkway"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEY2dzN0E",
+            "name": "Franklin Road Estates"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCM0FPN0E",
+            "name": "37128"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEV3hJN0E",
+            "name": "Murfreesboro",
+            "wikidata_id": "Q501766"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBVFltN0E",
+            "name": "Rutherford County",
+            "wikidata_id": "Q502348"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBMFRz",
+            "name": "Tennessee",
+            "wikidata_id": "Q1509",
+            "region_code": "TN",
+            "region_code_full": "US-TN"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -86.402128,
+          35.790119
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01027",
+        "address": "2946 S Church St",
+        "city": "Murfreesboro",
+        "state": "TN",
+        "mapbox_id": "dXJuOm1ieGFkcjpmNzZhMzY1My0zMGFjLTRiMWEtYTY4Yi0wMjkzN2M5MzZmNGI",
+        "feature_type": "address",
+        "full_address": "2946 South Church Street, Murfreesboro, Tennessee 37127, United States",
+        "name": "2946 South Church Street",
+        "name_preferred": "2946 South Church Street",
+        "coordinates": {
+          "longitude": -86.402128,
+          "latitude": 35.790119,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 35.790078,
+              "longitude": -86.401881
+            }
+          ]
+        },
+        "place_formatted": "Murfreesboro, Tennessee 37127, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjpmNzZhMzY1My0zMGFjLTRiMWEtYTY4Yi0wMjkzN2M5MzZmNGI",
+            "address_number": "2946",
+            "street_name": "South Church Street",
+            "name": "2946 South Church Street"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6Zjc2YTM2NTMtMzBhYy00YjFhLWE2OGItMDI5MzdjOTM2ZjRi",
+            "name": "South Church Street"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpMaWtNN0E",
+            "name": "River Shores"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCMi91N0E",
+            "name": "37127"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEV3hJN0E",
+            "name": "Murfreesboro",
+            "wikidata_id": "Q501766"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBVFltN0E",
+            "name": "Rutherford County",
+            "wikidata_id": "Q502348"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBMFRz",
+            "name": "Tennessee",
+            "wikidata_id": "Q1509",
+            "region_code": "TN",
+            "region_code_full": "US-TN"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -86.678833,
+          36.170757
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01029",
+        "address": "143 McGavock Pk",
+        "city": "Nashville",
+        "state": "TN",
+        "mapbox_id": "dXJuOm1ieGFkcjoxMmI3N2E1ZS02OTEwLTQzN2QtYmY5My1iNTRjNGEwMDA2NWE",
+        "feature_type": "address",
+        "full_address": "143 Mcgavock Pike, Nashville, Tennessee 37214, United States",
+        "name": "143 Mcgavock Pike",
+        "name_preferred": "143 Mcgavock Pike",
+        "coordinates": {
+          "longitude": -86.678833,
+          "latitude": 36.170757,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 36.170758,
+              "longitude": -86.679104
+            }
+          ]
+        },
+        "place_formatted": "Nashville, Tennessee 37214, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjoxMmI3N2E1ZS02OTEwLTQzN2QtYmY5My1iNTRjNGEwMDA2NWE",
+            "address_number": "143",
+            "street_name": "Mcgavock Pike",
+            "name": "143 Mcgavock Pike"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6MTJiNzdhNWUtNjkxMC00MzdkLWJmOTMtYjU0YzRhMDAwNjVh",
+            "name": "Mcgavock Pike"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCM2VPN0E",
+            "name": "37214"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEWVRJN0E",
+            "name": "Nashville",
+            "wikidata_id": "Q23197"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpXbWJz",
+            "name": "Davidson County",
+            "wikidata_id": "Q1177705"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBMFRz",
+            "name": "Tennessee",
+            "wikidata_id": "Q1509",
+            "region_code": "TN",
+            "region_code_full": "US-TN"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -86.725043,
+          36.110058
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01034",
+        "address": "61 E Thompson Ln",
+        "city": "Nashville",
+        "state": "TN",
+        "mapbox_id": "dXJuOm1ieGFkcjo0YTJiN2Q4Mi1kNzY0LTQzNmYtYTY4Yy0yNDgwMzBkMjdlOTc",
+        "feature_type": "address",
+        "full_address": "61 Thompson Lane, Nashville, Tennessee 37211, United States",
+        "name": "61 East Thompson Ln",
+        "name_preferred": "61 Thompson Lane",
+        "coordinates": {
+          "longitude": -86.725043,
+          "latitude": 36.110058,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 36.110203,
+              "longitude": -86.725086
+            }
+          ]
+        },
+        "place_formatted": "Nashville, Tennessee 37211, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "unmatched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "high"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjo0YTJiN2Q4Mi1kNzY0LTQzNmYtYTY4Yy0yNDgwMzBkMjdlOTc",
+            "address_number": "61",
+            "street_name": "Thompson Lane",
+            "name": "61 Thompson Lane"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6NGEyYjdkODItZDc2NC00MzZmLWE2OGMtMjQ4MDMwZDI3ZTk3",
+            "name": "Thompson Lane"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCM2N1N0E",
+            "name": "37211"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpEWVRJN0E",
+            "name": "Nashville",
+            "wikidata_id": "Q23197"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpXbWJz",
+            "name": "Davidson County",
+            "wikidata_id": "Q1177705"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBMFRz",
+            "name": "Tennessee",
+            "wikidata_id": "Q1509",
+            "region_code": "TN",
+            "region_code_full": "US-TN"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -86.551019,
+          35.983198
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01017",
+        "address": "463 Sam Ridley Pkwy W",
+        "city": "Smyrna",
+        "state": "TN",
+        "mapbox_id": "dXJuOm1ieGFkcjoyZDYyZjM3Zi1kMWM3LTRkY2UtYTdmYy04MzM3NzNiMDk0ZmI",
+        "feature_type": "address",
+        "full_address": "463 Sam Ridley Parkway, Smyrna, Tennessee 37167, United States",
+        "name": "463 Sam Ridley Pkwy W.",
+        "name_preferred": "463 Sam Ridley Parkway",
+        "coordinates": {
+          "longitude": -86.551019,
+          "latitude": 35.983198,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 35.983382,
+              "longitude": -86.551181
+            }
+          ]
+        },
+        "place_formatted": "Smyrna, Tennessee 37167, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "unmatched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "high"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjoyZDYyZjM3Zi1kMWM3LTRkY2UtYTdmYy04MzM3NzNiMDk0ZmI",
+            "address_number": "463",
+            "street_name": "Sam Ridley Parkway",
+            "name": "463 Sam Ridley Parkway"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6MmQ2MmYzN2YtZDFjNy00ZGNlLWE3ZmMtODMzNzczYjA5NGZi",
+            "name": "Sam Ridley Parkway"
+          },
+          "neighborhood": {
+            "mapbox_id": "dXJuOm1ieHBsYzpMWnJNN0E",
+            "name": "Loafer's Corner"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCM091N0E",
+            "name": "37167"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpFamdvN0E",
+            "name": "Smyrna",
+            "wikidata_id": "Q996433"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBVFltN0E",
+            "name": "Rutherford County",
+            "wikidata_id": "Q502348"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBMFRz",
+            "name": "Tennessee",
+            "wikidata_id": "Q1509",
+            "region_code": "TN",
+            "region_code_full": "US-TN"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -86.863463,
+          36.48851
+        ]
+      },
+      "properties": {
+        "retailer": "Kroger",
+        "machineID": "Q01108",
+        "address": "2600 Memorial Blvd",
+        "city": "Springfield",
+        "state": "TN",
+        "mapbox_id": "dXJuOm1ieGFkcjozZjA0YzE3Zi1iZWZmLTQwYmEtOTc3YS0yNjdhYmZmNWM5MDA",
+        "feature_type": "address",
+        "full_address": "2600 Memorial Boulevard, Springfield, Tennessee 37172, United States",
+        "name": "2600 Memorial Boulevard",
+        "name_preferred": "2600 Memorial Boulevard",
+        "coordinates": {
+          "longitude": -86.863463,
+          "latitude": 36.48851,
+          "accuracy": "rooftop",
+          "routable_points": [
+            {
+              "name": "default",
+              "latitude": 36.4883,
+              "longitude": -86.863497
+            }
+          ]
+        },
+        "place_formatted": "Springfield, Tennessee 37172, United States",
+        "match_code": {
+          "address_number": "matched",
+          "street": "matched",
+          "postcode": "inferred",
+          "place": "matched",
+          "region": "matched",
+          "locality": "not_applicable",
+          "country": "matched",
+          "confidence": "exact"
+        },
+        "context": {
+          "address": {
+            "mapbox_id": "dXJuOm1ieGFkcjozZjA0YzE3Zi1iZWZmLTQwYmEtOTc3YS0yNjdhYmZmNWM5MDA",
+            "address_number": "2600",
+            "street_name": "Memorial Boulevard",
+            "name": "2600 Memorial Boulevard"
+          },
+          "street": {
+            "mapbox_id": "dXJuOm1ieGFkci1zdHI6M2YwNGMxN2YtYmVmZi00MGJhLTk3N2EtMjY3YWJmZjVjOTAw",
+            "name": "Memorial Boulevard"
+          },
+          "postcode": {
+            "mapbox_id": "dXJuOm1ieHBsYzpCM1B1N0E",
+            "name": "37172"
+          },
+          "place": {
+            "mapbox_id": "dXJuOm1ieHBsYzpFbzhJN0E",
+            "name": "Springfield",
+            "wikidata_id": "Q185323"
+          },
+          "district": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBVEZtN0E",
+            "name": "Robertson County",
+            "wikidata_id": "Q495043"
+          },
+          "region": {
+            "mapbox_id": "dXJuOm1ieHBsYzpBMFRz",
+            "name": "Tennessee",
+            "wikidata_id": "Q1509",
+            "region_code": "TN",
+            "region_code_full": "US-TN"
+          },
+          "country": {
+            "mapbox_id": "dXJuOm1ieHBsYzpJdXc",
+            "name": "United States",
+            "wikidata_id": "Q30",
+            "country_code": "US",
+            "country_code_alpha_3": "USA"
+          }
+        }
+      }
+    }
+  ],
+  "updated": [
+    {
+      "machineID": "Q00598",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01290",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01223",
+      "old_accuracy": "point",
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01063",
+      "old_accuracy": "parcel",
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01021",
+      "old_accuracy": "point",
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01182",
+      "old_accuracy": "point",
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00570",
+      "old_accuracy": "point",
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01638",
+      "old_accuracy": "point",
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00555",
+      "old_accuracy": "point",
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00904",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00399",
+      "old_accuracy": null,
+      "new_accuracy": "point"
+    },
+    {
+      "machineID": "Q00795",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01466",
+      "old_accuracy": "point",
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01298",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00194",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00216",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00255",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00233",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00026",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01149",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00196",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00827",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01403",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00224",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01401",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01187",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01297",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00035",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01085",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00117",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00851",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01490",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00228",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00039",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00940",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01137",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00229",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01177",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00203",
+      "old_accuracy": null,
+      "new_accuracy": "parcel"
+    },
+    {
+      "machineID": "Q00247",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00250",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01188",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00259",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00811",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00947",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01315",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00131",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00147",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00868",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01402",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00022",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01414",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00025",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00176",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00132",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00810",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00873",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01168",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01192",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01281",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01489",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00807",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00866",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00136",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00727",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00152",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00222",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00227",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01119",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00139",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00199",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00207",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00208",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00212",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00218",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00850",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01073",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01652",
+      "old_accuracy": null,
+      "new_accuracy": "interpolated"
+    },
+    {
+      "machineID": "Q01040",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00693",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01504",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q00160",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    },
+    {
+      "machineID": "Q01053",
+      "old_accuracy": null,
+      "new_accuracy": "rooftop"
+    }
+  ]
+}

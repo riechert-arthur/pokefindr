@@ -1,0 +1,62 @@
+name: Weekly Vending-Machine Update
+
+on:
+  # every Monday at 03:00 UTC (11 pm ET Sunday)
+  schedule:
+    - cron:  '0 3 * * MON'
+  workflow_dispatch:
+
+jobs:
+  update-machines:
+    runs-on: ubuntu-latest
+    env:
+      # your secrets, set these in GitHub Settings → Secrets
+      MAPBOX_API_KEY: ${{ secrets.MAPBOX_API_KEY }}
+      SUPABASE_URL:   ${{ secrets.SUPABASE_URL }}
+      SUPABASE_KEY:   ${{ secrets.SUPABASE_KEY }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.10"
+
+    - name: Install dependencies
+      run: |
+        pip install -r scripts/requirements.txt
+
+    - name: Scrape and merge new data
+      id: scrape
+      run: |
+        # This script must:
+        #  1) Scrape & geocode via Mapbox
+        #  2) Load old JSON
+        #  3) Merge preserving _manual_override
+        #  4) Write new vending_machines.json
+        #  5) Write vending_machines_diff.json and vending_machines_flagged.json
+        python3 scripts/scrape_and_merge.py
+
+    - name: Sanity-check diff & flags
+      id: sanity
+      run: |
+        # This script should:
+        #  • Fail if diff is unexpectedly large (e.g. >10% removed)
+        #  • Fail if flagged count > threshold (e.g. 5% of total)
+        python3 scripts/sanity_check.py
+
+    - name: Commit & push JSON updates
+      uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: "chore: weekly update vending_machines.json and diffs"
+        file_pattern: |
+          src/data/vending_machines.json
+          src/data/vending_machines_diff.json
+          src/data/vending_machines_flagged.json
+
+    - name: Upsert to Supabase
+      run: |
+        # idempotently insert or update only the `geog` column for each machine
+        python3 scripts/push_supabase.py

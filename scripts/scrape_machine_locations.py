@@ -18,7 +18,7 @@ SEED_URL = (
     f"{BASE_URL}/hc/en-us/sections/13360842288916-"
     "Pok%C3%A9mon-Automated-Retail-Vending-Machines"
 )
-MAPBOX_API_KEY = "pk.eyJ1IjoiYW1yaWVjaGVydCIsImEiOiJjbWFmc3hzamwwNjBvMmxxMXhuODRmaGwxIn0.MIlz9n_W9XS2ft0T7t7TBw"
+MAPBOX_API_KEY = "key"
 
 
 def init_scraper():

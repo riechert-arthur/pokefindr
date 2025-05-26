@@ -1,0 +1,27 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "retailer": "Fred Meyer",
+        "machineID": "Q00197",
+        "address": "2801 Bickford Ave",
+        "city": "Snohomish",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "retailer": "Fred Meyer",
+        "machineID": "Q00210",
+        "address": "2500 Columbia House Blvd",
+        "city": "Vancouver",
+        "state": "WA"
+      }
+    }
+  ]
+}
