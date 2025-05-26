@@ -109088,7 +109088,13 @@
     },
     {
       "type": "Feature",
-      "geometry": null,
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -77.26095,
+          38.87139
+        ]
+      },
       "properties": {
         "retailer": "Safeway",
         "machineID": "Q01482",
