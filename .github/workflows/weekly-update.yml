@@ -8,6 +8,7 @@ on:
 
 jobs:
   update-machines:
+    environment: production
     runs-on: ubuntu-latest
     env:
       MAPBOX_API_KEY: ${{ secrets.MAPBOX_API_KEY }}
