@@ -10,12 +10,17 @@ jobs:
   update-machines:
     runs-on: ubuntu-latest
     env:
-      # your secrets, set these in GitHub Settings → Secrets
       MAPBOX_API_KEY: ${{ secrets.MAPBOX_API_KEY }}
       SUPABASE_URL:   ${{ secrets.SUPABASE_URL }}
       SUPABASE_KEY:   ${{ secrets.SUPABASE_KEY }}
 
     steps:
+    - name: Check secrets
+      run: |
+        echo "MAPBOX_API_KEY is set: ${#MAPBOX_API_KEY} characters"
+        echo "SUPABASE_URL is set:    ${#SUPABASE_URL} characters"
+        echo "SUPABASE_KEY is set:    ${#SUPABASE_KEY} characters"
+
     - name: Checkout code
       uses: actions/checkout@v3
 
