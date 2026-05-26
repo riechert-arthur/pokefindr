@@ -1,5 +1,5 @@
 import React from "react"
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
+import { describe, it, expect, afterEach, vi } from "vitest"
 import { render, fireEvent, screen, cleanup } from "@testing-library/react"
 
 async function renderBanner() {
@@ -15,7 +15,7 @@ async function renderBanner() {
   const [{ AdContextProvider }, { default: AffiliateBanner }] =
     await Promise.all([
       import("@/components/providers/AdContextProvider"),
-      import("@/components/AffiliateBanner"),
+      import("@/components/wrappers/AffiliateBanner"),
     ])
 
   return render(
