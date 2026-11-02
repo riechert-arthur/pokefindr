@@ -1,0 +1,15 @@
+.git
+.github
+.next
+node_modules
+coverage
+.env*
+!.env.template
+# Local-only directories
+backend
+scripts/env
+scripts/.cache
+drizzle-introspect
+*.tsbuildinfo
+Dockerfile*
+docker-compose.yml

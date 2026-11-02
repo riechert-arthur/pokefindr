@@ -89,3 +89,14 @@ of the bundled `src/data/vending_machines_mod.json`. Before deploying that chang
    bundled JSON, matched on `machineID`. Existing coordinates are never overwritten.
 3. Check the count: `select count(*) from locations where is_active and geog is not null`
    should match the number of machines on the current map (1,457 at the time of writing).
+
+## Running the whole app in containers
+
+```bash
+npm run db:up && npm run db:migrate && npm run db:backfill-locations -- --apply
+docker compose --profile app up --build   # http://localhost:3000
+```
+
+The production `Dockerfile` builds the Next.js standalone server. It works
+on any container host (Fly, Railway, Render, Cloud Run, a VM). `GET /api/health`
+returns 200 when the app can reach the database and 503 when it can't.
