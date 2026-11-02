@@ -19,6 +19,7 @@ describe("session cookies", () => {
     resetServerConfigForTests()
     vi.stubEnv("APP_URL", "https://pokefindr.example")
     vi.stubEnv("JWT_SECRET", SECRET)
+    vi.stubEnv("DATABASE_URL", "postgres://user:pass@localhost:5432/pokefindr")
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://project.supabase.co")
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon")
     vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service")

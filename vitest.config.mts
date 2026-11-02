@@ -7,5 +7,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: "./vitest.setup.ts",
+    // Integration tests need Postgres; run them with `npm run test:integration`.
+    exclude: ["**/node_modules/**", "__tests__/integration/**"],
   },
 })
