@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { adminDB } from '@/lib/supabase/db'
+import { getAdminClient } from '@/lib/supabase/db'
 
 interface UpdateRequest {
   fullName?: string
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthenticated" }, { status: 401 })
   }
 
-  const { data: profile, error } = await adminDB
+  const { data: profile, error } = await getAdminClient()
     .from('profiles')
     .select('id, username, full_name, metadata')
     .eq('id', userId)
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   }
 
   const { data: authUser, error: authError } =
-    await adminDB.auth.admin.getUserById(userId)
+    await getAdminClient().auth.admin.getUserById(userId)
 
   if (authError || !authUser?.user) {
     console.error('Auth user load error', authError)
@@ -64,7 +64,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (updates.email !== undefined) {
-    const { error: authError } = await adminDB.auth.admin.updateUserById(
+    const { error: authError } = await getAdminClient().auth.admin.updateUserById(
       userId,
       { email: updates.email }
     )
@@ -75,7 +75,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (Object.keys(dbUpdates).length > 0) {
-    const { error: profileError } = await adminDB
+    const { error: profileError } = await getAdminClient()
       .from('profiles')
       .update(dbUpdates)
       .eq('id', userId)

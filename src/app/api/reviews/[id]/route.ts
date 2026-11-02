@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { adminDB } from '@/lib/supabase/db'
+import { getAdminClient } from '@/lib/supabase/db'
 
 export async function DELETE(
   req: NextRequest,
@@ -16,7 +16,7 @@ export async function DELETE(
     )
   }
 
-  const { error } = await adminDB
+  const { error } = await getAdminClient()
     .from('location_ratings')
     .delete()
     .eq('id', reviewId)
@@ -55,7 +55,7 @@ export async function PATCH(
     )
   }
 
-  const { data, error } = await adminDB
+  const { data, error } = await getAdminClient()
     .from('location_ratings')
     .update({ text, rating })
     .eq('id', reviewId)
