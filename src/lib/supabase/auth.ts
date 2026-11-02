@@ -38,3 +38,15 @@ export async function verifyUserCredentials(
 
   return data.user as User
 }
+
+const EMAIL_OTP_TYPES = ["signup", "invite", "magiclink", "recovery", "email_change", "email"] as const
+type EmailOtpType = (typeof EMAIL_OTP_TYPES)[number]
+
+export const isEmailOtpType = (value: string | null): value is EmailOtpType =>
+  value !== null && (EMAIL_OTP_TYPES as readonly string[]).includes(value)
+
+/** Confirms the token from a sign-up / email-change link. */
+export async function verifyEmailOtp(tokenHash: string, type: EmailOtpType) {
+  const { error } = await getAnonClient().auth.verifyOtp({ type, token_hash: tokenHash })
+  if (error) throw new Error(error.message)
+}

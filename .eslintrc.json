@@ -1,11 +1,27 @@
 {
-  "extends": ["next/core-web-vitals", "next/typescript"],
+  "extends": [
+    "next/core-web-vitals",
+    "next/typescript"
+  ],
   "rules": {
     "no-restricted-syntax": [
       "error",
       {
         "selector": "MemberExpression[object.type='MemberExpression'][object.object.name='process'][object.property.name='env'][property.name!='NODE_ENV'][property.name!='NEXT_RUNTIME']",
         "message": "Read configuration through getServerConfig() (src/server/config.ts) or publicConfig (src/config.public.ts)."
+      }
+    ],
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": [
+              "@supabase/*"
+            ],
+            "message": "Supabase is only used for auth during the migration; go through src/lib/supabase/*."
+          }
+        ]
       }
     ]
   },
@@ -18,7 +34,17 @@
         "*.config.*",
         "scripts/**"
       ],
-      "rules": { "no-restricted-syntax": "off" }
+      "rules": {
+        "no-restricted-syntax": "off"
+      }
+    },
+    {
+      "files": [
+        "src/lib/supabase/**"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
     }
   ]
 }

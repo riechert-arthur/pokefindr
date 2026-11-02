@@ -2,11 +2,10 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { registrationSchema } from '@/lib/schemas'
 import { signUpNewUser } from '@/lib/supabase/auth'
-import { getAdminClient } from '@/lib/supabase/db'
+import { UsernameTakenError, updateProfile } from '@/server/services/users'
 
 export async function POST(req: NextRequest) {
-  const body = await req.json()
-  const parsed = registrationSchema.safeParse(body)
+  const parsed = registrationSchema.safeParse(await req.json().catch(() => null))
   if (!parsed.success) {
     return NextResponse.json(
       { error: parsed.error.errors.map(e => e.message).join(', ') },
@@ -19,41 +18,21 @@ export async function POST(req: NextRequest) {
   if (upError) {
     return NextResponse.json({ error: upError.message }, { status: 400 })
   }
-
   if (!data.user) {
     return NextResponse.json({ error: "No user id" }, { status: 404 })
   }
 
-  const { error } = await getAdminClient()
-    .from("profiles")
-    .update({
-      username: values.username,
-      full_name: values.name,
-    })
-    .eq("id", data.user.id)
-
-  if (error) {
-    console.error("Profile update failed:", error)
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    )
-  }
-
-  const { error: subError } = await getAdminClient()
-    .from('subscriptions')
-    .select('plan_name')
-    .eq('user_id', data.user.id)
-    .maybeSingle()
-
-  if (subError) {
-    console.error("Subscription lookup failed:", subError)
-    return NextResponse.json(
-      { error: subError.message },
-      { status: 500 }
-    )
+  // The profile row is created by a database trigger when Supabase Auth
+  // creates the user; fill in the names the user chose.
+  try {
+    await updateProfile(data.user.id, { username: values.username, fullName: values.name })
+  } catch (err) {
+    if (err instanceof UsernameTakenError) {
+      return NextResponse.json({ error: err.message }, { status: 409 })
+    }
+    console.error("Profile update failed:", err)
+    return NextResponse.json({ error: "Profile update failed" }, { status: 500 })
   }
 
   return NextResponse.json({ status: 200 })
 }
-

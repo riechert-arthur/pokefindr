@@ -1,89 +1,67 @@
-
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { z } from 'zod'
 import { getAdminClient } from '@/lib/supabase/db'
+import { getSessionUserId } from '@/server/auth/request'
+import { UsernameTakenError, getProfile, updateProfile } from '@/server/services/users'
 
-interface UpdateRequest {
-  fullName?: string
-  username?: string
-  email?: string
-}
-
-interface ProfileUpdates {
-  full_name?: string
-  username?: string
-}
+const updateSchema = z.object({
+  fullName: z.string().trim().min(1).max(100).optional(),
+  username: z.string().trim().min(1).max(50).optional(),
+  email: z.string().trim().email().optional(),
+})
 
 export async function GET(req: NextRequest) {
-  const userId = req.headers.get("x-user-id")
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthenticated" }, { status: 401 })
-  }
+  const userId = getSessionUserId(req)
+  if (!userId) return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
 
-  const { data: profile, error } = await getAdminClient()
-    .from('profiles')
-    .select('id, username, full_name, metadata')
-    .eq('id', userId)
-    .single()
+  const profile = await getProfile(userId)
+  if (!profile) return NextResponse.json({ error: 'Account not found' }, { status: 404 })
 
-  if (error || !profile) {
-    return NextResponse.json({ error: "Account not found" }, { status: 404 })
-  }
-
-  const { data: authUser, error: authError } =
-    await getAdminClient().auth.admin.getUserById(userId)
-
+  // Email lives with the identity provider (Supabase Auth, for now).
+  const { data: authUser, error: authError } = await getAdminClient().auth.admin.getUserById(userId)
   if (authError || !authUser?.user) {
     console.error('Auth user load error', authError)
-    return NextResponse.json({}, { status: 500 })
+    return NextResponse.json({ error: 'Could not load account' }, { status: 500 })
   }
 
   return NextResponse.json({
     fullName: profile.full_name,
-    email:    authUser.user.email,
+    email: authUser.user.email,
     username: profile.username,
   })
-
 }
 
 export async function PATCH(req: NextRequest) {
-  const userId = req.headers.get("x-user-id")
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthenticated" }, { status: 401 })
-  }
+  const userId = getSessionUserId(req)
+  if (!userId) return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
 
-  const updates = (await req.json()) as UpdateRequest
-
-  const dbUpdates: ProfileUpdates = {}
-
-  if (updates.fullName !== undefined) {
-    dbUpdates.full_name = updates.fullName
-  }
-  if (updates.username !== undefined) {
-    dbUpdates.username = updates.username
-  }
-
-  if (updates.email !== undefined) {
-    const { error: authError } = await getAdminClient().auth.admin.updateUserById(
-      userId,
-      { email: updates.email }
+  const parsed = updateSchema.safeParse(await req.json().catch(() => null))
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join(', ') },
+      { status: 400 },
     )
+  }
+  const { email, fullName, username } = parsed.data
+
+  if (email !== undefined) {
+    const { error: authError } = await getAdminClient().auth.admin.updateUserById(userId, { email })
     if (authError) {
       console.error('Auth email update failed', authError)
       return NextResponse.json({ error: authError.message }, { status: 500 })
     }
   }
 
-  if (Object.keys(dbUpdates).length > 0) {
-    const { error: profileError } = await getAdminClient()
-      .from('profiles')
-      .update(dbUpdates)
-      .eq('id', userId)
-
-    if (profileError) {
-      console.error('Profile update failed', profileError)
-      return NextResponse.json({ error: profileError.message }, { status: 500 })
+  try {
+    const found = await updateProfile(userId, { fullName, username })
+    if (!found) return NextResponse.json({ error: 'Account not found' }, { status: 404 })
+  } catch (err) {
+    if (err instanceof UsernameTakenError) {
+      return NextResponse.json({ error: err.message }, { status: 409 })
     }
+    console.error('Profile update failed', err)
+    return NextResponse.json({ error: 'Profile update failed' }, { status: 500 })
   }
 
   return NextResponse.json({ ok: true })
