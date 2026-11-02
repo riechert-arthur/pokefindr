@@ -56,15 +56,24 @@ const locationColumns = {
   machineId: text("machineID"),
   name: text("name"),
   description: text("description"),
+  retailer: text("retailer"),
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  postalCode: text("postal_code"),
   geog: geographyPoint("geog"),
   isOfficial: boolean("is_official"),
+  /** Inactive locations are hidden from the map but keep their reviews. */
+  isActive: boolean("is_active").notNull().default(true),
   createdBy: uuid("created_by").references(() => profiles.id),
   createdAt: createdAt(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 }
 
 export const locations = pgTable("locations", locationColumns, (t) => [
   uniqueIndex("locations_machine_id_key").on(t.machineId),
   index("locations_geog_gist").using("gist", t.geog),
+  index("locations_active_idx").on(t.isActive),
 ])
 
 /** ETL landing table; same shape as `locations`. */

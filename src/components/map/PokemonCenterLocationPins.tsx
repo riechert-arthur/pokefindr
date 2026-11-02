@@ -11,15 +11,9 @@ import type { LayerProps } from "react-map-gl"
 import LocationPopup, { LocationPopupProps } from "./LocationPinPopUps"
 import type { Feature, Point, FeatureCollection } from "geojson"
 import { MapLayerMouseEvent } from "mapbox-gl"
+import type { LocationFeatureProperties } from "@/lib/types/locations"
 
-export interface MachineProperties {
-  retailer: string;
-  machineID: string;
-  address: string;
-  city: string;
-  state: string;
-  feature_index: number 
-}
+export type MachineProperties = LocationFeatureProperties
 
 interface PokemonCenterLocationPinsProps {
   collection: FeatureCollection<Point, MachineProperties>
@@ -188,6 +182,7 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
         id="machines"
         type="geojson"
         data={collection}
+        promoteId="id"
         cluster
         clusterMaxZoom={CLUSTER_MAX_ZOOM}
         clusterRadius={30}
@@ -197,7 +192,7 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
         <Layer {...unclusteredLayer} />
       </Source>
     )
-  }, [])
+  }, [collection])
 
   const activeInfo = clickedInfo || hoveredInfo
 
@@ -205,9 +200,9 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
     <>
       {renderedSource}
 
-      {unclusteredPoints.map((feature, i) => {
+      {unclusteredPoints.map((feature) => {
         const [longitude, latitude] = feature.geometry.coordinates
-        const { retailer, machineID, address, city, state, feature_index } =
+        const { id, retailer, machineID, address, city, state } =
           feature.properties
 
         const isActive =
@@ -218,7 +213,7 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
 
         return (
           <Marker
-            key={`unclustered-${i}`}
+            key={id}
             longitude={longitude}
             latitude={latitude}
             anchor="bottom"
@@ -232,7 +227,7 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
                 city,
                 state,
                 machineID,
-                feature_index,
+                id,
               })
             }}
           >
@@ -250,7 +245,7 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
                     city,
                     state,
                     machineID,
-                    feature_index,
+                    id,
                   })
                 },
                 onMouseLeave: scheduleHide,

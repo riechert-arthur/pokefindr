@@ -76,3 +76,16 @@ must be **recorded** there, not run:
    DATABASE_URL_UNPOOLED=<prod direct url> npm run db:baseline
    ```
 3. From then on, `npm run db:migrate` applies only newer migrations.
+
+## Rolling out map data from the database
+
+The map reads `GET /api/locations` (cached under the `locations` tag) instead
+of the bundled `src/data/vending_machines_mod.json`. Before deploying that change:
+
+1. `npm run db:migrate`: adds the retailer/address/city/state/postcode and
+   `is_active` columns.
+2. `npm run db:backfill-locations` (dry run), then
+   `npm run db:backfill-locations -- --apply`: fills those columns from the
+   bundled JSON, matched on `machineID`. Existing coordinates are never overwritten.
+3. Check the count: `select count(*) from locations where is_active and geog is not null`
+   should match the number of machines on the current map (1,457 at the time of writing).

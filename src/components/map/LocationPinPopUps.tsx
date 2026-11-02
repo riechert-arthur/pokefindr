@@ -9,7 +9,8 @@ export interface LocationPopupProps {
   city: string
   state: string
   machineID: string
-  feature_index: number
+  /** Database id of the location. */
+  id: string
   onClose: () => void
   onMouseEnter?: () => void
   onMouseLeave?: () => void
