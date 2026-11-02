@@ -41,3 +41,14 @@ export const callbackSchema = z.object({
     .nonempty({ message: "Please enter a name." })
     .regex(/^[\p{L} ]+$/u, { message: "Only letters are allowed." }),
 })
+
+/** A review as written by a user. Shared by the review forms and the API. */
+export const reviewSchema = z.object({
+  rating: z.number().int().min(1, { message: "Select a rating" }).max(5),
+  text: z
+    .string()
+    .trim()
+    .min(1, { message: "Please write a review" })
+    .max(2000, { message: "Reviews can be at most 2000 characters" }),
+})
+export type ReviewFormValues = z.infer<typeof reviewSchema>

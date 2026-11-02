@@ -18,6 +18,14 @@ export function handleSubmitError(err: unknown) {
         typeof (payload as { message: unknown }).message === "string"
       ) {
         msg = (payload as { message: string }).message;
+      } else if (
+        payload !== null &&
+        typeof payload === "object" &&
+        "error" in payload &&
+        typeof (payload as { error: unknown }).error === "string"
+      ) {
+        // API routes respond with { error: "..." }
+        msg = (payload as { error: string }).error;
       } else {
         msg = `Request failed with status code ${status}`;
       }

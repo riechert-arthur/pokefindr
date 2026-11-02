@@ -21,7 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/Form"
 import { Button } from "@/components/ui/Button"
-import { z } from "zod"
+import { reviewSchema, type ReviewFormValues } from "@/lib/schemas"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { handleSubmitError } from "@/lib/forms"
@@ -39,11 +39,6 @@ interface Review {
   username: string
 }
 
-export const reviewSchema = z.object({
-  rating: z.number().min(1, { message: "Select a rating" }).max(5),
-  text: z.string().min(1, { message: "Please write a review" }),
-})
-export type ReviewFormValues = z.infer<typeof reviewSchema>
 
 const PLACEHOLDER_URL = "/placeholder.png"
 
@@ -127,45 +122,41 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
     defaultValues: { rating: 1, text: "" },
   })
 
-  const loadReviews = useCallback(
-    async (lat: number, lng: number) => {
-      try {
-        const res = await axios.get<{ reviews: Review[] }>("/api/get-reviews", {
-          params: { lat, lng },
-          withCredentials: true,
-        })
+  // Id of the location whose reviews should be on screen; ignores late
+  // responses after the user has clicked another pin.
+  const activeLocationId = useRef<string | null>(null)
+
+  const loadReviews = useCallback(async (locationId: string) => {
+    try {
+      const res = await axios.get<{ reviews: Review[] }>(
+        `/api/locations/${encodeURIComponent(locationId)}/reviews`
+      )
+      if (activeLocationId.current === locationId) {
         setReviews(res.data.reviews || [])
-      } catch (err) {
-        console.error("Failed to load reviews", err)
       }
-    },
-    []
-  )
+    } catch (err) {
+      console.error("Failed to load reviews", err)
+    }
+  }, [])
 
   useEffect(() => {
-    if (!info) return
-    loadReviews(info.latitude, info.longitude)
+    activeLocationId.current = info?.id ?? null
+    setReviews([])
+    if (info) loadReviews(info.id)
   }, [info, loadReviews])
 
   const onReviewSubmit = async (values: ReviewFormValues) => {
     if (!info) return
 
     try {
-      const { latitude, longitude } = info
-
       await axios.post(
-        "/api/reviews",
-        {
-          lat: latitude,
-          lng: longitude,
-          rating: values.rating,
-          text: values.text,
-        },
+        `/api/locations/${encodeURIComponent(info.id)}/reviews`,
+        { rating: values.rating, text: values.text },
         { withCredentials: true }
       )
 
       reviewForm.reset()
-      await loadReviews(latitude, longitude)
+      await loadReviews(info.id)
     } catch (err) {
       handleSubmitError(err)
     }
