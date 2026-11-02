@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import jwt from 'jsonwebtoken'
-import { serialize } from 'cookie'
-import { adminDB } from '@/lib/supabase/db'
-
-const JWT_SECRET  = process.env.JWT_SECRET!
-const COOKIE_NAME = 'app_session'
+import { getAdminClient } from '@/lib/supabase/db'
+import { createSessionCookie } from '@/server/auth/session'
 
 export async function POST(req: NextRequest) {
   const { access_token } = await req.json()
@@ -18,7 +14,7 @@ export async function POST(req: NextRequest) {
   const {
     data: { user },
     error: authError
-  } = await adminDB.auth.getUser(access_token)
+  } = await getAdminClient().auth.getUser(access_token)
 
   if (authError || !user) {
     console.error('Auth callback error', authError)
@@ -28,7 +24,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { data, error } = await adminDB
+  const { data, error } = await getAdminClient()
     .from('profiles')
     .select(`
       id,
@@ -39,8 +35,6 @@ export async function POST(req: NextRequest) {
     `)
     .eq('id', user.id)
     .single()
-
-  console.log("User login detected: ", data)
 
   if (!data) {
     return NextResponse.json(
@@ -63,19 +57,7 @@ export async function POST(req: NextRequest) {
   const planName = data.subscriptions?.[0]?.plan_name
   const tier = planName ? 'paid' : 'free'
 
-  const token = jwt.sign(
-    { sub: user.id, email: user.email, tier },
-    JWT_SECRET,
-    { expiresIn: '7d' }
-  )
-
-  const cookie = serialize(COOKIE_NAME, token, {
-    httpOnly: true,
-    path: '/',
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 24 * 7,
-  })
+  const cookie = createSessionCookie({ sub: user.id, email: user.email, tier })
 
   return NextResponse.json(
     { ok: true },

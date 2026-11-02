@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { adminDB } from '@/lib/supabase/db';
+import { getAdminClient } from '@/lib/supabase/db';
+import { getServerConfig } from '@/server/config';
 
 export async function POST(req: NextRequest) {
   const { provider } = await req.json();
@@ -12,10 +13,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { data, error } = await adminDB.auth.signInWithOAuth({
+  const { data, error } = await getAdminClient().auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `${process.env.APP_URL}/login/callback`,
+      redirectTo: new URL('/login/callback', getServerConfig().APP_URL).toString(),
     },
   });
 

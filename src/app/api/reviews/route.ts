@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { adminDB } from '@/lib/supabase/db'
+import { getAdminClient } from '@/lib/supabase/db'
 
 const MAX_DISTANCE_METERS = 50      
 
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   if (Number.isNaN(latNum) || Number.isNaN(lngNum))
     return NextResponse.json({ error: 'Invalid coordinates' }, { status: 400 })
 
-  const { error: rpcErr } = await adminDB.rpc('add_review_for_location', {
+  const { error: rpcErr } = await getAdminClient().rpc('add_review_for_location', {
     lat_input:     latNum,
     lng_input:     lngNum,
     user_id:       userId,
