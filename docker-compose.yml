@@ -1,0 +1,21 @@
+# Local development services. Start with `npm run db:up`.
+name: pokefindr
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: pokefindr
+      POSTGRES_PASSWORD: pokefindr
+      POSTGRES_DB: pokefindr
+    ports:
+      - "5433:5432"
+    volumes:
+      - pokefindr-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pokefindr -d pokefindr"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  pokefindr-db:

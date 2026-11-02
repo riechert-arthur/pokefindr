@@ -7,7 +7,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest"
+    "test": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.mts",
+    "typecheck": "tsc --noEmit",
+    "db:up": "docker compose up -d --wait db",
+    "db:down": "docker compose down",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:baseline": "tsx scripts/db/baseline.ts",
+    "db:pull": "drizzle-kit pull --config drizzle.pull.config.ts",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
@@ -19,9 +28,11 @@
     "@supabase/supabase-js": "^2.46.2",
     "@tailwindcss/typography": "^0.5.15",
     "@vercel/analytics": "^1.4.1",
+    "@vercel/functions": "^3.9.11",
     "axios": "^1.9.0",
     "class-variance-authority": "^0.7.1",
     "cookie": "^1.0.2",
+    "drizzle-orm": "^0.45.4",
     "fuse.js": "^7.1.0",
     "jose": "^6.0.11",
     "jsonwebtoken": "^9.0.2",
@@ -29,6 +40,7 @@
     "mapbox-gl": "^3.12.0",
     "next": "^15.3.2",
     "next-themes": "^0.4.6",
+    "postgres": "^3.4.9",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.56.3",
@@ -42,6 +54,7 @@
     "zod": "^3.24.4"
   },
   "devDependencies": {
+    "@next/env": "^15.3.2",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -50,10 +63,12 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@vitejs/plugin-react": "^4.4.1",
+    "drizzle-kit": "^0.31.11",
     "eslint": "^8",
     "eslint-config-next": "15.0.3",
     "jsdom": "^26.1.0",
     "tailwindcss": "^3.4.1",
+    "tsx": "^4.20.6",
     "typescript": "^5",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.1.3"

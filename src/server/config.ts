@@ -19,6 +19,13 @@ const serverSchema = z.object({
   /** Secret used to sign the `app_session` cookie. */
   JWT_SECRET: z.string().min(1),
 
+  /** Pooled Postgres connection string used at runtime. Postgres 15+ with PostGIS. */
+  DATABASE_URL: z.string().url(),
+  /** Max connections per server instance. Keep small on serverless hosts. */
+  DATABASE_POOL_MAX: z.coerce.number().int().positive().default(5),
+  /** Set automatically on Vercel. */
+  VERCEL: z.string().optional(),
+
   // Supabase is still used for auth until the auth migration lands.
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
