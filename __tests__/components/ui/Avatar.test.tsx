@@ -58,13 +58,14 @@ describe("Avatar", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Log out" }))
 
+    // Everything after the awaited POST runs asynchronously, so wait for all of it.
     await waitFor(() => {
-      expect(postMock).toHaveBeenCalledWith("/api/auth/logout", {
+      expect(postMock).toHaveBeenCalledWith("/api/auth/logout", undefined, {
         withCredentials: true,
       })
+      expect(postMessage).toHaveBeenCalledWith("logout")
+      expect(mocks.refresh).toHaveBeenCalled()
+      expect(mocks.push).toHaveBeenCalledWith("/login")
     })
-    expect(postMessage).toHaveBeenCalledWith("logout")
-    expect(mocks.refresh).toHaveBeenCalled()
-    expect(mocks.push).toHaveBeenCalledWith("/login")
   })
 })
