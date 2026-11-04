@@ -24,7 +24,6 @@ import { Button } from "@/components/ui/Button"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import machineData from "@/data/vending_machines_mod.json"
 import { handleSubmitError } from "@/lib/forms"
 import { useSessionContext } from "@/components/providers/SessionProvider"
 import { useRouter } from "next/navigation"
@@ -144,27 +143,15 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
   )
 
   useEffect(() => {
-    if (!info) return;
-
-    const feature = machineData.features[info.feature_index];
-    const coords = feature.geometry?.coordinates;
-    if (!coords) {
-      return;
-    }
-
-    const [longitude, latitude] = coords;
-    loadReviews(latitude, longitude);
-  }, [info, loadReviews]);
+    if (!info) return
+    loadReviews(info.latitude, info.longitude)
+  }, [info, loadReviews])
 
   const onReviewSubmit = async (values: ReviewFormValues) => {
     if (!info) return
 
     try {
-      const feature = machineData.features[info.feature_index];
-      const coords = feature.geometry?.coordinates;
-      if (!coords) return;
-
-      const [longitude, latitude] = coords;
+      const { latitude, longitude } = info
 
       await axios.post(
         "/api/reviews",
