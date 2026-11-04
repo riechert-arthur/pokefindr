@@ -1,1 +1,1 @@
- sudo docker build -t pokefindr:latest .
+ sudo docker build -f Dockerfile.dev -t pokefindr:latest .
