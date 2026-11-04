@@ -1,0 +1,87 @@
+name: Tests
+
+# Runs on every pull request, whatever its base branch, so each PR in a
+# stacked series gets checked. Branches without integration tests yet skip
+# that job instead of failing.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint and typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npx tsc --noEmit
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      # Integration tests are excluded by vitest.config.mts.
+      - run: npx vitest run --reporter=default --reporter=github-actions
+
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: pokefindr
+          POSTGRES_PASSWORD: pokefindr
+          POSTGRES_DB: pokefindr
+        ports: ["5433:5432"]
+        options: >-
+          --health-cmd "pg_isready -U pokefindr"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      # The test setup drops and recreates this database and applies every
+      # migration, so no separate migrate step is needed.
+      TEST_DATABASE_URL: postgres://pokefindr:pokefindr@localhost:5433/pokefindr_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for integration tests
+        id: present
+        run: |
+          if [ -f vitest.integration.config.mts ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::No integration tests on this branch yet; skipping."
+          fi
+      - if: steps.present.outputs.found == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - if: steps.present.outputs.found == 'true'
+        run: npm ci --no-audit --no-fund
+      - if: steps.present.outputs.found == 'true'
+        run: npx vitest run --config vitest.integration.config.mts --reporter=default --reporter=github-actions
