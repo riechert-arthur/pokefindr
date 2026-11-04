@@ -1,30 +1,14 @@
-
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getAdminClient } from '@/lib/supabase/db'
+import { getSessionUserId } from '@/server/auth/request'
+import { getProfile } from '@/server/services/users'
 
 export async function GET(req: NextRequest) {
-  const userId = req.headers.get("x-user-id")
-  if (!userId) {
-    return NextResponse.json(
-      { error: "Unauthenticated" },
-      { status: 401 },
-    )
-  }
+  const userId = getSessionUserId(req)
+  if (!userId) return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
 
-  const { data: profile, error } = await getAdminClient()
-    .from('profiles')
-    .select('id, username, full_name, metadata')
-    .eq('id', userId)
-    .single()
-
-  if (error || !profile) {
-    return NextResponse.json(
-      { error: "Account not found" },
-      { status: 404 },
-    )
-  }
+  const profile = await getProfile(userId)
+  if (!profile) return NextResponse.json({ error: 'Account not found' }, { status: 404 })
 
   return NextResponse.json({ user: profile })
 }
-
