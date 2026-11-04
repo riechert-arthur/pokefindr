@@ -35,7 +35,8 @@ export default function Avatar({
 
   const handleLogout = async () => {
     try {
-      await axios.post('/api/auth/logout', { withCredentials: true })
+      // No body; request options go in the third argument.
+      await axios.post('/api/auth/logout', undefined, { withCredentials: true })
       new BroadcastChannel("auth").postMessage("logout")
       router.refresh()
       router.push('/login')

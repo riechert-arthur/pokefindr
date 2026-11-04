@@ -1,0 +1,94 @@
+name: Tests
+
+# Runs on every pull request, whatever its base branch, so each PR in a
+# stacked series gets checked. Branches without integration tests yet skip
+# that job instead of failing.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  # Superseded PR pushes are cancelled; every commit on main gets a full run.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint and typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npx tsc --noEmit
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      # Integration tests need Postgres and run in their own job.
+      - run: npx vitest run --exclude "__tests__/integration/**" --reporter=default --reporter=github-actions
+
+  integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # The test setup drops and recreates this database and applies every
+      # migration, so no separate migrate step is needed.
+      TEST_DATABASE_URL: postgres://pokefindr:pokefindr@localhost:5433/pokefindr_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for integration tests
+        id: present
+        run: |
+          if [ -f vitest.integration.config.mts ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          elif [ -d __tests__/integration ]; then
+            echo "::error::__tests__/integration exists but vitest.integration.config.mts does not. Was the config renamed?"
+            exit 1
+          else
+            echo "::notice::No integration tests on this branch yet; skipping."
+          fi
+      # Started here rather than as a job service, so branches without
+      # integration tests don't pay for pulling and booting it.
+      - name: Start PostGIS
+        if: steps.present.outputs.found == 'true'
+        run: |
+          docker run -d --name postgis \
+            -e POSTGRES_USER=pokefindr -e POSTGRES_PASSWORD=pokefindr -e POSTGRES_DB=pokefindr \
+            -p 5433:5432 \
+            --health-cmd "pg_isready -U pokefindr" --health-interval 2s --health-timeout 3s --health-retries 30 \
+            postgis/postgis:16-3.4
+          for _ in $(seq 60); do
+            [ "$(docker inspect -f '{{.State.Health.Status}}' postgis)" = healthy ] && exit 0
+            sleep 2
+          done
+          docker logs postgis
+          exit 1
+      - if: steps.present.outputs.found == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - if: steps.present.outputs.found == 'true'
+        run: npm ci --no-audit --no-fund
+      - if: steps.present.outputs.found == 'true'
+        run: npx vitest run --config vitest.integration.config.mts --reporter=default --reporter=github-actions
