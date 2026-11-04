@@ -10,7 +10,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  checks:
+  # Lint, typecheck, unit and integration tests live in tests.yml.
+  build:
+    name: Production build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,15 +21,13 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npx vitest run
       - name: Build (no secrets needed)
         run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: 1
 
-  database:
+  migrations:
+    name: Migrations
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -61,9 +61,9 @@ jobs:
         run: npx drizzle-kit migrate
         env:
           DATABASE_URL: postgres://pokefindr:pokefindr@localhost:5433/pokefindr
-      - run: npm run test:integration
 
   container:
+    name: Container smoke test
     # Proves the app runs outside Vercel: production image + plain PostGIS.
     runs-on: ubuntu-latest
     steps:
