@@ -1,71 +1,39 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getAdminClient } from '@/lib/supabase/db'
+import { reviewSchema } from '@/lib/schemas'
+import { getSessionUserId } from '@/server/auth/request'
+import { deleteReview, isUuid, updateReview } from '@/server/services/reviews'
 
-export async function DELETE(
-  req: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  const { id: reviewId } = await context.params
+type Context = { params: Promise<{ id: string }> }
 
-  const userId = req.headers.get("x-user-id")
-  if (!userId) {
-    return NextResponse.json(
-      { error: "Unauthenticated" },
-      { status: 401 },
-    )
-  }
+const notFound = () => NextResponse.json({ error: 'Review not found' }, { status: 404 })
 
-  const { error } = await getAdminClient()
-    .from('location_ratings')
-    .delete()
-    .eq('id', reviewId)
-    .eq('user_id', userId)
+export async function DELETE(req: NextRequest, context: Context) {
+  const userId = getSessionUserId(req)
+  if (!userId) return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
+  const { id } = await context.params
+  if (!isUuid(id)) return notFound()
 
-  return NextResponse.json({ success: true })
+  const deleted = await deleteReview({ reviewId: id, userId })
+  return deleted ? NextResponse.json({ success: true }) : notFound()
 }
 
-export async function PATCH(
-  req: NextRequest,
-  context: { params: Promise<{ id: string }> }
-) {
-  const { id: reviewId } = await context.params
+export async function PATCH(req: NextRequest, context: Context) {
+  const userId = getSessionUserId(req)
+  if (!userId) return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
 
-  const userId = req.headers.get("x-user-id")
-  if (!userId) {
+  const { id } = await context.params
+  if (!isUuid(id)) return notFound()
+
+  const parsed = reviewSchema.safeParse(await req.json().catch(() => null))
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "Unauthenticated" },
-      { status: 401 },
+      { error: parsed.error.issues.map((i) => i.message).join(', ') },
+      { status: 400 },
     )
   }
 
-  const body = await req.json()
-  const { text, rating } = body as {
-    text?: string
-    rating?: number
-  }
-  if (typeof text !== 'string' || typeof rating !== 'number') {
-    return NextResponse.json(
-      { error: 'Request must include comment (string) and rating (number)' },
-      { status: 400 }
-    )
-  }
-
-  const { data, error } = await getAdminClient()
-    .from('location_ratings')
-    .update({ text, rating })
-    .eq('id', reviewId)
-    .eq('user_id', userId)
-    .select()       
-    .single()
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
-  }
-
-  return NextResponse.json({ success: true, review: data })
+  const review = await updateReview({ reviewId: id, userId, ...parsed.data })
+  return review ? NextResponse.json({ success: true, review }) : notFound()
 }
