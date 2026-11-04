@@ -1,6 +1,6 @@
 import React from "react"
 import { describe, it, expect, afterEach, vi } from "vitest"
-import { render, fireEvent, screen, cleanup } from "@testing-library/react"
+import { render, fireEvent, screen } from "@testing-library/react"
 
 async function renderBanner() {
   vi.resetModules()
@@ -28,8 +28,8 @@ async function renderBanner() {
 describe("AffiliateBanner Component", () => {
   afterEach(() => {
     vi.resetAllMocks()
-    vi.stubEnv("NODE_ENV", undefined)
-    cleanup()
+    // Restores NODE_ENV and the NEXT_PUBLIC_* stubs to their original values.
+    vi.unstubAllEnvs()
   })
 
   it("renders banner and close button by default", async () => {

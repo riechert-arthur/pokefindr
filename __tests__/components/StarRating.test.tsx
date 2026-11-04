@@ -7,7 +7,9 @@ describe("StarRating", () => {
   it("renders a readonly five-star rating", () => {
     const { container } = render(<StarRating rating={3.5} />)
 
-    expect(container.querySelectorAll("span")).toHaveLength(5)
+    const stars = container.firstElementChild!.children
+    expect(stars).toHaveLength(5)
+    expect([...stars].every((star) => star.tagName === "SPAN")).toBe(true)
     expect(screen.queryAllByRole("button")).toHaveLength(0)
   })
 
