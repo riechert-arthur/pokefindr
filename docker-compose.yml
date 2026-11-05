@@ -1,7 +1,9 @@
 # Local stack. Start or update everything with `make run` (docs/database.md).
 #
-#   db    PostGIS, on localhost:5433 for host tools
-#   init  one-off: installs dependencies, applies migrations, checks the schema, seeds
+#   db    PostGIS, on localhost:5433 for host tools. One database per git branch
+#         (DB_NAME, set by the Makefile; main's is "pokefindr")
+#   init  one-off: installs dependencies, creates the branch database if needed,
+#         applies migrations, checks the schema, seeds
 #   web   Next.js dev server on localhost:3000, started once init has succeeded
 name: pokefindr
 
@@ -14,18 +16,19 @@ name: pokefindr
 #       init:
 #         condition: service_completed_successfully
 x-app: &app
-  build:
-    context: .
-    dockerfile: Dockerfile.dev
+  # Built once, by init (below); the other services reuse the local image.
   image: pokefindr-dev:latest
+  pull_policy: never
   volumes:
     - .:/app
     - node_modules:/app/node_modules
     - next:/app/.next
   environment:
-    # Containers always use this stack's database, whatever .env.local says.
-    DATABASE_URL: postgres://pokefindr:pokefindr@db:5432/pokefindr
-    DATABASE_URL_UNPOOLED: postgres://pokefindr:pokefindr@db:5432/pokefindr
+    # Containers always use this stack's database for the current branch,
+    # whatever .env.local says.
+    DATABASE_URL: postgres://pokefindr:pokefindr@db:5432/${DB_NAME:-pokefindr}
+    DATABASE_URL_UNPOOLED: postgres://pokefindr:pokefindr@db:5432/${DB_NAME:-pokefindr}
+    BASE_DATABASE: pokefindr
     NEXT_TELEMETRY_DISABLED: "1"
 
 services:
@@ -49,7 +52,10 @@ services:
 
   init:
     <<: *app
-    command: ["sh", "-c", "npm run --silent db:migrate && npm run --silent db:check && npm run --silent db:seed"]
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: ["sh", "-c", "npx tsx scripts/db/branchDatabase.ts && npm run --silent db:migrate && npm run --silent db:check && npm run --silent db:seed"]
     depends_on:
       db:
         condition: service_healthy

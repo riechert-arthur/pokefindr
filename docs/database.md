@@ -44,7 +44,7 @@ server isn't restarted.
 | Service | What it does |
 |---|---|
 | `db` | PostGIS 16, also published on localhost:5433 for host tools |
-| `init` | Runs once per `make run`: installs dependencies if needed, `db:migrate`, `db:check`, `db:seed` |
+| `init` | Runs once per `make run`: installs dependencies if needed, creates the branch's database if it's new, `db:migrate`, `db:check`, `db:seed` |
 | `web` | `next dev` on localhost:3000, with hot reload. Starts after `init` succeeds |
 
 Workers will be services that share the app's definition (`x-app` in
@@ -52,8 +52,9 @@ Workers will be services that share the app's definition (`x-app` in
 `make run` brings them up too.
 
 Other commands: `make stop`, `make logs`, `make shell` (a shell in the web
-container), and `make reset`, which **deletes** the local database and
-dependency volumes and starts again.
+container), `make prune` (see "Branch databases" below), and `make reset`,
+which **deletes** every local database and the dependency volume and starts
+again.
 
 Notes:
 - `.env.local` is created from `.env.template` with a random `JWT_SECRET`, and
@@ -66,6 +67,24 @@ Notes:
 - `node_modules` and `.next` live in Docker volumes. For editor type checking
   and the tests below, also run `npm install` on the host.
 - If a port is taken: `make run WEB_PORT=3001 DB_PORT=5434`.
+
+### Branch databases
+
+Each git branch gets its own local database, so a migration you try on one
+branch never reaches another, even if you never merge it.
+
+- `main` uses `pokefindr`, and only ever gets `main`'s migrations, so it
+  matches what production will have.
+- Any other branch uses `pokefindr_b_<branch>_<hash>`. The first `make run` on
+  a branch copies `main`'s database (a fast `CREATE DATABASE … TEMPLATE`), so it
+  starts with `main`'s data, then applies the branch's own migrations.
+- Switching back to a branch finds its database as you left it.
+- If `main`'s database already has a migration the branch doesn't (`main` moved
+  on after the branch was cut), the branch starts from an empty database
+  instead, built by its migrations and seed. Rebase to get `main`'s data.
+- `make prune` drops the databases of local branches you've deleted.
+- `make run` prints the current branch's database URL for host tools. The
+  `DATABASE_URL` in `.env.local` points at `main`'s database.
 - **A local database from before migrations existed** (tables but no
   `kysely` schema) makes `init` fail because the tables already exist. Run
   `make reset`, or record the baseline with `npm run db:baseline` from the host.

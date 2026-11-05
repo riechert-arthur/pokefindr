@@ -141,6 +141,29 @@ jobs:
           docker compose logs --no-log-prefix --since "$since" init | tee init.log
           grep -q "applied 9999_ci_noop" init.log
           [ "$(grep -c '^applied ' init.log)" = 1 ] || { echo "::error::expected exactly one migration"; exit 1; }
+          docker compose exec -T web npx tsx scripts/db/migrate.ts down
+          rm database/migrations/9999_ci_noop.ts
+      - name: A branch's migrations stay in its own database
+        run: |
+          git config user.name ci && git config user.email ci@example.com
+          start=$(git rev-parse HEAD)
+          git switch -q -c ci-branch-a
+          printf 'export async function up(): Promise<void> {}\nexport async function down(): Promise<void> {}\n' > database/migrations/9999_ci_branch_a.ts
+          git add database/migrations && git commit -q -m "ci: branch migration"
+          since=$(date -u +%Y-%m-%dT%H:%M:%SZ); sleep 1
+          make run
+          docker compose logs --no-log-prefix --since "$since" init | tee init.log
+          grep -q "as a copy of pokefindr" init.log
+          grep -q "applied 9999_ci_branch_a" init.log
+          # Back on the original checkout, which never had that migration.
+          git switch -q --detach "$start"
+          since=$(date -u +%Y-%m-%dT%H:%M:%SZ); sleep 1
+          make run
+          docker compose logs --no-log-prefix --since "$since" init | tee init.log
+          grep -q "Nothing to apply." init.log
+          git branch -q -D ci-branch-a
+          make prune | tee prune.log
+          grep -q "Dropped 1 branch database" prune.log
       - name: Logs on failure
         if: failure()
         run: docker compose logs --tail 200
