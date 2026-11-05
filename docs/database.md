@@ -29,13 +29,65 @@ For the current Supabase project:
 
 ## Local development
 
+Everything runs in Docker (`docker-compose.yml`), so the host only needs Docker and make:
+
 ```bash
-npm run db:up          # PostGIS 16 on localhost:5433 (docker compose)
-npm run db:migrate     # apply migrations
-npm run dev
+make run     # start or update the whole stack; open http://localhost:3000
 ```
 
-`.env.local` needs `DATABASE_URL=postgres://pokefindr:pokefindr@localhost:5433/pokefindr`.
+`make run` is idempotent. The first time, it creates `.env.local`, builds the
+dev image, installs dependencies, starts PostGIS, applies migrations and seeds
+locations. After that it only does what changed: new dependencies after a
+change to `package-lock.json`, and new migrations after a pull. A running web
+server isn't restarted.
+
+| Service | What it does |
+|---|---|
+| `db` | PostGIS 16, also published on localhost:5433 for host tools |
+| `init` | Runs once per `make run`: installs dependencies if needed, creates the branch's database if it's new, `db:migrate`, `db:check`, `db:seed` |
+| `web` | `next dev` on localhost:3000, with hot reload. Starts after `init` succeeds |
+
+Workers will be services that share the app's definition (`x-app` in
+`docker-compose.yml`, which has an example) and start after `init`, so
+`make run` brings them up too.
+
+Other commands: `make stop`, `make logs`, `make shell` (a shell in the web
+container), `make prune` (see "Branch databases" below), and `make reset`,
+which **deletes** every local database and the dependency volume and starts
+again.
+
+Notes:
+- `.env.local` is created from `.env.template` with a random `JWT_SECRET`, and
+  never edited after that. `make run` stops with a list of the variables the
+  app needs at start-up that are still empty. Placeholder Supabase values are
+  enough to use the map.
+- The containers always use the stack's own database, whatever `DATABASE_URL`
+  in `.env.local` says. `.env.local`'s `DATABASE_URL` is for host tools such as
+  `npm run db:studio` or running `npm run dev` outside Docker.
+- `node_modules` and `.next` live in Docker volumes. For editor type checking
+  and the tests below, also run `npm install` on the host.
+- If a port is taken: `make run WEB_PORT=3001 DB_PORT=5434`.
+
+### Branch databases
+
+Each git branch gets its own local database, so a migration you try on one
+branch never reaches another, even if you never merge it.
+
+- `main` uses `pokefindr`, and only ever gets `main`'s migrations, so it
+  matches what production will have.
+- Any other branch uses `pokefindr_b_<branch>_<hash>`. The first `make run` on
+  a branch copies `main`'s database (a fast `CREATE DATABASE … TEMPLATE`), so it
+  starts with `main`'s data, then applies the branch's own migrations.
+- Switching back to a branch finds its database as you left it.
+- If `main`'s database already has a migration the branch doesn't (`main` moved
+  on after the branch was cut), the branch starts from an empty database
+  instead, built by its migrations and seed. Rebase to get `main`'s data.
+- `make prune` drops the databases of local branches you've deleted.
+- `make run` prints the current branch's database URL for host tools. The
+  `DATABASE_URL` in `.env.local` points at `main`'s database.
+- **A local database from before migrations existed** (tables but no
+  `kysely` schema) makes `init` fail because the tables already exist. Run
+  `make reset`, or record the baseline with `npm run db:baseline` from the host.
 
 Tests:
 
@@ -64,7 +116,7 @@ npm run test:integration   # creates and migrates pokefindr_test on the local se
    can't express, such as a default (`` sql`now()` ``) or a type like
    `` sql`geography(point, 4326)` ``. Name indexes and constraints the way the
    Drizzle schema does. `down` undoes `up` in reverse order.
-3. Run `npm run db:migrate`, then `npm run db:check`. If the database doesn't
+3. Run `make run` (or `npm run db:migrate`, then `npm run db:check`). If the database doesn't
    match the schema, `db:check` prints the SQL drizzle-kit would run to fix it.
    That shows what the migration is missing. It ignores what the schema leaves
    out on purpose (the legacy table and views listed in `scripts/db/drift.ts`,
