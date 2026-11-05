@@ -82,6 +82,23 @@ instead of pretending it worked.
 
 Migrations run in a deploy step (`npm run db:migrate`), never at app start-up.
 
+### Deploying migrations
+
+`.github/workflows/migrate.yml` runs on every push to `main` (and by hand from
+the Actions tab). It runs `db:migrate` and `db:check` on the Neon `staging`
+branch, then on `production` only if staging passed. One run at a time; a run
+is never cancelled halfway.
+
+Setup, once: create GitHub environments `staging` and `production`
+(Settings → Environments) and give each a secret `DATABASE_URL_UNPOOLED`, the
+**direct** (non-`-pooler`) connection string of that Neon branch. Optionally
+add required reviewers to `production` so each production migration waits for
+approval.
+
+Vercel deploys `main` at the same time, so new code can briefly run against the
+old schema. Write migrations that the previous release can live with (add
+columns before using them, drop them a release after they're unused).
+
 ## Running and rolling back migrations
 
 ```bash
