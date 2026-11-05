@@ -12,10 +12,9 @@ export interface LngLat {
  * Writes go through ST_MakePoint so the driver never has to encode WKB.
  * Reads arrive as (E)WKB hex, which `parsePointWkb` decodes.
  *
- * drizzle-kit wraps types it does not recognise in quotes, so any generated
- * migration that creates or alters a column of this type must be edited to
- * write `geography(point, 4326)` without quotes. A unit test
- * (__tests__/server/migrations.test.ts) fails if a quoted one slips through.
+ * drizzle-kit can't read this custom type back from a database, so the drift
+ * check (scripts/db/drift.ts) skips its false "change the type" for these
+ * columns after checking the type itself.
  */
 export const geographyPoint = customType<{ data: LngLat; driverData: string }>({
   dataType() {

@@ -1,14 +1,18 @@
 /**
- * Database schema: the source of truth for table types and migrations.
+ * Database schema: the source of truth for table types.
+ *
+ * Migrations are written separately with Kysely (database/migrations). The
+ * integration tests (and `npm run db:check`) fail if the database they build
+ * doesn't match this file.
  *
  * Mirrors the existing Supabase `public` schema, rebuilt from the generated
  * Supabase types. Column names match the live database exactly (including
  * the quoted "machineID", which the generated types predate: the weekly
  * update upserts on it); TypeScript property names are camelCase.
  *
- * `drizzle/0000_baseline.sql` must describe production exactly, because it is
- * recorded there without running. `npm run db:baseline` compares the database
- * with it first and refuses on any difference.
+ * `database/migrations/0000_baseline.ts` must describe production exactly,
+ * because it is recorded there without running. `npm run db:baseline` compares
+ * the database with it first and refuses on any difference.
  *
  * Not modelled here:
  * - Supabase's `auth` schema. In Supabase, `profiles.id` references

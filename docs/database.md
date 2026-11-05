@@ -1,8 +1,8 @@
 # Database
 
 PokeFindr talks to Postgres 15+ with PostGIS through [Drizzle ORM](https://orm.drizzle.team).
-Migrations are written by drizzle-kit and run by [Kysely's migrator](https://kysely.dev/docs/migrations),
-which adds rollbacks.
+Migrations are TypeScript files written with [Kysely](https://kysely.dev/docs/migrations)'s
+schema builder and run by Kysely's migrator, which adds rollbacks.
 The app only needs a connection string, so any provider that offers PostGIS
 and a connection pooler works.
 
@@ -10,10 +10,10 @@ and a connection pooler works.
 |---|---|
 | Schema (source of truth for types) | `src/server/db/schema/index.ts` |
 | Connection | `src/server/db/client.ts` (`getDb()`) |
-| Migrations (generated SQL, committed) | `drizzle/` |
-| Down migrations (hand-written SQL) | `drizzle/down/` |
+| Migrations (Kysely, `up` and `down` in one file) | `database/migrations/` |
 | Migration runner | `scripts/db/migrator.ts` |
-| Config | `drizzle.config.ts` |
+| Drift check (migrations vs. schema) | `scripts/db/drift.ts` |
+| drizzle-kit config (`db:pull`, `db:studio`) | `drizzle.config.ts` |
 
 ## Environment
 
@@ -47,12 +47,34 @@ npm run test:integration   # creates and migrates pokefindr_test on the local se
 ## Changing the schema
 
 1. Edit `src/server/db/schema/index.ts`.
-2. Run `npm run db:generate -- --name short_description`.
-3. Review the SQL in `drizzle/`. Edit it if needed (see the geography note below).
-4. Write `drizzle/down/<same name>.sql` to undo it (see `drizzle/down/README.md`).
-5. Check it both ways locally: `npm run db:migrate`, `npm run db:rollback`, `npm run db:migrate`.
-6. Commit the schema change, the migration and its down file together. CI fails
-   if the schema and migrations drift apart, or if a migration has no down file.
+2. Add `database/migrations/<NNNN>_short_description.ts`, numbered after the
+   last one, that exports `up(db)` and `down(db)`:
+   ```ts
+   import type { Kysely } from "kysely"
+
+   export async function up(db: Kysely<unknown>): Promise<void> {
+     await db.schema.alterTable("profiles").addColumn("nickname", "text").execute()
+   }
+
+   export async function down(db: Kysely<unknown>): Promise<void> {
+     await db.schema.alterTable("profiles").dropColumn("nickname").execute()
+   }
+   ```
+   Use the schema builder (`db.schema`). Pass a `sql` fragment only for what it
+   can't express, such as a default (`` sql`now()` ``) or a type like
+   `` sql`geography(point, 4326)` ``. Name indexes and constraints the way the
+   Drizzle schema does. `down` undoes `up` in reverse order.
+3. Run `npm run db:migrate`, then `npm run db:check`. If the database doesn't
+   match the schema, `db:check` prints the SQL drizzle-kit would run to fix it.
+   That shows what the migration is missing.
+4. Check it both ways: `npm run db:rollback`, then `npm run db:migrate`.
+5. Commit the schema change and the migration together. CI fails if the
+   migrations don't build exactly the schema, or if a migration has no `down`
+   (unless it's listed as irreversible in `__tests__/server/migrations.test.ts`).
+
+A migration that can't be undone safely (for example, one that drops data)
+can leave `down` out and be listed as irreversible. Rolling it back then fails
+instead of pretending it worked.
 
 Migrations run in a deploy step (`npm run db:migrate`), never at app start-up.
 
@@ -66,40 +88,33 @@ npm run db:rollback -- --to 0001_something  # undo every migration after 0001_so
 ```
 
 How it works (`scripts/db/migrator.ts`):
-- Migrations are the entries in `drizzle/meta/_journal.json`, run in name order.
-  Up is `drizzle/<tag>.sql`, down is `drizzle/down/<tag>.sql`.
+- Migrations are the files in `database/migrations`, run in name order.
 - Each applied migration is recorded by name in `kysely.kysely_migration`. The
   `kysely` schema keeps this out of `public`, so Supabase's API doesn't expose it.
 - Everything pending runs in one transaction under a lock, so a failed
   migration leaves nothing half-applied and two deploys can't migrate at once.
-- If an applied migration is missing from the journal, or a new one sorts
+- If an applied migration's file is missing, or a new one sorts
   before the last applied one (for example, a branch that merged late with an
   older number), the migrator stops with a "corrupted migrations" error
-  instead of skipping it. Renumber the late migration with `drizzle-kit` and
-  try again.
-- A migration without a down file can't be rolled back: `db:rollback` fails
+  instead of skipping it. Renumber the late migration and try again.
+- A migration without `down` can't be rolled back: `db:rollback` fails
   and changes nothing. The baseline is like this on purpose.
 
 **Production:** a rollback only undoes the schema. Vercel Instant Rollback
 restores old code but not the old schema, so keep schema changes compatible
 with the previous release (add first, remove in a later release), and read a
-down file before running it on production: one that drops a column drops its
-data.
+migration's `down` before running it on production: one that drops a column
+drops its data.
 
 **Switching branches locally:** roll back the branch's migrations before you
 switch away (`npm run db:rollback -- --to <last migration on main>`), because the
-down files stay on that branch. If you forget, `db:migrate` stops with the
+branch's migrations (and their `down`) stay on that branch. If you forget, `db:migrate` stops with the
 "missing migration" error; recreate the local database instead.
-
-**Geography columns:** drizzle-kit wraps `geography(point, 4326)` in quotes,
-because it doesn't recognise the type. Any generated migration that adds or
-alters such a column needs those quotes removed by hand. The unit tests fail
-if a migration still has them.
 
 ## Adopting the existing Supabase database (one time)
 
-The production database already has these tables, so `0000_baseline.sql`
-must be **recorded** there, not run:
+The production database already has these tables, so
+`database/migrations/0000_baseline.ts` must be **recorded** there, not run:
 
 1. Check that the schema in code matches production:
    ```bash
@@ -120,13 +135,16 @@ must be **recorded** there, not run:
    DATABASE_URL_UNPOOLED=<prod direct url> npm run db:baseline -- --dry-run
    DATABASE_URL_UNPOOLED=<prod direct url> npm run db:baseline
    ```
-   Both commands first compare the database with the baseline's snapshot
-   (`scripts/db/schemaCheck.ts`): every table, column (type, nullability,
-   default or not), primary key, index, foreign key, check constraint and enum
-   the schema models. On any difference they list it and stop without recording
-   anything. Fix `src/server/db/schema/index.ts`, regenerate the baseline, and
-   run it again. Tables the schema doesn't model, views, row-level security and
+   Both commands first compare the database with what the baseline migration
+   builds (`scripts/db/schemaCheck.ts`). The baseline runs in a scratch schema
+   inside a transaction that is rolled back, so nothing is left behind. The
+   comparison covers every table, column (type, nullability, default or not),
+   primary key, index, foreign key, check constraint and enum the baseline
+   creates. On any difference they list it and stop without recording
+   anything. Fix the baseline and `src/server/db/schema/index.ts`, and run it
+   again. Tables the baseline doesn't create, views, row-level security and
    foreign keys into `auth` are not compared.
-   Recording writes one row to `kysely.kysely_migration`, the same row
-   `db:migrate` writes when it applies a migration.
+   Recording goes through Kysely's migrator (with the baseline's `up` replaced
+   by a no-op), so it writes the same row to `kysely.kysely_migration` that
+   `db:migrate` would.
 3. From then on, `npm run db:migrate` applies only newer migrations.

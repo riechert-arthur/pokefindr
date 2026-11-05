@@ -31,15 +31,6 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
       - run: npx tsc --noEmit
-      - name: Schema and migrations are in sync
-        if: hashFiles('drizzle.config.ts') != ''
-        run: |
-          npx drizzle-kit generate
-          if [ -n "$(git status --porcelain drizzle)" ]; then
-            echo "::error::src/server/db/schema changed without a migration. Run 'npm run db:generate' and commit the result."
-            git status --porcelain drizzle
-            exit 1
-          fi
       - name: Build (no secrets needed)
         run: npm run build
         env:
@@ -65,7 +56,8 @@ jobs:
     timeout-minutes: 15
     env:
       # The test setup drops and recreates this database and applies every
-      # migration, so no separate migrate step is needed.
+      # migration, so no separate migrate step is needed. The tests also check
+      # that the migrations build exactly src/server/db/schema (drift check).
       TEST_DATABASE_URL: postgres://pokefindr:pokefindr@localhost:5433/pokefindr_test
     steps:
       - uses: actions/checkout@v4

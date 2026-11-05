@@ -12,12 +12,12 @@
     "typecheck": "tsc --noEmit",
     "db:up": "docker compose up -d --wait db",
     "db:down": "docker compose down",
-    "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/db/migrate.ts up",
     "db:rollback": "tsx scripts/db/migrate.ts down",
     "db:status": "tsx scripts/db/migrate.ts status",
+    "db:check": "tsx scripts/db/check.ts",
     "db:baseline": "tsx scripts/db/baseline.ts",
-    "db:pull": "drizzle-kit pull --config drizzle.pull.config.ts",
+    "db:pull": "drizzle-kit pull",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {

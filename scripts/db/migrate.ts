@@ -1,5 +1,5 @@
 /**
- * Applies, rolls back or lists migrations (see scripts/db/migrator.ts).
+ * Applies, rolls back or lists migrations in database/migrations (see scripts/db/migrator.ts).
  *
  *   npm run db:migrate                 # apply every pending migration
  *   npm run db:rollback                # undo the last applied migration
@@ -7,7 +7,7 @@
  *   npm run db:status                  # list migrations and when each was applied
  */
 import postgres from "postgres"
-import { loadDevEnv, migrationDatabaseUrl } from "./migrations"
+import { loadDevEnv, migrationDatabaseUrl } from "./env"
 import { createMigrator, throwIfFailed } from "./migrator"
 
 loadDevEnv()

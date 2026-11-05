@@ -4,7 +4,7 @@
 
 **Decision:** Keep **Drizzle ORM** for the schema and queries, and **drizzle-kit** to generate migration SQL. ~~Migrations are forward-only.~~
 
-**Update 2026-11-05:** migrations now **run with Kysely's `Migrator`** (the "migrations only, Drizzle kept for queries" option in §3), which gives `up`/`down` and `db:rollback`. drizzle-kit still writes `drizzle/<tag>.sql` from the Drizzle schema, so the schema lives in one place and the CI drift check still works. Down files are hand-written in `drizzle/down/<tag>.sql`. Kysely records each migration by name and refuses an out-of-order or missing one, which closes the "skipped silently" gap in §2. Details in `docs/database.md`. The production habits in §7 (two-step schema changes, backups as the emergency undo) still apply: a rollback restores the schema, not lost data or old code.
+**Update 2026-11-05:** migrations now **run with Kysely's `Migrator`** (the "migrations only, Drizzle kept for queries" option in §3), which gives `up`/`down` and `db:rollback`. Migrations are TypeScript files in `database/migrations/`, written with Kysely's schema builder, each with its own `up` and `down` (no raw `.sql` files). Drizzle stays the schema for queries; an integration test (and `npm run db:check`) fails if the migrations don't build exactly that schema, using drizzle-kit's push diff without applying it. Kysely records each migration by name and refuses an out-of-order or missing one, which closes the "skipped silently" gap in §2. Details in `docs/database.md`. The production habits in §7 (two-step schema changes, backups as the emergency undo) still apply: a rollback restores the schema, not lost data or old code.
 
 ---
 
@@ -94,7 +94,7 @@ Every option needs raw PostGIS SQL for the queries this app runs, so PostGIS rul
 
 - [x] ~~**CI ordering check**~~: Kysely refuses a migration that sorts before an applied one (2026-11-05). Still open: detecting an already-merged migration file that was edited.
 - [ ] **`npm run db:reset` and a seed script** (the backfill script from #65 could supply locations).
-- [x] Hand-written `drizzle/down/*.sql` with `db:rollback`, tested up → down → up in CI (2026-11-05, via Kysely).
+- [x] Down migrations (`down()` in each Kysely migration) with `db:rollback`, tested up → down → up in CI (2026-11-05).
 
 ## 9. When to revisit
 
