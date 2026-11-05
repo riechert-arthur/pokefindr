@@ -42,9 +42,12 @@ production   (Neon's default/root branch; the live data)
 
 ## 4. Moving the data
 
-- **Fresh start:** on an empty Neon production branch, `npm run db:migrate` builds the whole schema, the baseline included. The "Adopting the existing Supabase database" steps and `db:baseline` are then only needed if we restore a Supabase dump instead.
-- **Existing data:** users, profiles and reviews exist only in Supabase. If the project can still be restored, take `pg_dump --no-owner --data-only` of the `public` tables and load it after migrating. If it can't, those rows are lost. Locations can be rebuilt from `src/data/vending_machines_mod.json` or the ETL pipeline.
-- **Auth:** Supabase Auth goes away with Supabase, so the auth migration (phase 4, Better Auth) is now a blocker for login, not an optional later step. Foreign keys into `auth.users` won't exist on Neon.
+**Decided: start fresh. No user data is carried over.** There were few sign-ups, and most visitors only use the map, which doesn't need an account.
+
+- On an empty Neon production branch, `npm run db:migrate` builds the whole schema, the baseline included. The "Adopting the existing Supabase database" steps and `db:baseline` aren't needed.
+- **Not migrated:** users, profiles and reviews from Supabase. Existing users sign up again.
+- **Locations:** load them from `src/data/vending_machines_mod.json` (the backfill script from #65) or the ETL pipeline. Until the map reads from the database, it keeps using the bundled JSON, so it works with no data in Neon.
+- **Auth:** Supabase Auth goes away with Supabase, so login stays broken until the auth migration (phase 4, Better Auth) lands. Starting fresh makes that migration simpler: no password hashes or OAuth identities to carry over. Foreign keys into `auth.users` won't exist on Neon.
 
 ## 5. Caveats
 
@@ -57,5 +60,5 @@ production   (Neon's default/root branch; the live data)
 - [ ] Create the Neon project (region `us-east-1`, next to `iad1`) with `production` and `staging` branches. Enable PostGIS with `create extension postgis` (the baseline migration expects it).
 - [ ] Connect the Vercel Marketplace integration and turn on per-preview branches (Preview deploys aren't running on Vercel today).
 - [ ] Update `docs/database.md`: Neon URLs (pooled `-pooler` host for `DATABASE_URL`, direct host for `DATABASE_URL_UNPOOLED`) instead of the Supavisor ports.
-- [ ] Decide the data move (§4): restore Supabase and dump, or start fresh.
+- [ ] Load locations into the Neon production branch (§4).
 - [ ] Move auth off Supabase (`plans/postgres_orm_rearchitecture.md` phase 4) before production depends on Neon.

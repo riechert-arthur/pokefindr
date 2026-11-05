@@ -288,7 +288,7 @@ Phases 1–3 deliver the goal of rendering points from Postgres through an ORM. 
 
 1. ~~**ORM:** Drizzle (recommended) or Prisma?~~ Decided: Drizzle (2026-11-04, `plans/orm_migrations_decision.md`).
 2. **Auth:** Better Auth (recommended), Auth.js, or keep Supabase Auth for good (which effectively makes Supabase the provider)?
-3. **Password migration:** can we read `auth.users.encrypted_password` from the current project? If not, plan a forced password reset.
+3. ~~**Password migration:** can we read `auth.users.encrypted_password` from the current project? If not, plan a forced password reset.~~ Not needed: we start fresh on Neon and users sign up again (2026-11-05, `plans/db_provider_decision.md` §4).
 4. **Reviews:** one review per user per location, or many?
 5. **User-submitted locations:** in scope now (`created_by`, `is_official=false`, moderation), or later?
 6. ~~**Provider shortlist:** is Vercel Marketplace integration or DB branching for previews a must-have? That points to Neon.~~ Decided: Neon, with branches for production, staging and previews (2026-11-05, `plans/db_provider_decision.md`).
