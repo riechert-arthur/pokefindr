@@ -2,7 +2,7 @@
  * Loads the fixture locations in database/seeds/locations.json so a local
  * database isn't empty. Safe to run repeatedly (see seedLocations).
  *
- *   npm run db:seed    (make seed runs it against the local database)
+ *   npm run db:seed    (make run runs it in the init container)
  */
 import { loadDevEnv, migrationClient } from "./env"
 import { readSeedLocations, seedLocations } from "./seedLocations"

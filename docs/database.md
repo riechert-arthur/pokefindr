@@ -29,26 +29,46 @@ For the current Supabase project:
 
 ## Local development
 
+Everything runs in Docker (`docker-compose.yml`), so the host only needs Docker and make:
+
 ```bash
-make setup     # images, .env.local, npm ci, PostGIS on localhost:5433, migrations, seed data
-npm run dev
+make run     # start or update the whole stack; open http://localhost:3000
 ```
 
-`make setup` is safe to rerun: after a pull it only installs changed
-dependencies and applies new migrations. `make help` lists the single steps
-(`env`, `deps`, `db`, `migrate`, `seed`, …). Notes:
+`make run` is idempotent. The first time, it creates `.env.local`, builds the
+dev image, installs dependencies, starts PostGIS, applies migrations and seeds
+locations. After that it only does what changed: new dependencies after a
+change to `package-lock.json`, and new migrations after a pull. A running web
+server isn't restarted.
 
-- `make env` creates `.env.local` from `.env.template` with the local
-  `DATABASE_URL` and a random `JWT_SECRET`, and never edits an existing file.
-  Fill in the Supabase and Mapbox values yourself; it warns while required
-  ones are missing.
-- The `migrate` and `seed` targets always use the local database, even if
-  `.env.local` points somewhere else. `npm run db:*` uses whatever `.env.local` says.
-- `make seed` upserts the locations in `database/seeds/locations.json` by
-  `machineID`.
-- `make reset-db` **deletes** the local database volume and runs setup again.
-- `make shell` opens the Arch dev image (`Dockerfile`) with the repo mounted.
-  It replaces `install.sh` and `run.sh`.
+| Service | What it does |
+|---|---|
+| `db` | PostGIS 16, also published on localhost:5433 for host tools |
+| `init` | Runs once per `make run`: installs dependencies if needed, `db:migrate`, `db:check`, `db:seed` |
+| `web` | `next dev` on localhost:3000, with hot reload. Starts after `init` succeeds |
+
+Workers will be services that share the app's definition (`x-app` in
+`docker-compose.yml`, which has an example) and start after `init`, so
+`make run` brings them up too.
+
+Other commands: `make stop`, `make logs`, `make shell` (a shell in the web
+container), and `make reset`, which **deletes** the local database and
+dependency volumes and starts again.
+
+Notes:
+- `.env.local` is created from `.env.template` with a random `JWT_SECRET`, and
+  never edited after that. `make run` stops with a list of the variables the
+  app needs at start-up that are still empty. Placeholder Supabase values are
+  enough to use the map.
+- The containers always use the stack's own database, whatever `DATABASE_URL`
+  in `.env.local` says. `.env.local`'s `DATABASE_URL` is for host tools such as
+  `npm run db:studio` or running `npm run dev` outside Docker.
+- `node_modules` and `.next` live in Docker volumes. For editor type checking
+  and the tests below, also run `npm install` on the host.
+- If a port is taken: `make run WEB_PORT=3001 DB_PORT=5434`.
+- **A local database from before migrations existed** (tables but no
+  `kysely` schema) makes `init` fail because the tables already exist. Run
+  `make reset`, or record the baseline with `npm run db:baseline` from the host.
 
 Tests:
 
@@ -77,7 +97,7 @@ npm run test:integration   # creates and migrates pokefindr_test on the local se
    can't express, such as a default (`` sql`now()` ``) or a type like
    `` sql`geography(point, 4326)` ``. Name indexes and constraints the way the
    Drizzle schema does. `down` undoes `up` in reverse order.
-3. Run `npm run db:migrate`, then `npm run db:check`. If the database doesn't
+3. Run `make run` (or `npm run db:migrate`, then `npm run db:check`). If the database doesn't
    match the schema, `db:check` prints the SQL drizzle-kit would run to fix it.
    That shows what the migration is missing. It ignores what the schema leaves
    out on purpose (the legacy table and views listed in `scripts/db/drift.ts`,
