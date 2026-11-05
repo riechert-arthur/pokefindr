@@ -137,7 +137,7 @@ Use **Better Auth** (a library inside our app, not a hosted provider), storing `
 
 Make the app run unchanged on Vercel, in a container (Fly, Railway, Render, Cloud Run, ECS, a VPS), or on Node directly.
 - `next.config.ts`: `output: 'standalone'`.
-- Replace the dev `Dockerfile` with a multi-stage production image: `node:22-alpine` deps → build → `standalone` runner, non-root, `HEALTHCHECK` on `/api/health`. Keep the current Arch dev shell as `Dockerfile.dev` if it's still used (`run.sh` depends on it).
+- Replace the dev `Dockerfile` with a multi-stage production image: `node:22-alpine` deps → build → `standalone` runner, non-root, `HEALTHCHECK` on `/api/health`. Keep the current Arch dev shell as `Dockerfile.dev` if it's still used (`make shell` depends on it).
 - Add `GET /api/health`, which checks the DB with `select 1`.
 - Middleware stays Edge-compatible (it already is: `jose` + cookie only), and also runs on self-hosted Node.
 - `next/image`: add `sharp` as a dependency so image optimization works outside Vercel.

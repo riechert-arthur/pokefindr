@@ -1,4 +1,4 @@
-# Local development services. Start with `npm run db:up`.
+# Local development services. Start with `make setup` (or `make db`).
 name: pokefindr
 services:
   db:
@@ -8,11 +8,13 @@ services:
       POSTGRES_PASSWORD: pokefindr
       POSTGRES_DB: pokefindr
     ports:
-      - "5433:5432"
+      - "${DB_PORT:-5433}:5432"
     volumes:
       - pokefindr-db:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U pokefindr -d pokefindr"]
+      # -h 127.0.0.1: on a fresh volume the image's init step runs a temporary
+      # server on the Unix socket only. Checking over TCP waits for the real one.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U pokefindr -d pokefindr"]
       interval: 2s
       timeout: 3s
       retries: 30

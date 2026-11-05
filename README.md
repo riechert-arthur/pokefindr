@@ -8,17 +8,14 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+With Docker running:
 
 ```bash
+make setup    # .env.local, dependencies, local PostGIS, migrations, seed data
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
+
+`make setup` is safe to rerun at any time. See [docs/database.md](docs/database.md) for details and `make help` for the single steps.
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
