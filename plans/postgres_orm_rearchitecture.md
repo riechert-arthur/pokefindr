@@ -291,4 +291,4 @@ Phases 1–3 deliver the goal of rendering points from Postgres through an ORM. 
 3. **Password migration:** can we read `auth.users.encrypted_password` from the current project? If not, plan a forced password reset.
 4. **Reviews:** one review per user per location, or many?
 5. **User-submitted locations:** in scope now (`created_by`, `is_official=false`, moderation), or later?
-6. **Provider shortlist:** is Vercel Marketplace integration or DB branching for previews a must-have? That points to Neon.
+6. ~~**Provider shortlist:** is Vercel Marketplace integration or DB branching for previews a must-have? That points to Neon.~~ Decided: Neon, with branches for production, staging and previews (2026-11-05, `plans/db_provider_decision.md`).

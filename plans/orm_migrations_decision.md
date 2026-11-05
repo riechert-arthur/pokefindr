@@ -86,7 +86,7 @@ Every option needs raw PostGIS SQL for the queries this app runs, so PostGIS rul
 ## 7. How we work with it
 
 - **Two-step schema changes** (rollbacks exist now, but the habit still applies): first add the new column or table so old and new code both work; ship the code that uses it; remove the old thing in a later migration. If a migration is wrong, fix it with a new one.
-- **Backups:** Supabase point-in-time recovery (or the future provider's equivalent) is the undo for a bad production migration.
+- **Backups:** Neon point-in-time restore is the undo for a bad production migration (`plans/db_provider_decision.md`). Test risky migrations on the `staging` branch first.
 - **Run migrations from one deploy step only.** Kysely takes a lock, so two runs can't overlap, but one deploy step is still simpler.
 - **Local branch switching:** `npm run db:reset` (drop, migrate, seed) after switching to a branch with different migrations. Integration tests already create and migrate a fresh `pokefindr_test` database on each run, so they're unaffected. Per-branch databases (`CREATE DATABASE … TEMPLATE …`) only if resets get slow.
 
