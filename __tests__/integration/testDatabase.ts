@@ -13,18 +13,27 @@ export function testDatabaseUrl(): string {
   return url
 }
 
+// One connection and one TRUNCATE statement per test file, reused by every test.
+let connection: postgres.Sql | undefined
+let truncateStatement: string | null | undefined
+
 /** Empties every application table (keeps the schema and migrations). */
-export async function truncateAll(url = testDatabaseUrl()) {
-  const sql = postgres(url, { max: 1, onnotice: () => {} })
-  try {
-    const tables = await sql<{ tablename: string }[]>`
+export async function truncateAll() {
+  connection ??= postgres(testDatabaseUrl(), { max: 1, onnotice: () => {} })
+  if (truncateStatement === undefined) {
+    const tables = await connection<{ tablename: string }[]>`
       select tablename from pg_tables
       where schemaname = 'public' and tablename <> 'spatial_ref_sys'`
-    if (tables.length > 0) {
-      const list = tables.map((t) => `"public"."${t.tablename}"`).join(", ")
-      await sql.unsafe(`truncate ${list} restart identity cascade`)
-    }
-  } finally {
-    await sql.end({ timeout: 5 })
+    truncateStatement = tables.length
+      ? `truncate ${tables.map((t) => `"public"."${t.tablename}"`).join(", ")} restart identity cascade`
+      : null
   }
+  if (truncateStatement) await connection.unsafe(truncateStatement)
+}
+
+/** Closes the connection `truncateAll` opened. Call once per file, after all tests. */
+export async function closeTestConnection() {
+  await connection?.end({ timeout: 5 })
+  connection = undefined
+  truncateStatement = undefined
 }

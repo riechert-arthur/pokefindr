@@ -3,7 +3,12 @@
  *
  * Mirrors the existing Supabase `public` schema, rebuilt from the generated
  * Supabase types. Column names match the live database exactly (including
- * the quoted "machineID"); TypeScript property names are camelCase.
+ * the quoted "machineID", which the generated types predate: the weekly
+ * update upserts on it); TypeScript property names are camelCase.
+ *
+ * `drizzle/0000_baseline.sql` must describe production exactly, because it is
+ * recorded there without running. `npm run db:baseline` compares the database
+ * with it first and refuses on any difference.
  *
  * Not modelled here:
  * - Supabase's `auth` schema. In Supabase, `profiles.id` references
@@ -58,19 +63,35 @@ const locationColumns = {
   description: text("description"),
   geog: geographyPoint("geog"),
   isOfficial: boolean("is_official"),
-  createdBy: uuid("created_by").references(() => profiles.id),
-  createdAt: createdAt(),
 }
 
-export const locations = pgTable("locations", locationColumns, (t) => [
-  uniqueIndex("locations_machine_id_key").on(t.machineId),
-  index("locations_geog_gist").using("gist", t.geog),
-])
+export const locations = pgTable(
+  "locations",
+  {
+    ...locationColumns,
+    createdBy: uuid("created_by").references(() => profiles.id),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    uniqueIndex("locations_machine_id_key").on(t.machineId),
+    index("locations_geog_gist").using("gist", t.geog),
+  ],
+)
 
-/** ETL landing table; same shape as `locations`. */
-export const locationsStaging = pgTable("locations_staging", locationColumns, (t) => [
-  uniqueIndex("locations_staging_machine_id_key").on(t.machineId),
-])
+/**
+ * ETL landing table; same columns as `locations`. Production created it with
+ * `LIKE public.locations INCLUDING ALL`, which copies indexes (under
+ * Postgres-generated names, matched here) but not foreign keys, so
+ * `created_by` has no reference.
+ */
+export const locationsStaging = pgTable(
+  "locations_staging",
+  { ...locationColumns, createdBy: uuid("created_by"), createdAt: createdAt() },
+  (t) => [
+    uniqueIndex("locations_staging_machineID_idx").on(t.machineId),
+    index("locations_staging_geog_idx").using("gist", t.geog),
+  ],
+)
 
 export const locationRatings = pgTable(
   "location_ratings",
@@ -109,7 +130,8 @@ export const subscriptions = pgTable(
     userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
     planName: text("plan_name").notNull(),
     price: numeric("price", { mode: "number" }).notNull(),
-    startDate: timestamp("start_date", { withTimezone: true }).notNull(),
+    // Production has a default (start_date is optional on insert in the Supabase types).
+    startDate: timestamp("start_date", { withTimezone: true }).notNull().defaultNow(),
     endDate: timestamp("end_date", { withTimezone: true }).notNull(),
     createdAt: createdAt(),
   },

@@ -15,7 +15,7 @@ and a connection pooler works.
 
 | Variable | Used by | Notes |
 |---|---|---|
-| `DATABASE_URL` | the app | Pooled URL (PgBouncer/Supavisor in transaction mode, or the provider's pooled endpoint). Required at start-up. |
+| `DATABASE_URL` | the app | Pooled URL (PgBouncer/Supavisor in transaction mode, or the provider's pooled endpoint). Optional until request handlers use the database; `getDb()` throws without it. |
 | `DATABASE_URL_UNPOOLED` | migrations | Direct URL. Falls back to `DATABASE_URL`. |
 | `DATABASE_POOL_MAX` | the app | Connections per server instance (default 5). |
 
@@ -67,6 +67,8 @@ must be **recorded** there, not run:
    `subscriptions.price` and `subscriptions.start_date/end_date` were inferred
    from generated types and are the most likely to differ. Constraint and index
    names may differ too; that is harmless.
+   The generated Supabase types predate `locations."machineID"` (the weekly
+   update upserts on it), so the schema includes it even though the types don't.
    Also confirm `locations_staging` exists (it comes from the Supabase
    migration `20260528000100_create_locations_staging.sql` on the ETL branch).
    If it doesn't, apply that migration first.
@@ -75,4 +77,11 @@ must be **recorded** there, not run:
    DATABASE_URL_UNPOOLED=<prod direct url> npm run db:baseline -- --dry-run
    DATABASE_URL_UNPOOLED=<prod direct url> npm run db:baseline
    ```
+   Both commands first compare the database with the baseline's snapshot
+   (`scripts/db/schemaCheck.ts`): every table, column (type, nullability,
+   default or not), primary key, index, foreign key, check constraint and enum
+   the schema models. On any difference they list it and stop without recording
+   anything. Fix `src/server/db/schema/index.ts`, regenerate the baseline, and
+   run it again. Tables the schema doesn't model, views, row-level security and
+   foreign keys into `auth` are not compared.
 3. From then on, `npm run db:migrate` applies only newer migrations.

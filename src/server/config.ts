@@ -19,8 +19,12 @@ const serverSchema = z.object({
   /** Secret used to sign the `app_session` cookie. */
   JWT_SECRET: z.string().min(1),
 
-  /** Pooled Postgres connection string used at runtime. Postgres 15+ with PostGIS. */
-  DATABASE_URL: z.string().url(),
+  /**
+   * Pooled Postgres connection string used at runtime. Postgres 15+ with PostGIS.
+   * Optional until request handlers use the database, so deploys don't fail at
+   * start-up before it is configured. `getDb()` throws if it is missing.
+   */
+  DATABASE_URL: z.string().url().optional(),
   /** Max connections per server instance. Keep small on serverless hosts. */
   DATABASE_POOL_MAX: z.coerce.number().int().positive().default(5),
   /** Set automatically on Vercel. */

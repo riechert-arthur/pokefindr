@@ -282,8 +282,8 @@
         }
       },
       "indexes": {
-        "locations_staging_machine_id_key": {
-          "name": "locations_staging_machine_id_key",
+        "locations_staging_machineID_idx": {
+          "name": "locations_staging_machineID_idx",
           "columns": [
             {
               "expression": "machineID",
@@ -296,23 +296,24 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "locations_staging_geog_idx": {
+          "name": "locations_staging_geog_idx",
+          "columns": [
+            {
+              "expression": "geog",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gist",
+          "with": {}
         }
       },
-      "foreignKeys": {
-        "locations_staging_created_by_profiles_id_fk": {
-          "name": "locations_staging_created_by_profiles_id_fk",
-          "tableFrom": "locations_staging",
-          "tableTo": "profiles",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -523,7 +524,8 @@
           "name": "start_date",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "now()"
         },
         "end_date": {
           "name": "end_date",

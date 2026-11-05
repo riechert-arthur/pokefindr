@@ -12,7 +12,7 @@ PR #64 adds Drizzle with `drizzle-kit` migrations. Coming from Rails, we wanted 
 
 - migrations that run in a reliable order,
 - a way to roll them back (`db:rollback`),
-- good PostGIS support, since `locations.location` is `geography(Point, 4326)`,
+- good PostGIS support, since `locations.geog` is `geography(Point, 4326)`,
 - a sane local workflow when switching between branches with different migrations.
 
 Constraints: Next.js on Vercel (serverless), PostGIS, and PRs #65–#69 stacked on #64 already using Drizzle for queries (locations, reviews, users services, backfill script, health check, integration tests).

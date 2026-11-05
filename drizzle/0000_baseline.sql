@@ -65,7 +65,7 @@ CREATE TABLE "subscriptions" (
 	"user_id" uuid NOT NULL,
 	"plan_name" text NOT NULL,
 	"price" numeric NOT NULL,
-	"start_date" timestamp with time zone NOT NULL,
+	"start_date" timestamp with time zone DEFAULT now() NOT NULL,
 	"end_date" timestamp with time zone NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now()
 );
@@ -82,7 +82,6 @@ CREATE TABLE "trust_ratings" (
 ALTER TABLE "location_ratings" ADD CONSTRAINT "location_ratings_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "location_ratings" ADD CONSTRAINT "location_ratings_user_id_profiles_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "locations" ADD CONSTRAINT "locations_created_by_profiles_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."profiles"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "locations_staging" ADD CONSTRAINT "locations_staging_created_by_profiles_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."profiles"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "status_reports" ADD CONSTRAINT "status_reports_location_id_locations_id_fk" FOREIGN KEY ("location_id") REFERENCES "public"."locations"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "status_reports" ADD CONSTRAINT "status_reports_user_id_profiles_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "subscriptions" ADD CONSTRAINT "subscriptions_user_id_profiles_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."profiles"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -92,6 +91,7 @@ CREATE INDEX "location_ratings_location_id_idx" ON "location_ratings" USING btre
 CREATE INDEX "location_ratings_user_id_idx" ON "location_ratings" USING btree ("user_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "locations_machine_id_key" ON "locations" USING btree ("machineID");--> statement-breakpoint
 CREATE INDEX "locations_geog_gist" ON "locations" USING gist ("geog");--> statement-breakpoint
-CREATE UNIQUE INDEX "locations_staging_machine_id_key" ON "locations_staging" USING btree ("machineID");--> statement-breakpoint
+CREATE UNIQUE INDEX "locations_staging_machineID_idx" ON "locations_staging" USING btree ("machineID");--> statement-breakpoint
+CREATE INDEX "locations_staging_geog_idx" ON "locations_staging" USING gist ("geog");--> statement-breakpoint
 CREATE INDEX "status_reports_location_created_idx" ON "status_reports" USING btree ("location_id","created_at");--> statement-breakpoint
 CREATE INDEX "subscriptions_user_id_idx" ON "subscriptions" USING btree ("user_id");

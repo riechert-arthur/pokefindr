@@ -8,6 +8,12 @@
  *   npm run db:baseline -- --dry-run   # show what would be recorded
  *   npm run db:baseline                # record it
  *
+ * Before recording anything, the database is compared with the baseline's
+ * snapshot (drizzle/meta/0000_snapshot.json): every modelled table, column,
+ * primary key, index, foreign key, check constraint and enum. Any difference
+ * stops the script, because a recorded baseline is never run again, so
+ * anything it describes but the database lacks would never be created.
+ *
  * Writes the same bookkeeping row drizzle's migrator writes
  * (drizzle.__drizzle_migrations: sha256 of the SQL file + journal timestamp).
  */
@@ -16,6 +22,7 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 import postgres from "postgres"
 import { loadEnvConfig } from "@next/env"
+import { diffAgainstSnapshot, type Snapshot } from "./schemaCheck"
 
 loadEnvConfig(path.resolve(__dirname, "../.."))
 
@@ -44,17 +51,6 @@ async function main() {
 
   const sql = postgres(url, { max: 1, prepare: false })
   try {
-    // Refuse to baseline a database that doesn't look like ours.
-    const [{ count }] = await sql<{ count: number }[]>`
-      select count(*)::int as count from information_schema.tables
-      where table_schema = 'public' and table_name in ('locations', 'location_ratings', 'profiles')`
-    if (count < 3) {
-      throw new Error(
-        "This database is missing locations/location_ratings/profiles. " +
-          "It looks fresh: run `npm run db:migrate` instead.",
-      )
-    }
-
     const [{ exists }] = await sql<{ exists: boolean }[]>`
       select to_regclass('drizzle.__drizzle_migrations') is not null as exists`
     if (exists) {
@@ -64,6 +60,31 @@ async function main() {
         return
       }
     }
+
+    const snapshot = JSON.parse(
+      readFileSync(path.join(MIGRATIONS_DIR, `meta/${entry.tag.split("_")[0]}_snapshot.json`), "utf8"),
+    ) as Snapshot
+
+    // A database with none of our tables is fresh: it should be migrated, not baselined.
+    const tableNames = Object.values(snapshot.tables).map((t) => t.name)
+    const [{ count }] = await sql<{ count: number }[]>`
+      select count(*)::int as count from information_schema.tables
+      where table_schema = 'public' and table_name = any(${tableNames})`
+    if (count === 0) {
+      throw new Error("This database has none of the baseline's tables. It looks fresh: run `npm run db:migrate` instead.")
+    }
+
+    // Refuse to baseline a database that doesn't match the baseline exactly.
+    const differences = await diffAgainstSnapshot(sql, snapshot)
+    if (differences.length > 0) {
+      throw new Error(
+        `The database doesn't match ${entry.tag} (${differences.length} difference(s)):\n` +
+          differences.map((d) => `  - ${d}`).join("\n") +
+          "\n\nFix the schema and regenerate the baseline (or fix the database) before recording it. " +
+          "See docs/database.md, \"Adopting the existing Supabase database\".",
+      )
+    }
+    console.log(`Schema matches ${entry.tag}.`)
 
     console.log(`${dryRun ? "[dry run] would record" : "Recording"} ${entry.tag} (${hash.slice(0, 12)}…, ${entry.when})`)
     if (dryRun) return

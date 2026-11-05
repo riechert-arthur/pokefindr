@@ -1,5 +1,5 @@
 import { afterAll, beforeEach, vi } from "vitest"
-import { testDatabaseUrl, truncateAll } from "./testDatabase"
+import { closeTestConnection, testDatabaseUrl, truncateAll } from "./testDatabase"
 
 vi.mock("server-only", () => ({}))
 // revalidateTag needs a Next.js request context; tests only care that it was called.
@@ -22,4 +22,5 @@ beforeEach(async () => {
 afterAll(async () => {
   const { closeDb } = await import("@/server/db/client")
   await closeDb()
+  await closeTestConnection()
 })

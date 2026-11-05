@@ -234,7 +234,6 @@ Auth is the riskiest part of the plan and doesn't block rendering points, so it'
   ```ts
   import postgres from 'postgres'
   import { drizzle } from 'drizzle-orm/postgres-js'
-  import { attachDatabasePool } from '@vercel/functions'
   import * as schema from './schema'
 
   const client = postgres(process.env.DATABASE_URL!, {
@@ -242,10 +241,9 @@ Auth is the riskiest part of the plan and doesn't block rendering points, so it'
     prepare: false,       // required behind PgBouncer/Supavisor transaction mode
     idle_timeout: 20,
   })
-  attachDatabasePool(client)   // lets Vercel drain idle connections before suspending
   export const db = drizzle(client, { schema, casing: 'snake_case' })
   ```
-  Use a module-level singleton, with a `globalThis` guard in dev so hot reloads don't leak connections.
+  Use a module-level singleton, with a `globalThis` guard in dev so hot reloads don't leak connections. Don't use `@vercel/functions`' `attachDatabasePool`: it only supports `pg`-style pools and throws "Unsupported database pool type" for postgres-js. `idle_timeout` closes idle connections instead.
 - **Env vars:**
   - `DATABASE_URL`: pooled, used at runtime.
   - `DATABASE_URL_UNPOOLED`: direct, used by migrations only.

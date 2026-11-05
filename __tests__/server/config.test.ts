@@ -38,6 +38,16 @@ describe("getServerConfig", () => {
     expect(() => getServerConfig()).toThrowError(/APP_URL[\s\S]*JWT_SECRET/)
   })
 
+  it("allows DATABASE_URL to be missing until the app uses the database", () => {
+    vi.stubEnv("DATABASE_URL", undefined)
+    expect(getServerConfig().DATABASE_URL).toBeUndefined()
+  })
+
+  it("rejects an invalid DATABASE_URL", () => {
+    vi.stubEnv("DATABASE_URL", "not a url")
+    expect(() => getServerConfig()).toThrowError(/DATABASE_URL/)
+  })
+
   it("caches the parsed result", () => {
     const first = getServerConfig()
     vi.stubEnv("APP_URL", "https://changed.example")

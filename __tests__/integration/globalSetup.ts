@@ -4,6 +4,8 @@ import { drizzle } from "drizzle-orm/postgres-js"
 import { migrate } from "drizzle-orm/postgres-js/migrator"
 import { testDatabaseUrl } from "./testDatabase"
 
+const CONNECTION_ERRORS = new Set(["ECONNREFUSED", "ENOTFOUND", "ETIMEDOUT", "EHOSTUNREACH", "CONNECT_TIMEOUT"])
+
 /** Recreates the test database from scratch and applies every migration. */
 export default async function setup() {
   const url = testDatabaseUrl()
@@ -16,9 +18,15 @@ export default async function setup() {
     await admin.unsafe(`drop database if exists "${dbName}" with (force)`)
     await admin.unsafe(`create database "${dbName}"`)
   } catch (err) {
-    throw new Error(
-      `Could not reach Postgres at ${adminUrl.host}. Start it with \`npm run db:up\`.\n${String(err)}`,
-    )
+    const code = (err as { code?: string }).code
+    if (code && CONNECTION_ERRORS.has(code)) {
+      throw new Error(`Could not reach Postgres at ${adminUrl.host} (${code}). Start it with \`npm run db:up\`.`, {
+        cause: err,
+      })
+    }
+    throw new Error(`Could not recreate test database "${dbName}" at ${adminUrl.host}: ${String(err)}`, {
+      cause: err,
+    })
   } finally {
     await admin.end({ timeout: 5 })
   }

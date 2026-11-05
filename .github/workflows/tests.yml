@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   lint:
-    name: Lint and typecheck
+    name: Lint, typecheck and build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -31,6 +31,19 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
       - run: npx tsc --noEmit
+      - name: Schema and migrations are in sync
+        if: hashFiles('drizzle.config.ts') != ''
+        run: |
+          npx drizzle-kit generate
+          if [ -n "$(git status --porcelain drizzle)" ]; then
+            echo "::error::src/server/db/schema changed without a migration. Run 'npm run db:generate' and commit the result."
+            git status --porcelain drizzle
+            exit 1
+          fi
+      - name: Build (no secrets needed)
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
 
   unit:
     name: Unit tests
