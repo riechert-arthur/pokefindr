@@ -1,5 +1,6 @@
 "use client"
 
+import { publicConfig } from "@/config.public"
 import axios, { CancelTokenSource } from "axios"
 import { useState, useEffect, useRef, useCallback } from "react"
 import type { Feature, Point, FeatureCollection } from "geojson"
@@ -45,7 +46,7 @@ export function MapSearchBar({
   >([])
   const cancelRef = useRef<CancelTokenSource | null>(null)
   const { toggleSidebar } = useSidebar()
-  const token = process.env.NEXT_PUBLIC_MAPBOX_GEOCODING_API_KEY
+  const token = publicConfig.mapboxGeocodingToken
   const [isFocused, setIsFocused] = useState(false)
 
   const containerRef = useRef<HTMLDivElement>(null)

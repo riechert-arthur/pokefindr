@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { adminDB } from '@/lib/supabase/db'
+import { getAdminClient } from '@/lib/supabase/db'
 
 export async function GET(req: NextRequest) {
   const userId = req.headers.get("x-user-id")
@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  const { data, error } = await adminDB
+  const { data, error } = await getAdminClient()
     .from('location_ratings')
     .select(`
       id,

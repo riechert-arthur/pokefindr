@@ -1,5 +1,6 @@
 "use client"
 
+import { publicConfig } from "@/config.public"
 import type { FC } from "react"
 import { useEffect, useRef, useState } from "react"
 import Map, { FullscreenControl, NavigationControl } from "react-map-gl"
@@ -69,7 +70,7 @@ const MapInstance: FC = () => {
     <Map
       ref={mapRef}
       initialViewState={initialViewState}
-      mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOXGL_API_KEY}
+      mapboxAccessToken={publicConfig.mapboxAccessToken}
       style={{
         width: "100%",
         height: "100%",

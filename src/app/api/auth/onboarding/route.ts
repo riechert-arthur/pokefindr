@@ -1,11 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
-import jwt from 'jsonwebtoken'
-import { serialize } from 'cookie'
-import { adminDB } from '@/lib/supabase/db'
-
-const JWT_SECRET  = process.env.JWT_SECRET!
-const COOKIE_NAME = 'app_session'
+import { getAdminClient } from '@/lib/supabase/db'
+import { createSessionCookie, tierFromPlanName } from '@/server/auth/session'
 
 interface OnboardBody {
   access_token: string
@@ -41,7 +37,7 @@ export async function POST(req: NextRequest) {
   const {
     data: { user },
     error: authError
-  } = await adminDB.auth.getUser(access_token)
+  } = await getAdminClient().auth.getUser(access_token)
 
   if (authError || !user) {
     console.error('Auth callback error', authError)
@@ -51,7 +47,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { error: profileError } = await adminDB
+  const { error: profileError } = await getAdminClient()
     .from('profiles')
     .update({
       username,
@@ -68,7 +64,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { data: subData, error: subError } = await adminDB
+  const { data: subData, error: subError } = await getAdminClient()
     .from('subscriptions')
     .select('plan_name')
     .eq('user_id', user.id)
@@ -83,21 +79,9 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const tier = subData?.plan_name ? 'paid' : 'free'
+  const tier = tierFromPlanName(subData?.plan_name)
 
-  const token = jwt.sign(
-    { sub: user.id, email: user.email, tier },
-    JWT_SECRET,
-    { expiresIn: '7d' }
-  )
-
-  const cookie = serialize(COOKIE_NAME, token, {
-    httpOnly: true,
-    path: '/',
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 24 * 7,
-  })
+  const cookie = createSessionCookie({ sub: user.id, email: user.email, tier })
 
   return NextResponse.json(
     { ok: true },

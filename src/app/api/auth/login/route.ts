@@ -1,13 +1,8 @@
-
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import jwt from 'jsonwebtoken'
-import { serialize } from 'cookie'
 import { verifyUserCredentials } from '@/lib/supabase/auth'
-import { adminDB } from '@/lib/supabase/db'
-
-const JWT_SECRET   = process.env.JWT_SECRET!
-const COOKIE_NAME  = 'app_session'
+import { getAdminClient } from '@/lib/supabase/db'
+import { createSessionCookie, tierFromPlanName } from '@/server/auth/session'
 
 export async function POST(req: NextRequest) {
   const { email, password } = await req.json()
@@ -17,26 +12,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid credentials or email needs to be verified' }, { status: 401 })
   }
 
-  const { data: sub } = await adminDB
-    .from('subscriptions') 
+  const { data: sub } = await getAdminClient()
+    .from('subscriptions')
     .select('plan_name')
     .eq('user_id', user.id)
     .single()
 
-  const tier = sub ? 'paid' : 'free'
-
-  const token = jwt.sign(
-    { sub: user.id, email: user.email, tier },
-    JWT_SECRET,
-    { expiresIn: '7d' }
-  )
-
-  const cookie = serialize(COOKIE_NAME, token, {
-    httpOnly: true,
-    path: '/',
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 60 * 60 * 24 * 7,
+  const cookie = createSessionCookie({
+    sub: user.id,
+    email: user.email,
+    tier: tierFromPlanName(sub?.plan_name),
   })
 
   return NextResponse.json({ ok: true }, {
@@ -44,4 +29,3 @@ export async function POST(req: NextRequest) {
     headers: { 'Set-Cookie': cookie },
   })
 }
-

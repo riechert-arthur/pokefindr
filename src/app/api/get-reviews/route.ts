@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { adminDB } from '@/lib/supabase/db'
+import { getAdminClient } from '@/lib/supabase/db'
 
 const MAX_DISTANCE_METERS = 50      
 
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   if (Number.isNaN(lat) || Number.isNaN(lng))
     return NextResponse.json({ error: 'Invalid coordinates' }, { status: 400 })
 
-  const { data: loc, error: locErr } = await adminDB
+  const { data: loc, error: locErr } = await getAdminClient()
     .rpc('get_location_by_point', {
       lat_input:  lat,
       lng_input:  lng,
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
       { status: 200 },
     )
 
-  const { data: ratings, error: ratingsErr } = await adminDB
+  const { data: ratings, error: ratingsErr } = await getAdminClient()
     .from('location_ratings')
     .select('rating, text, user_id')
     .eq('location_id', loc.id)
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
     )
 
   const userIds = [...new Set(ratings.map(r => r.user_id!))]
-  const { data: profiles, error: profilesErr } = await adminDB
+  const { data: profiles, error: profilesErr } = await getAdminClient()
     .from('profiles')
     .select('id, username')
     .in('id', userIds)

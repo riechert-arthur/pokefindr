@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { registrationSchema } from '@/lib/schemas'
 import { signUpNewUser } from '@/lib/supabase/auth'
-import { adminDB } from '@/lib/supabase/db'
+import { getAdminClient } from '@/lib/supabase/db'
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No user id" }, { status: 404 })
   }
 
-  const { error } = await adminDB
+  const { error } = await getAdminClient()
     .from("profiles")
     .update({
       username: values.username,
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { error: subError } = await adminDB
+  const { error: subError } = await getAdminClient()
     .from('subscriptions')
     .select('plan_name')
     .eq('user_id', data.user.id)

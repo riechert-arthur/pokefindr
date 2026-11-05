@@ -2,15 +2,18 @@
 
 import React, { memo } from "react"
 import { useAdContext } from "@/components/providers/AdContextProvider"
+import { publicConfig } from "@/config.public"
 
 const AffiliateBanner: React.FC = () => {
   const { showBanner, setShowBanner } = useAdContext()
   if (!showBanner) return null
 
   const isProd = process.env.NODE_ENV === "production"
-  const pixelTrackingURL = process.env.NEXT_PUBLIC_PIXEL_TRACKING_URL_1
-  const affiliateLink = process.env.NEXT_PUBLIC_AFFILIATE_LINK_1
-  const imageLink = process.env.NEXT_PUBLIC_IMAGE_1
+  const {
+    pixelTrackingUrl: pixelTrackingURL,
+    link: affiliateLink,
+    image: imageLink,
+  } = publicConfig.affiliate
 
   return (
     <>

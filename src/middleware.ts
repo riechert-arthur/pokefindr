@@ -1,14 +1,13 @@
-
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { parse } from 'cookie'
 import { jwtVerify } from 'jose'
+import { SESSION_COOKIE_NAME } from '@/server/auth/cookie'
+import { getJwtSecret } from '@/server/edge-config'
 
-const COOKIE_NAME = 'app_session'
 const encoder     = new TextEncoder()
 
 interface SessionJWTPayload {
-  sub: string     
+  sub: string
   tier?: string    // e.g. 'paid' | 'free'
 }
 
@@ -26,33 +25,32 @@ export const config = {
   ],
 }
 
-export async function middleware(req: NextRequest) {
-  const cookies = parse(req.headers.get('cookie') || '')
-  const token   = cookies[COOKIE_NAME]
-
-  if (!token) {
-    const url = req.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
-  }
-
-  try {
-    const { payload } = await jwtVerify<SessionJWTPayload>(
-      token,
-      encoder.encode(process.env.JWT_SECRET!)
-    )
-
-    const userId   = payload.sub
-    const userTier = payload.tier ?? 'free'
-
-    const response = NextResponse.next()
-    response.headers.set('x-user-id',   userId)
-    response.headers.set('x-user-tier', userTier)
-    return response
-  } catch {
-    const url = req.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
-  }
+function redirectToLogin(req: NextRequest) {
+  const url = req.nextUrl.clone()
+  url.pathname = '/login'
+  return NextResponse.redirect(url)
 }
 
+export async function middleware(req: NextRequest) {
+  const token = req.cookies.get(SESSION_COOKIE_NAME)?.value
+  if (!token) return redirectToLogin(req)
+
+  // Read outside the try block: a missing secret is a server error, not a bad
+  // token, and must not turn into a silent redirect to /login.
+  const secret = encoder.encode(getJwtSecret())
+
+  try {
+    const { payload } = await jwtVerify<SessionJWTPayload>(token, secret)
+
+    // Pass the verified identity to route handlers as request headers.
+    // Building a fresh header set means a client-supplied x-user-id or
+    // x-user-tier can never reach a handler.
+    const headers = new Headers(req.headers)
+    headers.set('x-user-id', payload.sub)
+    headers.set('x-user-tier', payload.tier ?? 'free')
+
+    return NextResponse.next({ request: { headers } })
+  } catch {
+    return redirectToLogin(req)
+  }
+}
