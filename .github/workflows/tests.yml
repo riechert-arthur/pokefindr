@@ -119,6 +119,7 @@ jobs:
                  -e 's#^SUPABASE_SERVICE_ROLE_KEY=$#SUPABASE_SERVICE_ROLE_KEY=placeholder#' .env.local
       - name: First run
         run: |
+          docker compose version
           make run
           curl -fsS -o /dev/null http://localhost:3000/map
       - name: Second run changes nothing
