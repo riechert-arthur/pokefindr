@@ -80,7 +80,7 @@ jobs:
           docker run -d --name postgis \
             -e POSTGRES_USER=pokefindr -e POSTGRES_PASSWORD=pokefindr -e POSTGRES_DB=pokefindr \
             -p 5433:5432 \
-            --health-cmd "pg_isready -U pokefindr" --health-interval 2s --health-timeout 3s --health-retries 30 \
+            --health-cmd "pg_isready -h 127.0.0.1 -U pokefindr -d pokefindr" --health-interval 2s --health-timeout 3s --health-retries 30 \
             postgis/postgis:16-3.4
           for _ in $(seq 60); do
             [ "$(docker inspect -f '{{.State.Health.Status}}' postgis)" = healthy ] && exit 0
@@ -97,3 +97,35 @@ jobs:
         run: npm ci --no-audit --no-fund
       - if: steps.present.outputs.found == 'true'
         run: npx vitest run --config vitest.integration.config.mts --reporter=default --reporter=github-actions
+
+  setup:
+    name: make setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      # dev-db is setup without building the Arch dev shell image, which
+      # nothing here uses.
+      - name: First run (fresh clone)
+        run: make dev-db
+      - name: Second run changes nothing
+        run: |
+          before=$(sha256sum .env.local)
+          make dev-db | tee second-run.log
+          [ "$before" = "$(sha256sum .env.local)" ] || { echo "::error::.env.local changed"; exit 1; }
+          grep -q "Nothing to apply." second-run.log || { echo "::error::second run applied migrations"; exit 1; }
+          grep -q "0 added, 0 updated" second-run.log || { echo "::error::second run changed seed data"; exit 1; }
+          if grep -q "npm ci" second-run.log; then echo "::error::second run reinstalled dependencies"; exit 1; fi
+      - name: A new migration is the only one applied
+        run: |
+          cat > database/migrations/9999_ci_noop.ts <<'TS'
+          export async function up(): Promise<void> {}
+          export async function down(): Promise<void> {}
+          TS
+          make migrate | tee migrate.log
+          grep -q "applied 9999_ci_noop" migrate.log
+          [ "$(grep -c '^applied ' migrate.log)" = 1 ] || { echo "::error::expected exactly one migration"; exit 1; }

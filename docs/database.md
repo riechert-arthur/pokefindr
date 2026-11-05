@@ -30,12 +30,25 @@ For the current Supabase project:
 ## Local development
 
 ```bash
-npm run db:up          # PostGIS 16 on localhost:5433 (docker compose)
-npm run db:migrate     # apply migrations
+make setup     # images, .env.local, npm ci, PostGIS on localhost:5433, migrations, seed data
 npm run dev
 ```
 
-`.env.local` needs `DATABASE_URL=postgres://pokefindr:pokefindr@localhost:5433/pokefindr`.
+`make setup` is safe to rerun: after a pull it only installs changed
+dependencies and applies new migrations. `make help` lists the single steps
+(`env`, `deps`, `db`, `migrate`, `seed`, …). Notes:
+
+- `make env` creates `.env.local` from `.env.template` with the local
+  `DATABASE_URL` and a random `JWT_SECRET`, and never edits an existing file.
+  Fill in the Supabase and Mapbox values yourself; it warns while required
+  ones are missing.
+- The `migrate` and `seed` targets always use the local database, even if
+  `.env.local` points somewhere else. `npm run db:*` uses whatever `.env.local` says.
+- `make seed` upserts the locations in `database/seeds/locations.json` by
+  `machineID`.
+- `make reset-db` **deletes** the local database volume and runs setup again.
+- `make shell` opens the Arch dev image (`Dockerfile`) with the repo mounted.
+  It replaces `install.sh` and `run.sh`.
 
 Tests:
 
