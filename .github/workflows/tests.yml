@@ -98,34 +98,49 @@ jobs:
       - if: steps.present.outputs.found == 'true'
         run: npx vitest run --config vitest.integration.config.mts --reporter=default --reporter=github-actions
 
-  setup:
-    name: make setup
+  local-stack:
+    name: make run
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    env:
+      COMPOSE_PROGRESS: plain
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-      # dev-db is setup without building the Arch dev shell image, which
-      # nothing here uses.
-      - name: First run (fresh clone)
-        run: make dev-db
+      - name: Fresh clone without keys stops with a clear message
+        run: |
+          if make run 2>err.log; then echo "::error::expected make run to fail without keys"; exit 1; fi
+          cat err.log
+          grep -q NEXT_PUBLIC_SUPABASE_URL err.log
+          test -f .env.local
+      - name: Add placeholder keys (as a developer would)
+        run: |
+          sed -i -e 's#^NEXT_PUBLIC_SUPABASE_URL=$#NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321#' \
+                 -e 's#^NEXT_PUBLIC_SUPABASE_ANON_KEY=$#NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder#' \
+                 -e 's#^SUPABASE_SERVICE_ROLE_KEY=$#SUPABASE_SERVICE_ROLE_KEY=placeholder#' .env.local
+      - name: First run
+        run: |
+          make run
+          curl -fsS -o /dev/null http://localhost:3000/map
       - name: Second run changes nothing
         run: |
-          before=$(sha256sum .env.local)
-          make dev-db | tee second-run.log
-          [ "$before" = "$(sha256sum .env.local)" ] || { echo "::error::.env.local changed"; exit 1; }
-          grep -q "Nothing to apply." second-run.log || { echo "::error::second run applied migrations"; exit 1; }
-          grep -q "0 added, 0 updated" second-run.log || { echo "::error::second run changed seed data"; exit 1; }
-          if grep -q "npm ci" second-run.log; then echo "::error::second run reinstalled dependencies"; exit 1; fi
+          env_before=$(sha256sum .env.local)
+          web_before=$(docker inspect -f '{{.State.StartedAt}}' "$(docker compose ps -q web)")
+          since=$(date -u +%Y-%m-%dT%H:%M:%SZ); sleep 1
+          make run
+          docker compose logs --no-log-prefix --since "$since" init | tee init.log
+          [ "$env_before" = "$(sha256sum .env.local)" ] || { echo "::error::.env.local changed"; exit 1; }
+          [ "$web_before" = "$(docker inspect -f '{{.State.StartedAt}}' "$(docker compose ps -q web)")" ] || { echo "::error::web restarted"; exit 1; }
+          grep -q "Nothing to apply." init.log || { echo "::error::second run applied migrations"; exit 1; }
+          grep -q "0 added, 0 updated" init.log || { echo "::error::second run changed seed data"; exit 1; }
+          if grep -q "Installing dependencies" init.log; then echo "::error::second run reinstalled dependencies"; exit 1; fi
       - name: A new migration is the only one applied
         run: |
-          cat > database/migrations/9999_ci_noop.ts <<'TS'
-          export async function up(): Promise<void> {}
-          export async function down(): Promise<void> {}
-          TS
-          make migrate | tee migrate.log
-          grep -q "applied 9999_ci_noop" migrate.log
-          [ "$(grep -c '^applied ' migrate.log)" = 1 ] || { echo "::error::expected exactly one migration"; exit 1; }
+          printf 'export async function up(): Promise<void> {}\nexport async function down(): Promise<void> {}\n' > database/migrations/9999_ci_noop.ts
+          since=$(date -u +%Y-%m-%dT%H:%M:%SZ); sleep 1
+          make run
+          docker compose logs --no-log-prefix --since "$since" init | tee init.log
+          grep -q "applied 9999_ci_noop" init.log
+          [ "$(grep -c '^applied ' init.log)" = 1 ] || { echo "::error::expected exactly one migration"; exit 1; }
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --tail 200

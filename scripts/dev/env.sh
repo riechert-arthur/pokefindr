@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
-# Creates .env.local from .env.template if it doesn't exist. Never edits an
-# existing file; only warns about what it's missing.
-#
-#   scripts/dev/env.sh postgres://pokefindr:pokefindr@localhost:5433/pokefindr
+# Creates .env.local from .env.template if it doesn't exist, and never edits an
+# existing one. Fails if a variable the app needs at start-up is still empty.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
-local_url="${1:?usage: env.sh <local database url>}"
 file=.env.local
 
 # Value of a variable in a dotenv file, or empty if it's unset or blank.
@@ -16,38 +13,31 @@ read_var() {
 }
 
 if [ ! -e "$file" ]; then
-  secret=$(node -e 'process.stdout.write(require("crypto").randomBytes(48).toString("base64"))')
+  secret=$(head -c 48 /dev/urandom | base64 | tr -d '\n')
   {
-    echo "# Created by 'make env' from .env.template. Edit freely; make never overwrites this file."
-    sed -e "s#^DATABASE_URL=.*#DATABASE_URL=$local_url#" -e "s#^JWT_SECRET=\$#JWT_SECRET=$secret#" .env.template
+    echo "# Created by 'make run' from .env.template. Edit freely; make never overwrites this file."
+    sed -e "s#^JWT_SECRET=\$#JWT_SECRET=$secret#" .env.template
   } >"$file"
-  echo "Created $file (local DATABASE_URL and a random JWT_SECRET)."
-else
-  db_url=$(read_var DATABASE_URL "$file")
-  if [ -z "$db_url" ]; then
-    echo "warning: $file has no DATABASE_URL, so the app can't reach a database. Add:" >&2
-    echo "  DATABASE_URL=$local_url" >&2
-    echo "  (make leaves your file alone)" >&2
-  elif [ "$db_url" != "$local_url" ]; then
-    echo "note: DATABASE_URL in $file isn't the local database. make's db targets still use" \
-      "the local one, but npm run dev will use yours."
-  fi
+  echo "Created $file with a random JWT_SECRET."
 fi
 
-# Required at start-up by src/server/config.ts. Next.js loads these files in
-# this order (first wins), and variables set in the shell win over all of them.
+# Required at start-up by src/server/config.ts. The web container reads these
+# files the way Next.js does (first one wins). DATABASE_URL isn't listed: the
+# containers set it themselves.
 required=(APP_URL JWT_SECRET NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY)
 missing=()
 for var in "${required[@]}"; do
-  value="${!var:-}"
+  value=""
   for f in .env.development.local .env.local .env.development .env; do
-    [ -n "$value" ] && break
     value=$(read_var "$var" "$f")
+    [ -n "$value" ] && break
   done
   [ -n "$value" ] || missing+=("$var")
 done
 
 if [ ${#missing[@]} -gt 0 ]; then
-  echo "warning: npm run dev will fail at start-up until these are set in $file:" >&2
+  echo "error: the app won't start until these are set in $file:" >&2
   printf '  %s\n' "${missing[@]}" >&2
+  echo "Placeholders work if you only need the map, e.g. NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321" >&2
+  exit 1
 fi

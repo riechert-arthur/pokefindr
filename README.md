@@ -5,11 +5,10 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 With Docker running:
 
 ```bash
-make setup    # .env.local, dependencies, local PostGIS, migrations, seed data
-npm run dev
+make run    # database, migrations, seed data and the app, all in Docker
 ```
 
-`make setup` is safe to rerun at any time. See [docs/database.md](docs/database.md) for details and `make help` for the single steps.
+Then open http://localhost:3000. `make run` is safe to rerun at any time, e.g. after a pull. `make help` lists the other commands (`stop`, `logs`, `shell`, `reset`). See [docs/database.md](docs/database.md) for details.
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 

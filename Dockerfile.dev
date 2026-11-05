@@ -1,0 +1,9 @@
+# Image for every local service that runs the app's code (web, init, workers).
+# The repo is bind-mounted at /app and node_modules lives in a volume, so this
+# image only holds Node and the entrypoint. It rarely needs rebuilding.
+FROM node:20-bookworm-slim
+
+WORKDIR /app
+COPY scripts/dev/entrypoint.sh /usr/local/bin/dev-entrypoint
+ENTRYPOINT ["dev-entrypoint"]
+CMD ["bash"]

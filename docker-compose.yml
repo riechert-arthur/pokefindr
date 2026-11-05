@@ -1,5 +1,33 @@
-# Local development services. Start with `make setup` (or `make db`).
+# Local stack. Start or update everything with `make run` (docs/database.md).
+#
+#   db    PostGIS, on localhost:5433 for host tools
+#   init  one-off: installs dependencies, applies migrations, checks the schema, seeds
+#   web   Next.js dev server on localhost:3000, started once init has succeeded
 name: pokefindr
+
+# Shared by every service that runs the app's code. To add a worker:
+#
+#   worker-etl:
+#     <<: *app
+#     command: ["npx", "tsx", "scripts/workers/etl.ts"]
+#     depends_on:
+#       init:
+#         condition: service_completed_successfully
+x-app: &app
+  build:
+    context: .
+    dockerfile: Dockerfile.dev
+  image: pokefindr-dev:latest
+  volumes:
+    - .:/app
+    - node_modules:/app/node_modules
+    - next:/app/.next
+  environment:
+    # Containers always use this stack's database, whatever .env.local says.
+    DATABASE_URL: postgres://pokefindr:pokefindr@db:5432/pokefindr
+    DATABASE_URL_UNPOOLED: postgres://pokefindr:pokefindr@db:5432/pokefindr
+    NEXT_TELEMETRY_DISABLED: "1"
+
 services:
   db:
     image: postgis/postgis:16-3.4
@@ -19,5 +47,29 @@ services:
       timeout: 3s
       retries: 30
 
+  init:
+    <<: *app
+    command: ["sh", "-c", "npm run --silent db:migrate && npm run --silent db:check && npm run --silent db:seed"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    <<: *app
+    command: ["npx", "next", "dev", "--hostname", "0.0.0.0"]
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/map').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 5s
+      timeout: 60s
+      start_period: 120s
+      retries: 3
+
 volumes:
   pokefindr-db:
+  node_modules:
+  next:
