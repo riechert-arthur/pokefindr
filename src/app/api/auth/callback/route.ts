@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminClient } from '@/lib/supabase/db'
-import { createSessionCookie } from '@/server/auth/session'
+import { createSessionCookie, tierFromPlanName } from '@/server/auth/session'
 
 export async function POST(req: NextRequest) {
   const { access_token } = await req.json()
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
   }
 
   const planName = data.subscriptions?.[0]?.plan_name
-  const tier = planName ? 'paid' : 'free'
+  const tier = tierFromPlanName(planName)
 
   const cookie = createSessionCookie({ sub: user.id, email: user.email, tier })
 

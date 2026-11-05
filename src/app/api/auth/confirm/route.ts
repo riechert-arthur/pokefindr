@@ -1,7 +1,7 @@
 import { type EmailOtpType } from "@supabase/supabase-js"
 import { type NextRequest } from "next/server"
 import { redirect } from "next/navigation"
-import { getAnonClient } from "@/lib/supabase/db"
+import { createEphemeralAuthClient } from "@/lib/supabase/db"
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const next = searchParams.get("next") ?? "/"
 
   if (tokenHash && type) {
-    const { error } = await getAnonClient().auth.verifyOtp({
+    const { error } = await createEphemeralAuthClient().auth.verifyOtp({
       type,
       token_hash: tokenHash,
     })

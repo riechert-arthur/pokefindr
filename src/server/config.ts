@@ -10,7 +10,8 @@ import { z } from "zod"
  * misconfigured server fails on start-up instead of on the first request.
  */
 const serverSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  // Only compared to "production", so any other value (e.g. "staging") is allowed.
+  NODE_ENV: z.string().default("development"),
 
   /** Public base URL of the app, used to build links in emails and OAuth redirects. */
   APP_URL: z.string().url(),

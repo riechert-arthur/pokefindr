@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getAdminClient } from '@/lib/supabase/db'
-import { createSessionCookie } from '@/server/auth/session'
+import { createSessionCookie, tierFromPlanName } from '@/server/auth/session'
 
 interface OnboardBody {
   access_token: string
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const tier = subData?.plan_name ? 'paid' : 'free'
+  const tier = tierFromPlanName(subData?.plan_name)
 
   const cookie = createSessionCookie({ sub: user.id, email: user.email, tier })
 

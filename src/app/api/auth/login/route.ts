@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { verifyUserCredentials } from '@/lib/supabase/auth'
 import { getAdminClient } from '@/lib/supabase/db'
-import { createSessionCookie } from '@/server/auth/session'
+import { createSessionCookie, tierFromPlanName } from '@/server/auth/session'
 
 export async function POST(req: NextRequest) {
   const { email, password } = await req.json()
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   const cookie = createSessionCookie({
     sub: user.id,
     email: user.email,
-    tier: sub ? 'paid' : 'free',
+    tier: tierFromPlanName(sub?.plan_name),
   })
 
   return NextResponse.json({ ok: true }, {

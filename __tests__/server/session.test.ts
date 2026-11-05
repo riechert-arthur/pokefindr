@@ -10,6 +10,7 @@ import {
   SESSION_COOKIE_NAME,
   clearSessionCookie,
   createSessionCookie,
+  tierFromPlanName,
 } from "@/server/auth/session"
 
 const SECRET = "test-secret"
@@ -54,5 +55,14 @@ describe("session cookies", () => {
     expect(clearSessionCookie()).toMatch(
       new RegExp(`^${SESSION_COOKIE_NAME}=;.*Expires=Thu, 01 Jan 1970`)
     )
+  })
+})
+
+describe("tierFromPlanName", () => {
+  it("is paid only when there is a plan name", () => {
+    expect(tierFromPlanName("pro")).toBe("paid")
+    expect(tierFromPlanName(null)).toBe("free")
+    expect(tierFromPlanName(undefined)).toBe("free")
+    expect(tierFromPlanName("")).toBe("free")
   })
 })

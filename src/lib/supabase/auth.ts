@@ -1,6 +1,6 @@
 import "server-only"
 import { registrationSchema } from "@/lib/schemas"
-import { createEphemeralAuthClient, getAnonClient } from "./db"
+import { createEphemeralAuthClient } from "./db"
 import { getServerConfig } from "@/server/config"
 import { z } from "zod"
 
@@ -11,7 +11,9 @@ export type User = {
 }
 
 export async function signUpNewUser(values: z.infer<typeof registrationSchema>) {
-  return await getAnonClient().auth.signUp({
+  // Sign-up returns a session when email confirmation is off, so it needs a
+  // throwaway client too.
+  return await createEphemeralAuthClient().auth.signUp({
     email: values.email,
     password: values.password,
     options: {

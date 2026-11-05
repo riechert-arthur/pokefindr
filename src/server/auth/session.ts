@@ -2,11 +2,17 @@ import "server-only"
 import jwt from "jsonwebtoken"
 import { serialize } from "cookie"
 import { getServerConfig } from "@/server/config"
+import { SESSION_COOKIE_NAME } from "@/server/auth/cookie"
 
-export const SESSION_COOKIE_NAME = "app_session"
+export { SESSION_COOKIE_NAME }
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7
 
 export type SessionTier = "free" | "paid"
+
+/** A user is paid only when their subscription row has a plan name. */
+export function tierFromPlanName(planName: string | null | undefined): SessionTier {
+  return planName ? "paid" : "free"
+}
 
 export interface SessionClaims {
   sub: string

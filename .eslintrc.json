@@ -6,6 +6,10 @@
       {
         "selector": "MemberExpression[object.type='MemberExpression'][object.object.name='process'][object.property.name='env'][property.name!='NODE_ENV'][property.name!='NEXT_RUNTIME']",
         "message": "Read configuration through getServerConfig() (src/server/config.ts) or publicConfig (src/config.public.ts)."
+      },
+      {
+        "selector": "VariableDeclarator[id.type='ObjectPattern'][init.type='MemberExpression'][init.object.name='process'][init.property.name='env']",
+        "message": "Don't destructure process.env. Read configuration through getServerConfig() (src/server/config.ts) or publicConfig (src/config.public.ts)."
       }
     ]
   },
@@ -13,6 +17,7 @@
     {
       "files": [
         "src/server/config.ts",
+        "src/server/edge-config.ts",
         "src/config.public.ts",
         "__tests__/**",
         "*.config.*",
