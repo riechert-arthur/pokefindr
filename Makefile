@@ -25,7 +25,10 @@ run: preflight env ## Start or update everything: db, migrations, seed data, web
 	@# Mount points for the node_modules and .next volumes. Created here so
 	@# Docker doesn't create them owned by root, which breaks a host npm install.
 	@mkdir -p node_modules .next
-	@docker compose up --build --detach --wait || { \
+	@# Build first, then a plain up. `up --build` makes some Compose v2
+	@# releases recreate init and web even when the image didn't change.
+	@docker compose build --quiet init
+	@docker compose up --detach --wait || { \
 	  echo; echo "Startup failed. Last output from init and web:"; \
 	  docker compose logs --tail 40 init web; exit 1; }
 	@echo
