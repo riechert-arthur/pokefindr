@@ -15,6 +15,17 @@ describe("parsePointWkb", () => {
     expect(parsePointWkb(hex)).toEqual({ lng: 1, lat: 2 })
   })
 
+  it("rejects POINT EMPTY instead of returning NaN", () => {
+    // SELECT 'SRID=4326;POINT EMPTY'::geography
+    expect(() => parsePointWkb("0101000020E6100000000000000000F87F000000000000F87F")).toThrow("WKB Point is empty")
+  })
+
+  it("rejects truncated or non-hex input with a clear error", () => {
+    expect(() => parsePointWkb("0101000020E6100000")).toThrow("WKB Point is too short")
+    expect(() => parsePointWkb("01")).toThrow("WKB Point is too short")
+    expect(() => parsePointWkb("not hex")).toThrow("hex-encoded")
+  })
+
   it("rejects non-point geometries", () => {
     // LINESTRING EMPTY
     expect(() => parsePointWkb("010200000000000000")).toThrow(/Point/)

@@ -17,7 +17,7 @@
 import { readdirSync } from "node:fs"
 import path from "node:path"
 import { pathToFileURL } from "node:url"
-import { Kysely, Migrator, type Migration } from "kysely"
+import { Kysely, Migrator, type Migration, type Transaction } from "kysely"
 import { PostgresJSDialect } from "kysely-postgres-js"
 import type { Sql } from "postgres"
 import { ROOT_DIR } from "./env"
@@ -75,6 +75,25 @@ export function createMigrator(sql: Sql, migrations?: Migrations) {
     migrationTableName: MIGRATION_TABLE,
   })
   return { db, migrator }
+}
+
+class RolledBack extends Error {}
+
+/** Runs `fn` in a transaction that is always rolled back, and returns its result. */
+export async function inRolledBackTransaction<T>(
+  db: Kysely<unknown>,
+  fn: (trx: Transaction<unknown>) => Promise<T>,
+): Promise<T> {
+  let result: T | undefined
+  try {
+    await db.transaction().execute(async (trx) => {
+      result = await fn(trx)
+      throw new RolledBack()
+    })
+  } catch (err) {
+    if (!(err instanceof RolledBack)) throw err
+  }
+  return result as T
 }
 
 /** Throws the migrator's error, naming the migration that failed. */

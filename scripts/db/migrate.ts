@@ -6,8 +6,7 @@
  *   npm run db:rollback -- --to <tag>  # undo every migration after <tag>
  *   npm run db:status                  # list migrations and when each was applied
  */
-import postgres from "postgres"
-import { loadDevEnv, migrationDatabaseUrl } from "./env"
+import { loadDevEnv, migrationClient } from "./env"
 import { createMigrator, throwIfFailed } from "./migrator"
 
 loadDevEnv()
@@ -21,10 +20,7 @@ async function main() {
   const command = process.argv[2] ?? "up"
   if (!["up", "down", "status"].includes(command)) throw new Error(`Unknown command "${command}" (expected up, down or status)`)
 
-  const url = migrationDatabaseUrl()
-  if (!url) throw new Error("Set DATABASE_URL (or DATABASE_URL_UNPOOLED)")
-
-  const sql = postgres(url, { max: 1, prepare: false, onnotice: () => {} })
+  const sql = migrationClient()
   const { migrator } = createMigrator(sql)
   try {
     if (command === "status") {

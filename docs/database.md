@@ -66,7 +66,11 @@ npm run test:integration   # creates and migrates pokefindr_test on the local se
    Drizzle schema does. `down` undoes `up` in reverse order.
 3. Run `npm run db:migrate`, then `npm run db:check`. If the database doesn't
    match the schema, `db:check` prints the SQL drizzle-kit would run to fix it.
-   That shows what the migration is missing.
+   That shows what the migration is missing. It ignores what the schema leaves
+   out on purpose (the legacy table and views listed in `scripts/db/drift.ts`,
+   row-level security and foreign keys into `auth`), so it also works against
+   Supabase. If a difference could be a rename, it stops and asks you to write
+   the rename migration instead of guessing.
 4. Check it both ways: `npm run db:rollback`, then `npm run db:migrate`.
 5. Commit the schema change and the migration together. CI fails if the
    migrations don't build exactly the schema, or if a migration has no `down`
@@ -144,7 +148,9 @@ The production database already has these tables, so
    anything. Fix the baseline and `src/server/db/schema/index.ts`, and run it
    again. Tables the baseline doesn't create, views, row-level security and
    foreign keys into `auth` are not compared.
-   Recording goes through Kysely's migrator (with the baseline's `up` replaced
-   by a no-op), so it writes the same row to `kysely.kysely_migration` that
-   `db:migrate` would.
+   Recording goes through Kysely's migrator, with the check in place of the
+   baseline's `up`. So the check and the record happen in one transaction under
+   the migrator's lock: nothing can change the schema or migrate in between, two
+   runs at once record it once, and it writes the same row to
+   `kysely.kysely_migration` that `db:migrate` would.
 3. From then on, `npm run db:migrate` applies only newer migrations.

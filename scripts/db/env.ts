@@ -1,8 +1,9 @@
 /**
- * Env helpers shared by drizzle.config.ts and the db:* scripts.
+ * Env and connection helpers shared by drizzle.config.ts and the db:* scripts.
  */
 import path from "node:path"
 import { loadEnvConfig } from "@next/env"
+import postgres from "postgres"
 
 export const ROOT_DIR = path.resolve(__dirname, "../..")
 
@@ -18,4 +19,11 @@ export function loadDevEnv() {
 /** Migrations need a direct connection; poolers in transaction mode can break DDL. */
 export function migrationDatabaseUrl(): string | undefined {
   return process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL
+}
+
+/** One connection for a db:* script, from migrationDatabaseUrl(). The caller closes it with `end()`. */
+export function migrationClient(): postgres.Sql {
+  const url = migrationDatabaseUrl()
+  if (!url) throw new Error("Set DATABASE_URL (or DATABASE_URL_UNPOOLED)")
+  return postgres(url, { max: 1, prepare: false, onnotice: () => {} })
 }

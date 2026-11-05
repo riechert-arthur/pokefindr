@@ -6,18 +6,16 @@
  * Prints what drizzle-kit would change if they differ, which is a good
  * starting point for the migration you still need to write.
  */
-import postgres from "postgres"
 import { schemaDrift } from "./drift"
-import { loadDevEnv, migrationDatabaseUrl } from "./env"
+import { loadDevEnv, migrationClient } from "./env"
+import { createMigrator } from "./migrator"
 
 loadDevEnv()
 
 async function main() {
-  const url = migrationDatabaseUrl()
-  if (!url) throw new Error("Set DATABASE_URL (or DATABASE_URL_UNPOOLED)")
-  const sql = postgres(url, { max: 1, prepare: false, onnotice: () => {} })
+  const sql = migrationClient()
   try {
-    const drift = await schemaDrift(sql)
+    const drift = await schemaDrift(createMigrator(sql).db)
     if (drift.length === 0) {
       console.log("The database matches src/server/db/schema.")
       return

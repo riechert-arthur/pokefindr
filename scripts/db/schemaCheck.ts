@@ -35,6 +35,12 @@ const ON_DELETE: Record<string, string> = {
 // (public.location_status, extensions.geography(...)), so drop any schema prefix.
 const normType = (t: string) => t.replace(/^(?:"(?:[^"]|"")+"|[a-z_][a-z0-9_$]*)\./, "")
 
+// Index and check definitions qualify names the same way, e.g. a cast in a
+// predicate prints as ::public.location_status on one side and ::location_status
+// on the other. Drop the prefixes of the schemas being compared.
+const QUALIFIER = new RegExp(`(?<![\\w$"])"?(?:public|extensions|${SCRATCH_SCHEMA})"?\\.`, "g")
+const unqualify = (def: string) => def.replace(QUALIFIER, "")
+
 /** A fact about one table (or an enum), as a readable, name-independent string. */
 interface Fact {
   table?: string
@@ -98,7 +104,8 @@ async function describeSchema(
     } else {
       // `CREATE UNIQUE INDEX x ON s.t USING btree (c) WHERE ...` -> `index t: unique USING btree (c) WHERE ...`
       const unique = i.def.startsWith("CREATE UNIQUE ") ? "unique " : ""
-      facts.push({ table: i.table, text: `index ${i.table}: ${unique}${i.def.slice(i.def.indexOf(" USING ") + 1)}` })
+      const body = unqualify(i.def.slice(i.def.indexOf(" USING ") + 1))
+      facts.push({ table: i.table, text: `index ${i.table}: ${unique}${body}` })
     }
   }
 
@@ -117,7 +124,7 @@ async function describeSchema(
     where n.nspname = ${schema} and con.contype in ('c', 'f')`)
   for (const con of constraints) {
     if (con.type === "c") {
-      facts.push({ table: con.table, text: `check ${con.table}: ${con.def}` })
+      facts.push({ table: con.table, text: `check ${con.table}: ${unqualify(con.def)}` })
     } else if (con.to) {
       // Foreign keys into other schemas (Supabase's auth) are skipped.
       const onDelete = ON_DELETE[con.on_delete] ?? con.on_delete

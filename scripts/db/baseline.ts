@@ -14,37 +14,38 @@
  * difference stops the script, because a recorded baseline is never run
  * again, so anything it creates but the database lacks would never exist.
  *
- * Recording goes through Kysely's own Migrator, with a no-op in place of the
- * baseline's up(), so it writes exactly the row `db:migrate` would, under
- * Kysely's lock. If the database already has other migrations recorded,
- * Kysely refuses.
+ * Recording runs through Kysely's own Migrator, with the check in place of the
+ * baseline's up(). So the check and the record happen in one transaction under
+ * the migrator's lock (nothing can change the schema or migrate in between),
+ * and the row written is exactly the one `db:migrate` would write. If the
+ * database already has other migrations recorded, Kysely refuses.
  */
-import { Kysely, sql } from "kysely"
-import { PostgresJSDialect } from "kysely-postgres-js"
-import postgres from "postgres"
+import { sql, type Transaction } from "kysely"
 import { diffAgainstMigrations } from "./schemaCheck"
-import { loadDevEnv, migrationDatabaseUrl } from "./env"
-import { createMigrator, loadMigrations, MIGRATION_SCHEMA, MIGRATION_TABLE, throwIfFailed } from "./migrator"
+import { loadDevEnv, migrationClient } from "./env"
+import {
+  createMigrator,
+  inRolledBackTransaction,
+  loadMigrations,
+  MIGRATION_SCHEMA,
+  MIGRATION_TABLE,
+  throwIfFailed,
+} from "./migrator"
 
 loadDevEnv()
 
 const BASELINE = "0000_baseline"
 
-class Rollback extends Error {}
-
 async function main() {
   const dryRun = process.argv.includes("--dry-run")
-  const url = migrationDatabaseUrl()
-  if (!url) throw new Error("Set DATABASE_URL (or DATABASE_URL_UNPOOLED)")
 
   const baseline = (await loadMigrations())[BASELINE]
   if (!baseline) throw new Error(`database/migrations/${BASELINE}.ts not found`)
 
-  const client = postgres(url, { max: 1, prepare: false, onnotice: () => {} })
-  const db = new Kysely<unknown>({ dialect: new PostgresJSDialect({ postgres: client }) })
+  const client = migrationClient()
   try {
-    const { migrator } = createMigrator(client, { [BASELINE]: { up: async () => {} } })
-    const applied = (await createMigrator(client).migrator.getMigrations()).filter((m) => m.executedAt)
+    const { db, migrator } = createMigrator(client)
+    const applied = (await migrator.getMigrations()).filter((m) => m.executedAt)
     if (applied.some((m) => m.name === BASELINE)) {
       console.log("The baseline is already recorded. Nothing to do.")
       return
@@ -53,42 +54,43 @@ async function main() {
       throw new Error(`${MIGRATION_SCHEMA}.${MIGRATION_TABLE} already lists ${applied.map((m) => m.name).join(", ")} but not ${BASELINE}. Look before recording anything.`)
     }
 
-    // Read-only check, rolled back whatever happens.
-    let differences: string[] = []
-    let hasTables = false
-    await db
-      .transaction()
-      .execute(async (trx) => {
-        const { rows } = await sql<{ count: number }>`
-          select count(*)::int as count from information_schema.tables
-          where table_schema = 'public' and table_name = 'locations'`.execute(trx)
-        hasTables = rows[0].count > 0
-        if (hasTables) differences = await diffAgainstMigrations(trx, [baseline])
-        throw new Rollback()
-      })
-      .catch((err) => {
-        if (!(err instanceof Rollback)) throw err
-      })
+    /** Throws unless `public` matches what the baseline builds. */
+    async function check(trx: Transaction<unknown>) {
+      // A database without our tables is fresh: it should be migrated, not baselined.
+      const { rows } = await sql<{ count: number }>`
+        select count(*)::int as count from information_schema.tables
+        where table_schema = 'public' and table_name = 'locations'`.execute(trx)
+      if (rows[0].count === 0) {
+        throw new Error("This database doesn't have the baseline's tables. It looks fresh: run `npm run db:migrate` instead.")
+      }
 
-    // A database without our tables is fresh: it should be migrated, not baselined.
-    if (!hasTables) {
-      throw new Error("This database doesn't have the baseline's tables. It looks fresh: run `npm run db:migrate` instead.")
+      const differences = await diffAgainstMigrations(trx, [baseline])
+      if (differences.length > 0) {
+        throw new Error(
+          `The database doesn't match ${BASELINE} (${differences.length} difference(s)):\n` +
+            differences.map((d) => `  - ${d}`).join("\n") +
+            "\n\nFix the baseline migration and src/server/db/schema (or fix the database) before recording it. " +
+            'See docs/database.md, "Adopting the existing Supabase database".',
+        )
+      }
+      console.log(`Schema matches ${BASELINE}.`)
     }
-    if (differences.length > 0) {
-      throw new Error(
-        `The database doesn't match ${BASELINE} (${differences.length} difference(s)):\n` +
-          differences.map((d) => `  - ${d}`).join("\n") +
-          "\n\nFix the baseline migration and src/server/db/schema (or fix the database) before recording it. " +
-          'See docs/database.md, "Adopting the existing Supabase database".',
-      )
+
+    if (dryRun) {
+      await inRolledBackTransaction(db, check)
+      console.log(`[dry run] would record ${BASELINE} in ${MIGRATION_SCHEMA}.${MIGRATION_TABLE}`)
+      return
     }
-    console.log(`Schema matches ${BASELINE}.`)
 
-    console.log(`${dryRun ? "[dry run] would record" : "Recording"} ${BASELINE} in ${MIGRATION_SCHEMA}.${MIGRATION_TABLE}`)
-    if (dryRun) return
-
-    throwIfFailed(await migrator.migrateTo(BASELINE))
-    console.log("Done. Run `npm run db:migrate` to apply newer migrations.")
+    const recorder = createMigrator(client, { [BASELINE]: { up: (trx) => check(trx as Transaction<unknown>) } })
+    const result = await recorder.migrator.migrateTo(BASELINE)
+    throwIfFailed(result)
+    if (!result.results?.length) {
+      // Another run recorded it while this one waited for the migrator's lock.
+      console.log("The baseline is already recorded. Nothing to do.")
+      return
+    }
+    console.log(`Recorded ${BASELINE} in ${MIGRATION_SCHEMA}.${MIGRATION_TABLE}. Run \`npm run db:migrate\` to apply newer migrations.`)
   } finally {
     await client.end({ timeout: 5 })
   }

@@ -33,7 +33,10 @@ const EWKB_SRID_FLAG = 0x20000000
 
 /** Decodes a hex-encoded (E)WKB Point into longitude/latitude. */
 export function parsePointWkb(hex: string): LngLat {
+  if (!/^(?:[0-9a-f]{2})+$/i.test(hex)) throw new Error("Expected a hex-encoded WKB Point")
   const bytes = Uint8Array.from(hex.match(/../g) ?? [], (byte) => parseInt(byte, 16))
+  // Byte order (1) + type (4), then an optional SRID (4).
+  if (bytes.length < 5) throw new Error(`WKB Point is too short (${bytes.length} bytes)`)
   const view = new DataView(bytes.buffer)
   const littleEndian = view.getUint8(0) === 1
 
@@ -43,8 +46,12 @@ export function parsePointWkb(hex: string): LngLat {
   }
 
   const offset = type & EWKB_SRID_FLAG ? 9 : 5
-  return {
+  if (bytes.length < offset + 16) throw new Error(`WKB Point is too short (${bytes.length} bytes)`)
+  const point = {
     lng: view.getFloat64(offset, littleEndian),
     lat: view.getFloat64(offset + 8, littleEndian),
   }
+  // POINT EMPTY is encoded as NaN coordinates.
+  if (!Number.isFinite(point.lng) || !Number.isFinite(point.lat)) throw new Error("WKB Point is empty")
+  return point
 }
