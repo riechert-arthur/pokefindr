@@ -31,8 +31,8 @@ export interface JournalEntry {
   tag: string
 }
 
-export function readJournal(): JournalEntry[] {
-  const journal = JSON.parse(readFileSync(path.join(MIGRATIONS_DIR, "meta/_journal.json"), "utf8")) as {
+export function readJournal(dir = MIGRATIONS_DIR): JournalEntry[] {
+  const journal = JSON.parse(readFileSync(path.join(dir, "meta/_journal.json"), "utf8")) as {
     entries: JournalEntry[]
   }
   return journal.entries

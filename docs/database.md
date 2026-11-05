@@ -1,6 +1,8 @@
 # Database
 
 PokeFindr talks to Postgres 15+ with PostGIS through [Drizzle ORM](https://orm.drizzle.team).
+Migrations are written by drizzle-kit and run by [Kysely's migrator](https://kysely.dev/docs/migrations),
+which adds rollbacks.
 The app only needs a connection string, so any provider that offers PostGIS
 and a connection pooler works.
 
@@ -9,6 +11,8 @@ and a connection pooler works.
 | Schema (source of truth for types) | `src/server/db/schema/index.ts` |
 | Connection | `src/server/db/client.ts` (`getDb()`) |
 | Migrations (generated SQL, committed) | `drizzle/` |
+| Down migrations (hand-written SQL) | `drizzle/down/` |
+| Migration runner | `scripts/db/migrator.ts` |
 | Config | `drizzle.config.ts` |
 
 ## Environment
@@ -45,9 +49,47 @@ npm run test:integration   # creates and migrates pokefindr_test on the local se
 1. Edit `src/server/db/schema/index.ts`.
 2. Run `npm run db:generate -- --name short_description`.
 3. Review the SQL in `drizzle/`. Edit it if needed (see the geography note below).
-4. Commit the schema change and the migration together. CI fails if they drift apart.
+4. Write `drizzle/down/<same name>.sql` to undo it (see `drizzle/down/README.md`).
+5. Check it both ways locally: `npm run db:migrate`, `npm run db:rollback`, `npm run db:migrate`.
+6. Commit the schema change, the migration and its down file together. CI fails
+   if the schema and migrations drift apart, or if a migration has no down file.
 
 Migrations run in a deploy step (`npm run db:migrate`), never at app start-up.
+
+## Running and rolling back migrations
+
+```bash
+npm run db:migrate                          # apply every pending migration
+npm run db:status                           # list migrations and when each was applied
+npm run db:rollback                         # undo the last applied migration
+npm run db:rollback -- --to 0001_something  # undo every migration after 0001_something
+```
+
+How it works (`scripts/db/migrator.ts`):
+- Migrations are the entries in `drizzle/meta/_journal.json`, run in name order.
+  Up is `drizzle/<tag>.sql`, down is `drizzle/down/<tag>.sql`.
+- Each applied migration is recorded by name in `kysely.kysely_migration`. The
+  `kysely` schema keeps this out of `public`, so Supabase's API doesn't expose it.
+- Everything pending runs in one transaction under a lock, so a failed
+  migration leaves nothing half-applied and two deploys can't migrate at once.
+- If an applied migration is missing from the journal, or a new one sorts
+  before the last applied one (for example, a branch that merged late with an
+  older number), the migrator stops with a "corrupted migrations" error
+  instead of skipping it. Renumber the late migration with `drizzle-kit` and
+  try again.
+- A migration without a down file can't be rolled back: `db:rollback` fails
+  and changes nothing. The baseline is like this on purpose.
+
+**Production:** a rollback only undoes the schema. Vercel Instant Rollback
+restores old code but not the old schema, so keep schema changes compatible
+with the previous release (add first, remove in a later release), and read a
+down file before running it on production: one that drops a column drops its
+data.
+
+**Switching branches locally:** roll back the branch's migrations before you
+switch away (`npm run db:rollback -- --to <last migration on main>`), because the
+down files stay on that branch. If you forget, `db:migrate` stops with the
+"missing migration" error; recreate the local database instead.
 
 **Geography columns:** drizzle-kit wraps `geography(point, 4326)` in quotes,
 because it doesn't recognise the type. Any generated migration that adds or
@@ -85,4 +127,6 @@ must be **recorded** there, not run:
    anything. Fix `src/server/db/schema/index.ts`, regenerate the baseline, and
    run it again. Tables the schema doesn't model, views, row-level security and
    foreign keys into `auth` are not compared.
+   Recording writes one row to `kysely.kysely_migration`, the same row
+   `db:migrate` writes when it applies a migration.
 3. From then on, `npm run db:migrate` applies only newer migrations.

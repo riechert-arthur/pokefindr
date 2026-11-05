@@ -113,7 +113,7 @@ Covered by the ORM plan. What matters for provider independence:
 - No RLS, no provider RPCs, no provider client. Authorization lives in services.
 - Avoid provider-only extensions (Supabase `pg_net`, `pgsodium`, Neon `neon_*`). Allowed: `postgis`, `pgcrypto`, `citext`, `pg_trgm`.
 - **Vercel's connection helper:** `@vercel/functions`' `attachDatabasePool` is not used: it doesn't support postgres-js (it throws "Unsupported database pool type"). postgres-js's `idle_timeout` closes idle connections on any host.
-- Migrations run with `drizzle-kit migrate` against any Postgres. CI proves this by running them against a vanilla `postgis/postgis` container.
+- Migrations run with `npm run db:migrate` (Kysely's migrator) against any Postgres. CI proves this by running them against a vanilla `postgis/postgis` container.
 
 ### 4.2 Identity and sessions
 

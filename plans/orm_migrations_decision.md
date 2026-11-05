@@ -1,8 +1,10 @@
 # Decision: ORM and migrations
 
-**Status:** Decided · 2026-11-04 · applies to `plans/postgres_orm_rearchitecture.md` §3 and PR #64 onward
+**Status:** Decided · 2026-11-04 · updated 2026-11-05 · applies to `plans/postgres_orm_rearchitecture.md` §3 and PR #64 onward
 
-**Decision:** Keep **Drizzle ORM** for the schema, queries and migrations. Migrations are **forward-only**. We don't roll back production migrations; we fix mistakes with a new migration, and backups are the emergency undo.
+**Decision:** Keep **Drizzle ORM** for the schema and queries, and **drizzle-kit** to generate migration SQL. ~~Migrations are forward-only.~~
+
+**Update 2026-11-05:** migrations now **run with Kysely's `Migrator`** (the "migrations only, Drizzle kept for queries" option in §3), which gives `up`/`down` and `db:rollback`. drizzle-kit still writes `drizzle/<tag>.sql` from the Drizzle schema, so the schema lives in one place and the CI drift check still works. Down files are hand-written in `drizzle/down/<tag>.sql`. Kysely records each migration by name and refuses an out-of-order or missing one, which closes the "skipped silently" gap in §2. Details in `docs/database.md`. The production habits in §7 (two-step schema changes, backups as the emergency undo) still apply: a rollback restores the schema, not lost data or old code.
 
 ---
 
@@ -83,16 +85,16 @@ Every option needs raw PostGIS SQL for the queries this app runs, so PostGIS rul
 
 ## 7. How we work with it
 
-- **Forward-only migrations, two-step schema changes:** first add the new column or table so old and new code both work; ship the code that uses it; remove the old thing in a later migration. If a migration is wrong, fix it with a new one.
+- **Two-step schema changes** (rollbacks exist now, but the habit still applies): first add the new column or table so old and new code both work; ship the code that uses it; remove the old thing in a later migration. If a migration is wrong, fix it with a new one.
 - **Backups:** Supabase point-in-time recovery (or the future provider's equivalent) is the undo for a bad production migration.
-- **Run migrations from one deploy step only** (no lock).
+- **Run migrations from one deploy step only.** Kysely takes a lock, so two runs can't overlap, but one deploy step is still simpler.
 - **Local branch switching:** `npm run db:reset` (drop, migrate, seed) after switching to a branch with different migrations. Integration tests already create and migrate a fresh `pokefindr_test` database on each run, so they're unaffected. Per-branch databases (`CREATE DATABASE … TEMPLATE …`) only if resets get slow.
 
 ## 8. Follow-ups
 
-- [ ] **CI ordering check:** fail if a new migration's timestamp isn't later than every migration on `main`, or if an already-merged migration file changed. Closes the "skipped silently" and "edited migration" gaps.
+- [x] ~~**CI ordering check**~~: Kysely refuses a migration that sorts before an applied one (2026-11-05). Still open: detecting an already-merged migration file that was edited.
 - [ ] **`npm run db:reset` and a seed script** (the backfill script from #65 could supply locations).
-- [ ] Optional: hand-written `drizzle/down/*.sql` with a `db:rollback` script for local use only, tested up → down → up in CI.
+- [x] Hand-written `drizzle/down/*.sql` with `db:rollback`, tested up → down → up in CI (2026-11-05, via Kysely).
 
 ## 9. When to revisit
 

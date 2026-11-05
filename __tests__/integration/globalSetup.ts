@@ -1,7 +1,5 @@
-import path from "node:path"
 import postgres from "postgres"
-import { drizzle } from "drizzle-orm/postgres-js"
-import { migrate } from "drizzle-orm/postgres-js/migrator"
+import { createMigrator, throwIfFailed } from "../../scripts/db/migrator"
 import { testDatabaseUrl } from "./testDatabase"
 
 const CONNECTION_ERRORS = new Set(["ECONNREFUSED", "ENOTFOUND", "ETIMEDOUT", "EHOSTUNREACH", "CONNECT_TIMEOUT"])
@@ -33,7 +31,7 @@ export default async function setup() {
 
   const client = postgres(url, { max: 1, onnotice: () => {} })
   try {
-    await migrate(drizzle(client), { migrationsFolder: path.resolve(__dirname, "../../drizzle") })
+    throwIfFailed(await createMigrator(client).migrator.migrateToLatest())
   } finally {
     await client.end({ timeout: 5 })
   }
