@@ -51,7 +51,8 @@ Migrations run in a deploy step (`npm run db:migrate`), never at app start-up.
 
 **Geography columns:** drizzle-kit wraps `geography(point, 4326)` in quotes,
 because it doesn't recognise the type. Any generated migration that adds or
-alters such a column needs those quotes removed by hand.
+alters such a column needs those quotes removed by hand. The unit tests fail
+if a migration still has them.
 
 ## Adopting the existing Supabase database (one time)
 

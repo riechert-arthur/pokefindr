@@ -53,7 +53,10 @@ export const profiles = pgTable("profiles", {
   rating: doublePrecision("rating"),
   metadata: jsonb("metadata"),
   createdAt: createdAt(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  // Set by the ORM on every update; there is no database trigger for it.
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 })
 
 const locationColumns = {

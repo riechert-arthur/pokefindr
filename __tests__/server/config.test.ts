@@ -43,6 +43,14 @@ describe("getServerConfig", () => {
     expect(getServerConfig().DATABASE_URL).toBeUndefined()
   })
 
+  it("treats blank DATABASE_URL and DATABASE_POOL_MAX as unset", () => {
+    vi.stubEnv("DATABASE_URL", "")
+    vi.stubEnv("DATABASE_POOL_MAX", "")
+    const config = getServerConfig()
+    expect(config.DATABASE_URL).toBeUndefined()
+    expect(config.DATABASE_POOL_MAX).toBe(5)
+  })
+
   it("rejects an invalid DATABASE_URL", () => {
     vi.stubEnv("DATABASE_URL", "not a url")
     expect(() => getServerConfig()).toThrowError(/DATABASE_URL/)

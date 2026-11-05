@@ -1,17 +1,14 @@
 import { defineConfig } from "drizzle-kit"
-import { loadEnvConfig } from "@next/env"
+import { loadDevEnv, migrationDatabaseUrl } from "./scripts/db/migrations"
 
-// Load .env / .env.local the same way `next dev` does.
-loadEnvConfig(process.cwd())
-
-// Migrations need a direct connection; poolers in transaction mode can break DDL.
-const url = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL
+// Load .env files the way `next dev` does (never .env.production*).
+loadDevEnv()
 
 export default defineConfig({
   dialect: "postgresql",
   schema: "./src/server/db/schema/index.ts",
   out: "./drizzle",
-  dbCredentials: { url: url ?? "" },
+  dbCredentials: { url: migrationDatabaseUrl() ?? "" },
   // Only manage our own schema; ignore PostGIS's spatial_ref_sys and Supabase internals.
   schemaFilter: ["public"],
   tablesFilter: ["!spatial_ref_sys"],

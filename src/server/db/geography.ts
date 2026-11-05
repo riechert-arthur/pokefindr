@@ -14,7 +14,8 @@ export interface LngLat {
  *
  * drizzle-kit wraps types it does not recognise in quotes, so any generated
  * migration that creates or alters a column of this type must be edited to
- * write `geography(point, 4326)` without quotes.
+ * write `geography(point, 4326)` without quotes. A unit test
+ * (__tests__/server/migrations.test.ts) fails if a quoted one slips through.
  */
 export const geographyPoint = customType<{ data: LngLat; driverData: string }>({
   dataType() {

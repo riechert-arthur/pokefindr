@@ -1,18 +1,10 @@
-import path from "node:path"
-import { readFileSync } from "node:fs"
 import { afterAll, describe, expect, it } from "vitest"
 import postgres from "postgres"
-import { diffAgainstSnapshot, type Snapshot } from "../../scripts/db/schemaCheck"
+import { diffAgainstSnapshot } from "../../scripts/db/schemaCheck"
+import { loadSnapshot } from "../../scripts/db/migrations"
 import { testDatabaseUrl } from "./testDatabase"
 
-const metaDir = path.resolve(__dirname, "../../drizzle/meta")
-const journal = JSON.parse(readFileSync(path.join(metaDir, "_journal.json"), "utf8")) as {
-  entries: { tag: string }[]
-}
-const latestTag = journal.entries.at(-1)!.tag
-const snapshot = JSON.parse(
-  readFileSync(path.join(metaDir, `${latestTag.split("_")[0]}_snapshot.json`), "utf8"),
-) as Snapshot
+const snapshot = loadSnapshot()
 
 const sql = postgres(testDatabaseUrl(), { max: 1, onnotice: () => {} })
 afterAll(() => sql.end({ timeout: 5 }))
@@ -23,7 +15,7 @@ async function diffAfter(change: (tx: postgres.TransactionSql) => Promise<unknow
   await sql
     .begin(async (tx) => {
       await change(tx)
-      differences = await diffAgainstSnapshot(tx as unknown as postgres.Sql, snapshot)
+      differences = await diffAgainstSnapshot(tx, snapshot)
       throw new Error("rollback")
     })
     .catch((err: Error) => {
@@ -40,6 +32,7 @@ describe("diffAgainstSnapshot", () => {
   it("reports a missing column", async () => {
     const diff = await diffAfter((tx) => tx`alter table locations drop column "machineID"`)
     expect(diff).toContain("missing column locations.machineID (text)")
+    expect(diff).toContain('missing index locations: create unique index on locations using btree ("machineID")')
   })
 
   it("reports a missing table", async () => {
@@ -61,10 +54,36 @@ describe("diffAgainstSnapshot", () => {
     expect(renamed).toEqual([])
 
     const dropped = await diffAfter((tx) => tx`drop index locations_staging_geog_idx`)
-    expect(dropped).toContain("missing index locations_staging: gist index on (geog)")
+    expect(dropped).toContain("missing index locations_staging: USING gist (geog)")
 
     const extra = await diffAfter((tx) => tx`create index extra_idx on profiles (username)`)
-    expect(extra).toContain("unexpected index profiles: btree index on (username)")
+    expect(extra).toContain("unexpected index profiles: USING btree (username)")
+  })
+
+  it("reports an index that became partial", async () => {
+    const diff = await diffAfter(async (tx) => {
+      await tx`drop index locations_machine_id_key`
+      await tx`create unique index on locations ("machineID") where "machineID" is not null`
+    })
+    expect(diff).toEqual([
+      'missing index locations: unique USING btree ("machineID")',
+      'unexpected index locations: unique USING btree ("machineID") WHERE ("machineID" IS NOT NULL)',
+    ])
+  })
+
+  it("compares check constraint bodies, not just how many there are", async () => {
+    const diff = await diffAfter(async (tx) => {
+      await tx`alter table location_ratings drop constraint location_ratings_rating_range`
+      await tx`alter table location_ratings add check (rating between 0 and 10)`
+    })
+    expect(diff).toEqual([
+      "missing check constraint location_ratings: CHECK (((rating >= 1) AND (rating <= 5)))",
+      "unexpected check constraint location_ratings: CHECK (((rating >= 0) AND (rating <= 10)))",
+    ])
+  })
+
+  it("ignores schema-qualified type names when public isn't on search_path", async () => {
+    expect(await diffAfter((tx) => tx`set local search_path = pg_catalog`)).toEqual([])
   })
 
   it("reports an unexpected foreign key and an extra column", async () => {
