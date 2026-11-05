@@ -1,0 +1,38 @@
+import postgres from "postgres"
+import { createMigrator, throwIfFailed } from "../../scripts/db/migrator"
+import { testDatabaseUrl } from "./testDatabase"
+
+const CONNECTION_ERRORS = new Set(["ECONNREFUSED", "ENOTFOUND", "ETIMEDOUT", "EHOSTUNREACH", "CONNECT_TIMEOUT"])
+
+/** Recreates the test database from scratch and applies every migration. */
+export default async function setup() {
+  const url = testDatabaseUrl()
+  const dbName = new URL(url).pathname.slice(1)
+
+  const adminUrl = new URL(url)
+  adminUrl.pathname = "/postgres"
+  const admin = postgres(adminUrl.toString(), { max: 1, onnotice: () => {} })
+  try {
+    await admin.unsafe(`drop database if exists "${dbName}" with (force)`)
+    await admin.unsafe(`create database "${dbName}"`)
+  } catch (err) {
+    const code = (err as { code?: string }).code
+    if (code && CONNECTION_ERRORS.has(code)) {
+      throw new Error(`Could not reach Postgres at ${adminUrl.host} (${code}). Start it with \`npm run db:up\`.`, {
+        cause: err,
+      })
+    }
+    throw new Error(`Could not recreate test database "${dbName}" at ${adminUrl.host}: ${String(err)}`, {
+      cause: err,
+    })
+  } finally {
+    await admin.end({ timeout: 5 })
+  }
+
+  const client = postgres(url, { max: 1, onnotice: () => {} })
+  try {
+    throwIfFailed(await createMigrator(client).migrator.migrateToLatest())
+  } finally {
+    await client.end({ timeout: 5 })
+  }
+}

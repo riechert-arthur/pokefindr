@@ -9,6 +9,10 @@ import { z } from "zod"
  * environment, and `instrumentation.ts` calls `getServerConfig()` at boot so a
  * misconfigured server fails on start-up instead of on the first request.
  */
+/** Treats an empty variable (`FOO=`) as unset, so its default or optionality applies. */
+const blankAsUnset = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((value) => (value === "" ? undefined : value), schema)
+
 const serverSchema = z.object({
   // Only compared to "production", so any other value (e.g. "staging") is allowed.
   NODE_ENV: z.string().default("development"),
@@ -18,6 +22,15 @@ const serverSchema = z.object({
 
   /** Secret used to sign the `app_session` cookie. */
   JWT_SECRET: z.string().min(1),
+
+  /**
+   * Pooled Postgres connection string used at runtime. Postgres 15+ with PostGIS.
+   * Optional until request handlers use the database, so deploys don't fail at
+   * start-up before it is configured. `getDb()` throws if it is missing.
+   */
+  DATABASE_URL: blankAsUnset(z.string().url().optional()),
+  /** Max connections per server instance. Keep small on serverless hosts. */
+  DATABASE_POOL_MAX: blankAsUnset(z.coerce.number().int().positive().default(5)),
 
   // Supabase is still used for auth until the auth migration lands.
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),

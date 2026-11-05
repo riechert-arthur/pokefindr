@@ -112,8 +112,8 @@ Covered by the ORM plan. What matters for provider independence:
 - The app depends on **Postgres 15+ with PostGIS** through `DATABASE_URL` (pooled) and `DATABASE_URL_UNPOOLED` (migrations). Nothing else.
 - No RLS, no provider RPCs, no provider client. Authorization lives in services.
 - Avoid provider-only extensions (Supabase `pg_net`, `pgsodium`, Neon `neon_*`). Allowed: `postgis`, `pgcrypto`, `citext`, `pg_trgm`.
-- **Vercel's connection helper:** `@vercel/functions`' `attachDatabasePool` is called only when `process.env.VERCEL` is set. Isolate it in `db/client.ts`.
-- Migrations run with `drizzle-kit migrate` against any Postgres. CI proves this by running them against a vanilla `postgis/postgis` container.
+- **Vercel's connection helper:** `@vercel/functions`' `attachDatabasePool` is not used: it doesn't support postgres-js (it throws "Unsupported database pool type"). postgres-js's `idle_timeout` closes idle connections on any host.
+- Migrations run with `npm run db:migrate` (Kysely's migrator) against any Postgres. CI proves this by running them against a vanilla `postgis/postgis` container.
 
 ### 4.2 Identity and sessions
 
@@ -229,7 +229,7 @@ services:
 |---|---|---|
 | **0. Config + quick fixes** | `config.ts` / `config.public.ts`, move every `process.env` read into them. Fix the localhost `emailRedirectTo` and the shared-`adminDB` login side-effect now (cheap, and they're bugs today) | (none) |
 | **1. Database** | ORM plan phases 1–3 (Drizzle, points from DB, reviews by ID) | 0 |
-| **2. Hosting portability** | `output: 'standalone'`, production `Dockerfile`, `/api/health`, `docker-compose.yml`, `sharp`, isolate `attachDatabasePool`, CI "no-vendor" job (map + reviews only at first) | 1 |
+| **2. Hosting portability** | `output: 'standalone'`, production `Dockerfile`, `/api/health`, `docker-compose.yml`, `sharp`, CI "no-vendor" job (map + reviews only at first) | 1 |
 | **3. Identity + email** | Better Auth, `Mailer` port + SMTP/console adapters, templates in repo, user and hash migration. Extend the no-vendor job to sign-up/login | 1, 2 |
 | **4. Maps + geocoding** | MapLibre + configurable style URL, `engine.ts`, `/api/geocode` + `Geocoder` port, remove public geocoding key | 0 |
 | **5. Jobs, cache, telemetry** | `/api/jobs/*` + `CRON_SECRET`, `cache` port, OTel `instrumentation.ts`, analytics wrapper, pino | 1 |
