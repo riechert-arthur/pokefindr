@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/Dialog'
+} from '@/components/ui/dialog'
 import {
   Form,
   FormField,
@@ -18,14 +18,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/Form'
+} from '@/components/ui/form'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import Avatar from '@/components/ui/Avatar'
+import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { useSidebar } from '@/components/providers/SidebarContextProvider'
 import { RecentReviewsSection, Review } from '@/components/RecentReviewSection'
 import { reviewSchema, type ReviewFormValues } from '@/components/map/LocationInfoPanel'
-import { StarRating } from '@/components/ui/StarRating'
+import { StarRating } from '@/components/pokefindr/StarRating'
 import { useSessionContext } from '@/components/providers/SessionProvider'
 import { LoadSpinner } from '@/components/wrappers/LoadSpinner'
 
@@ -113,7 +113,7 @@ export default function ReviewsPage() {
               <span className="sr-only">View notifications</span>
               <BellIcon className="size-6" />
             </button>*/}
-            <Avatar userName={session?.username ?? "Guest"} size={40}  />
+            <UserMenu userName={session?.username ?? "Guest"} size={40}  />
           </div>
         </div>
       </header>

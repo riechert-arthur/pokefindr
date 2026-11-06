@@ -1,15 +1,15 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/Button"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/Card"
-import { Input } from "@/components/ui/Input"
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import {
   Form,
   FormField,
@@ -17,7 +17,7 @@ import {
   FormItem,
   FormMessage,
   FormLabel,
-} from "@/components/ui/Form"
+} from "@/components/ui/form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useForm } from "react-hook-form"

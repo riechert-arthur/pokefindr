@@ -1,7 +1,7 @@
 import React from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
-import Avatar from "@/components/ui/Avatar"
+import { UserMenu } from "@/components/pokefindr/UserMenu"
 import axios from "axios"
 
 const mocks = vi.hoisted(() => ({
@@ -22,7 +22,7 @@ vi.mock("axios", () => ({
   },
 }))
 
-describe("Avatar", () => {
+describe("UserMenu", () => {
   const postMock = vi.mocked(axios.post)
   const postMessage = vi.fn()
 
@@ -42,21 +42,19 @@ describe("Avatar", () => {
   })
 
   it("renders the first initial when no image is provided", () => {
-    render(<Avatar size={42} userName="misty" />)
+    render(<UserMenu size={42} userName="misty" />)
 
-    expect(screen.getByRole("button")).toHaveTextContent("m")
+    expect(screen.getByRole("button", { name: "Account menu for misty" })).toHaveTextContent("m")
   })
 
   it("opens the menu and logs the user out", async () => {
-    render(<Avatar size={42} userName="misty" />)
+    render(<UserMenu size={42} userName="misty" />)
 
-    fireEvent.click(screen.getByRole("button"))
-    expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute(
-      "href",
-      "/settings"
-    )
+    // Radix menus open from the keyboard (or pointerdown), not a synthetic click.
+    fireEvent.keyDown(screen.getByRole("button", { name: "Account menu for misty" }), { key: "Enter" })
+    expect(await screen.findByRole("menuitem", { name: "Settings" })).toHaveAttribute("href", "/settings")
 
-    fireEvent.click(screen.getByRole("button", { name: "Log out" }))
+    fireEvent.click(screen.getByRole("menuitem", { name: "Log out" }))
 
     // Everything after the awaited POST runs asynchronously, so wait for all of it.
     await waitFor(() => {

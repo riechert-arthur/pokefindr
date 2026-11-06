@@ -3,10 +3,10 @@
 
 import { useState, useEffect, Fragment } from 'react'
 import { MenuIcon } from "lucide-react"
-import { ThemeToggle } from "@/components/ui/ThemeToggle"
+import { ThemeToggle } from "@/components/pokefindr/ThemeToggle"
 import axios from 'axios'
 import { useSidebar } from '@/components/providers/SidebarContextProvider'
-import Avatar from '@/components/ui/Avatar'
+import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { LoadSpinner } from '@/components/wrappers/LoadSpinner'
 import { useSessionContext } from '@/components/providers/SessionProvider'
 
@@ -82,7 +82,7 @@ export default function SettingsPage() {
               <span className="sr-only">View notifications</span>
               <BellIcon className="size-6" />
             </button>*/}
-            <Avatar userName={session?.username || "Pokefindr"} size={40} />
+            <UserMenu userName={session?.username || "Pokefindr"} size={40} />
           </div>
         </div>
       </header>

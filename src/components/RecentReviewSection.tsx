@@ -1,7 +1,7 @@
 
 import React from 'react'
 import { SquarePenIcon, Trash2Icon } from "lucide-react"
-import { StarRating } from '@/components/ui/StarRating'
+import { StarRating } from '@/components/pokefindr/StarRating'
 
 export interface Review {
   id: string

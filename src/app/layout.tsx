@@ -4,7 +4,7 @@ import { ContextProviders } from "@/components/providers/ContextProviders"
 import { ThemeProvider } from "@/components/providers/ThemeProvider"
 import { Analytics } from "@vercel/analytics/next"
 import AffiliateBannerWrapper from "@/components/wrappers/AffiliateBannerWrapper"
-import { Toaster } from "@/components/ui/Sonner"
+import { Toaster } from "@/components/ui/sonner"
 import { getSiteUrl } from "@/server/site-url"
 
 export const metadata = {

@@ -6,7 +6,7 @@ import { Logo } from "@/components/brand/Logo"
 import { useState } from "react"
 import { Dialog, DialogPanel } from "@headlessui/react"
 import Link from "next/link"
-import Avatar from "@/components/ui/Avatar"
+import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { useSessionContext } from "./providers/SessionProvider"
 
 export interface NavigationLink {
@@ -70,7 +70,7 @@ export const MobileMenu: FC<MobileMenuProps> = ({
                   Log in
                 </a>
               ) : (
-                <Avatar
+                <UserMenu
                   size={36}
                   userName={session.username}
                 />
@@ -133,7 +133,7 @@ export const ContentPageHeader: FC<HeaderProps> = ({ navigation }) => {
                 Log in &rarr;
               </a>
             ) : (
-              <Avatar 
+              <UserMenu 
                 size={42}
                 userName={session.username}
               />

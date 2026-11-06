@@ -15,7 +15,7 @@ import { useLocations } from "./useLocations"
 import { LocationPopupProps } from "./LocationPinPopUps"
 import { useSidebar } from "../providers/SidebarContextProvider"
 import { LocationInfoPanel } from "./LocationInfoPanel"
-import Avatar from "@/components/ui/Avatar"
+import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { useSessionContext } from "../providers/SessionProvider"
 import { useIsDark } from "@/lib/design/useThemeKey"
 
@@ -100,7 +100,7 @@ const MapInstance: FC = () => {
       <LocationInfoPanel info={clickedInfo} onClose={() => setClickedInfo(null)} />
       {session && (
         <div className="absolute top-4 right-5 z-50">
-          <Avatar size={45} userName={session.username} />
+          <UserMenu size={45} userName={session.username} />
         </div>
       )}
     </Map>
