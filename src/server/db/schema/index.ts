@@ -96,7 +96,7 @@ const locationColumns = {
   manualOverrideSource: text("manual_override_source"),
   /** The full feature properties from the JSON, kept while the data moves off it. */
   raw: jsonb("raw"),
-  // Set by the ORM on every update (and by the location import); there is no trigger.
+  // Set on every update by the locations_set_updated_at trigger (migration 0001), whoever writes.
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .$onUpdate(() => new Date()),

@@ -50,18 +50,36 @@ describe("location import (npm run db:import-locations)", () => {
     await sql`insert into locations_staging ("machineID") values ('ETL-1')`
 
     const first = await db.transaction().execute((trx) => importLocations(trx))
-    expect(first.counts).toMatchObject({ inserted: source.total, updated: 0 })
+    expect(first.counts).toMatchObject({ inserted: source.rows.length, updated: 0 })
     expect(first.verify.problems).toEqual([])
     expect(first.verify.overridesFlagged).toBe(source.rows.filter((r) => r.manual_override).length)
 
     const before = await sql`select "machineID", updated_at from locations order by 1`
     const second = await db.transaction().execute((trx) => importLocations(trx))
-    expect(second.counts).toMatchObject({ inserted: 0, updated: 0, unchanged: source.total })
+    expect(second.counts).toMatchObject({ inserted: 0, updated: 0, unchanged: source.rows.length })
     expect(await sql`select "machineID", updated_at from locations order by 1`).toEqual(before)
 
     expect(await sql`select "machineID" from locations_staging`).toEqual([{ machineID: "ETL-1" }])
     // The temporary table went away with the transaction.
     expect(await sql`select to_regclass('location_import') as t`).toEqual([{ t: null }])
+  })
+
+  it("never drops a permanent table named like its temporary one", async () => {
+    await sql`create table public.location_import (keep int)`
+    try {
+      await importRows(rows(feature("Q1", -112, 33)))
+      expect(await sql`select to_regclass('public.location_import') as t`).toEqual([{ t: "location_import" }])
+    } finally {
+      await sql`drop table public.location_import`
+    }
+  })
+
+  it("keeps updated_at current for writers other than the import", async () => {
+    // Inserts keep the given value; only updates fire the trigger.
+    await sql`insert into locations ("machineID", updated_at) values ('Q1', '2000-01-01')`
+    await sql`update locations set name = 'Renamed by hand' where "machineID" = 'Q1'`
+    const [after] = await sql<{ updated_at: Date }[]>`select updated_at from locations where "machineID" = 'Q1'`
+    expect(after.updated_at.getFullYear()).toBeGreaterThan(2000)
   })
 
   it("refuses to load outside a transaction, where the temporary table wouldn't last", async () => {

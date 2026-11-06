@@ -2,7 +2,8 @@
  * Location details that used to live only in src/data/vending_machines_mod.json:
  * address fields, geocoding metadata, the manual-override flag (and where the
  * override came from) and the active flag (#73). Added to `locations` and to
- * `locations_staging`, which keeps the same columns as `locations`.
+ * `locations_staging`, which keeps the same columns as `locations`. A trigger
+ * keeps `locations.updated_at` current for every writer, not just the ORM.
  *
  * Additive only, so the previous release keeps working while this deploys.
  */
@@ -36,9 +37,21 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     for (const column of rest) alter = alter.addColumn(...column)
     await alter.execute()
   }
+  // Every UPDATE sets updated_at, whoever runs it: the ORM, the import, the ETL or SQL by hand.
+  await sql`
+    create function locations_set_updated_at() returns trigger language plpgsql as $$
+    begin
+      new.updated_at := now();
+      return new;
+    end $$`.execute(db)
+  await sql`
+    create trigger locations_set_updated_at before update on locations
+    for each row execute function locations_set_updated_at()`.execute(db)
 }
 
 export async function down(db: Kysely<unknown>): Promise<void> {
+  await sql`drop trigger locations_set_updated_at on locations`.execute(db)
+  await sql`drop function locations_set_updated_at()`.execute(db)
   for (const table of TABLES) {
     const [first, ...rest] = COLUMNS.map(([name]) => name)
     let alter = db.schema.alterTable(table).dropColumn(first)

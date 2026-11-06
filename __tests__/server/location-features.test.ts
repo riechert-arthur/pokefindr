@@ -53,15 +53,53 @@ describe("toLocationRow", () => {
     expect(row({ ...base, geometry: null })).toMatchObject({ lng: -111.5, lat: 33.4 })
   })
 
+  /** `base` placed at `geometry`, with Mapbox's point at `mapbox` (or none). */
+  const at = (geometry: number[], mapbox: [number, number] | null): SourceFeature => ({
+    ...base,
+    geometry: { type: "Point", coordinates: geometry },
+    properties: {
+      ...base.properties,
+      coordinates: mapbox && { longitude: mapbox[0], latitude: mapbox[1], accuracy: "rooftop" },
+    },
+  })
+
   it("swaps a geometry typed as latitude, longitude, with a warning", () => {
-    const result = toLocationRow({ ...base, geometry: { type: "Point", coordinates: [37.77541, -122.23037] } })
+    // Q00984 in the JSON: a hand correction typed backwards, near Mapbox's point.
+    const result = toLocationRow(at([37.77541, -122.23037], [-122.232689, 37.775203]))
     expect(result).toMatchObject({ row: { lng: -122.23037, lat: 37.77541 }, warning: expect.stringContaining("swapped") })
   })
 
   it("swaps a latitude, longitude pair even when it is a valid position, because it's outside the US", () => {
     // [40.71, -74.0] is a valid point in Antarctica, typed for New York.
-    const result = toLocationRow({ ...base, geometry: { type: "Point", coordinates: [40.71, -74.0] } })
+    const result = toLocationRow(at([40.71, -74.0], null))
     expect(result).toMatchObject({ row: { lng: -74.0, lat: 40.71 }, warning: expect.stringContaining("outside the US") })
+  })
+
+  it("doesn't trust a swapped geometry far from Mapbox's point", () => {
+    // Swapped, [-111.5, 33.4] is in the US, but nowhere near Mapbox's New York point.
+    expect(toLocationRow(at([33.4, -111.5], [-74.0, 40.71]))).toMatchObject({
+      row: { lng: -74.0, lat: 40.71 },
+      warning: "Q00350: geometry [33.4, -111.5] is outside the US; swapped, it's more than 0.1° from properties.coordinates; used properties.coordinates",
+    })
+  })
+
+  it("swaps Mapbox's point back too when it's the fallback", () => {
+    expect(toLocationRow(at([500, 500], [33.4, -111.5]))).toMatchObject({
+      row: { lng: -111.5, lat: 33.4 },
+      warning: expect.stringContaining("properties.coordinates [33.4, -111.5] are outside the US; used them swapped"),
+    })
+  })
+
+  it("accepts machines in US territories outside the mainland box", () => {
+    for (const [lng, lat] of [
+      [144.79, 13.47], // Guam
+      [145.75, 15.18], // Saipan
+      [173.18, 52.94], // Attu, western Aleutians
+      [-170.7, -14.28], // Pago Pago, American Samoa
+      [-64.93, 18.34], // St. Thomas, USVI
+    ]) {
+      expect(toLocationRow(at([lng, lat], [lng, lat]))).toEqual({ row: expect.objectContaining({ lng, lat }), warning: undefined })
+    }
   })
 
   it("takes a numeric machineID as its digits", () => {

@@ -194,21 +194,32 @@ checks never replay it.
 - `_manual_override` in the JSON sets `manual_override` with
   `manual_override_source = 'file'`. Removing the flag from the JSON clears it
   on the next run.
+- While the JSON exists it is the source of truth: every deploy writes its
+  values (active, official, address, position, ...) over any machine without a
+  database override. To make a database edit stick, such as deactivating a
+  closed machine, also set `manual_override = true`.
 - An override made in the database (`manual_override = true`, source left
   null) is kept unless the JSON overrides that machine too. To override a
   machine the JSON already overrides, also set `manual_override_source` to
   null, or the JSON's values win again when its flag is removed.
 - Coordinates come from the GeoJSON `geometry` first (what the map draws, and
   where hand corrections were saved), then `properties.coordinates`. Every
-  machine is in the US, so a position outside it is swapped back with a
-  warning when it was typed as latitude, longitude. One that is outside even
-  swapped falls back to `properties.coordinates`; if those don't work either,
-  the machine is skipped with the reason.
+  machine is in the US (the states, Alaska including the western Aleutians,
+  Hawaii, Puerto Rico, the US Virgin Islands, Guam, the Northern Mariana
+  Islands and American Samoa), so a position outside it is swapped back with a
+  warning when it was typed as latitude, longitude. A swapped geometry is only
+  used if it lands within 0.1° of `properties.coordinates`; otherwise, or when
+  it is outside even swapped, the import falls back to
+  `properties.coordinates`, swapping those back too if needed. If neither
+  works, the machine is skipped with the reason.
 - Afterwards it checks that every machine in the file is in the table, active,
   within 1e-6° of the file's position, and flagged when the file overrides it.
   On any difference it fails and nothing is written. Machines in the table but
   not in the file are listed, never deleted.
 - Once the JSON is deleted (#80), it does nothing.
+- `locations.updated_at` is set by a `before update` trigger
+  (`locations_set_updated_at`, migration 0001), so every writer bumps it, not
+  just the ORM and the import.
 
 The weekly GitHub job (`weekly-update.yml`) commits `vending_machines.json`,
 not `vending_machines_mod.json`, so its scrapes never reach the import. Its
