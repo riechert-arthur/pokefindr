@@ -52,13 +52,13 @@ export const RecentReviewsSection: React.FC<RecentReviewsSectionProps> = ({ revi
               <div className="flex items-center justify-end gap-x-2 border-t border-border  p-4">
                 <button
                   onClick={() => onEdit(review)}
-                  className="flex items-center mr-1 text-sm font-semibold text-blue-600 hover:text-indigo-500"
+                  className="flex items-center mr-1 text-sm font-semibold text-primary hover:text-primary/80"
                 >
                   <SquarePenIcon className="mr-1 size-6" /> Edit
                 </button>
                 <button
                   onClick={() => onDelete(review.id)}
-                  className="flex items-center text-sm font-semibold text-red-600 hover:text-red-500"
+                  className="flex items-center text-sm font-semibold text-destructive hover:text-destructive"
                 >
                   <Trash2Icon className="size-6 mr-1" /> Delete
                 </button>

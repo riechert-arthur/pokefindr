@@ -58,7 +58,7 @@ export const LocationPopup: React.FC<LocationPopupProps> = ({
         )}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-2 block underline text-blue-500"
+        className="mt-2 block underline text-primary"
       >
         Open in Google Maps
       </a>

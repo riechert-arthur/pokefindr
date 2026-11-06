@@ -28,7 +28,7 @@ const StarIcon = ({ fill, size }: { fill: Fill; size: number }) => (
  */
 export const StarRating: React.FC<StarRatingProps> = ({ rating, starSize = 24, onChange, className, ...rest }) => {
   const refs = useRef<(HTMLButtonElement | null)[]>([])
-  const wrapper = `flex space-x-1 text-yellow-500 ${className ?? ''}`.trim()
+  const wrapper = `flex space-x-1 text-spark ${className ?? ''}`.trim()
 
   if (!onChange) {
     return (

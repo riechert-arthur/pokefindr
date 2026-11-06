@@ -74,7 +74,7 @@ export default function SettingsPage() {
       <header className="absolute inset-x-0 top-0 z-10 flex h-16 border-b border-border">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <button onClick={toggleSidebar} className="md:hidden mr-2 p-1 rounded" aria-label="Toggle menu">
-            <MenuIcon className="size-6 text-muted-foreground hover:text-blue-600" />
+            <MenuIcon className="size-6 text-muted-foreground hover:text-primary/80" />
           </button>
           <div />
           <div className="flex items-center gap-x-8">
@@ -126,7 +126,7 @@ export default function SettingsPage() {
                               />
                               <button
                                 onClick={() => saveEdit(field)}
-                                className="px-3 py-1 text-sm font-semibold text-white bg-blue-600 rounded hover:bg-indigo-500"
+                                className="px-3 py-1 text-sm font-semibold text-white bg-primary rounded hover:bg-primary/90"
                               >
                                 Save
                               </button>
@@ -142,7 +142,7 @@ export default function SettingsPage() {
                               <div className="text-foreground">{value}</div>
                               <button
                                 onClick={() => startEdit(field)}
-                                className="font-semibold text-blue-600 hover:text-blue-500"
+                                className="font-semibold text-primary hover:text-primary/80"
                               >
                                 Update
                               </button>

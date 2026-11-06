@@ -243,7 +243,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 block underline text-blue-500"
+              className="mt-2 block underline text-primary"
             >
               Open in Google Maps
             </a>
@@ -252,7 +252,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
               <h3 className="mb-2 text-lg font-semibold">Review Summary</h3>
               <div className="flex flex-col items-center">
                 <StarRating rating={average} starSize={16} />
-                <span className="font-semibold mt-1 text-blue-500">
+                <span className="font-semibold mt-1 text-primary">
                   {reviews.length} reviews
                 </span>
 
@@ -260,7 +260,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
                   <DialogTrigger asChild>
                     <Button
                       variant="outline"
-                      className="mt-4 flex items-center rounded-full border border-input py-1 px-3 font-medium text-foreground transition-transform hover:scale-105 hover:text-blue-500 hover:border-blue-500"
+                      className="mt-4 flex items-center rounded-full border border-input py-1 px-3 font-medium text-foreground transition-transform hover:scale-105 hover:text-primary/80 hover:border-primary"
                       onClick={() => {
                         if (!isLoading && !session) {
                           router.push("/login")
@@ -355,7 +355,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
                               [idx]: !isExpanded,
                             }))
                           }
-                          className="ml-2 text-blue-500 text-xs"
+                          className="ml-2 text-primary text-xs"
                         >
                           {isExpanded ? "Show less" : "Read more"}
                         </button>
@@ -368,7 +368,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
               {reviews.length > 3 && (
                 <button
                   onClick={() => setShowAllReviews((s) => !s)}
-                  className="text-blue-600 text-sm"
+                  className="text-primary text-sm"
                 >
                   {showAllReviews
                     ? "Show fewer reviews"
@@ -413,7 +413,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
                 <h3 className="text-lg font-semibold">Review Summary</h3>
                 <div className="flex flex-col items-center">
                   <StarRating rating={average} starSize={16} />
-                  <span className="font-semibold mt-1 text-blue-500">
+                  <span className="font-semibold mt-1 text-primary">
                     {reviews.length} reviews
                   </span>
 
@@ -421,7 +421,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
                     <DialogTrigger asChild>
                       <Button
                         variant="outline"
-                        className="mt-4 flex items-center rounded-full border border-input py-1 px-3 font-medium text-foreground transition-transform hover:scale-105 hover:text-blue-500 hover:border-blue-500"
+                        className="mt-4 flex items-center rounded-full border border-input py-1 px-3 font-medium text-foreground transition-transform hover:scale-105 hover:text-primary/80 hover:border-primary"
                       >
                         <SquarePenIcon className="size-6 mr-2" />
                         Write a review
@@ -511,7 +511,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
                                 [idx]: !isExpanded,
                               }))
                             }
-                            className="ml-2 text-blue-500 text-xs"
+                            className="ml-2 text-primary text-xs"
                           >
                             {isExpanded ? "Show less" : "Read more"}
                           </button>
@@ -524,7 +524,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
                 {reviews.length > 3 && (
                   <button
                     onClick={() => setShowAllReviews((s) => !s)}
-                    className="text-blue-600 text-sm"
+                    className="text-primary text-sm"
                   >
                     {showAllReviews
                       ? "Show fewer reviews"

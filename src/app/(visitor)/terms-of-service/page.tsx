@@ -24,7 +24,7 @@ const TermsOfServicePage: FC = () => {
         or browser, we may process your geolocation data to show relevant
         vending machine locations. For more details on how we handle your data,
         please review our{" "}
-        <a href="/privacy-policy" className="text-blue-600 hover:underline">
+        <a href="/privacy-policy" className="text-primary hover:underline">
           Privacy Policy
         </a>
         .
@@ -143,7 +143,7 @@ const TermsOfServicePage: FC = () => {
         us at{" "}
         <a
           href="mailto:riechertarthur@gmail.com"
-          className="text-blue-600 hover:underline"
+          className="text-primary hover:underline"
         >
           riechertarthur@gmail.com
         </a>

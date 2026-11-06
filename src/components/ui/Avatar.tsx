@@ -61,7 +61,7 @@ export default function Avatar({
         ) : (
           <div
             style={{ width: size, height: size }}
-            className="rounded-full flex items-center justify-center bg-fuchsia-700 text-white font-semibold uppercase text-lg"
+            className="rounded-full flex items-center justify-center bg-brand text-white font-semibold uppercase text-lg"
           >
             {userName.charAt(0)}
           </div>
