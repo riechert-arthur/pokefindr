@@ -18,6 +18,7 @@
       "files": [
         "src/server/config.ts",
         "src/server/edge-config.ts",
+        "src/server/site-url.ts",
         "src/config.public.ts",
         "__tests__/**",
         "*.config.*",

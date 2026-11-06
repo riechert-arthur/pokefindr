@@ -5,11 +5,11 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider"
 import { Analytics } from "@vercel/analytics/next"
 import AffiliateBannerWrapper from "@/components/wrappers/AffiliateBannerWrapper"
 import { Toaster } from "@/components/ui/Sonner"
-import { publicConfig } from "@/config.public"
+import { getSiteUrl } from "@/server/site-url"
 
 export const metadata = {
   // Absolute base for og:image, twitter:image and other metadata URLs.
-  metadataBase: publicConfig.siteUrl ? new URL(publicConfig.siteUrl) : undefined,
+  metadataBase: getSiteUrl(),
   "robots": {
     "index": true,
     "follow": true

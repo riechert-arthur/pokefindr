@@ -20,6 +20,7 @@ const geometry = (svg: string) => [
     `rect ${["x", "y", "width", "height", "rx", "opacity"].map((a) => attr(m[0], a)).join(",")}`,
   ),
   ...[...svg.matchAll(/<g\b[^>]*transform="(rotate[^"]*)"/g)].map((m) => `rotate ${m[1]}`),
+  ...[...svg.matchAll(/<stop\b[^>]*>/g)].map((m) => `stop ${attr(m[0], "offset")}`),
   ...[...svg.matchAll(/<linearGradient\b[^>]*>/g)].map((m) =>
     `gradient ${["x1", "y1", "x2", "y2"].map((a) => attr(m[0], a)).join(",")}`,
   ),
@@ -41,6 +42,13 @@ describe("brand mark copies", () => {
 
   it.each(["src/components/brand/Logo.tsx", "public/brand/wordmark.svg"])("draws the same mark in %s", (file) => {
     const other = geometry(read(file))
+    // Same number of each element (the wordmark adds two text paths).
+    const count = (svg: string, tag: string) => (svg.match(new RegExp(`<${tag}\\b`, "g")) ?? []).length
+    const text = file.endsWith("wordmark.svg") ? 2 : 0
+    for (const tag of ["rect", "stop", "linearGradient", "circle", "ellipse", "polygon"]) {
+      expect(count(read(file), tag), tag).toBe(count(mark, tag))
+    }
+    expect(count(read(file), "path"), "path").toBe(count(mark, "path") + text)
     // The wordmark also has outlined text paths, so check containment.
     for (const shape of geometry(mark)) expect(other, shape).toContain(shape)
   })
