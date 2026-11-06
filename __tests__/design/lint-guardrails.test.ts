@@ -9,6 +9,9 @@ const eslint = new ESLint({ cwd: ROOT })
 /** Lints `code` as if it lived at `file`, returning only the design-system violations. */
 async function colorErrors(code: string, file = "src/components/Example.tsx") {
   const [result] = await eslint.lintText(code, { filePath: path.join(ROOT, file) })
+  // A parse error or an ignored file has a null ruleId; fail instead of reading it as "no violations".
+  expect(result.fatalErrorCount, `${file} parses`).toBe(0)
+  expect(result.messages.filter((m) => m.ruleId === null).map((m) => m.message), `${file} is linted`).toEqual([])
   return result.messages.filter((m) => m.ruleId === "no-restricted-syntax").map((m) => m.message)
 }
 
@@ -27,6 +30,13 @@ describe("design-system lint guardrails", () => {
     ["a directional border color", `export const A = () => <p className="border-t-red-500" />`],
     ["an arbitrary oklch color", `export const A = () => <p className="bg-[oklch(0.6_0.2_250)]" />`],
     ["an arbitrary named color", `export const A = () => <p className="text-[color:red]" />`],
+    ["a color function inside an arbitrary value", `export const A = () => <p className="shadow-[0_0_10px_rgba(0,0,0,.5)]" />`],
+    ["a hex color inside an arbitrary value", `export const A = () => <p className="shadow-[0_0_10px_#fff]" />`],
+    ["a hex color in a gradient", `export const A = () => <div style={{ backgroundImage: "linear-gradient(135deg, #c026d3, #7c3aed)" }} />`],
+    ["a hex color in a var() fallback", `export const A = () => <p className="bg-[var(--x,#fff)]" />`],
+    ["a theme() palette lookup", `export const A = () => <p className="text-[theme(colors.blue.500)]" />`],
+    ["a hex color in a border shorthand", `export const A = () => <div style={{ border: "1px solid #ddd" }} />`],
+    ["a hex color constant", `export const brandColor = "#c026d3"`],
   ])("rejects %s", async (_label, code) => {
     expect(await colorErrors(code)).not.toEqual([])
   })
@@ -40,6 +50,9 @@ describe("design-system lint guardrails", () => {
     ["an in-page anchor", `export const A = () => <a href="#faq">FAQ</a>`],
     ["an anchor made of hex letters", `export const A = () => <a href="#add">Add</a>`],
     ["an issue reference in text", `export const A = () => <p title="Fixed in #142">See #100</p>`],
+    ["an issue reference after a colon", `export const A = () => <p title="Fixes: #142">Bug: #abc</p>`],
+    ["anchors outside a plain href", "export const nav = [{ name: 'Add', href: '#add' }]; export const A = () => <a href={\"#add\"} onClick={() => document.querySelector(\"#face\")} />"],
+    ["an SVG fragment reference", `export const A = () => <p className="bg-[url(#a)]" />`],
     ["a token color inside an arbitrary value", `export const A = () => <div className="bg-[hsl(var(--brand)/0.3)]" />`],
   ])("allows %s", async (_label, code) => {
     expect(await colorErrors(code)).toEqual([])
@@ -48,6 +61,7 @@ describe("design-system lint guardrails", () => {
   it("exempts illustration icons and generated images", async () => {
     const svg = `export const I = () => <path fill="#eb5569" />`
     expect(await colorErrors(svg, "src/components/icons/Example.tsx")).toEqual([])
-    expect(await colorErrors(`export const c = "#ffffff"`, "src/app/opengraph-image.tsx")).toEqual([])
+    expect(await colorErrors(`export const color = "#ffffff"`, "src/app/opengraph-image.tsx")).toEqual([])
+    expect(await colorErrors(`export const color = "#ffffff"`, "src/app/(visitor)/(content)/blog/[slug]/opengraph-image.tsx")).toEqual([])
   })
 })

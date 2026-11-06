@@ -14,7 +14,7 @@ export default function GlobalError({
   useEffect(() => console.error(error), [error])
 
   return (
-    <>:went
+    <>
       <main className="grid min-h-full place-items-center bg-background px-6 py-24 sm:py-32 lg:px-8">
         <div className="text-center">
           <p className="text-base font-semibold text-primary">Error</p>

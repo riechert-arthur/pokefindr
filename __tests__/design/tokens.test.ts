@@ -61,7 +61,8 @@ describe("design tokens", () => {
   })
 
   // The map's cluster counts are drawn in primary-foreground on opaque
-  // primary / brand-2 / brand circles (PokemonCenterLocationPins.tsx).
+  // primary / brand-2 / brand circles (PokemonCenterLocationPins.tsx), and
+  // avatar initials on brand (Avatar.tsx).
   it.each(["primary", "brand-2", "brand"])("keeps primary-foreground at 4.5:1 or more on %s", (fill) => {
     for (const [name, mode] of [["light", light], ["dark", dark]] as const) {
       const ratio = contrast(mode.get("primary-foreground")!, mode.get(fill)!)
