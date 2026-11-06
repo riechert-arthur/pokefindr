@@ -100,6 +100,14 @@ export default {
   			caption: ['0.75rem', { lineHeight: '1.4' }],
   			overline: ['0.6875rem', { lineHeight: '1.2', letterSpacing: '0.08em', fontWeight: '600' }]
   		},
+  		keyframes: {
+  			'accordion-down': { from: { height: '0' }, to: { height: 'var(--radix-accordion-content-height)' } },
+  			'accordion-up': { from: { height: 'var(--radix-accordion-content-height)' }, to: { height: '0' } }
+  		},
+  		animation: {
+  			'accordion-down': 'accordion-down 0.2s ease-out',
+  			'accordion-up': 'accordion-up 0.2s ease-out'
+  		},
   		/*
   		 * Elevation from the redesign prototype, themed for light and dark.
   		 * These replace Tailwind's sm/md/lg/xl (xl is for drawers and side

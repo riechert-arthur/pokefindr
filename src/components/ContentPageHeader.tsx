@@ -1,10 +1,10 @@
 "use client"
 
 import type { FC, Dispatch, SetStateAction } from "react"
-import { MenuIcon, XIcon } from "lucide-react"
+import { MenuIcon } from "lucide-react"
 import { Logo } from "@/components/brand/Logo"
 import { useState } from "react"
-import { Dialog, DialogPanel } from "@headlessui/react"
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import Link from "next/link"
 import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { useSessionContext } from "./providers/SessionProvider"
@@ -31,25 +31,13 @@ export const MobileMenu: FC<MobileMenuProps> = ({
   const { session } = useSessionContext()
 
   return (
-    <Dialog
-      open={mobileMenuOpen}
-      onClose={setMobileMenuOpen}
-      className="lg:hidden"
-    >
-      <div className="fixed inset-0 z-50" />
-      <DialogPanel className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-card px-6 py-6 sm:max-w-sm sm:ring-1 sm:ring-border">
-        <div className="flex items-center justify-between">
-          <Link href="/" className="-m-1.5 p-1.5">
+    <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+      <SheetContent side="right" className="w-full overflow-y-auto bg-card px-6 py-6 sm:max-w-sm lg:hidden">
+        <SheetTitle className="sr-only">Menu</SheetTitle>
+        <div className="flex items-center justify-between pr-8">
+          <Link href="/" className="-m-1.5 p-1.5" onClick={() => setMobileMenuOpen(false)}>
             <Logo variant="full" size={32} />
           </Link>
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(false)}
-            className="-m-2.5 rounded-md p-2.5 text-foreground"
-          >
-            <span className="sr-only">Close menu</span>
-            <XIcon aria-hidden="true" className="size-6" />
-          </button>
         </div>
         <div className="mt-6 flow-root">
           <div className="-my-6 divide-y divide-border">
@@ -83,8 +71,8 @@ export const MobileMenu: FC<MobileMenuProps> = ({
             </div>
           </div>
         </div>
-      </DialogPanel>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }
 
