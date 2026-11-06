@@ -1,8 +1,9 @@
 import { useSyncExternalStore } from "react"
 
 /**
- * A string that changes whenever the theme on <html> changes (its class,
- * style or data-theme). Use it as a memo dependency for anything built from
+ * A string that changes whenever the theme on <html> changes (its class or
+ * data-theme). Inline styles aren't watched: scroll locks and other libraries
+ * set them often, and theme libraries switch themes with the class. Use it as a memo dependency for anything built from
  * `readTokens`, so colors are re-read after the new theme is applied.
  *
  * This watches the DOM rather than a theme library's state on purpose: a
@@ -17,14 +18,14 @@ function subscribe(onChange: () => void): () => void {
   const observer = new MutationObserver(onChange)
   observer.observe(document.documentElement, {
     attributes: true,
-    attributeFilter: ["class", "style", "data-theme"],
+    attributeFilter: ["class", "data-theme"],
   })
   return () => observer.disconnect()
 }
 
 function getSnapshot(): string {
   const html = document.documentElement
-  return `${html.className}|${html.getAttribute("style") ?? ""}|${html.dataset.theme ?? ""}`
+  return `${html.className}|${html.dataset.theme ?? ""}`
 }
 
 function getServerSnapshot(): string {

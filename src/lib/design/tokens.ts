@@ -18,11 +18,6 @@ export const COLOR_TOKENS = [
 
 export type ColorToken = (typeof COLOR_TOKENS)[number]
 
-export type LocationKind = "vending" | "shop" | "event"
-
-/** The token for a location kind's color. */
-export const kindToken = (kind: LocationKind): ColorToken => `kind-${kind}`
-
 /** A token value: hue, saturation % and lightness % (`"221.2 83.2% 53.3%"`). */
 export const HSL_CHANNELS = /^\d+(\.\d+)?\s+\d+(\.\d+)?%\s+\d+(\.\d+)?%$/
 
@@ -30,6 +25,9 @@ export const HSL_CHANNELS = /^\d+(\.\d+)?\s+\d+(\.\d+)?%\s+\d+(\.\d+)?%$/
 const FALLBACK = "hsl(0, 0%, 50%)"
 const TEXT_FALLBACK = "hsl(0, 0%, 0%)"
 const defaultFallback = (token: ColorToken) => (/(^|-)foreground$/.test(token) ? TEXT_FALLBACK : FALLBACK)
+
+/** Tokens already warned about, so a re-render doesn't repeat the warning. */
+const warned = new Set<string>()
 
 /**
  * Turns a token's HSL channels (`"221.2 83.2% 53.3%"`) into a CSS color with
@@ -49,7 +47,8 @@ export function channelsToHsl(channels: string): string | undefined {
  * you have one; defaults to <html>. A token that is missing or malformed, or
  * any token during SSR, gets `fallback`. Without one, text tokens
  * (`*-foreground`) fall back to black and the rest to mid gray, so text drawn
- * on a fallback fill stays readable.
+ * on a fallback fill stays readable. Outside production, a missing or
+ * malformed token logs a warning once.
  */
 export function readTokens<T extends ColorToken>(
   tokens: readonly T[],
@@ -59,12 +58,13 @@ export function readTokens<T extends ColorToken>(
   const style = typeof window === "undefined" ? undefined : getComputedStyle(el ?? document.documentElement)
   const colors = {} as Record<T, string>
   for (const token of tokens) {
-    colors[token] = (style && channelsToHsl(style.getPropertyValue(`--${token}`))) ?? fallback ?? defaultFallback(token)
+    const raw = style?.getPropertyValue(`--${token}`)
+    const color = raw === undefined ? undefined : channelsToHsl(raw)
+    if (raw !== undefined && !color && process.env.NODE_ENV !== "production" && !warned.has(token)) {
+      warned.add(token)
+      console.warn(`readTokens: --${token} is ${raw.trim() ? `"${raw.trim()}"` : "not set"}, expected HSL channels like "221.2 83.2% 53.3%". Using a fallback color.`)
+    }
+    colors[token] = color ?? fallback ?? defaultFallback(token)
   }
   return colors
-}
-
-/** Reads one token's current value as a CSS color. See `readTokens`. */
-export function readToken(token: ColorToken, fallback?: string, el?: Element): string {
-  return readTokens([token], fallback, el)[token]
 }

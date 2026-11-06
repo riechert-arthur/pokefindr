@@ -51,7 +51,8 @@ const clusterLayers = (): { circle: LayerProps; count: LayerProps } => {
         "circle-radius": ["step", ["get", "point_count"], 15, 10, 20, 30, 25],
         "circle-stroke-width": 2,
         "circle-stroke-color": c["map-dot-ring"],
-        "circle-opacity": 0.8,
+        // Opaque, so the count's contrast doesn't depend on the basemap below.
+        "circle-opacity": 1,
       },
     },
     count: {
@@ -70,9 +71,9 @@ const clusterLayers = (): { circle: LayerProps; count: LayerProps } => {
         "text-offset": [0, 0.55],
         "text-anchor": "bottom",
       },
-      // All three fills are saturated in light mode and pale in dark mode, so
-      // the primary foreground (near-white / near-black) reads on each. If the
-      // tokens can't be read, readTokens falls back to black text on gray.
+      // primary-foreground meets 4.5:1 on all three fills in both themes
+      // (checked in __tests__/design/tokens.test.ts). If the tokens can't be
+      // read, readTokens falls back to black text on gray.
       paint: {
         "text-color": c["primary-foreground"],
       },
@@ -189,8 +190,10 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
     }
   }, [mapRef])
 
+  // Re-read the colors only when the theme changes (themeKey), not on every new collection.
+  const layers = useMemo(clusterLayers, [themeKey])
+
   const renderedSource = useMemo(() => {
-    const layers = clusterLayers()
     return (
       <Source
         id="machines"
@@ -206,9 +209,7 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
         <Layer {...unclusteredLayer} />
       </Source>
     )
-    // themeKey isn't read inside; it re-runs the memo so clusterLayers() re-reads the colors.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collection, themeKey])
+  }, [collection, layers])
 
   const activeInfo = clickedInfo || hoveredInfo
 
