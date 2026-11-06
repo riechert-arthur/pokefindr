@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { readTokens } from "@/lib/design/tokens"
-import { useThemeKey } from "@/lib/design/useThemeKey"
+import { useIsDark, useThemeKey } from "@/lib/design/useThemeKey"
 
 let warn: ReturnType<typeof vi.spyOn>
 
@@ -61,5 +61,16 @@ describe("useThemeKey", () => {
     })
     await new Promise((r) => setTimeout(r, 0))
     expect(result.current).toBe(before)
+  })
+})
+
+describe("useIsDark", () => {
+  it("follows the dark class on <html>", async () => {
+    const { result } = renderHook(() => useIsDark())
+    expect(result.current).toBe(false)
+    act(() => {
+      document.documentElement.classList.add("dark")
+    })
+    await waitFor(() => expect(result.current).toBe(true))
   })
 })

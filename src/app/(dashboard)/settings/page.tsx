@@ -2,6 +2,7 @@
 'use client'
 
 import { useState, useEffect, Fragment } from 'react'
+import { ThemeToggle } from "@/components/ui/ThemeToggle"
 import axios from 'axios'
 import { Bars3Icon } from '@heroicons/react/20/solid'
 import { useSidebar } from '@/components/providers/SidebarContextProvider'
@@ -70,14 +71,14 @@ export default function SettingsPage() {
 
   return (
     <div className={`${isSidebarOpen ? 'ml-16' : ''} md:ml-16`}>
-      <header className="absolute inset-x-0 top-0 z-10 flex h-16 border-b border-gray-900/10">
+      <header className="absolute inset-x-0 top-0 z-10 flex h-16 border-b border-border">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <button onClick={toggleSidebar} className="md:hidden mr-2 p-1 rounded" aria-label="Toggle menu">
-            <Bars3Icon className="w-6 h-6 text-gray-600 hover:text-blue-600" />
+            <Bars3Icon className="w-6 h-6 text-muted-foreground hover:text-blue-600" />
           </button>
           <div />
           <div className="flex items-center gap-x-8">
-            {/*<button className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500">
+            {/*<button className="-m-2.5 p-2.5 text-muted-foreground hover:text-foreground">
               <span className="sr-only">View notifications</span>
               <BellIcon className="h-6 w-6" />
             </button>*/}
@@ -92,15 +93,15 @@ export default function SettingsPage() {
         <main className="px-4 py-16 sm:px-6 lg:flex-auto lg:px-0 lg:py-20">
           <div className="mx-auto max-w-2xl space-y-16 sm:space-y-20 lg:mx-0 lg:max-w-none">
             <section>
-              <h2 className="text-base/7 font-semibold text-gray-900">Profile</h2>
-              <p className="mt-1 text-sm/6 text-gray-500">
+              <h2 className="text-base/7 font-semibold text-foreground">Profile</h2>
+              <p className="mt-1 text-sm/6 text-muted-foreground">
                 This information will be displayed publicly so be careful what you share.
               </p>
 
               {loading ? (
                 <LoadSpinner text="Loading settings..." /> 
               ) : (
-                <dl className="mt-6 divide-y divide-gray-100 border-t border-gray-200 text-sm/6">
+                <dl className="mt-6 divide-y divide-border border-t border-border text-sm/6">
                   {(['fullName','email','username'] as const).map((field) => {
                     const label = field === 'fullName'
                       ? 'Full name'
@@ -111,7 +112,7 @@ export default function SettingsPage() {
 
                     return (
                       <div key={field} className="py-6 sm:flex">
-                        <dt className="font-medium text-gray-900 sm:w-64 sm:flex-none sm:pr-6">
+                        <dt className="font-medium text-foreground sm:w-64 sm:flex-none sm:pr-6">
                           {label}
                         </dt>
                         <dd className="mt-1 flex justify-between gap-x-6 sm:mt-0 sm:flex-auto">
@@ -131,14 +132,14 @@ export default function SettingsPage() {
                               </button>
                               <button
                                 onClick={cancelEdit}
-                                className="px-3 py-1 text-sm font-semibold text-gray-600 rounded hover:text-gray-800"
+                                className="px-3 py-1 text-sm font-semibold text-muted-foreground rounded hover:text-foreground"
                               >
                                 Cancel
                               </button>
                             </div>
                           ) : (
                             <Fragment>
-                              <div className="text-gray-900">{value}</div>
+                              <div className="text-foreground">{value}</div>
                               <button
                                 onClick={() => startEdit(field)}
                                 className="font-semibold text-blue-600 hover:text-blue-500"
@@ -153,6 +154,12 @@ export default function SettingsPage() {
                   })}
                 </dl>
               )}
+            </section>
+
+            <section>
+              <h2 className="text-base/7 font-semibold text-foreground">Appearance</h2>
+              <p className="mt-1 text-sm/6 text-muted-foreground">Light, dark, or follow your device.</p>
+              <ThemeToggle className="mt-4" />
             </section>
           </div>
         </main>

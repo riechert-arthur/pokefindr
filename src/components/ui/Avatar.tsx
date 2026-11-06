@@ -70,17 +70,17 @@ export default function Avatar({
 
 
       {open && (
-        <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-35 bg-white border rounded-lg shadow-lg z-50">
+        <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-35 bg-card border rounded-lg shadow-lg z-50">
           <Link
             href="/settings"
-            className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+            className="block px-4 py-2 text-foreground hover:bg-muted"
             onClick={() => setOpen(false)}
           >
             Settings
           </Link>
           <button
             onClick={handleLogout}
-            className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+            className="w-full text-left px-4 py-2 text-foreground hover:bg-muted"
           >
             Log out
           </button>

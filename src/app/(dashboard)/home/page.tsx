@@ -102,14 +102,14 @@ export default function ReviewsPage() {
   return (
     <div className={`${isSidebarOpen ? 'ml-16' : ''} md:ml-16`}>
       {/* header */}
-      <header className="absolute inset-x-0 top-0 z-40 flex h-16 border-b border-gray-900/10">
+      <header className="absolute inset-x-0 top-0 z-40 flex h-16 border-b border-border">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <button onClick={toggleSidebar} className="md:hidden mr-2 p-1 rounded" aria-label="Toggle menu">
-            <Bars3Icon className="w-6 h-6 text-gray-600 hover:text-blue-600" />
+            <Bars3Icon className="w-6 h-6 text-muted-foreground hover:text-blue-600" />
           </button>
           <div />
           <div className="flex items-center gap-x-8">
-            {/*<button className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500">
+            {/*<button className="-m-2.5 p-2.5 text-muted-foreground hover:text-foreground">
               <span className="sr-only">View notifications</span>
               <BellIcon className="h-6 w-6" />
             </button>*/}
@@ -122,11 +122,11 @@ export default function ReviewsPage() {
         <div className="space-y-16 py-16 xl:space-y-20">
           <div className="pt-8 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {loading ? (
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-muted-foreground">
                 <LoadSpinner text="Loading your reviews…"/>
               </div>
             ) : reviews.length === 0 ? (
-              <p className="text-sm text-gray-500">You haven’t written any reviews yet.</p>
+              <p className="text-sm text-muted-foreground">You haven’t written any reviews yet.</p>
             ) : (
               <RecentReviewsSection
                 reviews={reviews}
@@ -181,7 +181,7 @@ export default function ReviewsPage() {
                 <button
                   type="button"
                   onClick={() => setEditOpen(false)}
-                  className="px-3 py-1 text-sm font-medium text-gray-600 hover:text-gray-800"
+                  className="px-3 py-1 text-sm font-medium text-muted-foreground hover:text-foreground"
                 >Cancel</button>
                 <button
                   type="submit"

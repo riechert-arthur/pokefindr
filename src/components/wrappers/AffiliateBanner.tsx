@@ -33,12 +33,12 @@ const AffiliateBanner: React.FC = () => {
           bottom-4          /* flush to bottom */
           left-1/2
           transform -translate-x-1/2
-          bg-white/90
+          bg-card/90
           backdrop-blur-sm
           rounded-2xl
           shadow-xl
           max-w-[95vw]
-          z-50
+          z-40
           hover:scale-105
           ease-out
           duration-200
@@ -54,8 +54,8 @@ const AffiliateBanner: React.FC = () => {
             absolute
             top-1
             left-2
-            text-black
-            hover:text-gray-900
+            text-muted-foreground
+            hover:text-foreground
             text-2xl
             leading-none
             z-1000

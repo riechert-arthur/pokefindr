@@ -70,20 +70,20 @@ const HeroSection: FC = () => {
               <Link
                 href="/blog"
                 aria-label="View available articles on our blog"
-                className="text-sm/6 font-semibold text-gray-900"
+                className="text-sm/6 font-semibold text-foreground"
               >
                 Learn more <span aria-hidden="true">→</span>
               </Link>
             </div>
           </div>
           <div className="mt-16 flow-root sm:mt-24">
-            <div className="relative overflow-hidden rounded-md ring-1 ring-gray-900/10">
+            <div className="relative overflow-hidden rounded-md ring-1 ring-border">
               <Link href="/map" aria-label="Goes to map app">
                 <Image
                   src="/hero-image.webp"
                   width={700}
                   height={700}
-                  className="w-full h-auto rounded-md shadow-lg border border-gray-300"
+                  className="w-full h-auto rounded-md shadow-lg border border-border"
                   loading="lazy"
                   alt="App screenshot"
                 />
