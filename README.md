@@ -1,5 +1,11 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Docs
+
+- [Design system](docs/design-system.md): tokens, type, components, and how to add one
+- [Database](docs/database.md) · [Background jobs](docs/jobs.md)
+- [Contributing](CONTRIBUTING.md)
+
 ## Getting Started
 
 First, run the development server:
