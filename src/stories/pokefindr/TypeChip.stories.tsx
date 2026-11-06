@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite"
 import { fn } from "storybook/test"
+import { useArgs } from "storybook/preview-api"
 import { useState } from "react"
 import { TypeChip } from "@/components/pokefindr/TypeChip"
 import { KIND_ORDER, type LocationKind } from "@/components/pokefindr/kinds"
@@ -24,7 +25,20 @@ const meta = {
 } satisfies Meta<typeof TypeChip>
 export default meta
 type Story = StoryObj<typeof meta>
-/** One chip; its props are in Controls. */
-export const Single: Story = {}
+/** One chip; its props are in Controls, and clicking it toggles `pressed`. */
+export const Single: Story = {
+  render: function Render(args) {
+    const [, updateArgs] = useArgs()
+    return (
+      <TypeChip
+        {...args}
+        onPressedChange={(pressed) => {
+          args.onPressedChange(pressed)
+          updateArgs({ pressed })
+        }}
+      />
+    )
+  },
+}
 export const Row: Story = { render: () => <ChipRow short /> }
 export const LongLabels: Story = { render: () => <ChipRow /> }
