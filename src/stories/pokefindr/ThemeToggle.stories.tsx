@@ -1,11 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite"
-import { ThemeProvider } from "@/components/providers/ThemeProvider"
 import { ThemeToggle } from "@/components/pokefindr/ThemeToggle"
 
 const meta = {
   title: "PokeFindr/ThemeToggle",
   component: ThemeToggle,
-  decorators: [(Story) => <ThemeProvider storageKey="storybook-theme"><Story /></ThemeProvider>],
+  // The toggle drives the theme here, not the toolbar (see .storybook/preview.tsx).
+  parameters: { themeToggle: true },
 } satisfies Meta<typeof ThemeToggle>
 export default meta
 type Story = StoryObj<typeof meta>

@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite"
 import { Button } from "@/components/ui/button"
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer"
 
-const meta = { title: "UI/Drawer", component: Drawer, parameters: { viewport: { defaultViewport: "mobile1" } } } satisfies Meta<typeof Drawer>
+// Storybook 10 sets the starting viewport through globals.
+const meta = { title: "UI/Drawer", component: Drawer, globals: { viewport: { value: "mobile1", isRotated: false } } } satisfies Meta<typeof Drawer>
 export default meta
 export const Default: StoryObj<typeof meta> = {
   render: () => (

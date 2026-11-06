@@ -4,9 +4,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 const meta = { title: "UI/Accordion", component: Accordion } satisfies Meta<typeof Accordion>
 export default meta
 export const FAQ: StoryObj<typeof meta> = {
-  args: { type: "single", collapsible: true },
-  render: () => (
-    <Accordion type="single" collapsible defaultValue="a" className="w-[32rem]">
+  args: { type: "single", collapsible: true, defaultValue: "a" },
+  render: (args) => (
+    <Accordion {...args} className="w-[32rem]">
       <AccordionItem value="a">
         <AccordionTrigger>What is a Pokémon vending machine?</AccordionTrigger>
         <AccordionContent>An automated retail machine that sells official Pokémon TCG products.</AccordionContent>

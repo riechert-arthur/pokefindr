@@ -14,9 +14,10 @@ describe("story coverage", () => {
     expect(missing).toEqual([])
   })
 
-  it("has a story for every PokeFindr component", () => {
+  it.each(["pokefindr", "brand"])("has a story for every component in src/components/%s", (dir) => {
+    // Brand components (Logo) live with the PokeFindr stories.
     const stories = new Set(names("src/stories/pokefindr", /\.stories\.tsx$/))
-    const missing = names("src/components/pokefindr", /\.tsx$/).filter((n) => !stories.has(n))
+    const missing = names(`src/components/${dir}`, /\.tsx$/).filter((n) => !stories.has(n))
     expect(missing).toEqual([])
   })
 })

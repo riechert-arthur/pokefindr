@@ -4,7 +4,7 @@ import type { StorybookConfig } from "@storybook/nextjs-vite"
 const config: StorybookConfig = {
   framework: "@storybook/nextjs-vite",
   stories: ["../src/stories/**/*.stories.@(ts|tsx)"],
-  addons: ["@storybook/addon-themes"],
+  addons: [],
   staticDirs: ["../public"],
 }
 
