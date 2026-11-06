@@ -96,8 +96,8 @@ describe("no raw colors outside globals.css", () => {
   // and generated images, which can't read CSS variables, are the other
   // exceptions.
   const EXEMPT = [path.join("src", "app", "globals.css"), path.join("src", "components", "icons") + path.sep]
-  // Generated image routes anywhere under src/app, as in .eslintrc.js.
-  const IMAGE_ROUTE = /^src\/app\/(.+\/)?(opengraph-image|twitter-image|icon|apple-icon)\.tsx$/
+  // Generated image routes anywhere under src/app, as in .eslintrc.js (any extension Next accepts).
+  const IMAGE_ROUTE = /^src\/app\/(.+\/)?(opengraph-image|twitter-image|icon|apple-icon)\.(tsx|ts|jsx|js)$/
   const isExempt = (file: string) => {
     const rel = path.relative(ROOT, file)
     return EXEMPT.some((e) => rel.startsWith(e)) || IMAGE_ROUTE.test(rel.split(path.sep).join("/"))
@@ -205,14 +205,27 @@ describe("no raw colors outside globals.css", () => {
     expect(RAW_COLOR.test(`label="Red team"`)).toBe(false)
   })
 
-  it("exempts the same generated image routes as the lint rule", () => {
-    for (const route of ["opengraph-image", "twitter-image", "icon", "apple-icon"]) {
-      expect(isExempt(path.join(ROOT, "src", "app", `${route}.tsx`)), route).toBe(true)
-      expect(isExempt(path.join(ROOT, "src", "app", "(visitor)", "blog", "[slug]", `${route}.tsx`)), route).toBe(true)
+  it("exempts the same generated image routes as the lint rule", async () => {
+    // Ask ESLint which files get the color rules, so the two lists can't drift.
+    const { ESLint } = await import("eslint")
+    const eslint = new ESLint({ cwd: ROOT })
+    const lintChecksColors = async (rel: string) => {
+      const config = await eslint.calculateConfigForFile(path.join(ROOT, rel))
+      const options = (config.rules?.["no-restricted-syntax"] ?? []) as unknown[]
+      return options.some((o) => typeof o === "object" && o !== null && /Literal\[value=\/.*#/.test((o as { selector?: string }).selector ?? ""))
     }
-    expect(isExempt(path.join(ROOT, "src", "app", "brand-mark.ts"))).toBe(false)
-    expect(isExempt(path.join(ROOT, "src", "app", "icons.tsx"))).toBe(false)
-  })
+    const samples = [
+      ...["opengraph-image", "twitter-image", "icon", "apple-icon"].flatMap((route) =>
+        ["tsx", "js"].flatMap((ext) => [`src/app/${route}.${ext}`, `src/app/(visitor)/blog/[slug]/${route}.${ext}`]),
+      ),
+      "src/app/brand-mark.ts",
+      "src/app/icons.tsx",
+      "src/app/page.tsx",
+    ]
+    for (const rel of samples) {
+      expect(isExempt(path.join(ROOT, rel)), rel).toBe(!(await lintChecksColors(rel)))
+    }
+  }, 30_000)
 
   it("strips comments but not comment markers inside strings", () => {
     const src = `const glob = "src/**/*.tsx"\n<path fill="#f00" />\n/* "#fff" */ // "#000"\nurl(http://x)`

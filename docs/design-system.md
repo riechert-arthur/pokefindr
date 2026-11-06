@@ -105,8 +105,9 @@ Adding a kind:
 1. `--kind-<name>` in both `:root` and `.dark` (`globals.css`), checked for contrast.
 2. `kind.<name>` in `tailwind.config.ts` → `theme.extend.colors.kind`, so `bg-kind-<name>` exists,
    and `kind-<name>` in `COLOR_TOKENS` (`src/lib/design/tokens.ts`).
-3. The kind in `LocationKind` (`src/lib/types/locations.ts`) and its entry in `KINDS` (label, short
-   label, icon, `bg-`/`text-` classes). `KIND_ORDER` follows `KINDS`.
+3. The kind in `LocationKind` (`src/lib/types/locations.ts`) and its entry in `KINDS`: `label`,
+   `short`, the singular and plural nouns `one` and `many` (`countLabel` uses them), `icon`, and
+   the `bg-`/`text-` classes. `KIND_ORDER` follows `KINDS`.
 4. A story showing it (the `KindDot` and `TypeChip` stories render every kind).
 
 ## Components
@@ -206,17 +207,11 @@ The Accessibility tab in Storybook runs the same axe while you work, with two di
 - It also reports page-level rules (`region`, `landmark-one-main`, `page-has-heading-one`), which
   CI turns off because a story is one component, not a page.
 
-Run it locally:
+Run it locally (builds Storybook, serves the build on port 6007 and runs the checks):
 
 ```sh
-npm run build-storybook
-npx playwright install chromium          # once
-# Port 6007, so a running `npm run storybook` (6006) isn't tested by mistake.
-python3 -m http.server 6007 -b 127.0.0.1 -d storybook-static & server=$!
-for _ in $(seq 30); do curl -sf http://127.0.0.1:6007/index.json >/dev/null && break; sleep 1; done
-curl -sf http://127.0.0.1:6007/index.json >/dev/null || { echo "build server didn't start"; kill $server; }
-npx test-storybook --url http://127.0.0.1:6007
-kill $server
+npx playwright install chromium   # once
+npm run test-storybook:local
 ```
 
 Fix the component or the token rather than the story. Contrast targets: 4.5:1 for text, 3:1 for
@@ -234,15 +229,16 @@ export const OnMap: Story = {
 }
 ```
 
-`a11y: { test: "off" }` (or the older `disable: true`) skips a story in CI and in the tab; use it
-for stories that only make sense in a page. `a11y: { context: "#selector" }` narrows what's
+`a11y: { test: "off" }` (or the older `disable: true`) skips a story in CI and turns off the tab's
+automatic run for it (you can still run it from the tab); use it for stories that only make sense
+in a page. `a11y: { context: "#selector" }` narrows what's
 checked, in both. `a11y.config` and `a11y.options` apply in both too. `test: "todo"`, the default
 in `.storybook/preview.tsx`, only makes the tab show violations as warnings: CI still fails on
 serious and critical ones.
 
 ## Guardrails
 
-ESLint (`.eslintrc.js`) blocks, everywhere in `src`:
+ESLint (`.eslintrc.js`) blocks, in `src` (`.ts`, `.tsx`, `.js`, `.jsx`):
 
 - Tailwind palette colors (`text-blue-600`, `hover:!bg-gray-100`, `border-t-red-500`): use a token.
 - Arbitrary colors (`bg-[#fff]`, `text-[rgb(…)]`, `bg-[oklch(…)]`, `[color:red]`,
@@ -253,8 +249,11 @@ ESLint (`.eslintrc.js`) blocks, everywhere in `src`:
   like `href="#add"` aren't flagged.
 
 Exempt: `src/components/icons/**`, the image routes under `src/app` (`opengraph-image`,
-`twitter-image`, `icon`, `apple-icon`), which can't read CSS variables, and the token runtime in
-`src/lib/design/`.
+`twitter-image`, `icon`, `apple-icon`), which can't read CSS variables, the token runtime in
+`src/lib/design/`, and the config readers (`src/server/config.ts`, `edge-config.ts`, `site-url.ts`,
+`src/config.public.ts`), where `no-restricted-syntax` is off. ESLint doesn't read CSS: the raw-color
+test in `__tests__/design/tokens.test.ts` checks `.css` files in `src/components` and `src/app`
+(`globals.css` defines the tokens, so it's exempt).
 
 Tests in `__tests__/design/` check that tokens are defined in both themes (and key text/fill pairs
 meet 4.5:1), raw colors stay out, the folder naming rules, no heroicons, the logo copies match,

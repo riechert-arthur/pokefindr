@@ -118,7 +118,7 @@ module.exports = {
       // token runtime, which turns token channels into color strings.
       files: [
         "src/components/icons/**",
-        "src/app/**/{opengraph-image,twitter-image,icon,apple-icon}.tsx",
+        "src/app/**/{opengraph-image,twitter-image,icon,apple-icon}.{tsx,ts,jsx,js}",
         "src/lib/design/**",
       ],
       rules: { "no-restricted-syntax": ["error", ...ENV_RULES] },
