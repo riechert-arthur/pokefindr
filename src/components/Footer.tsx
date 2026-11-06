@@ -4,7 +4,7 @@ import { InstagramLogoIcon } from "@/components/icons/InstagramLogoIcon"
 import { XLogoIcon } from "@/components/icons/XLogoIcon"
 import { GitHubLogoIcon } from "@/components/icons/GitHubLogoIcon"
 import { YouTubeLogoIcon } from "@/components/icons/YouTubeLogoIcon"
-import { PokeFindrIcon } from "@/components/icons/PokeFindrIcon"
+import { Logo } from "@/components/brand/Logo"
 import Link from "next/link"
 
 interface NavigationLinkProps {
@@ -119,7 +119,7 @@ export const Footer: FC = () => {
       <div className="mx-auto max-w-7xl px-6 pb-8 pt-16 sm:pt-24 lg:px-8 lg:pt-32">
         <div className="xl:grid xl:grid-cols-3 xl:gap-8">
           <div className="space-y-8">
-            <PokeFindrIcon width="64px" height="64px" />
+            <Logo size={64} />
             <p className="text-balance text-sm/6 text-muted-foreground">
               Helping users find the Pokemon Card Vending Machines in their area
               with interactive maps.

@@ -2,7 +2,7 @@
 
 import { FC, ReactNode } from 'react'
 import Link from 'next/link'
-import { PokeFindrIcon } from '@/components/icons/PokeFindrIcon'
+import { Logo } from "@/components/brand/Logo"
 import { useSidebar } from '@/components/providers/SidebarContextProvider'
 import { DiscordIcon } from './icons/DiscordIcon'
 import { useSessionContext } from './providers/SessionProvider'
@@ -30,7 +30,7 @@ export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
         }
       >
         <Link href="/" aria-label="Home">
-          <PokeFindrIcon width={24} height={24} />
+          <Logo size={28} />
         </Link>
         <nav className="flex flex-col space-y-6">
           <Link href="/home" aria-label="Home" className="p-2 hover:bg-muted rounded-md">

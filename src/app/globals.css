@@ -36,6 +36,8 @@
     --brand: 293.4 69.5% 48.8%;
     --brand-2: 262.1 83.3% 57.8%;
     --spark: 45.1 100% 48%;
+    /* The logo's card face stays white in both themes. */
+    --logo-card: 0 0% 100%;
     /* Status */
     --success: 142.4 71.8% 29.2%;
     --warning: 32.1 94.6% 35%; /* 4.7:1 on white, so it works as text */
@@ -96,6 +98,8 @@
     --brand: 292 91.4% 72.5%;
     --brand-2: 255.1 91.7% 76.3%;
     --spark: 50.4 97.8% 63.5%;
+    /* The logo's card face stays white in both themes. */
+    --logo-card: 0 0% 100%;
     /* Status */
     --success: 141.9 69.2% 58%;
     --warning: 43.3 96.4% 56.3%;
