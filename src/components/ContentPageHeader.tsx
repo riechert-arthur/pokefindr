@@ -2,7 +2,7 @@
 
 import type { FC, Dispatch, SetStateAction } from "react"
 import { MenuIcon, XIcon } from "lucide-react"
-import { PokeFindrIcon } from "@/components/icons/PokeFindrIcon"
+import { Logo } from "@/components/brand/Logo"
 import { useState } from "react"
 import { Dialog, DialogPanel } from "@headlessui/react"
 import Link from "next/link"
@@ -38,7 +38,7 @@ export const MobileMenu: FC<MobileMenuProps> = ({
         <div className="flex items-center justify-between">
           <Link href="/" className="-m-1.5 p-1.5">
             <span className="sr-only">PokeFindr</span>
-            <PokeFindrIcon width="32px" height="32px" />
+            <Logo variant="full" size={32} title="" />
           </Link>
           <button
             type="button"
@@ -101,7 +101,7 @@ export const ContentPageHeader: FC<HeaderProps> = ({ navigation }) => {
         <div className="flex lg:flex-1">
           <Link href="/" className="-m-1.5 p-1.5">
             <span className="sr-only">PokeFindr</span>
-            <PokeFindrIcon width="32px" height="32px" />
+            <Logo variant="full" size={32} title="" />
           </Link>
         </div>
         <div className="flex lg:hidden">

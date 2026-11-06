@@ -90,8 +90,15 @@ function contrast(a: string, b: string): number {
 
 describe("no raw colors outside globals.css", () => {
   // globals.css defines the tokens. Illustrations (multi-color SVG artwork)
-  // are the one other exception.
-  const EXEMPT = [path.join("src", "app", "globals.css"), path.join("src", "components", "icons") + path.sep]
+  // and generated images, which can't read CSS variables, are the other
+  // exceptions (the same files .eslintrc.json exempts).
+  const EXEMPT = [
+    path.join("src", "app", "globals.css"),
+    path.join("src", "components", "icons") + path.sep,
+    path.join("src", "app", "opengraph-image.tsx"),
+    path.join("src", "app", "apple-icon.tsx"),
+    path.join("src", "app", "brand-mark.ts"),
+  ]
   const files: string[] = []
   const walk = (dir: string) => {
     for (const name of readdirSync(dir)) {

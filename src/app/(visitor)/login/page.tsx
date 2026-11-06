@@ -1,5 +1,5 @@
 import { LoginForm } from "@/components/forms/LoginForm"
-import { PokeFindrIcon } from "@/components/icons/PokeFindrIcon"
+import { Logo } from "@/components/brand/Logo"
 import Link from "next/link"
 
 export default function LoginPage() {
@@ -8,7 +8,7 @@ export default function LoginPage() {
       <div className="z-1000 flex w-full max-w-sm flex-col gap-6">
         <Link href="/" className="flex items-center gap-2 self-center font-medium">
           <div className="bg-transparent text-primary-foreground flex size-6 items-center justify-center rounded-md">
-            <PokeFindrIcon width={24} height={24} />
+            <Logo size={24} />
           </div>
           Pokefindr 
         </Link>

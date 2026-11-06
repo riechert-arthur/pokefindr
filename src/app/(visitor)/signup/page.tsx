@@ -1,5 +1,5 @@
 import { RegistrationForm } from "@/components/forms/SignupForm"
-import { PokeFindrIcon } from "@/components/icons/PokeFindrIcon"
+import { Logo } from "@/components/brand/Logo"
 import { Link } from "lucide-react"
 
 export default function LoginPage() {
@@ -8,7 +8,7 @@ export default function LoginPage() {
       <div className="z-1000 flex w-full max-w-sm flex-col gap-6">
         <Link href="/" className="flex items-center gap-2 self-center font-medium">
           <div className="bg-transparent text-primary-foreground flex size-6 items-center justify-center rounded-md">
-            <PokeFindrIcon width={20} height={20} /> 
+            <Logo size={20} /> 
           </div>
           Pokefindr 
         </Link>
