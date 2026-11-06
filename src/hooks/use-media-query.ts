@@ -16,10 +16,13 @@ const list = (query: string) => {
 
 /**
  * True while `query` matches. Components that mount on the client read the
- * real value on their first render; during SSR and hydration it's
- * `defaultValue`, then it follows the media query.
+ * real value on their first render. During SSR and hydration it's
+ * `defaultValue`, or undefined when none is given, so a caller can tell
+ * "not known yet" apart from "doesn't match".
  */
-export function useMediaQuery(query: string, defaultValue = false): boolean {
+export function useMediaQuery(query: string): boolean | undefined
+export function useMediaQuery(query: string, defaultValue: boolean): boolean
+export function useMediaQuery(query: string, defaultValue?: boolean): boolean | undefined {
   const subscribe = useCallback(
     (onChange: () => void) => {
       const mql = list(query)

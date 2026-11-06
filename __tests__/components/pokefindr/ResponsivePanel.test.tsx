@@ -1,6 +1,6 @@
 import React from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, render, screen, waitFor } from "@testing-library/react"
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { renderToString } from "react-dom/server"
 import { ResponsivePanel } from "@/components/pokefindr/ResponsivePanel"
 import { resetMediaQueryCache } from "@/hooks/use-media-query"
@@ -109,6 +109,48 @@ describe("ResponsivePanel", () => {
     document.body.appendChild(container)
     render(ui, { container, hydrate: true })
     await waitFor(() => expect(screen.getByRole("dialog")).toHaveAttribute("data-vaul-drawer-direction", "bottom"))
+    // Never the desktop sheet: nothing renders until the breakpoint is known.
+    expect(document.querySelector(".sm\\:max-w-md")).toBeNull()
     container.remove()
+  })
+
+  it("gives the phone drawer a close button", () => {
+    setViewport(false)
+    const onOpenChange = vi.fn()
+    render(
+      <ResponsivePanel open onOpenChange={onOpenChange} title="QFC">
+        Details
+      </ResponsivePanel>,
+    )
+    fireEvent.click(screen.getByRole("button", { name: "Close" }))
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+
+  it("is non-modal on desktop by default, so the page behind stays usable", () => {
+    setViewport(true)
+    render(
+      <>
+        <button>Map control</button>
+        <ResponsivePanel open onOpenChange={() => {}} title="QFC">
+          Details
+        </ResponsivePanel>
+      </>,
+    )
+    // A modal dialog hides everything else from assistive tech; a non-modal one doesn't.
+    expect(screen.getByRole("button", { name: "Map control" })).toBeInTheDocument()
+    expect(document.querySelector("[data-state=open].fixed.inset-0")).toBeNull()
+  })
+
+  it("can be modal on desktop", () => {
+    setViewport(true)
+    render(
+      <>
+        <button>Map control</button>
+        <ResponsivePanel open modal onOpenChange={() => {}} title="QFC">
+          Details
+        </ResponsivePanel>
+      </>,
+    )
+    expect(screen.queryByRole("button", { name: "Map control" })).toBeNull()
   })
 })
