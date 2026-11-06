@@ -51,6 +51,16 @@ describe("getServerConfig", () => {
     expect(config.DATABASE_POOL_MAX).toBe(5)
   })
 
+  it("allows CRON_SECRET to be unset or blank", () => {
+    vi.stubEnv("CRON_SECRET", "")
+    expect(getServerConfig().CRON_SECRET).toBeUndefined()
+  })
+
+  it("rejects a CRON_SECRET shorter than 32 characters", () => {
+    vi.stubEnv("CRON_SECRET", "too-short")
+    expect(() => getServerConfig()).toThrowError(/CRON_SECRET/)
+  })
+
   it("rejects an invalid DATABASE_URL", () => {
     vi.stubEnv("DATABASE_URL", "not a url")
     expect(() => getServerConfig()).toThrowError(/DATABASE_URL/)

@@ -32,6 +32,15 @@ const serverSchema = z.object({
   /** Max connections per server instance. Keep small on serverless hosts. */
   DATABASE_POOL_MAX: blankAsUnset(z.coerce.number().int().positive().default(5)),
 
+  /**
+   * Shared secret for `/api/jobs/<name>`. Vercel Cron sends it as
+   * `Authorization: Bearer <CRON_SECRET>`. Optional: without it, every job
+   * request is rejected.
+   */
+  CRON_SECRET: blankAsUnset(z.string().min(32, "must be at least 32 characters").optional()),
+  /** Set to "1" by Vercel on its build and runtime. Decides whether jobs go through Vercel Queues. */
+  VERCEL: blankAsUnset(z.string().optional()),
+
   // Supabase is still used for auth until the auth migration lands.
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),

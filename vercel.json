@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    { "path": "/api/jobs/noop", "schedule": "0 6 * * *" }
+  ],
+  "functions": {
+    "src/app/api/queues/jobs/route.ts": {
+      "experimentalTriggers": [
+        { "type": "queue/v2beta", "topic": "jobs", "retryAfterSeconds": 60, "maxDeliveries": 10 }
+      ]
+    }
+  }
+}
