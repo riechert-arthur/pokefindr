@@ -54,7 +54,7 @@ const AffiliateBanner: React.FC = () => {
             absolute
             top-1
             left-2
-            text-foreground
+            text-muted-foreground
             hover:text-foreground
             text-2xl
             leading-none

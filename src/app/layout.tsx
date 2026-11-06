@@ -4,7 +4,7 @@ import { ContextProviders } from "@/components/providers/ContextProviders"
 import { ThemeProvider } from "@/components/providers/ThemeProvider"
 import { Analytics } from "@vercel/analytics/next"
 import AffiliateBannerWrapper from "@/components/wrappers/AffiliateBannerWrapper"
-import { Toaster } from "sonner"
+import { Toaster } from "@/components/ui/Sonner"
 
 export const metadata = {
   "robots": {

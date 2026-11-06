@@ -109,7 +109,7 @@ export default function ReviewsPage() {
           </button>
           <div />
           <div className="flex items-center gap-x-8">
-            {/*<button className="-m-2.5 p-2.5 text-muted-foreground hover:text-muted-foreground">
+            {/*<button className="-m-2.5 p-2.5 text-muted-foreground hover:text-foreground">
               <span className="sr-only">View notifications</span>
               <BellIcon className="h-6 w-6" />
             </button>*/}

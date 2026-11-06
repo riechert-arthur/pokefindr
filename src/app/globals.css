@@ -137,3 +137,25 @@
     text-wrap: balance;
   }
 }
+
+/* mapbox-gl.css hard-codes a white popup; use the popover tokens instead. */
+.mapboxgl-popup-content {
+  background: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+}
+.mapboxgl-popup-anchor-top .mapboxgl-popup-tip,
+.mapboxgl-popup-anchor-top-left .mapboxgl-popup-tip,
+.mapboxgl-popup-anchor-top-right .mapboxgl-popup-tip {
+  border-bottom-color: hsl(var(--popover));
+}
+.mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip,
+.mapboxgl-popup-anchor-bottom-left .mapboxgl-popup-tip,
+.mapboxgl-popup-anchor-bottom-right .mapboxgl-popup-tip {
+  border-top-color: hsl(var(--popover));
+}
+.mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
+  border-right-color: hsl(var(--popover));
+}
+.mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
+  border-left-color: hsl(var(--popover));
+}

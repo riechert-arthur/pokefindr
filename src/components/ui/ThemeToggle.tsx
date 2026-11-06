@@ -12,29 +12,32 @@ const OPTIONS: { value: "light" | "dark" | "system"; label: string; icon: Lucide
 ]
 
 interface ThemeToggleProps {
-  /** "segmented" shows all three options (settings); "cycle" is one icon button that steps through them (sidebar). */
-  variant?: "segmented" | "cycle"
+  /**
+   * "segmented" shows light, dark and system (settings). "toggle" is one icon
+   * button that switches between light and dark from whatever is showing
+   * (sidebar), so every click changes the theme.
+   */
+  variant?: "segmented" | "toggle"
   className?: string
 }
 
-/** Light / dark / system theme switch. Renders a neutral placeholder until mounted, so SSR and client markup match. */
+/** Light / dark (/ system) theme switch. Renders a neutral placeholder until mounted, so SSR and client markup match. */
 export function ThemeToggle({ variant = "segmented", className }: ThemeToggleProps) {
-  const { theme, setTheme } = useTheme()
+  const { theme, resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   const current = mounted ? (theme ?? "system") : "system"
 
-  if (variant === "cycle") {
-    const index = OPTIONS.findIndex((o) => o.value === current)
-    const option = OPTIONS[index === -1 ? 2 : index]
-    const next = OPTIONS[(OPTIONS.indexOf(option) + 1) % OPTIONS.length]
-    const Icon = option.icon
+  if (variant === "toggle") {
+    const isDark = mounted && resolvedTheme === "dark"
+    const Icon = isDark ? Moon : Sun
+    const next = isDark ? "light" : "dark"
     return (
       <button
         type="button"
-        onClick={() => setTheme(next.value)}
-        aria-label={`Theme: ${option.label}. Switch to ${next.label}`}
-        title={`Theme: ${option.label}`}
+        onClick={() => setTheme(next)}
+        aria-label={`Switch to ${next} theme`}
+        title={`Switch to ${next} theme`}
         className={cn("rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground", className)}
       >
         <Icon className="size-6" aria-hidden />

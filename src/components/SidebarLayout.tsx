@@ -24,7 +24,7 @@ export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
       <aside
         className={
           `fixed inset-y-0 left-0 bg-card shadow-xl z-50
-          flex flex-col items-center py-4 space-y-6 w-16
+          flex flex-col items-center py-4 gap-6 w-16
           transform transition-transform duration-300
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           sm:translate-x-0
@@ -53,7 +53,7 @@ export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
           </Link> 
           )} 
         </nav>
-        <ThemeToggle variant="cycle" className="mt-auto" />
+        <ThemeToggle variant="toggle" className="mt-auto" />
       </aside>
 
       {isSidebarOpen && <button

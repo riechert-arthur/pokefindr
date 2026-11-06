@@ -78,7 +78,7 @@ export default function SettingsPage() {
           </button>
           <div />
           <div className="flex items-center gap-x-8">
-            {/*<button className="-m-2.5 p-2.5 text-muted-foreground hover:text-muted-foreground">
+            {/*<button className="-m-2.5 p-2.5 text-muted-foreground hover:text-foreground">
               <span className="sr-only">View notifications</span>
               <BellIcon className="h-6 w-6" />
             </button>*/}
@@ -156,7 +156,7 @@ export default function SettingsPage() {
               )}
             </section>
 
-            <section className="mt-10">
+            <section>
               <h2 className="text-base/7 font-semibold text-foreground">Appearance</h2>
               <p className="mt-1 text-sm/6 text-muted-foreground">Light, dark, or follow your device.</p>
               <ThemeToggle className="mt-4" />

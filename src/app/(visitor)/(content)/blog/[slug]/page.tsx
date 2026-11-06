@@ -39,11 +39,11 @@ const BlogPostPage: FC<BlogPostPageProps> = async ({ params }) => {
     <div className="flex flex-col items-center">
       <BlogPostHero metadata={metadata} />
       <Markdown
-        className="px-8 relative top-20 text-xl max-w-prose prose"
+        className="px-8 relative top-20 text-xl max-w-prose prose dark:prose-invert"
         remarkPlugins={[remarkGfm, remarkSlug as Plugin]}
         components={{
           a: ({ href, children }) => (
-            <a href={href} className="text-blue-600 hover:text-blue-800 underline">
+            <a href={href} className="text-primary hover:text-primary/80 underline">
               {children}
             </a>
           ),

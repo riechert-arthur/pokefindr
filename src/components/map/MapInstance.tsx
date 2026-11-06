@@ -17,7 +17,7 @@ import { useSidebar } from "../providers/SidebarContextProvider"
 import { LocationInfoPanel } from "./LocationInfoPanel"
 import Avatar from "@/components/ui/Avatar"
 import { useSessionContext } from "../providers/SessionProvider"
-import { useTheme } from "next-themes"
+import { useIsDark } from "@/lib/design/useThemeKey"
 
 interface ViewState {
   longitude: number
@@ -41,7 +41,8 @@ const MapInstance: FC = () => {
   > | null>(null)
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const { session } = useSessionContext()
-  const { resolvedTheme } = useTheme()
+  // MapInstance is client-only (MapLoader uses ssr: false), so this is right on first render.
+  const isDark = useIsDark()
   const collection = useLocations()
 
   useEffect(() => {
@@ -80,7 +81,7 @@ const MapInstance: FC = () => {
         zIndex: 1,
         position: "relative",
       }}
-      mapStyle={resolvedTheme === "dark" ? "mapbox://styles/mapbox/dark-v11" : "mapbox://styles/mapbox/streets-v12"}
+      mapStyle={isDark ? "mapbox://styles/mapbox/dark-v11" : "mapbox://styles/mapbox/streets-v12"}
       onClick={() => {
         if(isSidebarOpen) {
           toggleSidebar()

@@ -31,3 +31,15 @@ function getSnapshot(): string {
 function getServerSnapshot(): string {
   return ""
 }
+
+/**
+ * Whether the dark theme is applied to <html>. Reads the same class as
+ * useThemeKey, so it changes in the same render as the token colors.
+ */
+export function useIsDark(): boolean {
+  return useSyncExternalStore(subscribe, isDarkSnapshot, () => false)
+}
+
+function isDarkSnapshot(): boolean {
+  return document.documentElement.classList.contains("dark")
+}
