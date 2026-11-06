@@ -1,10 +1,16 @@
 // @vitest-environment node
 import path from "node:path"
 import { ESLint } from "eslint"
-import { describe, it, expect } from "vitest"
+import { beforeAll, describe, it, expect } from "vitest"
 
 const ROOT = path.resolve(__dirname, "../..")
 const eslint = new ESLint({ cwd: ROOT })
+
+// Loading the Next ESLint config (parsers and plugins) is slow on a cold runner,
+// so do it once up front with a generous timeout instead of in the first test.
+beforeAll(async () => {
+  await eslint.lintText("export {}", { filePath: path.join(ROOT, "src/components/Warmup.tsx") })
+}, 60_000)
 
 /** Lints `code` as if it lived at `file`, returning only the design-system violations. */
 async function colorErrors(code: string, file = "src/components/Example.tsx") {
@@ -37,8 +43,18 @@ describe("design-system lint guardrails", () => {
     ["a theme() palette lookup", `export const A = () => <p className="text-[theme(colors.blue.500)]" />`],
     ["a hex color in a border shorthand", `export const A = () => <div style={{ border: "1px solid #ddd" }} />`],
     ["a hex color constant", `export const brandColor = "#c026d3"`],
-  ])("rejects %s", async (_label, code) => {
-    expect(await colorErrors(code)).not.toEqual([])
+    ["a hex color in a color map", `export const KIND_COLORS = { shop: "#c026d3" }`],
+    ["a hex constant with any name", `export const PIN = "#c026d3"`],
+    ["a hex color in a ternary", `export const A = ({ on }: { on: boolean }) => <p style={{ color: on ? "#fff" : "#000" }} />`],
+    ["a hex color in a template literal", "export const A = () => <p style={{ color: `#fff` }} />"],
+    ["a named color in a style", `export const A = () => <p style={{ color: "red", background: "white" }} />`],
+    ["an arbitrary color property", `export const A = () => <p className="[color:red]" />`],
+    ["an upper-case color function", `export const A = () => <p style={{ color: "RGB(0,0,0)" }} />`],
+    ["upper-case CSS in a template", "export const css = `.x { Color: #abc }`"],
+    ["a raw color in src/lib", `export const style = { paint: "rgb(0, 0, 0)" }`, "src/lib/map/style.ts"],
+    ["a raw color in a .js file", `export const c = "rgb(0, 0, 0)"`, "src/components/legacy.js"],
+  ])("rejects %s", async (_label, code, file?: string) => {
+    expect(await colorErrors(code, file)).not.toEqual([])
   })
 
   it.each([
@@ -53,6 +69,7 @@ describe("design-system lint guardrails", () => {
     ["an issue reference after a colon", `export const A = () => <p title="Fixes: #142">Bug: #abc</p>`],
     ["anchors outside a plain href", "export const nav = [{ name: 'Add', href: '#add' }]; export const A = () => <a href={\"#add\"} onClick={() => document.querySelector(\"#face\")} />"],
     ["an SVG fragment reference", `export const A = () => <p className="bg-[url(#a)]" />`],
+    ["issue references in parentheses and lists", `export const A = () => <p title="Fixed map crash (#142)">See #12, #142 (#abc)</p>`],
     ["a token color inside an arbitrary value", `export const A = () => <div className="bg-[hsl(var(--brand)/0.3)]" />`],
   ])("allows %s", async (_label, code) => {
     expect(await colorErrors(code)).toEqual([])
