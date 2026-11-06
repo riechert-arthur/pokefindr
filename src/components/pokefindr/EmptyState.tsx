@@ -12,6 +12,9 @@ interface EmptyStateProps {
   className?: string
 }
 
+/** Whether a node renders something: 0 does; null, undefined, booleans and "" don't. */
+const hasContent = (node: ReactNode) => node != null && typeof node !== "boolean" && node !== ""
+
 /** What a list, panel or tile shows when it has nothing yet. */
 export function EmptyState({ icon: Icon, title, children, action, className }: EmptyStateProps) {
   return (
@@ -22,9 +25,8 @@ export function EmptyState({ icon: Icon, title, children, action, className }: E
         </span>
       )}
       <p className="font-semibold text-foreground">{title}</p>
-      {/* != null, not truthiness: 0 is content, not "nothing". */}
-      {children != null && children !== false && <div className="text-muted-foreground">{children}</div>}
-      {action != null && action !== false && <div className="pt-1">{action}</div>}
+      {hasContent(children) && <div className="text-muted-foreground">{children}</div>}
+      {hasContent(action) && <div className="pt-1">{action}</div>}
     </div>
   )
 }

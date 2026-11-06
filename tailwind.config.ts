@@ -2,6 +2,7 @@ import type { Config } from "tailwindcss"
 import typography from "@tailwindcss/typography"
 import defaultTheme from "tailwindcss/defaultTheme"
 import { SCREENS } from "./src/lib/design/breakpoints"
+import { FONT_SIZE } from "./src/lib/design/type-scale"
 
 export default {
     darkMode: ["class"],
@@ -93,16 +94,8 @@ export default {
   		 * Type scale from the redesign prototype. Use these instead of
   		 * text-5xl/text-sm/etc. so headings, body and captions stay consistent.
   		 */
-  		fontSize: {
-  			display: ['clamp(2.25rem, 1.5rem + 4vw, 4rem)', { lineHeight: '1.02', letterSpacing: '-0.035em', fontWeight: '700' }],
-  			title: ['clamp(1.625rem, 1.25rem + 1.6vw, 2.25rem)', { lineHeight: '1.1', letterSpacing: '-0.03em', fontWeight: '700' }],
-  			heading: ['1.25rem', { lineHeight: '1.3', letterSpacing: '-0.02em', fontWeight: '600' }],
-  			subheading: ['0.9375rem', { lineHeight: '1.35', letterSpacing: '-0.01em', fontWeight: '600' }],
-  			'body-lg': ['1.0625rem', { lineHeight: '1.55' }],
-  			body: ['0.875rem', { lineHeight: '1.45' }],
-  			caption: ['0.75rem', { lineHeight: '1.4' }],
-  			overline: ['0.6875rem', { lineHeight: '1.2', letterSpacing: '0.08em', fontWeight: '600' }]
-  		},
+  		// Type scale: src/lib/design/type-scale.ts (shared with cn()).
+  		fontSize: FONT_SIZE,
   		keyframes: {
   			'accordion-down': { from: { height: '0' }, to: { height: 'var(--radix-accordion-content-height)' } },
   			'accordion-up': { from: { height: 'var(--radix-accordion-content-height)' }, to: { height: '0' } }

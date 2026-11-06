@@ -1,14 +1,15 @@
 import { extendTailwindMerge } from "tailwind-merge"
+import { FONT_SIZE } from "@/lib/design/type-scale"
 
 /**
- * tailwind-merge, told about our custom type scale: without this it reads
- * text-body or text-caption as a color and drops a text-foreground next to it.
- * Keep the list in sync with theme.extend.fontSize in tailwind.config.ts.
+ * tailwind-merge, told about our custom type scale (the same object Tailwind
+ * uses): without this it reads text-body or text-caption as a color and drops
+ * a text-foreground next to it.
  */
 const twMerge = extendTailwindMerge({
   extend: {
     classGroups: {
-      "font-size": [{ text: ["display", "title", "heading", "subheading", "body-lg", "body", "caption", "overline"] }],
+      "font-size": [{ text: Object.keys(FONT_SIZE) }],
     },
   },
 })

@@ -1,4 +1,7 @@
 import { CalendarDaysIcon, StoreIcon, createLucideIcon, type LucideIcon } from "lucide-react"
+import type { LocationKind } from "@/lib/types/locations"
+
+export type { LocationKind }
 
 /** A vending machine in lucide's style (from the redesign prototype). */
 export const VendingMachineIcon = createLucideIcon("VendingMachine", [
@@ -10,9 +13,6 @@ export const VendingMachineIcon = createLucideIcon("VendingMachine", [
   ["path", { d: "M8 17h8", key: "slot" }],
 ])
 
-import type { LocationKind } from "@/lib/types/locations"
-
-export type { LocationKind }
 
 export interface KindMeta {
   /** Plural label for chips and filters. */
@@ -38,6 +38,10 @@ export const KINDS: Record<LocationKind, KindMeta> = {
 }
 
 export const KIND_ORDER: LocationKind[] = ["vending", "shop", "event"]
+
+/** A kind from untrusted data (the API): unknown or missing values are vending machines, today's only kind. */
+export const toKind = (value: unknown): LocationKind =>
+  typeof value === "string" && Object.hasOwn(KINDS, value) ? (value as LocationKind) : "vending"
 
 /** "1,457": counts are always formatted the same way. */
 export const formatCount = (n: number) => n.toLocaleString("en-US")

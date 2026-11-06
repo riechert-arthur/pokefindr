@@ -8,6 +8,7 @@ import type { Point } from "geojson"
 import type { LocationFeature, LocationFeatureCollection } from "@/lib/types/locations"
 import { useSidebar } from "@/components/providers/SidebarContextProvider"
 import { KindDot } from "@/components/pokefindr/KindDot"
+import { toKind } from "@/components/pokefindr/kinds"
 
 interface MapSearchBarProps {
   collection: LocationFeatureCollection
@@ -225,7 +226,7 @@ export function MapSearchBar({
                 onMouseDown={(e) => e.preventDefault()}
               >
                 <div className="flex items-start gap-2.5">
-                  <KindDot kind={feat.properties.kind ?? "vending"} className="mt-0.5" />
+                  <KindDot kind={toKind(feat.properties.kind)} className="mt-0.5" />
                   <div>
                     <strong>{retailer}</strong>
                     <br />

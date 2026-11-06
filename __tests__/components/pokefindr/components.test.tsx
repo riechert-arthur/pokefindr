@@ -4,7 +4,7 @@ import { fireEvent, render, screen } from "@testing-library/react"
 import { InboxIcon } from "lucide-react"
 import { EmptyState } from "@/components/pokefindr/EmptyState"
 import { KindDot } from "@/components/pokefindr/KindDot"
-import { KIND_ORDER, KINDS, countLabel } from "@/components/pokefindr/kinds"
+import { KIND_ORDER, KINDS, countLabel, toKind } from "@/components/pokefindr/kinds"
 import { SponsoredSlot } from "@/components/pokefindr/SponsoredSlot"
 import { StatusBadge } from "@/components/pokefindr/StatusBadge"
 import { TypeChip } from "@/components/pokefindr/TypeChip"
@@ -91,9 +91,27 @@ describe("class merging", () => {
     expect(dot).not.toHaveClass("rounded-full")
   })
 
-  it("shows 0 as EmptyState content", () => {
-    render(<EmptyState title="Saved places">{0}</EmptyState>)
+  it("shows 0 as EmptyState content, but not empty strings or booleans", () => {
+    const { container, rerender } = render(<EmptyState title="Saved places">{0}</EmptyState>)
     expect(screen.getByText("0")).toBeInTheDocument()
+    for (const empty of ["", true, false, null]) {
+      rerender(<EmptyState title="Saved places">{empty}</EmptyState>)
+      expect(container.querySelector(".text-muted-foreground"), String(empty)).toBeNull()
+    }
+  })
+
+  it("keeps the strip's right padding clear for the dismiss button", () => {
+    const { container } = render(
+      <SponsoredSlot variant="strip" sponsor="S" title="T" cta="Go" href="https://example.com" onDismiss={() => {}} />,
+    )
+    expect(container.firstElementChild).toHaveClass("pr-9", "pl-4")
+  })
+
+  it("treats unknown or missing kinds from the API as vending", () => {
+    expect(toKind("shop")).toBe("shop")
+    expect(toKind("card_shop")).toBe("vending")
+    expect(toKind(undefined)).toBe("vending")
+    expect(toKind("toString")).toBe("vending")
   })
 })
 

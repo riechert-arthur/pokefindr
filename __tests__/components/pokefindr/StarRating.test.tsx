@@ -75,8 +75,12 @@ describe("StarRating", () => {
     expect(screen.getByRole("radiogroup", { name: "Your rating" })).toBeInTheDocument()
   })
 
-  it("reads an average to one decimal", () => {
-    render(<StarRating rating={13 / 3} />)
-    expect(screen.getByRole("img", { name: "4.3 out of 5 stars" })).toBeInTheDocument()
+  it("draws and reads an average at the same half-star step", () => {
+    const { container, rerender } = render(<StarRating rating={13 / 3} />)
+    expect(screen.getByRole("img", { name: "4.5 out of 5 stars" })).toBeInTheDocument()
+    expect(container.querySelectorAll("svg.lucide-star-half")).toHaveLength(1)
+    rerender(<StarRating rating={4.96} />)
+    expect(screen.getByRole("img", { name: "5 out of 5 stars" })).toBeInTheDocument()
+    expect(container.querySelectorAll("svg.lucide-star-half")).toHaveLength(0)
   })
 })

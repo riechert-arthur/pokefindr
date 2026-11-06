@@ -16,6 +16,9 @@ interface StarRatingProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "on
 
 type Fill = "full" | "half" | "empty"
 
+/** Rounds to the nearest half star: 4.33 → 4.5, 4.2 → 4, 4.96 → 5. */
+const toHalf = (rating: number) => Math.round(rating * 2) / 2
+
 const fillFor = (rating: number, star: number): Fill =>
   rating >= star ? "full" : rating >= star - 0.5 ? "half" : "empty"
 
@@ -46,10 +49,11 @@ export function StarRating({ rating, starSize = 24, onChange, label = "Rating", 
 
   if (!onChange) {
     return (
-      // One decimal, so an average like 4.333… reads "4.3 out of 5 stars".
-      <div role="img" aria-label={`${Math.round(rating * 10) / 10} out of 5 stars`} className={wrapper} {...rest}>
+      // Drawn and read at the same half-star step, so an average like 4.33
+      // shows and reads as "4.5 out of 5 stars".
+      <div role="img" aria-label={`${toHalf(rating)} out of 5 stars`} className={wrapper} {...rest}>
         {[1, 2, 3, 4, 5].map((star) => (
-          <StarIcon key={star} fill={fillFor(rating, star)} size={starSize} />
+          <StarIcon key={star} fill={fillFor(toHalf(rating), star)} size={starSize} />
         ))}
       </div>
     )
