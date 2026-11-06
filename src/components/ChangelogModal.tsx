@@ -40,7 +40,7 @@ const ChangelogModal: FC = () => {
         </ul>
         <button
           onClick={handleClose}
-          className="w-full bg-primary text-white py-2 rounded hover:bg-primary/90 hover:cursor-pointer"
+          className="w-full bg-primary text-primary-foreground py-2 rounded hover:bg-primary/90 hover:cursor-pointer"
         >
           Got it!
         </button>

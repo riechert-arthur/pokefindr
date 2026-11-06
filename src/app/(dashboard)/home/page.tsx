@@ -185,7 +185,7 @@ export default function ReviewsPage() {
                 >Cancel</button>
                 <button
                   type="submit"
-                  className="px-3 py-1 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded"
+                  className="px-3 py-1 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded"
                 >Save</button>
               </div>
             </form>

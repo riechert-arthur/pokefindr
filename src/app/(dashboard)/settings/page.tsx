@@ -126,7 +126,7 @@ export default function SettingsPage() {
                               />
                               <button
                                 onClick={() => saveEdit(field)}
-                                className="px-3 py-1 text-sm font-semibold text-white bg-primary rounded hover:bg-primary/90"
+                                className="px-3 py-1 text-sm font-semibold text-primary-foreground bg-primary rounded hover:bg-primary/90"
                               >
                                 Save
                               </button>

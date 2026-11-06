@@ -3,6 +3,7 @@ import Link from "next/link"
 import Head from "next/head"
 import { FAQLoader } from "@/components/wrappers/FAQLoader"
 import Image from "next/image"
+import { buttonVariants } from "@/components/ui/Button"
 
 export const metadata = {
   "title": "Find all Pokemon Vending Machine Locations - Free Map | PokeFindr",
@@ -61,9 +62,7 @@ const HeroSection: FC = () => {
               <Link
                 href="/map"
                 aria-label="View the full map of Pokemon vending machines"
-                className="rounded-md bg-primary px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm
-                hover:bg-primary/90 focus-visible:outline focus-visible:outline-2
-                focus-visible:outline-offset-2 focus-visible:outline-ring"
+                className={buttonVariants({ size: "lg" })}
               >
                 View full map
               </Link>

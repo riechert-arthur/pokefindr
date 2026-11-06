@@ -58,7 +58,7 @@ export const RecentReviewsSection: React.FC<RecentReviewsSectionProps> = ({ revi
                 </button>
                 <button
                   onClick={() => onDelete(review.id)}
-                  className="flex items-center text-sm font-semibold text-destructive hover:text-destructive"
+                  className="flex items-center text-sm font-semibold text-destructive hover:text-destructive/80"
                 >
                   <Trash2Icon className="size-6 mr-1" /> Delete
                 </button>
