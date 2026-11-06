@@ -5,9 +5,13 @@ import { act, render } from "@testing-library/react"
 vi.mock("@/components/providers/SessionProvider", () => ({ useSessionContext: () => ({ session: null }) }))
 
 import { MobileMenu } from "@/components/ContentPageHeader"
+import { resetMediaQueryCache } from "@/hooks/use-media-query"
 
 describe("MobileMenu", () => {
-  afterEach(() => vi.unstubAllGlobals())
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    resetMediaQueryCache()
+  })
 
   it("closes itself when the window widens past lg", () => {
     const listeners = new Set<() => void>()

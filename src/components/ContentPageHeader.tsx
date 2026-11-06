@@ -39,7 +39,7 @@ export const MobileMenu: FC<MobileMenuProps> = ({
 
   return (
     <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-      <SheetContent side="right" closeLabel="Close menu" aria-describedby={undefined} className="w-full overflow-y-auto bg-card px-6 py-6 sm:max-w-sm lg:hidden">
+      <SheetContent side="right" closeLabel="Close menu" overlayClassName="lg:hidden" aria-describedby={undefined} className="w-full overflow-y-auto bg-card px-6 py-6 sm:max-w-sm lg:hidden">
         <SheetTitle className="sr-only">Menu</SheetTitle>
         <div className="flex items-center justify-between pr-8">
           <Link href="/" className="-m-1.5 p-1.5" onClick={() => setMobileMenuOpen(false)}>

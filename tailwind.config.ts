@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss"
 import typography from "@tailwindcss/typography"
 import defaultTheme from "tailwindcss/defaultTheme"
+import { SCREENS } from "./src/lib/design/breakpoints"
 
 export default {
     darkMode: ["class"],
@@ -10,6 +11,8 @@ export default {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
+  	// Shared with useMediaQuery (src/lib/design/breakpoints.ts).
+  	screens: SCREENS,
   	extend: {
   		colors: {
   			background: 'hsl(var(--background))',

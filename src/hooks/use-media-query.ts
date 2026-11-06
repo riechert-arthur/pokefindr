@@ -1,6 +1,18 @@
 "use client"
 
 import { useCallback, useSyncExternalStore } from "react"
+import { minWidth } from "@/lib/design/breakpoints"
+
+// One MediaQueryList per query, so snapshots don't re-parse the query.
+const lists = new Map<string, MediaQueryList>()
+const list = (query: string) => {
+  let mql = lists.get(query)
+  if (!mql) {
+    mql = window.matchMedia(query)
+    lists.set(query, mql)
+  }
+  return mql
+}
 
 /**
  * True while `query` matches. Components that mount on the client read the
@@ -10,21 +22,31 @@ import { useCallback, useSyncExternalStore } from "react"
 export function useMediaQuery(query: string, defaultValue = false): boolean {
   const subscribe = useCallback(
     (onChange: () => void) => {
-      const mql = window.matchMedia(query)
-      mql.addEventListener("change", onChange)
-      return () => mql.removeEventListener("change", onChange)
+      const mql = list(query)
+      // Safari before 14 only has the older addListener/removeListener.
+      if (mql.addEventListener) {
+        mql.addEventListener("change", onChange)
+        return () => mql.removeEventListener("change", onChange)
+      }
+      mql.addListener(onChange)
+      return () => mql.removeListener(onChange)
     },
     [query],
   )
   return useSyncExternalStore(
     subscribe,
-    () => window.matchMedia(query).matches,
+    () => list(query).matches,
     () => defaultValue,
   )
 }
 
 /** Tailwind's `md` breakpoint: desktop-style panels from here up. */
-export const MD_UP = "(min-width: 768px)"
+export const MD_UP = minWidth("md")
 
 /** Tailwind's `lg` breakpoint: the full header nav from here up. */
-export const LG_UP = "(min-width: 1024px)"
+export const LG_UP = minWidth("lg")
+
+/** For tests that stub matchMedia between cases. */
+export function resetMediaQueryCache() {
+  lists.clear()
+}

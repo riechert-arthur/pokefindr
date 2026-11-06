@@ -1,7 +1,9 @@
 import React from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, render, screen } from "@testing-library/react"
+import { act, render, screen, waitFor } from "@testing-library/react"
+import { renderToString } from "react-dom/server"
 import { ResponsivePanel } from "@/components/pokefindr/ResponsivePanel"
+import { resetMediaQueryCache } from "@/hooks/use-media-query"
 
 /** A controllable viewport: `resize(desktop)` fires "change" on every query. */
 function setViewport(desktop: boolean) {
@@ -24,7 +26,10 @@ function setViewport(desktop: boolean) {
 }
 
 describe("ResponsivePanel", () => {
-  afterEach(() => vi.unstubAllGlobals())
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    resetMediaQueryCache()
+  })
 
   it("is a side sheet on desktop", () => {
     setViewport(true)
@@ -45,21 +50,11 @@ describe("ResponsivePanel", () => {
         Details
       </ResponsivePanel>,
     )
+    // useMediaQuery reads matchMedia on the first client render, so no Sheet mounts first.
+    expect(screen.getAllByRole("dialog")).toHaveLength(1)
     const dialog = screen.getByRole("dialog", { name: "QFC" })
     expect(dialog).not.toHaveClass("sm:max-w-md")
     expect(dialog).toHaveAttribute("data-vaul-drawer-direction", "bottom")
-  })
-
-  it("is a drawer on the first render on a phone (no desktop sheet first)", () => {
-    setViewport(false)
-    render(
-      <ResponsivePanel open onOpenChange={() => {}} title="QFC">
-        Details
-      </ResponsivePanel>,
-    )
-    // useMediaQuery reads matchMedia on the first client render, so no Sheet mounts first.
-    expect(screen.getAllByRole("dialog")).toHaveLength(1)
-    expect(screen.getByRole("dialog")).toHaveAttribute("data-vaul-drawer-direction", "bottom")
   })
 
   it("keeps the same panel while open when the breakpoint changes", () => {
@@ -99,5 +94,21 @@ describe("ResponsivePanel", () => {
       </ResponsivePanel>,
     )
     expect(screen.getByRole("dialog")).not.toHaveAttribute("aria-describedby")
+  })
+
+  it("becomes a drawer after hydration when it's open on load on a phone", async () => {
+    setViewport(false)
+    const ui = (
+      <ResponsivePanel open onOpenChange={() => {}} title="QFC">
+        Details
+      </ResponsivePanel>
+    )
+    // The server render assumes desktop; hydrating on a phone must not keep the Sheet.
+    const container = document.createElement("div")
+    container.innerHTML = renderToString(ui)
+    document.body.appendChild(container)
+    render(ui, { container, hydrate: true })
+    await waitFor(() => expect(screen.getByRole("dialog")).toHaveAttribute("data-vaul-drawer-direction", "bottom"))
+    container.remove()
   })
 })

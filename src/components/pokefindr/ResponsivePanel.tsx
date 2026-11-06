@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { useState, useSyncExternalStore, type ReactNode } from "react"
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { MD_UP, useMediaQuery } from "@/hooks/use-media-query"
@@ -22,13 +22,25 @@ interface ResponsivePanelProps {
  * the prototype uses for location details, results and the add-a-place flow.
  * Both are dialogs with a required title for screen readers.
  */
+const noopSubscribe = () => () => {}
+
 export function ResponsivePanel({ open, onOpenChange, title, description, side = "left", children, className }: ResponsivePanelProps) {
   const desktop = useMediaQuery(MD_UP, true)
-  // Keep the same kind of panel while it's open. Switching between Sheet and
-  // Drawer mid-way (a tablet rotating across md) would remount the children
-  // and lose typed input, scroll position and focus.
-  const [sheet, setSheet] = useState(desktop)
-  if (!open && sheet !== desktop) setSheet(desktop)
+  const hydrated = useSyncExternalStore(noopSubscribe, () => true, () => false)
+  // Pick Sheet or Drawer when the panel opens and keep it until it next opens:
+  // switching while open (a tablet rotating across md) would remount the
+  // children and lose input and focus, and switching on close would cut off
+  // the exit animation. During hydration the breakpoint isn't known yet, so a
+  // panel that's open on load picks once hydration is done.
+  const [locked, setLocked] = useState<boolean | null>(null)
+  const [wasOpen, setWasOpen] = useState(false)
+  if (hydrated && open && (!wasOpen || locked === null)) {
+    setWasOpen(true)
+    setLocked(desktop)
+  } else if (!open && wasOpen) {
+    setWasOpen(false)
+  }
+  const sheet = locked ?? desktop
   // Without a description, opt out of aria-describedby so Radix doesn't warn.
   const describedBy = description ? {} : { "aria-describedby": undefined }
 
