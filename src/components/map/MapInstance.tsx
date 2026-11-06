@@ -6,12 +6,12 @@ import { useEffect, useRef, useState } from "react"
 import Map, { FullscreenControl, NavigationControl } from "react-map-gl"
 import type { MapRef } from "react-map-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
-import { PokemonCenterLocationPins, type MachineProperties } from "./PokemonCenterLocationPins"
+import { PokemonCenterLocationPins } from "./PokemonCenterLocationPins"
 import { UserLocationPin } from "./UserLocationPin"
 import { useUserLocationContext } from "@/components/providers/UserLocationContextProvider"
 import { MapSearchBar } from "./MapSearchBar"
-import machineData from "@/data/vending_machines_mod.json"
-import type { Feature, FeatureCollection, Point } from "geojson"
+import type { LocationFeature } from "@/lib/types/locations"
+import { useLocations } from "./useLocations"
 import { LocationPopupProps } from "./LocationPinPopUps"
 import { useSidebar } from "../providers/SidebarContextProvider"
 import { LocationInfoPanel } from "./LocationInfoPanel"
@@ -40,6 +40,7 @@ const MapInstance: FC = () => {
   > | null>(null)
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const { session } = useSessionContext()
+  const collection = useLocations()
 
   useEffect(() => {
     if (userLocation && !userLocationError && mapRef.current) {
@@ -51,7 +52,7 @@ const MapInstance: FC = () => {
     }
   }, [userLocation, userLocationError])
 
-  const handleSelect = (feat: Feature<Point, MachineProperties>) => {
+  const handleSelect = (feat: LocationFeature) => {
     const [lng, lat] = feat.geometry.coordinates
     mapRef.current?.flyTo({ center: [lng, lat], zoom: 14, duration: 1000 })
     setClickedInfo({
@@ -62,7 +63,7 @@ const MapInstance: FC = () => {
       city: feat.properties.city,
       state: feat.properties.state,
       machineID: feat.properties.machineID,
-      feature_index: feat.properties.feature_index,
+      id: feat.properties.id,
     })
   }
 
@@ -85,14 +86,14 @@ const MapInstance: FC = () => {
       }}
     >
       <PokemonCenterLocationPins 
-        collection={machineData as FeatureCollection<Point, MachineProperties>}
+        collection={collection}
         clickedInfo={clickedInfo}
         setClickedInfo={setClickedInfo}
       />
       <FullscreenControl position="bottom-right" />
       <NavigationControl position="bottom-right" />
       <UserLocationPin />
-      <MapSearchBar selectedLocation={clickedInfo} collection={machineData as FeatureCollection<Point, MachineProperties>} onSelect={handleSelect} />
+      <MapSearchBar selectedLocation={clickedInfo} collection={collection} onSelect={handleSelect} />
       <LocationInfoPanel info={clickedInfo} onClose={() => setClickedInfo(null)} />
       {session && (
         <div className="absolute top-4 right-5 z-50">

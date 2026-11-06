@@ -1,52 +1,30 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getAdminClient } from '@/lib/supabase/db'
+import { z } from 'zod'
+import { addReview } from '@/server/services/reviews'
 
-const MAX_DISTANCE_METERS = 50      
+const bodySchema = z.object({
+  locationId: z.string().uuid(),
+  rating: z.number().int().min(1).max(5),
+  text: z.string().trim().min(1),
+})
 
 export async function POST(req: NextRequest) {
-  const userId = req.headers.get("x-user-id")
+  const userId = req.headers.get('x-user-id')
   if (!userId) {
-    return NextResponse.json(
-      { error: "Unauthenticated" },
-      { status: 401 },
-    )
+    return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
   }
-  const { lat, lng, rating, text } = await req.json()
 
-  console.log("long: ", lng, " lat: ", lat)
+  const parsed = bodySchema.safeParse(await req.json().catch(() => null))
+  if (!parsed.success)
+    return NextResponse.json({ error: 'Missing or invalid locationId / rating / text' }, { status: 400 })
 
-  if (lat === undefined || lng === undefined)
-    return NextResponse.json(
-      { error: '(lat & lng) required' },
-      { status: 400 },
-    )
-  if (typeof rating !== 'number' || rating < 1 || rating > 5 || !text)
-    return NextResponse.json(
-      { error: 'Missing or invalid rating / text' },
-      { status: 400 },
-    )
-
-  const latNum = Number(lat)
-  const lngNum = Number(lng)
-  if (Number.isNaN(latNum) || Number.isNaN(lngNum))
-    return NextResponse.json({ error: 'Invalid coordinates' }, { status: 400 })
-
-  const { error: rpcErr } = await getAdminClient().rpc('add_review_for_location', {
-    lat_input:     latNum,
-    lng_input:     lngNum,
-    user_id:       userId,
-    rating_val:    rating,
-    comment_text:  text,
-    max_meters:    MAX_DISTANCE_METERS,
-  })
-
-  if (rpcErr)
-    return NextResponse.json(
-      { error: rpcErr.message },
-      { status: 500 },
-    )
-
-  return NextResponse.json({ success: true }, { status: 200 })
+  try {
+    const added = await addReview({ ...parsed.data, userId })
+    if (!added) return NextResponse.json({ error: 'Location not found' }, { status: 404 })
+    return NextResponse.json({ success: true }, { status: 200 })
+  } catch (err) {
+    console.error('[api/reviews] failed to add review', err)
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+  }
 }
-

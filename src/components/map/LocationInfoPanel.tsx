@@ -24,7 +24,6 @@ import { Button } from "@/components/ui/Button"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import machineData from "@/data/vending_machines_mod.json"
 import { handleSubmitError } from "@/lib/forms"
 import { useSessionContext } from "@/components/providers/SessionProvider"
 import { useRouter } from "next/navigation"
@@ -129,10 +128,10 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
   })
 
   const loadReviews = useCallback(
-    async (lat: number, lng: number) => {
+    async (locationId: string) => {
       try {
         const res = await axios.get<{ reviews: Review[] }>("/api/get-reviews", {
-          params: { lat, lng },
+          params: { locationId },
           withCredentials: true,
         })
         setReviews(res.data.reviews || [])
@@ -144,33 +143,18 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
   )
 
   useEffect(() => {
-    if (!info) return;
-
-    const feature = machineData.features[info.feature_index];
-    const coords = feature.geometry?.coordinates;
-    if (!coords) {
-      return;
-    }
-
-    const [longitude, latitude] = coords;
-    loadReviews(latitude, longitude);
-  }, [info, loadReviews]);
+    if (!info) return
+    loadReviews(info.id)
+  }, [info, loadReviews])
 
   const onReviewSubmit = async (values: ReviewFormValues) => {
     if (!info) return
 
     try {
-      const feature = machineData.features[info.feature_index];
-      const coords = feature.geometry?.coordinates;
-      if (!coords) return;
-
-      const [longitude, latitude] = coords;
-
       await axios.post(
         "/api/reviews",
         {
-          lat: latitude,
-          lng: longitude,
+          locationId: info.id,
           rating: values.rating,
           text: values.text,
         },
@@ -178,7 +162,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
       )
 
       reviewForm.reset()
-      await loadReviews(latitude, longitude)
+      await loadReviews(info.id)
     } catch (err) {
       handleSubmitError(err)
     }
