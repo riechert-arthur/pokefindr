@@ -74,4 +74,9 @@ describe("StarRating", () => {
     render(<StarRating rating={2} onChange={() => {}} label="Your rating" />)
     expect(screen.getByRole("radiogroup", { name: "Your rating" })).toBeInTheDocument()
   })
+
+  it("reads an average to one decimal", () => {
+    render(<StarRating rating={13 / 3} />)
+    expect(screen.getByRole("img", { name: "4.3 out of 5 stars" })).toBeInTheDocument()
+  })
 })

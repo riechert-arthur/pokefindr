@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { KINDS, type LocationKind } from "./kinds"
+import { KINDS, formatCount, type LocationKind } from "./kinds"
 
 interface TypeChipProps {
   kind: LocationKind
@@ -14,8 +14,6 @@ interface TypeChipProps {
   className?: string
 }
 
-const SHORT: Record<LocationKind, string> = { vending: "Vending", shop: "Shops", event: "Events" }
-
 /**
  * A toggle chip for showing or hiding one location kind. Off: muted swatch
  * and text. On: the swatch fills with the kind's color and the border darkens.
@@ -23,11 +21,13 @@ const SHORT: Record<LocationKind, string> = { vending: "Vending", shop: "Shops",
 export function TypeChip({ kind, pressed, onPressedChange, count, short, className }: TypeChipProps) {
   const meta = KINDS[kind]
   const Icon = meta.icon
+  const label = short ? meta.short : meta.label
   return (
     <button
       type="button"
       aria-pressed={pressed}
-      aria-label={count === undefined ? meta.label : `${meta.label}, ${count.toLocaleString("en-US")}`}
+      // Starts with the visible text, so voice control ("click Vending 1,457") matches.
+      aria-label={count === undefined ? label : `${label} ${formatCount(count)}`}
       onClick={() => onPressedChange(!pressed)}
       data-kind={kind}
       className={cn(
@@ -46,8 +46,8 @@ export function TypeChip({ kind, pressed, onPressedChange, count, short, classNa
       >
         <Icon className="size-[0.6875rem]" strokeWidth={2.5} />
       </span>
-      {short ? SHORT[kind] : meta.label}
-      {count !== undefined && <span className="text-caption tabular-nums text-muted-foreground">{count.toLocaleString("en-US")}</span>}
+      {label}
+      {count !== undefined && <span className="text-caption tabular-nums text-muted-foreground">{formatCount(count)}</span>}
     </button>
   )
 }

@@ -22,8 +22,9 @@ export function EmptyState({ icon: Icon, title, children, action, className }: E
         </span>
       )}
       <p className="font-semibold text-foreground">{title}</p>
-      {children && <div className="text-muted-foreground">{children}</div>}
-      {action && <div className="pt-1">{action}</div>}
+      {/* != null, not truthiness: 0 is content, not "nothing". */}
+      {children != null && children !== false && <div className="text-muted-foreground">{children}</div>}
+      {action != null && action !== false && <div className="pt-1">{action}</div>}
     </div>
   )
 }

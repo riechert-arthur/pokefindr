@@ -225,7 +225,7 @@ export function MapSearchBar({
                 onMouseDown={(e) => e.preventDefault()}
               >
                 <div className="flex items-start gap-2.5">
-                  <KindDot kind="vending" className="mt-0.5" />
+                  <KindDot kind={feat.properties.kind ?? "vending"} className="mt-0.5" />
                   <div>
                     <strong>{retailer}</strong>
                     <br />

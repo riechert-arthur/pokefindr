@@ -33,9 +33,14 @@ export function SponsoredSlot({ sponsor, title, body, cta, href, variant = "comp
       <span aria-hidden className="h-11 w-[2.125rem] shrink-0 -rotate-6 rounded-md bg-gradient-to-br from-brand to-brand-2 shadow-sm ring-[3px] ring-inset ring-background/70" />
       <span className="min-w-0 flex-1">
         <span className="block text-overline uppercase text-muted-foreground">Sponsored · {sponsor}</span>
-        <a href={href} target="_blank" rel="sponsored nofollow noopener" className={cn("block font-semibold text-foreground", !strip && "after:absolute after:inset-0")}>
-          {title}
-        </a>
+        {/* The strip's CTA button is its link, so the title isn't a second one. */}
+        {strip ? (
+          <span className="block font-semibold text-foreground">{title}</span>
+        ) : (
+          <a href={href} target="_blank" rel="sponsored nofollow noopener" className="block font-semibold text-foreground after:absolute after:inset-0">
+            {title}
+          </a>
+        )}
         {body && <span className="block text-muted-foreground">{body}</span>}
         {!strip && <span className="mt-1 block font-semibold text-primary">{cta} →</span>}
       </span>

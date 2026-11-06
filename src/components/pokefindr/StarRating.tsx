@@ -46,7 +46,8 @@ export function StarRating({ rating, starSize = 24, onChange, label = "Rating", 
 
   if (!onChange) {
     return (
-      <div role="img" aria-label={`${rating} out of 5 stars`} className={wrapper} {...rest}>
+      // One decimal, so an average like 4.333… reads "4.3 out of 5 stars".
+      <div role="img" aria-label={`${Math.round(rating * 10) / 10} out of 5 stars`} className={wrapper} {...rest}>
         {[1, 2, 3, 4, 5].map((star) => (
           <StarIcon key={star} fill={fillFor(rating, star)} size={starSize} />
         ))}

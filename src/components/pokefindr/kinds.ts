@@ -10,19 +10,21 @@ export const VendingMachineIcon = createLucideIcon("VendingMachine", [
   ["path", { d: "M8 17h8", key: "slot" }],
 ])
 
-export type LocationKind = "vending" | "shop" | "event"
+import type { LocationKind } from "@/lib/types/locations"
+
+export type { LocationKind }
 
 export interface KindMeta {
-  kind: LocationKind
   /** Plural label for chips and filters. */
   label: string
+  /** Short label for tight rows ("Vending" instead of "Vending machines"). */
+  short: string
   one: string
   many: string
   icon: LucideIcon
   /** Token classes for this kind's color. */
   bg: string
   text: string
-  border: string
 }
 
 /**
@@ -30,14 +32,17 @@ export interface KindMeta {
  * the map, chips, list icons and assistant cards always agree.
  */
 export const KINDS: Record<LocationKind, KindMeta> = {
-  vending: { kind: "vending", label: "Vending machines", one: "vending machine", many: "vending machines", icon: VendingMachineIcon, bg: "bg-kind-vending", text: "text-kind-vending", border: "border-kind-vending" },
-  shop: { kind: "shop", label: "Card shops", one: "card shop", many: "card shops", icon: StoreIcon, bg: "bg-kind-shop", text: "text-kind-shop", border: "border-kind-shop" },
-  event: { kind: "event", label: "Events", one: "event", many: "events", icon: CalendarDaysIcon, bg: "bg-kind-event", text: "text-kind-event", border: "border-kind-event" },
+  vending: { label: "Vending machines", short: "Vending", one: "vending machine", many: "vending machines", icon: VendingMachineIcon, bg: "bg-kind-vending", text: "text-kind-vending" },
+  shop: { label: "Card shops", short: "Shops", one: "card shop", many: "card shops", icon: StoreIcon, bg: "bg-kind-shop", text: "text-kind-shop" },
+  event: { label: "Events", short: "Events", one: "event", many: "events", icon: CalendarDaysIcon, bg: "bg-kind-event", text: "text-kind-event" },
 }
 
 export const KIND_ORDER: LocationKind[] = ["vending", "shop", "event"]
 
+/** "1,457": counts are always formatted the same way. */
+export const formatCount = (n: number) => n.toLocaleString("en-US")
+
 /** "1 vending machine", "12 card shops". */
 export function countLabel(kind: LocationKind, n: number): string {
-  return `${n.toLocaleString("en-US")} ${n === 1 ? KINDS[kind].one : KINDS[kind].many}`
+  return `${formatCount(n)} ${n === 1 ? KINDS[kind].one : KINDS[kind].many}`
 }

@@ -33,7 +33,8 @@ describe("TypeChip", () => {
   it("toggles and fills its swatch with the kind color when pressed", () => {
     const onPressedChange = vi.fn()
     const { rerender } = render(<TypeChip kind="vending" pressed={false} count={1457} short onPressedChange={onPressedChange} />)
-    const chip = screen.getByRole("button", { name: "Vending machines, 1,457" })
+    // The name starts with the visible text ("Vending 1,457"), for voice control.
+    const chip = screen.getByRole("button", { name: "Vending 1,457" })
     expect(chip).toHaveAttribute("aria-pressed", "false")
     expect(chip).toHaveTextContent("Vending")
     fireEvent.click(chip)
@@ -77,5 +78,22 @@ describe("SponsoredSlot", () => {
   it("shows a button in the strip variant", () => {
     render(<SponsoredSlot variant="strip" sponsor="S" title="T" cta="See the deal" href="https://example.com" />)
     expect(screen.getByRole("link", { name: "See the deal" })).toBeInTheDocument()
+    // One link per ad: the title isn't a second one.
+    expect(screen.getAllByRole("link")).toHaveLength(1)
   })
 })
+
+describe("class merging", () => {
+  it("draws a large KindDot as a rounded square, not a circle", () => {
+    const { container } = render(<KindDot kind="shop" size="lg" />)
+    const dot = container.firstElementChild!
+    expect(dot).toHaveClass("rounded-lg")
+    expect(dot).not.toHaveClass("rounded-full")
+  })
+
+  it("shows 0 as EmptyState content", () => {
+    render(<EmptyState title="Saved places">{0}</EmptyState>)
+    expect(screen.getByText("0")).toBeInTheDocument()
+  })
+})
+
