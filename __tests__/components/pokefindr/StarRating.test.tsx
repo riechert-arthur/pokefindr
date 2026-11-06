@@ -62,4 +62,39 @@ describe("StarRating", () => {
     expect(group).toHaveAttribute("aria-describedby", "r-msg")
     expect(group).toHaveAttribute("aria-invalid", "true")
   })
+
+  it("uses the spark token for filled stars and border for empty ones", () => {
+    const { container } = render(<StarRating rating={2} />)
+    const svgs = [...container.querySelectorAll("svg")]
+    expect(svgs.filter((s) => s.classList.contains("text-spark"))).toHaveLength(2)
+    expect(svgs.filter((s) => s.classList.contains("text-border"))).toHaveLength(3)
+  })
+
+  it("takes an accessible name for the input", () => {
+    render(<StarRating rating={2} onChange={() => {}} label="Your rating" />)
+    expect(screen.getByRole("radiogroup", { name: "Your rating" })).toBeInTheDocument()
+  })
+
+  it("draws and reads an average at the same half-star step", () => {
+    const { container, rerender } = render(<StarRating rating={13 / 3} />)
+    expect(screen.getByRole("img", { name: "4.5 out of 5 stars" })).toBeInTheDocument()
+    expect(container.querySelectorAll("svg.lucide-star-half")).toHaveLength(1)
+    rerender(<StarRating rating={4.96} />)
+    expect(screen.getByRole("img", { name: "5 out of 5 stars" })).toBeInTheDocument()
+    expect(container.querySelectorAll("svg.lucide-star-half")).toHaveLength(0)
+  })
+
+  it("labels bad or out-of-range ratings sensibly", () => {
+    const { rerender } = render(<StarRating rating={Number.NaN} />)
+    expect(screen.getByRole("img", { name: "0 out of 5 stars" })).toBeInTheDocument()
+    rerender(<StarRating rating={5.3} />)
+    expect(screen.getByRole("img", { name: "5 out of 5 stars" })).toBeInTheDocument()
+  })
+
+  it("draws the selected whole star in input mode", () => {
+    const { container } = render(<StarRating rating={3.5} onChange={() => {}} />)
+    expect(screen.getByRole("radio", { name: "4 stars" })).toHaveAttribute("aria-checked", "true")
+    expect(container.querySelectorAll("svg.lucide-star-half")).toHaveLength(0)
+    expect(container.querySelectorAll('svg.lucide-star[fill="currentColor"]')).toHaveLength(4)
+  })
 })

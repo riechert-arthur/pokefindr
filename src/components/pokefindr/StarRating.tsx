@@ -1,44 +1,67 @@
-import React, { useRef } from 'react'
-import { Star, StarHalf } from 'lucide-react'
+"use client"
 
-interface StarRatingProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
+import React, { useRef } from "react"
+import { Star, StarHalf } from "lucide-react"
+import { cn } from "@/lib/utils"
+
+interface StarRatingProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange"> {
+  /** 0–5; halves are shown. */
   rating: number
   starSize?: number
   /** Makes the stars a 1–5 radio group. Without it the rating is read-only. */
   onChange?: (newRating: number) => void
+  /** Accessible name for the input, e.g. "Your rating". */
+  label?: string
 }
 
-type Fill = 'full' | 'half' | 'empty'
+type Fill = "full" | "half" | "empty"
 
-const fillFor = (rating: number, threshold: number): Fill =>
-  rating >= threshold ? 'full' : rating >= threshold - 0.5 ? 'half' : 'empty'
+/** Rounds to the nearest half star within 0–5: 4.33 → 4.5, 4.96 → 5. NaN and null count as 0. */
+const toHalf = (rating: number) => (Number.isFinite(rating) ? Math.min(5, Math.max(0, Math.round(rating * 2) / 2)) : 0)
 
-/** One star at a fill level. lucide's StarHalf is only the left half, so a half star lays it over an outline. */
+const fillFor = (rating: number, star: number): Fill =>
+  rating >= star ? "full" : rating >= star - 0.5 ? "half" : "empty"
+
+/**
+ * One star: filled in the spark token, empty in the border token. lucide's
+ * StarHalf is only the left half, so a half star lays it over an empty outline.
+ */
 const StarIcon = ({ fill, size }: { fill: Fill; size: number }) => (
   <span className="relative block" style={{ width: size, height: size }}>
-    <Star size={size} fill={fill === 'full' ? 'currentColor' : 'none'} className="absolute inset-0" />
-    {fill === 'half' && <StarHalf size={size} fill="currentColor" className="absolute inset-0" />}
+    <Star
+      size={size}
+      fill={fill === "full" ? "currentColor" : "none"}
+      className={cn("absolute inset-0", fill === "full" ? "text-spark" : "text-border")}
+    />
+    {fill === "half" && <StarHalf size={size} fill="currentColor" className="absolute inset-0 text-spark" />}
   </span>
 )
 
 /**
  * Five stars. Read-only, it's an image labelled "N out of 5 stars". With
- * onChange it's a radio group (arrow keys move and select). Extra props such
- * as id and aria-describedby, which FormControl passes, go on the wrapper.
+ * onChange it's a radio group (arrow keys, Home and End move and select).
+ * Extra props such as id and aria-describedby, which FormControl passes, go on
+ * the wrapper.
  */
-export const StarRating: React.FC<StarRatingProps> = ({ rating, starSize = 24, onChange, className, ...rest }) => {
+export function StarRating({ rating, starSize = 24, onChange, label = "Rating", className, ...rest }: StarRatingProps) {
   const refs = useRef<(HTMLButtonElement | null)[]>([])
-  const wrapper = `flex space-x-1 text-spark ${className ?? ''}`.trim()
+  const wrapper = cn("flex gap-0.5", className)
 
   if (!onChange) {
+    // Drawn and read at the same half-star step, so an average like 4.33
+    // shows and reads as "4.5 out of 5 stars".
+    const shown = toHalf(rating)
     return (
-      <div role="img" aria-label={`${rating} out of 5 stars`} className={wrapper} {...rest}>
-        {[1, 2, 3, 4, 5].map((t) => <StarIcon key={t} fill={fillFor(rating, t)} size={starSize} />)}
+      <div role="img" aria-label={`${shown} out of 5 stars`} className={wrapper} {...rest}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <StarIcon key={star} fill={fillFor(shown, star)} size={starSize} />
+        ))}
       </div>
     )
   }
 
-  const selected = Math.round(rating)
+  // An input picks whole stars, so it draws the selected value, not a half.
+  const selected = Number.isFinite(rating) ? Math.min(5, Math.max(0, Math.round(rating))) : 0
   const select = (value: number) => {
     const next = Math.min(5, Math.max(1, value))
     onChange(next)
@@ -49,28 +72,30 @@ export const StarRating: React.FC<StarRatingProps> = ({ rating, starSize = 24, o
     if (step) {
       e.preventDefault()
       select((selected || 0) + step)
-    } else if (e.key === 'Home' || e.key === 'End') {
+    } else if (e.key === "Home" || e.key === "End") {
       e.preventDefault()
-      select(e.key === 'Home' ? 1 : 5)
+      select(e.key === "Home" ? 1 : 5)
     }
   }
 
   return (
-    <div role="radiogroup" aria-label="Rating" className={wrapper} onKeyDown={onKeyDown} {...rest}>
-      {[1, 2, 3, 4, 5].map((t) => (
+    <div role="radiogroup" aria-label={label} className={wrapper} onKeyDown={onKeyDown} {...rest}>
+      {[1, 2, 3, 4, 5].map((star) => (
         <button
-          key={t}
-          ref={(el) => { refs.current[t - 1] = el }}
+          key={star}
+          ref={(el) => {
+            refs.current[star - 1] = el
+          }}
           type="button"
           role="radio"
-          aria-checked={selected === t}
-          aria-label={`${t} ${t === 1 ? 'star' : 'stars'}`}
+          aria-checked={selected === star}
+          aria-label={`${star} ${star === 1 ? "star" : "stars"}`}
           // Roving tabindex: one tab stop, on the selected star (or the first).
-          tabIndex={selected === t || (selected < 1 && t === 1) ? 0 : -1}
-          onClick={() => select(t)}
-          className="rounded-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          tabIndex={selected === star || (selected < 1 && star === 1) ? 0 : -1}
+          onClick={() => select(star)}
+          className="rounded-md p-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <StarIcon fill={fillFor(rating, t)} size={starSize} />
+          <StarIcon fill={fillFor(selected, star)} size={starSize} />
         </button>
       ))}
     </div>

@@ -10,7 +10,11 @@ export interface LocationFeatureProperties {
   address: string
   city: string
   state: string
+  /** What kind of place this is. Absent on older data, which is all vending machines. */
+  kind?: LocationKind
 }
+
+export type LocationKind = "vending" | "shop" | "event"
 
 export type LocationFeature = Feature<Point, LocationFeatureProperties>
 export type LocationFeatureCollection = FeatureCollection<Point, LocationFeatureProperties>
