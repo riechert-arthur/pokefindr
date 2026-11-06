@@ -80,7 +80,8 @@
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 7.8%;
     --popover-foreground: 0 0% 98%;
-    --primary: 217.2 91.2% 59.8%;
+    /* Lighter than blue-500 so primary links pass AA on muted surfaces (4.85:1). */
+    --primary: 217.3 91.7% 62.2%;
     --primary-foreground: 220 48.8% 8.4%;
     --secondary: 0 0% 12.2%;
     --secondary-foreground: 0 0% 98%;
