@@ -91,8 +91,8 @@ export default {
   		 * text-5xl/text-sm/etc. so headings, body and captions stay consistent.
   		 */
   		fontSize: {
-  			display: ['clamp(2.25rem, 6.4vw, 4rem)', { lineHeight: '1.02', letterSpacing: '-0.035em', fontWeight: '700' }],
-  			title: ['clamp(1.625rem, 3.6vw, 2.25rem)', { lineHeight: '1.1', letterSpacing: '-0.03em', fontWeight: '700' }],
+  			display: ['clamp(2.25rem, 1.5rem + 4vw, 4rem)', { lineHeight: '1.02', letterSpacing: '-0.035em', fontWeight: '700' }],
+  			title: ['clamp(1.625rem, 1.25rem + 1.6vw, 2.25rem)', { lineHeight: '1.1', letterSpacing: '-0.03em', fontWeight: '700' }],
   			heading: ['1.25rem', { lineHeight: '1.3', letterSpacing: '-0.02em', fontWeight: '600' }],
   			subheading: ['0.9375rem', { lineHeight: '1.35', letterSpacing: '-0.01em', fontWeight: '600' }],
   			'body-lg': ['1.0625rem', { lineHeight: '1.55' }],
@@ -102,15 +102,17 @@ export default {
   		},
   		/*
   		 * Elevation from the redesign prototype, themed for light and dark.
-  		 * These replace Tailwind's sm/md/lg (and plain `shadow`, which maps to
-  		 * the lightest level). Being var() values, they can't take a color
-  		 * modifier such as shadow-lg shadow-indigo-600/10.
+  		 * These replace Tailwind's sm/md/lg; plain `shadow` maps to the lightest
+  		 * level and shadow-xl to the highest (drawers and side panels). Being
+  		 * var() values, they can't take a color modifier such as shadow-lg
+  		 * shadow-indigo-600/10.
   		 */
   		boxShadow: {
   			sm: 'var(--shadow-sm)',
   			DEFAULT: 'var(--shadow-sm)',
   			md: 'var(--shadow-md)',
-  			lg: 'var(--shadow-lg)'
+  			lg: 'var(--shadow-lg)',
+  			xl: 'var(--shadow-lg)'
   		}
   	}
   },

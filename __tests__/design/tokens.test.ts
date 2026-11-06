@@ -2,11 +2,13 @@
 import { readFileSync, readdirSync, statSync } from "node:fs"
 import path from "node:path"
 import { describe, it, expect } from "vitest"
+import tailwindConfig from "../../tailwind.config"
 import { COLOR_TOKENS, HSL_CHANNELS, channelsToHsl } from "@/lib/design/tokens"
 
 const ROOT = path.resolve(__dirname, "../..")
 const css = readFileSync(path.join(ROOT, "src/app/globals.css"), "utf8")
 const tailwind = readFileSync(path.join(ROOT, "tailwind.config.ts"), "utf8")
+const fontSize = (tailwindConfig.theme?.extend?.fontSize ?? {}) as Record<string, [string, unknown]>
 
 /**
  * The custom properties declared in the CSS rule whose selector list includes
@@ -34,8 +36,11 @@ describe("design tokens", () => {
     }
   })
 
-  it("only references color tokens from tailwind.config.ts that are defined in light and dark", () => {
-    const used = [...tailwind.matchAll(/var\(--([\w-]+)\)/g)].map((m) => m[1]).filter((t) => !/^(radius|font-)/.test(t))
+  // --radius is defined once (not per theme); the fonts come from next/font.
+  const NOT_THEMED = ["radius", "font-sans", "font-mono"]
+
+  it("only references tokens from tailwind.config.ts that are defined in light and dark", () => {
+    const used = [...tailwind.matchAll(/var\(--([\w-]+)\)/g)].map((m) => m[1]).filter((t) => !NOT_THEMED.includes(t))
     expect(used.length).toBeGreaterThan(0)
     for (const token of used) {
       expect(light.has(token), `${token} in :root`).toBe(true)
@@ -197,16 +202,13 @@ describe("no raw colors outside globals.css", () => {
   })
 })
 
-describe("type scale and elevation", () => {
+describe("type scale", () => {
   it.each(["display", "title", "heading", "subheading", "body-lg", "body", "caption", "overline"])("defines text-%s", (size) => {
-    // Anchored, so "heading" doesn't match inside "subheading: [".
-    expect(tailwind).toMatch(new RegExp(`(^|[\\s{,])['"]?${size}['"]?: \\[`, "m"))
+    expect(fontSize).toHaveProperty([size])
   })
 
-  it("doesn't match a size inside a longer name", () => {
-    const re = (size: string) => new RegExp(`(^|[\\s{,])['"]?${size}['"]?: \\[`, "m")
-    expect(re("heading").test(`  subheading: [`)).toBe(false)
-    expect(re("heading").test(`  heading: [`)).toBe(true)
-    expect(re("body-lg").test(`  'body-lg': [`)).toBe(true)
+  it("scales display and title with the browser's font size", () => {
+    // A rem term inside clamp() keeps text-size and zoom settings working.
+    for (const size of ["display", "title"]) expect(fontSize[size][0]).toMatch(/^clamp\([^,]+,[^,]*rem[^,]*,[^,]+\)$/)
   })
 })
