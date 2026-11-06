@@ -7,6 +7,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import type { Point } from "geojson"
 import type { LocationFeature, LocationFeatureCollection } from "@/lib/types/locations"
 import { useSidebar } from "@/components/providers/SidebarContextProvider"
+import { KindDot } from "@/components/pokefindr/KindDot"
 
 interface MapSearchBarProps {
   collection: LocationFeatureCollection
@@ -223,12 +224,15 @@ export function MapSearchBar({
                 }}
                 onMouseDown={(e) => e.preventDefault()}
               >
-                <div>
-                  <strong>{retailer}</strong>
-                  <br />
-                  <span className="text-sm">
-                    {address}, {city}
-                  </span>
+                <div className="flex items-start gap-2.5">
+                  <KindDot kind="vending" className="mt-0.5" />
+                  <div>
+                    <strong>{retailer}</strong>
+                    <br />
+                    <span className="text-sm text-muted-foreground">
+                      {address}, {city}
+                    </span>
+                  </div>
                 </div>
                 <span className="text-xs text-muted-foreground">{distMi} mi</span>
               </li>

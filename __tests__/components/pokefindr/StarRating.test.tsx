@@ -62,4 +62,16 @@ describe("StarRating", () => {
     expect(group).toHaveAttribute("aria-describedby", "r-msg")
     expect(group).toHaveAttribute("aria-invalid", "true")
   })
+
+  it("uses the spark token for filled stars and border for empty ones", () => {
+    const { container } = render(<StarRating rating={2} />)
+    const svgs = [...container.querySelectorAll("svg")]
+    expect(svgs.filter((s) => s.classList.contains("text-spark"))).toHaveLength(2)
+    expect(svgs.filter((s) => s.classList.contains("text-border"))).toHaveLength(3)
+  })
+
+  it("takes an accessible name for the input", () => {
+    render(<StarRating rating={2} onChange={() => {}} label="Your rating" />)
+    expect(screen.getByRole("radiogroup", { name: "Your rating" })).toBeInTheDocument()
+  })
 })
