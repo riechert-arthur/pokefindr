@@ -291,11 +291,9 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Rating</FormLabel>
-                              <StarRating
-                                rating={field.value}
-                                starSize={24}
-                                onChange={field.onChange}
-                              />
+                              <FormControl>
+                                <StarRating rating={field.value} starSize={24} onChange={field.onChange} />
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -449,11 +447,9 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Rating</FormLabel>
-                                <StarRating
-                                  rating={field.value}
-                                  starSize={24}
-                                  onChange={field.onChange}
-                                />
+                                <FormControl>
+                                  <StarRating rating={field.value} starSize={24} onChange={field.onChange} />
+                                </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}

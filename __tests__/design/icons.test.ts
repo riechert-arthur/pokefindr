@@ -12,14 +12,16 @@ describe("icons", () => {
       for (const name of readdirSync(dir)) {
         const full = path.join(dir, name)
         if (statSync(full).isDirectory()) walk(full)
-        else if (/\.(tsx?|jsx?|mjs|cjs|mdx?)$/.test(name)) files.push(full)
+        else if (/\.(tsx?|jsx?|mjs|cjs|mdx?|css|json)$/.test(name)) files.push(full)
       }
     }
-    for (const dir of ["src", "__tests__", "scripts"]) {
+    for (const dir of ["src", "__tests__", "scripts", "docs", "public"]) {
       if (existsSync(path.join(ROOT, dir))) walk(path.join(ROOT, dir))
     }
-    // Root config files (next.config, tailwind.config, vitest.config, ...).
-    for (const name of readdirSync(ROOT)) if (/\.config\.\w+$/.test(name)) files.push(path.join(ROOT, name))
+    // Root config and JSON files (next.config, components.json, ...), but not the lockfile.
+    for (const name of readdirSync(ROOT)) {
+      if (/\.config\.\w+$|\.json$/.test(name) && name !== "package-lock.json") files.push(path.join(ROOT, name))
+    }
     expect(files.length).toBeGreaterThan(0)
     const hits = files
       .filter((f) => f !== __filename && readFileSync(f, "utf8").includes("@heroicons"))
@@ -32,6 +34,11 @@ describe("icons", () => {
     for (const field of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
       expect(pkg[field] ?? {}, field).not.toHaveProperty("@heroicons/react")
     }
-    expect(readFileSync(path.join(ROOT, "package-lock.json"), "utf8")).not.toContain("node_modules/@heroicons/")
+    // The lockfile's root entry mirrors package.json; transitive copies are fine.
+    const lock = JSON.parse(readFileSync(path.join(ROOT, "package-lock.json"), "utf8"))
+    const root = lock.packages?.[""] ?? {}
+    for (const field of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
+      expect(root[field] ?? {}, `package-lock ${field}`).not.toHaveProperty("@heroicons/react")
+    }
   })
 })

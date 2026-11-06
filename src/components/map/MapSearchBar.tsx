@@ -192,16 +192,16 @@ export function MapSearchBar({
           onBlur={() => setIsFocused(false)}
         />
         {results.length > 0 ? (
-          <button onClick={() => { setResults([]); setQuery("") }} aria-label="Clear search" className="size-7 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
+          <button onClick={() => { setResults([]); setQuery("") }} aria-label="Clear search" onMouseDown={(e) => e.stopPropagation()} className="size-7 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
             <XIcon className="size-full hover:text-red-600" />
           </button>
         ) : (
-          <button onClick={performSearch} aria-label="Search" className="size-7 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
+          <button onClick={performSearch} aria-label="Search" onMouseDown={(e) => e.stopPropagation()} className="size-7 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
             <SearchIcon className="size-full hover:text-blue-600" />
           </button>
         )}
         {results.length > 0 &&
-          <button onClick={() => onSelect(results[0])} aria-label="Go to first result" className="ml-2 size-7 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
+          <button onClick={() => onSelect(results[0])} aria-label="Go to first result" onMouseDown={(e) => e.stopPropagation()} className="ml-2 size-7 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
             <SearchIcon className="size-full hover:text-blue-600" />
           </button>
         }
