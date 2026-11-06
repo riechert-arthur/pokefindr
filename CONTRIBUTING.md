@@ -22,7 +22,7 @@ Read [docs/design-system.md](docs/design-system.md) first. In short:
 - Use the shadcn components in `src/components/ui` and the PokeFindr ones in
   `src/components/pokefindr` before writing new markup.
 - Every component in those folders has a story in `src/stories/`. Check it in light and dark with
-  `npm run storybook`.
+  Storybook, which `make run` starts on http://localhost:6006.
 - UI icons are lucide; icon-only buttons need an `aria-label`.
 
 ## Other guides

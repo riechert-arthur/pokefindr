@@ -40,3 +40,4 @@ check_port() {
 
 check_port db "${DB_PORT:-5433}" DB_PORT
 check_port web "${WEB_PORT:-3000}" WEB_PORT
+check_port storybook "${STORYBOOK_PORT:-6006}" STORYBOOK_PORT

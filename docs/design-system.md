@@ -2,7 +2,8 @@
 
 How PokeFindr looks, and how to build UI that matches. The visual source of truth is the
 [redesign prototype](https://claude.ai/artifact/AhDFCmn2qbARqjpMgkSRjF); the code below is how it
-lives in this repo. Browse every component with `npm run storybook`.
+lives in this repo. Browse every component in Storybook: `make run` starts it on http://localhost:6006 (or run
+`npm run storybook` on the host).
 
 - [Tokens](#tokens) · [Type](#type) · [Spacing, radius, elevation](#spacing-radius-and-elevation) · [Location kinds](#location-kinds)
 - [Components](#components) · [Which overlay?](#which-overlay) · [Icons](#icons) · [Copy](#copy)
@@ -192,7 +193,7 @@ one in place of the current one.
 2. Add `src/stories/pokefindr/<Name>.stories.tsx` covering its variants and states, and unit tests
    in `__tests__/components/pokefindr/` for behavior (keyboard, callbacks).
 
-Then run `npm run storybook` and check it in light and dark, and run the checks below.
+Then open it in Storybook (http://localhost:6006 after `make run`) and check it in light and dark, and run the checks below.
 `__tests__/design/story-coverage.test.ts` fails if a component has no story.
 
 ## Accessibility
@@ -207,7 +208,9 @@ The Accessibility tab in Storybook runs the same axe while you work, with two di
 - It also reports page-level rules (`region`, `landmark-one-main`, `page-has-heading-one`), which
   CI turns off because a story is one component, not a page.
 
-Run it locally (builds Storybook, serves the build on port 6007 and runs the checks):
+Run it locally (builds Storybook, serves the build on port 6007 and runs the checks). Port 6007
+keeps it clear of the Storybook `make run` starts on 6006; the checks need a build, because the
+test runner doesn't work reliably against `storybook dev`:
 
 ```sh
 npx playwright install chromium   # once
