@@ -1,8 +1,8 @@
 /**
  * Location details that used to live only in src/data/vending_machines_mod.json:
- * address fields, geocoding metadata, the manual-override flag and the
- * active flag (#73). Added to `locations` and to `locations_staging`, where
- * the location import (0002_import_locations) lands rows before merging them.
+ * address fields, geocoding metadata, the manual-override flag (and where the
+ * override came from) and the active flag (#73). Added to `locations` and to
+ * `locations_staging`, which keeps the same columns as `locations`.
  *
  * Additive only, so the previous release keeps working while this deploys.
  */
@@ -23,6 +23,8 @@ const COLUMNS: [name: string, type: ColumnDataType, build?: (c: ColumnDefinition
   ["geocode_accuracy", "text"],
   ["match_code", "jsonb"],
   ["manual_override", "boolean", (c) => c.notNull().defaultTo(false)],
+  // 'file' when the JSON's _manual_override set it; null for an override made in the database.
+  ["manual_override_source", "text"],
   ["raw", "jsonb"],
   ["updated_at", "timestamptz", (c) => c.defaultTo(sql`now()`)],
 ]

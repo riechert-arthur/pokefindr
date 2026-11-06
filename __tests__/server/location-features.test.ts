@@ -58,6 +58,16 @@ describe("toLocationRow", () => {
     expect(result).toMatchObject({ row: { lng: -122.23037, lat: 37.77541 }, warning: expect.stringContaining("swapped") })
   })
 
+  it("swaps a latitude, longitude pair even when it is a valid position, because it's outside the US", () => {
+    // [40.71, -74.0] is a valid point in Antarctica, typed for New York.
+    const result = toLocationRow({ ...base, geometry: { type: "Point", coordinates: [40.71, -74.0] } })
+    expect(result).toMatchObject({ row: { lng: -74.0, lat: 40.71 }, warning: expect.stringContaining("outside the US") })
+  })
+
+  it("takes a numeric machineID as its digits", () => {
+    expect(row({ ...base, properties: { ...base.properties, machineID: 350 } }).machineID).toBe("350")
+  })
+
   it("reads the manual override flag", () => {
     expect(row({ ...base, properties: { ...base.properties, _manual_override: true } }).manual_override).toBe(true)
     expect(row(base).raw).not.toHaveProperty("_manual_override")
@@ -66,7 +76,7 @@ describe("toLocationRow", () => {
   it("falls back to Mapbox's coordinates when the geometry is unusable even swapped", () => {
     expect(toLocationRow({ ...base, geometry: { coordinates: [500, 500] } })).toMatchObject({
       row: { lng: -111.5, lat: 33.4 },
-      warning: "Q00350: geometry [500, 500] is out of range; used properties.coordinates",
+      warning: "Q00350: geometry [500, 500] is outside the US; used properties.coordinates",
     })
   })
 
@@ -74,7 +84,14 @@ describe("toLocationRow", () => {
     expect(toLocationRow({ ...base, properties: { ...base.properties, machineID: " " } })).toEqual({ skip: "no machineID" })
     const nowhere = { ...base, properties: { ...base.properties, coordinates: { longitude: 500, latitude: 500 } } }
     expect(toLocationRow({ ...nowhere, geometry: { coordinates: [500, 500] } })).toEqual({
-      skip: "Q00350: coordinates out of range",
+      skip: "Q00350: geometry [500, 500] is outside the US; properties.coordinates [500, 500] are outside the US",
+    })
+  })
+
+  it("says the geometry was unusable when there's no fallback, instead of 'no coordinates'", () => {
+    const noFallback = { ...base, geometry: { coordinates: [500, 500] }, properties: { ...base.properties, coordinates: null } }
+    expect(toLocationRow(noFallback)).toEqual({
+      skip: "Q00350: geometry [500, 500] is outside the US; no properties.coordinates",
     })
   })
 })

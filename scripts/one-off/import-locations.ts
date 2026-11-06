@@ -2,29 +2,34 @@
  * One-off: copies the machines in src/data/vending_machines_mod.json into
  * `locations` (#73).
  *
- * Migration 0002_import_locations runs it on every database. To run it by hand
- * (to pick up later edits to the JSON, or to preview):
+ * Not a migration: the migrate workflow runs it with --apply after
+ * `db:migrate`, in its own transaction, so it never holds the migrations' locks
+ * and schema checks never replay it. To run it by hand (to preview, or on a
+ * local database):
  *
  *   npm run db:import-locations                    # dry run: rolled back
  *   npm run db:import-locations -- --apply         # write
  *   npm run db:import-locations -- --file <geojson> --report <json>
  *
- * How it works, all in one transaction (the migration's, or the CLI's):
+ * How it works, all in one transaction:
  * 1. Parse: each GeoJSON feature becomes a row. Coordinates come from the
  *    geometry first (what the map draws, and where hand corrections were
- *    saved), then `properties.coordinates`.
- * 2. Load the rows into `locations_staging`.
+ *    saved), then `properties.coordinates`. Every machine is in the US, so a
+ *    position outside it is swapped back if it was typed as latitude, longitude.
+ * 2. Load the rows into `location_import`, a temporary table dropped at
+ *    commit. `locations_staging` belongs to the ETL and is never touched.
  * 3. Merge into `locations` on "machineID", writing only rows that change, so
  *    running it again writes nothing. `_manual_override` becomes
- *    manual_override; a database override is kept unless the file overrides
- *    that machine too. Machines in the table but not in the file are listed,
- *    never deleted.
+ *    manual_override with manual_override_source 'file', so dropping the flag
+ *    from the file clears it again. An override made in the database (source
+ *    null) is kept unless the file overrides that machine too. Machines in the
+ *    table but not in the file are listed, never deleted.
  * 4. Verify every machine is present, active, within 1e-6 degrees of the file
  *    and flagged when overridden. Otherwise throw, so nothing is written.
  *
  * Table names are unqualified, so they follow search_path.
  */
-import { readFileSync, writeFileSync } from "node:fs"
+import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import { sql, type Kysely } from "kysely"
 import { loadDevEnv, migrationClient, ROOT_DIR } from "../db/env"
@@ -61,7 +66,7 @@ export interface SourceCollection {
   features: SourceFeature[]
 }
 
-/** One row of `locations_staging`. Keys are column names. */
+/** One row of the import's temporary `location_import` table. Keys are column names. */
 export interface LocationRow {
   machineID: string
   retailer: string | null
@@ -87,6 +92,8 @@ export const SCRAPED_SOURCE = "pokemoncenter"
 
 const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v)
 const text = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null)
+/** machineIDs are text, but a whole number is taken as its digits rather than dropped. */
+const id = (v: unknown) => (Number.isSafeInteger(v) ? String(v) : text(v))
 
 function pair(v: unknown): [number, number] | null {
   if (!Array.isArray(v) || v.length < 2) return null
@@ -94,7 +101,15 @@ function pair(v: unknown): [number, number] | null {
   return isNum(lng) && isNum(lat) ? [lng, lat] : null
 }
 
-const inRange = ([lng, lat]: [number, number]) => Math.abs(lng) <= 180 && Math.abs(lat) <= 90
+/**
+ * Every machine is in the US: a box around the states, Alaska, Hawaii and
+ * Puerto Rico. Much tighter than the valid range, so a position typed as
+ * latitude, longitude (e.g. [40.71, -74.0] for New York) falls outside it,
+ * while its swap falls inside.
+ */
+export const US_BOUNDS = { minLng: -180, maxLng: -64, minLat: 17, maxLat: 72 }
+const inUS = ([lng, lat]: [number, number]) =>
+  lng >= US_BOUNDS.minLng && lng <= US_BOUNDS.maxLng && lat >= US_BOUNDS.minLat && lat <= US_BOUNDS.maxLat
 
 function matchCode(v: unknown): Record<string, string> | null {
   if (!v || typeof v !== "object" || Array.isArray(v)) return null
@@ -109,26 +124,36 @@ function matchCode(v: unknown): Record<string, string> | null {
  */
 export function toLocationRow(feature: SourceFeature): ParseResult {
   const p = feature.properties ?? {}
-  const machineID = text(p.machineID)
+  const machineID = id(p.machineID)
   if (!machineID) return { skip: "no machineID" }
 
   let warning: string | undefined
+  let badGeometry: string | undefined
   let position = pair(feature.geometry?.coordinates)
-  if (position && !inRange(position)) {
-    const bad = `${machineID}: geometry [${position.join(", ")}] is out of range`
+  if (position && !inUS(position)) {
+    badGeometry = `geometry [${position.join(", ")}] is outside the US`
     // Usually a hand correction typed as latitude, longitude.
     const swapped: [number, number] = [position[1], position[0]]
-    if (inRange(swapped)) {
-      warning = `${bad}; used it swapped, [${swapped.join(", ")}]`
+    if (inUS(swapped)) {
+      warning = `${machineID}: ${badGeometry}; used it swapped, [${swapped.join(", ")}]`
       position = swapped
     } else {
-      warning = `${bad}; used properties.coordinates`
+      warning = `${machineID}: ${badGeometry}; used properties.coordinates`
       position = null
     }
   }
-  position ??= pair([p.coordinates?.longitude, p.coordinates?.latitude])
-  if (!position) return { skip: `${machineID}: no coordinates` }
-  if (!inRange(position)) return { skip: `${machineID}: coordinates out of range` }
+  if (!position) {
+    const fallback = pair([p.coordinates?.longitude, p.coordinates?.latitude])
+    if (!fallback && !badGeometry) return { skip: `${machineID}: no coordinates` }
+    if (!fallback || !inUS(fallback)) {
+      // Say what was wrong with both, so a corrupt geometry isn't reported as missing.
+      const fallbackProblem = fallback
+        ? `properties.coordinates [${fallback.join(", ")}] are outside the US`
+        : "no properties.coordinates"
+      return { skip: `${machineID}: ${[badGeometry, fallbackProblem].filter(Boolean).join("; ")}` }
+    }
+    position = fallback
+  }
   const [lng, lat] = position
 
   // feature_index is the array position, not part of the machine.
@@ -199,8 +224,8 @@ export function readFeatureFile(file: string): ParsedSource {
 
 const BATCH_SIZE = 500
 
-/** Columns the merge owns. Everything else (id, created_by, created_at) is left alone. */
-const MERGED_COLUMNS = [
+/** Columns that describe the machine, and that the merge owns. */
+const DATA_COLUMNS = [
   "retailer",
   "address",
   "city",
@@ -215,30 +240,56 @@ const MERGED_COLUMNS = [
   "mapbox_id",
   "geocode_accuracy",
   "match_code",
-  "manual_override",
   "raw",
 ]
+
+/** Columns the merge owns. Everything else (id, created_by, created_at) is left alone. */
+const MERGED_COLUMNS = [...DATA_COLUMNS, "manual_override", "manual_override_source"]
 
 const q = (column: string) => `"${column}"`
 /** geography has no reliable equality; compare its binary form. */
 const comparable = (prefix: string, column: string) =>
   column === "geog" ? `ST_AsEWKB(${prefix}.geog::geometry)` : `${prefix}.${q(column)}`
 
-/** Replaces the contents of locations_staging with `rows`. */
+/**
+ * A database override the file doesn't replace: set in the database (source
+ * not 'file'), and the file doesn't override the machine itself. The merge
+ * keeps its values, and verification doesn't compare them with the file.
+ */
+const keptOverride = (cur: string, s: string) =>
+  `(${cur}.manual_override and ${cur}.manual_override_source is distinct from 'file' and not ${s}.manual_override)`
+
+/**
+ * Loads `rows` into `location_import`, a temporary table only this transaction
+ * sees, dropped at commit. Using it instead of `locations_staging` leaves the
+ * ETL's rows and locks alone.
+ */
 export async function loadStaging(db: Db, rows: LocationRow[]): Promise<void> {
-  await sql`truncate locations_staging`.execute(db)
+  // Outside a transaction, `on commit drop` would drop the table straight away.
+  if (!db.isTransaction) throw new Error("loadStaging needs a transaction")
+  await sql`drop table if exists location_import`.execute(db)
+  await sql`
+    create temporary table location_import (
+      "machineID" text primary key,
+      retailer text, address text, city text, state text, postal_code text,
+      name text, description text, geog geography(point, 4326) not null,
+      is_official boolean not null, is_active boolean not null, source text,
+      mapbox_id text, geocode_accuracy text, match_code jsonb,
+      manual_override boolean not null, manual_override_source text, raw jsonb
+    ) on commit drop`.execute(db)
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
     // Sent as text and cast, so the driver can't encode the JSON twice.
     const batch = JSON.stringify(rows.slice(i, i + BATCH_SIZE))
     await sql`
-      insert into locations_staging (
-        "machineID", retailer, address, city, state, postal_code, name, description,
-        geog, is_official, is_active, source, mapbox_id, geocode_accuracy, match_code, manual_override, raw
+      insert into location_import (
+        "machineID", retailer, address, city, state, postal_code, name, description, geog, is_official,
+        is_active, source, mapbox_id, geocode_accuracy, match_code, manual_override, manual_override_source, raw
       )
       select
         r."machineID", r.retailer, r.address, r.city, r.state, r.postal_code, r.name, r.description,
-        ST_SetSRID(ST_MakePoint(r.lng, r.lat), 4326)::geography,
-        true, true, ${SCRAPED_SOURCE}, r.mapbox_id, r.geocode_accuracy, r.match_code, r.manual_override, r.raw
+        ST_SetSRID(ST_MakePoint(r.lng, r.lat), 4326)::geography, true,
+        true, ${SCRAPED_SOURCE}, r.mapbox_id, r.geocode_accuracy, r.match_code, r.manual_override,
+        case when r.manual_override then 'file' end, r.raw
       from jsonb_to_recordset(cast(${batch} as text)::jsonb) as r(
         "machineID" text, retailer text, address text, city text, state text, postal_code text,
         name text, description text, lng double precision, lat double precision,
@@ -252,7 +303,7 @@ export interface MergeCounts {
   inserted: number
   updated: number
   unchanged: number
-  /** Rows the file would have changed but that have manual_override in the database. */
+  /** Machines kept as database overrides whose values differ from the file's. */
   keptOverrides: number
 }
 
@@ -262,21 +313,24 @@ export interface MergeCounts {
  * that machine too.
  */
 export async function mergeStaging(db: Db): Promise<MergeCounts> {
+  // Identifiers only come from the column lists above; no input reaches sql.raw.
+  const differs = (a: string, b: string) =>
+    `(${DATA_COLUMNS.map((c) => comparable(a, c)).join(", ")}) is distinct from (${DATA_COLUMNS.map((c) => comparable(b, c)).join(", ")})`
   const {
     rows: [{ staged, kept }],
-  } = await sql<{ staged: number; kept: number }>`
+  } = await sql<{ staged: number; kept: number }>`${sql.raw(`
     select
-      (select count(*)::int from locations_staging) as staged,
-      (select count(*)::int from locations_staging s join locations l using ("machineID")
-        where l.manual_override and not s.manual_override) as kept`.execute(db)
+      (select count(*)::int from location_import) as staged,
+      (select count(*)::int from location_import s join locations l using ("machineID")
+        where ${keptOverride("l", "s")} and ${differs("l", "s")}) as kept`)}`.execute(db)
 
-  const keep = `(cur."machineID" is not null and cur.manual_override and not s.manual_override)`
-  const desired = MERGED_COLUMNS.map((c) => `case when ${keep} then cur.${q(c)} else s.${q(c)} end as ${q(c)}`)
-  // Identifiers only come from MERGED_COLUMNS above; no input reaches sql.raw.
+  const desired = MERGED_COLUMNS.map(
+    (c) => `case when ${keptOverride("cur", "s")} then cur.${q(c)} else s.${q(c)} end as ${q(c)}`,
+  )
   const { rows } = await sql<{ inserted: boolean }>`${sql.raw(`
     insert into locations as l ("machineID", ${MERGED_COLUMNS.map(q).join(", ")}, updated_at)
     select s."machineID", ${desired.join(", ")}, now()
-    from locations_staging s
+    from location_import s
     left join locations cur using ("machineID")
     on conflict ("machineID") do update set
       ${MERGED_COLUMNS.map((c) => `${q(c)} = excluded.${q(c)}`).join(", ")},
@@ -305,32 +359,32 @@ export interface VerifyReport {
 
 /** Checks `locations` now holds every staged machine as the file describes it. */
 export async function verifyImport(db: Db): Promise<VerifyReport> {
+  const kept = keptOverride("l", "s")
   const {
     rows: [r],
-  } = await sql<Omit<VerifyReport, "problems">>`
+  } = await sql<Omit<VerifyReport, "problems">>`${sql.raw(`
     select
-      (select count(*)::int from locations_staging) as "staged",
-      (select count(*)::int from locations_staging s join locations l using ("machineID")
+      (select count(*)::int from location_import) as "staged",
+      (select count(*)::int from location_import s join locations l using ("machineID")
         where l.is_active and l.geog is not null) as "activeWithPosition",
-      array(select s."machineID" from locations_staging s join locations l using ("machineID")
-        where not (l.manual_override and not s.manual_override)
-          and not (l.is_active and l.geog is not null)
+      array(select s."machineID" from location_import s join locations l using ("machineID")
+        where not ${kept} and not (l.is_active and l.geog is not null)
         order by 1) as "inactive",
-      array(select s."machineID" from locations_staging s
+      array(select s."machineID" from location_import s
         where not exists (select 1 from locations l where l."machineID" = s."machineID")
         order by 1) as "missing",
-      array(select s."machineID" from locations_staging s join locations l using ("machineID")
-        where (not l.manual_override or s.manual_override)
+      array(select s."machineID" from location_import s join locations l using ("machineID")
+        where not ${kept}
           and (abs(ST_X(l.geog::geometry) - ST_X(s.geog::geometry)) > 1e-6
             or abs(ST_Y(l.geog::geometry) - ST_Y(s.geog::geometry)) > 1e-6)
         order by 1) as "coordinateMismatches",
-      (select count(*)::int from locations_staging where manual_override) as "overridesInFile",
-      (select count(*)::int from locations_staging s join locations l using ("machineID")
-        where s.manual_override and l.manual_override) as "overridesFlagged",
+      (select count(*)::int from location_import where manual_override) as "overridesInFile",
+      (select count(*)::int from location_import s join locations l using ("machineID")
+        where s.manual_override and l.manual_override and l.manual_override_source = 'file') as "overridesFlagged",
       array(select l."machineID" from locations l
         where l."machineID" is not null
-          and not exists (select 1 from locations_staging s where s."machineID" = l."machineID")
-        order by 1) as "extras"`.execute(db)
+          and not exists (select 1 from location_import s where s."machineID" = l."machineID")
+        order by 1) as "extras"`)}`.execute(db)
 
   const problems: string[] = []
   if (r.inactive.length) {
@@ -372,8 +426,6 @@ export async function importLocations(db: Kysely<unknown>, file = DEFAULT_FILE):
   if (verify.problems.length) {
     throw new Error(`Location import verification failed, nothing written:\n  ${verify.problems.join("\n  ")}`)
   }
-  // Leave the shared landing table empty for whatever uses it next.
-  await sql`truncate locations_staging`.execute(db)
   const { skipped, warnings, duplicates, total } = source
   return { file: path.relative(ROOT_DIR, file), total, skipped, warnings, duplicates, counts, verify }
 }
@@ -386,7 +438,8 @@ export function summarize(r: ImportReport): string[] {
     ...r.skipped.map((s) => `  skipped ${s}`),
     ...r.warnings.map((w) => `  warning: ${w}`),
     ...(r.duplicates.length ? [`  duplicate machineIDs (first kept): ${preview(r.duplicates)}`] : []),
-    `${c.inserted} inserted, ${c.updated} updated, ${c.unchanged} unchanged, ${c.keptOverrides} kept as manual overrides.`,
+    `${c.inserted} inserted, ${c.updated} updated, ${c.unchanged} unchanged; ` +
+      `${c.keptOverrides} database overrides kept that differ from the file.`,
     `Verified: ${v.activeWithPosition}/${v.staged} active with a position, ` +
       `${v.overridesFlagged}/${v.overridesInFile} overrides flagged, coordinates match within 1e-6°.`,
     ...(v.extras.length ? [`${v.extras.length} machines in the table aren't in the file (left as is): ${preview(v.extras)}`] : []),
@@ -409,6 +462,11 @@ async function main() {
   const file = argValue("--file") ?? DEFAULT_FILE
   const reportFile = argValue("--report")
   const apply = process.argv.includes("--apply")
+  // The migrate workflow runs this on every deploy; once the JSON is gone (#80) there's nothing to do.
+  if (file === DEFAULT_FILE && !existsSync(file)) {
+    console.log(`No ${path.relative(ROOT_DIR, file)}; nothing to import.`)
+    return
+  }
 
   const sql = migrationClient()
   const { db } = createMigrator(sql)
@@ -423,7 +481,7 @@ async function main() {
   }
 }
 
-// Run only as a script, not when the migration or a test imports this file.
+// Run only as a script, not when a test imports this file.
 if (process.argv[1]?.endsWith("import-locations.ts")) {
   main().catch((err) => {
     console.error(err instanceof Error ? err.message : err)

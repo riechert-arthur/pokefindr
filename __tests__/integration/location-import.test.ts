@@ -36,16 +36,18 @@ async function importRows(input: LocationRow[]) {
 }
 
 const machine = async (machineID: string) => {
-  const [r] = await sql<{ lng: number; lat: number; is_active: boolean; manual_override: boolean }[]>`
-    select ST_X(geog::geometry) as lng, ST_Y(geog::geometry) as lat, is_active, manual_override
+  const [r] = await sql<{ lng: number; lat: number; is_active: boolean; manual_override: boolean; manual_override_source: string | null }[]>`
+    select ST_X(geog::geometry) as lng, ST_Y(geog::geometry) as lat, is_active, manual_override, manual_override_source
     from locations where "machineID" = ${machineID}`
   return r
 }
 
-describe("location import (migration 0002, npm run db:import-locations)", () => {
+describe("location import (npm run db:import-locations)", () => {
   it("imports every machine in the JSON, verifies it, and writes nothing the second time", async () => {
     const source = readFeatureFile(JSON_FILE)
     expect(source.skipped).toEqual([])
+    // The ETL's staging rows must survive the import.
+    await sql`insert into locations_staging ("machineID") values ('ETL-1')`
 
     const first = await db.transaction().execute((trx) => importLocations(trx))
     expect(first.counts).toMatchObject({ inserted: source.total, updated: 0 })
@@ -57,8 +59,13 @@ describe("location import (migration 0002, npm run db:import-locations)", () => 
     expect(second.counts).toMatchObject({ inserted: 0, updated: 0, unchanged: source.total })
     expect(await sql`select "machineID", updated_at from locations order by 1`).toEqual(before)
 
-    // The shared landing table is left empty.
-    expect(await sql`select count(*)::int as n from locations_staging`).toEqual([{ n: 0 }])
+    expect(await sql`select "machineID" from locations_staging`).toEqual([{ machineID: "ETL-1" }])
+    // The temporary table went away with the transaction.
+    expect(await sql`select to_regclass('location_import') as t`).toEqual([{ t: null }])
+  })
+
+  it("refuses to load outside a transaction, where the temporary table wouldn't last", async () => {
+    await expect(loadStaging(db, [])).rejects.toThrow("needs a transaction")
   })
 
   it("verification catches a merge that lost an override, and the transaction writes nothing", async () => {
@@ -90,7 +97,22 @@ describe("location import (migration 0002, npm run db:import-locations)", () => 
     expect(await machine("Q1")).toMatchObject({ lng: -112.5, lat: 33.5 })
 
     await importRows(rows(feature("Q1", -113, 34, { _manual_override: true })))
-    expect(await machine("Q1")).toMatchObject({ lng: -113, lat: 34, manual_override: true })
+    expect(await machine("Q1")).toMatchObject({ lng: -113, lat: 34, manual_override: true, manual_override_source: "file" })
+  })
+
+  it("only counts kept overrides whose values differ from the file", async () => {
+    await importRows(rows(feature("Q1", -112, 33)))
+    await sql`update locations set manual_override = true where "machineID" = 'Q1'`
+    const { counts } = await importRows(rows(feature("Q1", -112, 33)))
+    expect(counts).toMatchObject({ updated: 0, unchanged: 1, keptOverrides: 0 })
+  })
+
+  it("clears an override the file set once the file drops the flag", async () => {
+    await importRows(rows(feature("Q1", -112, 33, { _manual_override: true })))
+    const { counts, verify } = await importRows(rows(feature("Q1", -113, 34)))
+    expect(counts).toMatchObject({ updated: 1, keptOverrides: 0 })
+    expect(verify.problems).toEqual([])
+    expect(await machine("Q1")).toMatchObject({ lng: -113, lat: 34, manual_override: false, manual_override_source: null })
   })
 
   it("accepts a database override that keeps a machine inactive", async () => {

@@ -42,6 +42,10 @@ jobs:
       - run: npm run db:migrate
       # Fails if the database doesn't match src/server/db/schema.
       - run: npm run db:check
+      # Copies src/data/vending_machines_mod.json into `locations` (#73). Its own
+      # transaction, after the migrations commit, so it never holds their locks.
+      # Writes only changed rows; does nothing once the JSON is gone (#80).
+      - run: npm run db:import-locations -- --apply
 
   production:
     name: Migrate production

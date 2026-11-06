@@ -88,6 +88,12 @@ const locationColumns = {
   matchCode: jsonb("match_code").$type<MatchCode>(),
   /** Set when someone checked or corrected this machine by hand (`_manual_override` in the JSON). */
   manualOverride: boolean("manual_override").notNull().default(false),
+  /**
+   * "file" when the JSON's `_manual_override` set the override, so the import
+   * clears it once the JSON drops the flag. Null for an override made in the
+   * database, which the import keeps.
+   */
+  manualOverrideSource: text("manual_override_source"),
   /** The full feature properties from the JSON, kept while the data moves off it. */
   raw: jsonb("raw"),
   // Set by the ORM on every update (and by the location import); there is no trigger.
