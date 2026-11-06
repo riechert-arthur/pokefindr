@@ -8,6 +8,7 @@ import { COLOR_TOKENS, HSL_CHANNELS, channelsToHsl } from "@/lib/design/tokens"
 const ROOT = path.resolve(__dirname, "../..")
 const css = readFileSync(path.join(ROOT, "src/app/globals.css"), "utf8")
 const tailwind = readFileSync(path.join(ROOT, "tailwind.config.ts"), "utf8")
+const layout = readFileSync(path.join(ROOT, "src/app/layout.tsx"), "utf8")
 const fontSize = (tailwindConfig.theme?.extend?.fontSize ?? {}) as Record<string, [string, unknown]>
 
 /**
@@ -42,6 +43,9 @@ describe("design tokens", () => {
   it("only references tokens from tailwind.config.ts that are defined in light and dark", () => {
     const used = [...tailwind.matchAll(/var\(--([\w-]+)\)/g)].map((m) => m[1]).filter((t) => !NOT_THEMED.includes(t))
     expect(used.length).toBeGreaterThan(0)
+    for (const font of ["font-sans", "font-mono"]) {
+      expect(layout, `layout.tsx sets --${font}`).toContain(`variable: "--${font}"`)
+    }
     for (const token of used) {
       expect(light.has(token), `${token} in :root`).toBe(true)
       expect(dark.has(token), `${token} in .dark`).toBe(true)

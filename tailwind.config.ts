@@ -102,17 +102,17 @@ export default {
   		},
   		/*
   		 * Elevation from the redesign prototype, themed for light and dark.
-  		 * These replace Tailwind's sm/md/lg; plain `shadow` maps to the lightest
-  		 * level and shadow-xl to the highest (drawers and side panels). Being
-  		 * var() values, they can't take a color modifier such as shadow-lg
-  		 * shadow-indigo-600/10.
+  		 * These replace Tailwind's sm/md/lg/xl (xl is for drawers and side
+  		 * panels); plain `shadow` maps to the lightest level. Being var()
+  		 * values, they can't take a color modifier such as shadow-lg
+  		 * shadow-indigo-600/10; use an arbitrary shadow with a token instead.
   		 */
   		boxShadow: {
   			sm: 'var(--shadow-sm)',
   			DEFAULT: 'var(--shadow-sm)',
   			md: 'var(--shadow-md)',
   			lg: 'var(--shadow-lg)',
-  			xl: 'var(--shadow-lg)'
+  			xl: 'var(--shadow-xl)'
   		}
   	}
   },
