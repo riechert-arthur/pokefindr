@@ -51,9 +51,11 @@ jobs:
       - run: npx vitest run --exclude "__tests__/integration/**" --reporter=default --reporter=github-actions
 
   storybook:
-    name: Storybook build
+    name: Storybook build and accessibility
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+    env:
+      STORYBOOK_DISABLE_TELEMETRY: 1
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -63,8 +65,14 @@ jobs:
       - run: npm ci --no-audit --no-fund
       # Fails if any story stops compiling.
       - run: npm run build-storybook
-        env:
-          STORYBOOK_DISABLE_TELEMETRY: 1
+      - run: npx playwright install --with-deps chromium
+      # axe on every story in light and dark; serious/critical violations fail
+      # (.storybook/test-runner.ts, docs/design-system.md#accessibility).
+      - name: Accessibility checks
+        run: |
+          python3 -m http.server 6006 --bind 127.0.0.1 --directory storybook-static >/dev/null 2>&1 &
+          for _ in $(seq 30); do curl -sf http://127.0.0.1:6006/index.json >/dev/null && break; sleep 1; done
+          npm run test-storybook -- --maxWorkers=2
 
   integration:
     name: Integration tests

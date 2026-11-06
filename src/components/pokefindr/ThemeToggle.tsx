@@ -54,9 +54,10 @@ export function ThemeToggle({ variant = "segmented", className }: ThemeTogglePro
           aria-pressed={current === value}
           onClick={() => setTheme(value)}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-body font-medium text-muted-foreground transition-colors",
-            "hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            current === value && "bg-foreground text-background hover:text-background",
+            "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-body font-medium transition-colors",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+            // Exclusive branches: cn() doesn't merge conflicting classes, so both text colors can't be present.
+            current === value ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
           )}
         >
           <Icon className="size-4" aria-hidden />

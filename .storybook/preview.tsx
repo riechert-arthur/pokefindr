@@ -29,6 +29,10 @@ const preview: Preview = {
   parameters: {
     layout: "centered",
     controls: { expanded: true },
+    // Components use next/navigation (App Router).
+    nextjs: { appDirectory: true },
+    // The panel shows every issue; CI gating (serious/critical only) lives in .storybook/test-runner.ts.
+    a11y: { test: "todo" },
   },
   // Light/dark from the toolbar.
   globalTypes: {
