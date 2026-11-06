@@ -1,5 +1,5 @@
 import { handleCallback } from "@vercel/queue"
-import { handleJobMessage, retryJobMessage } from "@/server/jobs/consumer"
+import { handleJobMessage, retryJobMessage } from "@/server/lib/jobs/consumer"
 
 const consume = handleCallback(handleJobMessage, {
   // The SDK keeps extending this while the handler runs; it only matters if the function dies.

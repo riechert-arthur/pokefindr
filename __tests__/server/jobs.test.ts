@@ -10,11 +10,11 @@ vi.mock("@vercel/queue", () => ({
 }))
 
 import { resetServerConfigForTests } from "@/server/config"
-import { isAuthorizedJobRequest } from "@/server/jobs/auth"
-import { runJob, UnknownJobError } from "@/server/jobs/run"
-import { enqueueJob, JOBS_TOPIC } from "@/server/jobs/enqueue"
-import { handleJobMessage, retryJobMessage, MAX_DELIVERIES } from "@/server/jobs/consumer"
-import { jobs } from "@/server/jobs/registry"
+import { isAuthorizedJobRequest } from "@/server/lib/jobs/auth"
+import { runJob, UnknownJobError } from "@/server/lib/jobs/run"
+import { enqueueJob, JOBS_TOPIC } from "@/server/lib/jobs/enqueue"
+import { handleJobMessage, retryJobMessage, MAX_DELIVERIES } from "@/server/lib/jobs/consumer"
+import { jobs } from "@/server/lib/jobs/registry"
 import { GET, POST } from "@/app/api/jobs/[name]/route"
 import type { NextRequest } from "next/server"
 

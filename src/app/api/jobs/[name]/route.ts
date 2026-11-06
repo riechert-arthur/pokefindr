@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getServerConfig } from "@/server/config"
-import { isAuthorizedJobRequest } from "@/server/jobs/auth"
-import { isJobName } from "@/server/jobs/registry"
-import { runJob } from "@/server/jobs/run"
+import { isAuthorizedJobRequest } from "@/server/lib/jobs/auth"
+import { isJobName } from "@/server/lib/jobs/registry"
+import { runJob } from "@/server/lib/jobs/run"
 
 export const dynamic = "force-dynamic"
 

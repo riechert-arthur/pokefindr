@@ -9,7 +9,7 @@ Async work runs on Vercel (decision: #86):
 Every path goes through one registry and `runJob()`, so a job is written once and works from cron, the queue, and the CLI.
 
 ```
-src/server/jobs/
+src/server/lib/jobs/
   types.ts      Job, JobContext, JobResult
   registry.ts   name → job (the only list of jobs)
   run.ts        runJob(): runs by name, logs name/trigger/duration/outcome
@@ -24,21 +24,22 @@ scripts/run-job.ts                 npm run job
 
 ## Add a job
 
-1. Write it, usually in `src/server/jobs/<name>.ts`:
+`src/server/lib/jobs/` is the machinery, not where jobs live. Put the work in a service (`src/server/services/`), and give the registry a thin `Job` that calls it:
+
+1. Define the job next to the service it calls, for example in `src/server/services/events.ts`:
 
    ```ts
-   import type { Job } from "./types"
+   import type { Job } from "@/server/lib/jobs/types"
 
-   export const expireEvents: Job = {
+   export const expireEventsJob: Job = {
      description: "Deactivates events whose end date has passed",
-     async run(_payload, ctx) {
-       const count = await deactivateEndedEvents() // a service call
-       return { deactivated: count }
+     async run() {
+       return { deactivated: await deactivateEndedEvents() }
      },
    }
    ```
 
-2. Register it in `registry.ts` under a kebab-case name: `"expire-events": expireEvents`.
+2. Register it in `src/server/lib/jobs/registry.ts` under a kebab-case name: `"expire-events": expireEventsJob`.
 3. Run it locally: `npm run job -- expire-events`.
 
 Rules for every job:
@@ -63,7 +64,7 @@ Add an entry to `crons` in `vercel.json`:
 ## Run a job in the background (Vercel Queues)
 
 ```ts
-import { enqueueJob } from "@/server/jobs/enqueue"
+import { enqueueJob } from "@/server/lib/jobs/enqueue"
 
 await enqueueJob("notify-moderators", { submissionId }, { idempotencyKey: `submission-created:${submissionId}` })
 ```

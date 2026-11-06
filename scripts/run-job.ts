@@ -13,7 +13,7 @@ import { loadDevEnv } from "./db/env"
 async function main() {
   loadDevEnv()
   const [name, rawPayload] = process.argv.slice(2)
-  const { jobs } = await import("@/server/jobs/registry")
+  const { jobs } = await import("@/server/lib/jobs/registry")
   if (!name) {
     console.error("Usage: npm run job -- <name> [json-payload]\n\nJobs:")
     for (const [jobName, job] of Object.entries(jobs)) console.error(`  ${jobName.padEnd(20)} ${job.description}`)
@@ -30,7 +30,7 @@ async function main() {
     }
   }
 
-  const { runJob } = await import("@/server/jobs/run")
+  const { runJob } = await import("@/server/lib/jobs/run")
   const result = await runJob(name, payload, { trigger: "cli" })
   console.log(JSON.stringify(result, null, 2))
 }
