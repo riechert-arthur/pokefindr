@@ -61,7 +61,7 @@ export function LoginForm({
     try {
       const { data } = await axios.post("/api/auth/oauth", { provider })
       if (data.url) {
-        broadcastAuth("login")
+        // No session yet: the OAuth callback page broadcasts "login" once it exists.
         window.location.href = data.url
       } else {
         toast.error("OAuth login failed.")

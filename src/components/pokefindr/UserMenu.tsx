@@ -31,6 +31,8 @@ interface UserMenuProps {
    * nav drawer (a Headless UI dialog that would pull focus back from it).
    */
   variant?: "dropdown" | "list"
+  /** Classes for each Settings / Log out row in the "list" variant, to match the surrounding nav. */
+  itemClassName?: string
 }
 
 function UserAvatar({ size, userName, imageUrl }: Pick<UserMenuProps, "size" | "userName" | "imageUrl">) {
@@ -44,9 +46,11 @@ function UserAvatar({ size, userName, imageUrl }: Pick<UserMenuProps, "size" | "
 }
 
 /** The signed-in user's avatar with Settings and Log out. */
-export function UserMenu({ size, userName, imageUrl, className, variant = "dropdown" }: UserMenuProps) {
+export function UserMenu({ size, userName, imageUrl, className, variant = "dropdown", itemClassName }: UserMenuProps) {
   const router = useRouter()
-  // One logout at a time: a second click would fail (no session) and show a false error.
+  // One logout at a time: a second click would fail (no session) and show a false
+  // error. The ref blocks a second call in the same tick (before a re-render); the
+  // state disables the list button.
   const pending = useRef(false)
   const [loggingOut, setLoggingOut] = useState(false)
 
@@ -62,15 +66,18 @@ export function UserMenu({ size, userName, imageUrl, className, variant = "dropd
     } catch (err) {
       console.error("Logout failed", err)
       toast.error("Couldn't log out. Please try again.")
+    } finally {
+      // Re-enable either way, in case navigation is cancelled and this stays mounted.
       pending.current = false
       setLoggingOut(false)
     }
   }
 
   if (variant === "list") {
-    const item = "-mx-3 flex items-center gap-2 rounded-lg px-3 py-2.5 text-base/7 font-semibold text-foreground hover:bg-muted/50"
+    const item = cn("flex items-center gap-2 rounded-lg px-3 py-2.5 font-semibold text-foreground hover:bg-muted/50", itemClassName)
     return (
-      <div className={cn("space-y-1", className)}>
+      // flex-col stretches each row, including the button, to the same width.
+      <div className={cn("flex flex-col gap-1", className)}>
         <div className="flex items-center gap-3 pb-2">
           <UserAvatar size={size} userName={userName} imageUrl={imageUrl} />
           <span className="truncate font-semibold text-foreground">{userName}</span>
@@ -79,8 +86,7 @@ export function UserMenu({ size, userName, imageUrl, className, variant = "dropd
           <SettingsIcon className="size-5" aria-hidden />
           Settings
         </Link>
-        {/* w-full plus the item's -mx-3 would leave it 1.5rem short, so widen to match the link. */}
-        <button type="button" onClick={handleLogout} disabled={loggingOut} className={cn(item, "w-[calc(100%+1.5rem)] text-left disabled:opacity-50")}>
+        <button type="button" onClick={handleLogout} disabled={loggingOut} className={cn(item, "text-left disabled:opacity-50")}>
           <LogOutIcon className="size-5" aria-hidden />
           Log out
         </button>
@@ -105,7 +111,7 @@ export function UserMenu({ size, userName, imageUrl, className, variant = "dropd
             Settings
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={handleLogout} disabled={loggingOut}>
+        <DropdownMenuItem onSelect={handleLogout}>
           <LogOutIcon aria-hidden />
           Log out
         </DropdownMenuItem>

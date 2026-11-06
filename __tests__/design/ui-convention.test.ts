@@ -25,8 +25,23 @@ describe("component folders", () => {
   })
 
   it("keeps PokeFindr components in src/components/pokefindr (PascalCase)", () => {
-    const files = readdirSync(path.join(ROOT, "src/components/pokefindr"))
-    expect(files.length).toBeGreaterThan(0)
-    expect(files.filter((f) => !/^[A-Z][A-Za-z0-9]*\.tsx$/.test(f))).toEqual([])
+    // PascalCase components and folders; camelCase .ts helpers and hooks (useUserMenu.ts, index.ts).
+    const bad: string[] = []
+    let components = 0
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        if (entry.isDirectory()) {
+          if (!/^[A-Z][A-Za-z0-9]*$/.test(entry.name)) bad.push(entry.name)
+          walk(path.join(dir, entry.name))
+        } else if (/^[A-Z][A-Za-z0-9]*\.tsx$/.test(entry.name)) {
+          components++
+        } else if (!/^[a-z][A-Za-z0-9]*\.ts$/.test(entry.name)) {
+          bad.push(entry.name)
+        }
+      }
+    }
+    walk(path.join(ROOT, "src/components/pokefindr"))
+    expect(components).toBeGreaterThan(0)
+    expect(bad).toEqual([])
   })
 })
