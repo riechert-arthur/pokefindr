@@ -14,7 +14,11 @@ const ScrollArea = React.forwardRef<
     className={cn("relative overflow-hidden", className)}
     {...props}
   >
-    <ScrollAreaPrimitive.Viewport className="h-full w-full rounded-[inherit]">
+    {/* Focusable, so keyboard users can scroll content that has no focusable items of its own. */}
+    <ScrollAreaPrimitive.Viewport
+      tabIndex={0}
+      className="h-full w-full rounded-[inherit] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
       {children}
     </ScrollAreaPrimitive.Viewport>
     <ScrollBar />
