@@ -56,7 +56,7 @@ export function ThemeToggle({ variant = "segmented", className }: ThemeTogglePro
           className={cn(
             "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-body font-medium transition-colors",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-            // Exclusive branches: cn() doesn't merge conflicting classes, so both text colors can't be present.
+            // Exclusive branches, so the selected and idle text colors never meet.
             current === value ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground",
           )}
         >
