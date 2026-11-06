@@ -66,13 +66,14 @@ text size next to a `leading-*` keeps both.
 
 - Spacing is Tailwind's 4px scale. Common steps: `gap-1.5`/`gap-2` inside a control, `p-3`/`p-4`
   inside cards and panels, `gap-6`/`gap-8` between sections.
-- Radius: `rounded-md` for controls, `rounded-lg` (= `--radius`, 8px) for panels, popovers and
-  empty states, `rounded-xl` for cards (`Card`) and large floating surfaces (search, composer),
-  `rounded-full` for chips and dots.
+- Radius, as the components use it: `rounded-md` for controls, popovers and menus, `rounded-lg`
+  (= `--radius`, 8px) for dialogs, panels and empty states, `rounded-xl` for cards (`Card`) and
+  large floating surfaces (search, composer), `rounded-full` for chips and dots. The phone drawer
+  rounds only its top corners.
 - Elevation: `shadow-sm` (and plain `shadow`) for chips and buttons on the map, `shadow-md` for
-  floating panels and popovers, `shadow-lg` for the hero search, dialogs and sheets (including
-  `ResponsivePanel`), `shadow-xl` for the app's fixed side panels (the sidebar drawer, the location
-  panel). Shadows are tokens too (`--shadow-*`), so they deepen in dark mode. Being
+  popovers and floating panels, `shadow-lg` for menus, dialogs, sheets (including the desktop
+  `ResponsivePanel`) and the hero search, `shadow-xl` for the app's fixed side panels (the sidebar
+  drawer, the location panel). The phone drawer has no shadow; its overlay sets it apart. Shadows are tokens too (`--shadow-*`), so they deepen in dark mode. Being
   `var()` values, they can't take a color modifier (`shadow-lg shadow-primary/10`); use an arbitrary
   shadow with a token instead.
 - Breakpoints are Tailwind's defaults, defined once in
@@ -110,12 +111,15 @@ Adding a kind:
 
 ## Components
 
-Two folders, two naming rules (a test enforces both):
+Three folders (a test enforces the naming rules and that each component has a story):
 
 - **`src/components/ui/`**: shadcn/ui components, kebab-case file names, kept as close to the
-  registry as possible. Local changes get a comment saying why (see `command.tsx`).
+  registry as possible. Local changes get a comment saying why (see `command.tsx`). Stories in
+  `src/stories/ui/`.
 - **`src/components/pokefindr/`**: PokeFindr components built from them, PascalCase `.tsx`,
-  plus camelCase `.ts` helpers.
+  plus camelCase `.ts` helpers. Stories in `src/stories/pokefindr/`.
+- **`src/components/brand/`**: the logo. Its stories sit with the PokeFindr ones, in
+  `src/stories/pokefindr/`.
 
 | Component | What it is |
 |---|---|
@@ -143,7 +147,8 @@ Two folders, two naming rules (a test enforces both):
 | The name of an icon-only button | `Tooltip` (the button still needs its own `aria-label`; one `TooltipProvider` wraps the app) |
 | "Done" feedback after an action ("Link copied") | `toast()` from `sonner` |
 
-Don't put forms in a `Dialog` or `Popover`; they get a panel. Don't stack overlays: open the next
+New forms go in a panel, not a `Dialog` or `Popover`. (The review forms on the map and the home
+page are still in dialogs; move them to a `ResponsivePanel` when you next work on them.) Don't stack overlays: open the next
 one in place of the current one.
 
 ## Icons
@@ -206,9 +211,11 @@ Run it locally:
 ```sh
 npm run build-storybook
 npx playwright install chromium          # once
-python3 -m http.server 6006 -b 127.0.0.1 -d storybook-static >/dev/null 2>&1 & server=$!
-until curl -sf http://127.0.0.1:6006/index.json >/dev/null; do sleep 1; done
-npm run test-storybook
+# Port 6007, so a running `npm run storybook` (6006) isn't tested by mistake.
+python3 -m http.server 6007 -b 127.0.0.1 -d storybook-static & server=$!
+for _ in $(seq 30); do curl -sf http://127.0.0.1:6007/index.json >/dev/null && break; sleep 1; done
+curl -sf http://127.0.0.1:6007/index.json >/dev/null || { echo "build server didn't start"; kill $server; }
+npx test-storybook --url http://127.0.0.1:6007
 kill $server
 ```
 
@@ -250,5 +257,5 @@ Exempt: `src/components/icons/**`, the image routes under `src/app` (`opengraph-
 `src/lib/design/`.
 
 Tests in `__tests__/design/` check that tokens are defined in both themes (and key text/fill pairs
-meet 4.5:1), raw colors stay out, the folder naming rules, lucide-only icons, the logo copies match,
+meet 4.5:1), raw colors stay out, the folder naming rules, no heroicons, the logo copies match,
 the lint rules themselves, and that every component has a story that imports it.

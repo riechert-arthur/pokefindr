@@ -95,12 +95,13 @@ describe("no raw colors outside globals.css", () => {
   // globals.css defines the tokens. Illustrations (multi-color SVG artwork)
   // and generated images, which can't read CSS variables, are the other
   // exceptions.
-  const EXEMPT = [
-    path.join("src", "app", "globals.css"),
-    path.join("src", "components", "icons") + path.sep,
-    path.join("src", "app", "opengraph-image.tsx"),
-    path.join("src", "app", "apple-icon.tsx"),
-  ]
+  const EXEMPT = [path.join("src", "app", "globals.css"), path.join("src", "components", "icons") + path.sep]
+  // Generated image routes anywhere under src/app, as in .eslintrc.js.
+  const IMAGE_ROUTE = /^src\/app\/(.+\/)?(opengraph-image|twitter-image|icon|apple-icon)\.tsx$/
+  const isExempt = (file: string) => {
+    const rel = path.relative(ROOT, file)
+    return EXEMPT.some((e) => rel.startsWith(e)) || IMAGE_ROUTE.test(rel.split(path.sep).join("/"))
+  }
   const files: string[] = []
   const walk = (dir: string) => {
     for (const name of readdirSync(dir)) {
@@ -171,7 +172,7 @@ describe("no raw colors outside globals.css", () => {
 
   it("uses tokens instead of raw colors", () => {
     const offenders = files
-      .filter((f) => !EXEMPT.some((e) => path.relative(ROOT, f).startsWith(e)))
+      .filter((f) => !isExempt(f))
       .flatMap((f) =>
         stripComments(readFileSync(f, "utf8"))
           .split("\n")
@@ -202,6 +203,15 @@ describe("no raw colors outside globals.css", () => {
     expect(RAW_COLOR.test(`color: hsl(var(--primary))`)).toBe(false)
     expect(RAW_COLOR.test(`className="bg-[var(--brand)]"`)).toBe(false)
     expect(RAW_COLOR.test(`label="Red team"`)).toBe(false)
+  })
+
+  it("exempts the same generated image routes as the lint rule", () => {
+    for (const route of ["opengraph-image", "twitter-image", "icon", "apple-icon"]) {
+      expect(isExempt(path.join(ROOT, "src", "app", `${route}.tsx`)), route).toBe(true)
+      expect(isExempt(path.join(ROOT, "src", "app", "(visitor)", "blog", "[slug]", `${route}.tsx`)), route).toBe(true)
+    }
+    expect(isExempt(path.join(ROOT, "src", "app", "brand-mark.ts"))).toBe(false)
+    expect(isExempt(path.join(ROOT, "src", "app", "icons.tsx"))).toBe(false)
   })
 
   it("strips comments but not comment markers inside strings", () => {

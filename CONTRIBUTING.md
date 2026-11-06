@@ -6,10 +6,13 @@
 npm run lint
 npx tsc --noEmit
 npx vitest run --exclude "__tests__/integration/**"
+npm run build             # Next-only errors (server/client boundaries, route exports)
 npm run build-storybook   # if you touched UI
 ```
 
-CI also runs the integration tests (Postgres) and the accessibility checks on every story.
+If you touched UI, also run the accessibility checks on the Storybook build
+([how](docs/design-system.md#accessibility)). CI runs all of the above, plus the integration tests
+(Postgres).
 
 ## UI work
 
