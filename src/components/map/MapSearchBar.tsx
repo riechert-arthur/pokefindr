@@ -184,7 +184,7 @@ export function MapSearchBar({
         <input
           type="text"
           placeholder="Search address…"
-          className={`flex flex-row rounded-full w-full pr-4 py-3 text-base text-muted-foreground font-medium focus:outline-none`}
+          className={`flex flex-row rounded-full w-full pr-4 py-3 text-base text-foreground placeholder:text-muted-foreground font-medium focus:outline-none`}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onMouseDown={(e) => e.stopPropagation()}

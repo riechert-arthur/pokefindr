@@ -16,7 +16,7 @@ interface ContentPageLayoutProps {
 
 const ContentPageLayout: FC<ContentPageLayoutProps> = ({ children }) => {
   return (
-    <div className="bg-card relative">
+    <div className="bg-background relative">
       <ContentPageHeader navigation={navigation} />
       {children}
     </div>

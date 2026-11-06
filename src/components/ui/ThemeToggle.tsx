@@ -46,13 +46,12 @@ export function ThemeToggle({ variant = "segmented", className }: ThemeTogglePro
   }
 
   return (
-    <div role="radiogroup" aria-label="Theme" className={cn("inline-flex rounded-lg border border-border bg-card p-0.5", className)}>
+    <div role="group" aria-label="Theme" className={cn("inline-flex rounded-lg border border-border bg-card p-0.5", className)}>
       {OPTIONS.map(({ value, label, icon: Icon }) => (
         <button
           key={value}
           type="button"
-          role="radio"
-          aria-checked={current === value}
+          aria-pressed={current === value}
           onClick={() => setTheme(value)}
           className={cn(
             "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-body font-medium text-muted-foreground transition-colors",

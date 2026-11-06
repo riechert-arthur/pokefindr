@@ -14,13 +14,26 @@ export function useThemeKey(): string {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
 }
 
+// One MutationObserver on <html>, shared by every subscriber.
+const listeners = new Set<() => void>()
+let observer: MutationObserver | undefined
+
 function subscribe(onChange: () => void): () => void {
-  const observer = new MutationObserver(onChange)
-  observer.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ["class", "data-theme"],
-  })
-  return () => observer.disconnect()
+  listeners.add(onChange)
+  if (!observer) {
+    observer = new MutationObserver(() => listeners.forEach((l) => l()))
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "data-theme"],
+    })
+  }
+  return () => {
+    listeners.delete(onChange)
+    if (listeners.size === 0) {
+      observer?.disconnect()
+      observer = undefined
+    }
+  }
 }
 
 function getSnapshot(): string {
@@ -33,7 +46,7 @@ function getServerSnapshot(): string {
 }
 
 /**
- * Whether the dark theme is applied to <html>. Reads the same class as
+ * Whether the dark theme is applied to <html>. Uses the same store as
  * useThemeKey, so it changes in the same render as the token colors.
  */
 export function useIsDark(): boolean {
