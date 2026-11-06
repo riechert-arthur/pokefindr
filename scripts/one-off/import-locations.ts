@@ -115,11 +115,16 @@ export function toLocationRow(feature: SourceFeature): ParseResult {
   let warning: string | undefined
   let position = pair(feature.geometry?.coordinates)
   if (position && !inRange(position)) {
-    // A hand correction typed as latitude, longitude.
+    const bad = `${machineID}: geometry [${position.join(", ")}] is out of range`
+    // Usually a hand correction typed as latitude, longitude.
     const swapped: [number, number] = [position[1], position[0]]
-    if (!inRange(swapped)) return { skip: `${machineID}: coordinates out of range` }
-    warning = `${machineID}: geometry [${position.join(", ")}] is out of range; used it swapped, [${swapped.join(", ")}]`
-    position = swapped
+    if (inRange(swapped)) {
+      warning = `${bad}; used it swapped, [${swapped.join(", ")}]`
+      position = swapped
+    } else {
+      warning = `${bad}; used properties.coordinates`
+      position = null
+    }
   }
   position ??= pair([p.coordinates?.longitude, p.coordinates?.latitude])
   if (!position) return { skip: `${machineID}: no coordinates` }
@@ -287,6 +292,8 @@ export async function mergeStaging(db: Db): Promise<MergeCounts> {
 export interface VerifyReport {
   staged: number
   activeWithPosition: number
+  /** Staged machines that aren't active with a position, other than kept database overrides. */
+  inactive: string[]
   missing: string[]
   coordinateMismatches: string[]
   overridesInFile: number
@@ -305,6 +312,10 @@ export async function verifyImport(db: Db): Promise<VerifyReport> {
       (select count(*)::int from locations_staging) as "staged",
       (select count(*)::int from locations_staging s join locations l using ("machineID")
         where l.is_active and l.geog is not null) as "activeWithPosition",
+      array(select s."machineID" from locations_staging s join locations l using ("machineID")
+        where not (l.manual_override and not s.manual_override)
+          and not (l.is_active and l.geog is not null)
+        order by 1) as "inactive",
       array(select s."machineID" from locations_staging s
         where not exists (select 1 from locations l where l."machineID" = s."machineID")
         order by 1) as "missing",
@@ -322,8 +333,8 @@ export async function verifyImport(db: Db): Promise<VerifyReport> {
         order by 1) as "extras"`.execute(db)
 
   const problems: string[] = []
-  if (r.activeWithPosition !== r.staged) {
-    problems.push(`${r.staged} machines in the file, but ${r.activeWithPosition} of them are active with a position.`)
+  if (r.inactive.length) {
+    problems.push(`${r.inactive.length} machines from the file aren't active with a position: ${preview(r.inactive)}`)
   }
   if (r.missing.length) problems.push(`${r.missing.length} machines from the file are missing: ${preview(r.missing)}`)
   if (r.coordinateMismatches.length) {
@@ -361,6 +372,8 @@ export async function importLocations(db: Kysely<unknown>, file = DEFAULT_FILE):
   if (verify.problems.length) {
     throw new Error(`Location import verification failed, nothing written:\n  ${verify.problems.join("\n  ")}`)
   }
+  // Leave the shared landing table empty for whatever uses it next.
+  await sql`truncate locations_staging`.execute(db)
   const { skipped, warnings, duplicates, total } = source
   return { file: path.relative(ROOT_DIR, file), total, skipped, warnings, duplicates, counts, verify }
 }
@@ -392,7 +405,9 @@ function argValue(flag: string): string | undefined {
 
 async function main() {
   loadDevEnv()
+  // Parse every flag first, so a bad one fails before anything is written.
   const file = argValue("--file") ?? DEFAULT_FILE
+  const reportFile = argValue("--report")
   const apply = process.argv.includes("--apply")
 
   const sql = migrationClient()
@@ -401,7 +416,6 @@ async function main() {
     const run = (trx: Parameters<typeof importLocations>[0]) => importLocations(trx, file)
     const report = apply ? await db.transaction().execute(run) : await inRolledBackTransaction(db, run)
     for (const line of summarize(report)) console.log(line)
-    const reportFile = argValue("--report")
     if (reportFile) writeFileSync(reportFile, JSON.stringify({ apply, ...report }, null, 2) + "\n")
     console.log(apply ? "Done." : "Dry run: nothing written. Re-run with --apply to write.")
   } finally {

@@ -63,9 +63,17 @@ describe("toLocationRow", () => {
     expect(row(base).raw).not.toHaveProperty("_manual_override")
   })
 
-  it("skips features without a machineID or with impossible coordinates", () => {
+  it("falls back to Mapbox's coordinates when the geometry is unusable even swapped", () => {
+    expect(toLocationRow({ ...base, geometry: { coordinates: [500, 500] } })).toMatchObject({
+      row: { lng: -111.5, lat: 33.4 },
+      warning: "Q00350: geometry [500, 500] is out of range; used properties.coordinates",
+    })
+  })
+
+  it("skips features without a machineID or any usable coordinates", () => {
     expect(toLocationRow({ ...base, properties: { ...base.properties, machineID: " " } })).toEqual({ skip: "no machineID" })
-    expect(toLocationRow({ ...base, geometry: { coordinates: [500, 500] } })).toEqual({
+    const nowhere = { ...base, properties: { ...base.properties, coordinates: { longitude: 500, latitude: 500 } } }
+    expect(toLocationRow({ ...nowhere, geometry: { coordinates: [500, 500] } })).toEqual({
       skip: "Q00350: coordinates out of range",
     })
   })

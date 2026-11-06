@@ -90,7 +90,10 @@ const locationColumns = {
   manualOverride: boolean("manual_override").notNull().default(false),
   /** The full feature properties from the JSON, kept while the data moves off it. */
   raw: jsonb("raw"),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  // Set by the ORM on every update (and by the location import); there is no trigger.
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 }
 
 export const locations = pgTable(
@@ -103,7 +106,6 @@ export const locations = pgTable(
   (t) => [
     uniqueIndex("locations_machine_id_key").on(t.machineId),
     index("locations_geog_gist").using("gist", t.geog),
-    index("locations_active_idx").on(t.isActive),
   ],
 )
 

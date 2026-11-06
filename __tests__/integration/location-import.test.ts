@@ -56,6 +56,9 @@ describe("location import (migration 0002, npm run db:import-locations)", () => 
     const second = await db.transaction().execute((trx) => importLocations(trx))
     expect(second.counts).toMatchObject({ inserted: 0, updated: 0, unchanged: source.total })
     expect(await sql`select "machineID", updated_at from locations order by 1`).toEqual(before)
+
+    // The shared landing table is left empty.
+    expect(await sql`select count(*)::int as n from locations_staging`).toEqual([{ n: 0 }])
   })
 
   it("verification catches a merge that lost an override, and the transaction writes nothing", async () => {
@@ -88,6 +91,26 @@ describe("location import (migration 0002, npm run db:import-locations)", () => 
 
     await importRows(rows(feature("Q1", -113, 34, { _manual_override: true })))
     expect(await machine("Q1")).toMatchObject({ lng: -113, lat: 34, manual_override: true })
+  })
+
+  it("accepts a database override that keeps a machine inactive", async () => {
+    await importRows(rows(feature("Q1", -112, 33)))
+    await sql`update locations set manual_override = true, is_active = false where "machineID" = 'Q1'`
+    const { counts, verify } = await importRows(rows(feature("Q1", -112, 33)))
+    expect(counts).toMatchObject({ updated: 0, keptOverrides: 1 })
+    expect(verify.problems).toEqual([])
+    expect(await machine("Q1")).toMatchObject({ is_active: false, manual_override: true })
+  })
+
+  it("reports a machine left inactive that isn't a kept override", async () => {
+    await expect(
+      db.transaction().execute(async (trx) => {
+        await loadStaging(trx, rows(feature("Q1", -112, 33)))
+        await mergeStaging(trx)
+        await k`update locations set is_active = false`.execute(trx) // as if the merge had a bug
+        throw new Error((await verifyImport(trx)).problems.join("; "))
+      }),
+    ).rejects.toThrow("1 machines from the file aren't active with a position: Q1")
   })
 
   it("lists machines that aren't in the file without touching them", async () => {
