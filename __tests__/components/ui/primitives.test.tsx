@@ -1,4 +1,6 @@
 import React from "react"
+import { readFileSync } from "node:fs"
+import path from "node:path"
 import { describe, expect, it } from "vitest"
 import { fireEvent, render, screen } from "@testing-library/react"
 import { Badge } from "@/components/ui/badge"
@@ -85,15 +87,24 @@ describe("shadcn primitives (batch 1)", () => {
     expect(screen.getByText("Sample")).toHaveClass("text-foreground")
   })
 
-  it("Tooltip works without a TooltipProvider above it", async () => {
+  it("Tooltip uses the surrounding TooltipProvider's delay on hover", async () => {
+    // Radix's default delay is 700ms. With the provider's 0ms the tooltip opens
+    // well inside the 300ms wait; it wouldn't if the provider were ignored.
     render(
-      <Tooltip delayDuration={0}>
-        <TooltipTrigger>Locate</TooltipTrigger>
-        <TooltipContent>Show my location</TooltipContent>
-      </Tooltip>,
+      <TooltipProvider delayDuration={0}>
+        <Tooltip>
+          <TooltipTrigger>Locate</TooltipTrigger>
+          <TooltipContent>Show my location</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>,
     )
-    fireEvent.focus(screen.getByRole("button", { name: "Locate" }))
-    expect((await screen.findAllByText("Show my location")).length).toBeGreaterThan(0)
+    fireEvent.pointerMove(screen.getByRole("button", { name: "Locate" }), { pointerType: "mouse" })
+    expect((await screen.findAllByText("Show my location", {}, { timeout: 300 })).length).toBeGreaterThan(0)
+  })
+
+  it("ContextProviders mounts a TooltipProvider for the app", () => {
+    const source = readFileSync(path.join(__dirname, "../../../src/components/providers/ContextProviders.tsx"), "utf8")
+    expect(source).toMatch(/<TooltipProvider>/)
   })
 
   it("CommandDialog has an accessible name", () => {
@@ -103,6 +114,20 @@ describe("shadcn primitives (batch 1)", () => {
       </CommandDialog>,
     )
     expect(screen.getByRole("dialog", { name: "Search locations" })).toBeInTheDocument()
+  })
+
+  it("CommandDialog forwards props to the inner Command", () => {
+    render(
+      <CommandDialog open commandProps={{ shouldFilter: false, label: "Locations" }}>
+        <CommandInput placeholder="Search" />
+        <CommandList>
+          <CommandItem>Safeway on Main St</CommandItem>
+        </CommandList>
+      </CommandDialog>,
+    )
+    fireEvent.change(screen.getByPlaceholderText("Search"), { target: { value: "94110" } })
+    // With filtering off, an item that doesn't contain the query stays visible.
+    expect(screen.getByText("Safeway on Main St")).toBeVisible()
   })
 
   it("CommandEmpty keeps its base styles when given a className", () => {

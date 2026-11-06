@@ -8,14 +8,11 @@ import { cn } from "@/lib/utils"
 const TooltipProvider = TooltipPrimitive.Provider
 
 /**
- * A tooltip that brings its own provider, so it works without a
- * TooltipProvider higher up. Wrap a group in TooltipProvider to share delays.
+ * Needs a TooltipProvider above it. The app mounts one in ContextProviders, so
+ * delays and skip-delay are shared app-wide; wrap a subtree in another
+ * TooltipProvider to change them there.
  */
-const Tooltip = ({ delayDuration, ...props }: React.ComponentProps<typeof TooltipPrimitive.Root>) => (
-  <TooltipPrimitive.Provider delayDuration={delayDuration}>
-    <TooltipPrimitive.Root {...props} />
-  </TooltipPrimitive.Provider>
-)
+const Tooltip = TooltipPrimitive.Root
 
 const TooltipTrigger = TooltipPrimitive.Trigger
 
