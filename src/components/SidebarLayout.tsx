@@ -23,7 +23,7 @@ export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
     <div className="relative h-screen flex">
       <aside
         className={
-          `fixed inset-y-0 left-0 bg-card shadow-xl z-[60]
+          `fixed inset-y-0 left-0 bg-card shadow-xl z-50
           flex flex-col items-center py-4 gap-6 w-16
           transform transition-transform duration-300
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -73,7 +73,7 @@ export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
         />
       </button>}
 
-      <main className="z-10 flex-1 bg-muted/50 overflow-auto">
+      <main className="z-10 flex-1 bg-muted/50 dark:bg-background overflow-auto">
         {children}
       </main>
     </div>

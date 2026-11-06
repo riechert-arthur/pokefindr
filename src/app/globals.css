@@ -162,3 +162,21 @@
 .mapboxgl-map .mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
   border-left-color: hsl(var(--popover));
 }
+
+/* Map controls and attribution: mapbox-gl.css hard-codes white. */
+.mapboxgl-map .mapboxgl-ctrl-group {
+  background: hsl(var(--card));
+}
+.mapboxgl-map .mapboxgl-ctrl-group button + button {
+  border-top-color: hsl(var(--border));
+}
+.mapboxgl-map .mapboxgl-ctrl.mapboxgl-ctrl-attrib {
+  background: hsl(var(--card) / 0.6);
+}
+.mapboxgl-map .mapboxgl-ctrl-attrib a {
+  color: hsl(var(--muted-foreground));
+}
+/* The control icons are dark SVGs; invert them on the dark card. */
+.dark .mapboxgl-map .mapboxgl-ctrl button .mapboxgl-ctrl-icon {
+  filter: invert(1);
+}

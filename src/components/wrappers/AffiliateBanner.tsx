@@ -38,7 +38,7 @@ const AffiliateBanner: React.FC = () => {
           rounded-2xl
           shadow-xl
           max-w-[95vw]
-          z-50
+          z-40
           hover:scale-105
           ease-out
           duration-200

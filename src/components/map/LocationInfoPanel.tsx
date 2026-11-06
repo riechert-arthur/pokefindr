@@ -204,7 +204,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
         onPointerDown={onPointerDown}
       >
         {/* drag handle (visual only) */}
-        <div className="w-10 h-1.5 bg-muted rounded mx-auto mt-2" />
+        <div className="w-10 h-1.5 bg-muted-foreground/30 rounded mx-auto mt-2" />
 
         {/* header */}
         <div className="flex-shrink-0 flex items-center justify-between p-4 border-b">
