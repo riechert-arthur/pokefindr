@@ -16,6 +16,7 @@ import type {
   LocationFeatureCollection,
   LocationFeatureProperties,
 } from "@/lib/types/locations"
+import { readToken } from "@/lib/design/tokens"
 
 interface PokemonCenterLocationPinsProps {
   collection: LocationFeatureCollection
@@ -31,7 +32,8 @@ interface PokemonCenterLocationPinsProps {
 
 const CLUSTER_MAX_ZOOM = 8
 
-const clusterCircleLayer: LayerProps = {
+/** Cluster colors come from the design tokens, read when the source renders. */
+const clusterCircleLayer = (): LayerProps => ({
   id: "cluster-circle",
   type: "circle",
   source: "machines",
@@ -41,18 +43,18 @@ const clusterCircleLayer: LayerProps = {
     "circle-color": [
       "step",
       ["get", "point_count"],
-      "#51bbd6",
+      readToken("primary"),
       10,
-      "#f1f075",
+      readToken("brand-2"),
       30,
-      "#f28cb1",
+      readToken("brand"),
     ],
     "circle-radius": ["step", ["get", "point_count"], 15, 10, 20, 30, 25],
     "circle-stroke-width": 2,
-    "circle-stroke-color": "#fff",
+    "circle-stroke-color": readToken("map-dot-ring"),
     "circle-opacity": 0.8,
   },
-}
+})
 
 const clusterCountLayer: LayerProps = {
   id: "cluster-count",
@@ -191,7 +193,7 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
         clusterMaxZoom={CLUSTER_MAX_ZOOM}
         clusterRadius={30}
       >
-        <Layer {...clusterCircleLayer} />
+        <Layer {...clusterCircleLayer()} />
         <Layer {...clusterCountLayer} />
         <Layer {...unclusteredLayer} />
       </Source>
