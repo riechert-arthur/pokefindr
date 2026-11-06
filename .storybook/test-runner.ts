@@ -34,18 +34,23 @@ type A11yParameters = {
 async function setTheme(page: Page, theme: "light" | "dark") {
   // Resolves once the story has re-rendered for the new globals (or right away
   // if the theme is already set and nothing re-renders).
-  await page.evaluate(
+  const outcome = await page.evaluate(
     (t) =>
-      new Promise<void>((resolve) => {
-        if (document.documentElement.classList.contains(t)) return resolve()
+      new Promise<string>((resolve) => {
+        if (document.documentElement.classList.contains(t)) return resolve("rendered")
         const channel = (window as unknown as {
           __STORYBOOK_ADDONS_CHANNEL__: { emit: (e: string, p: unknown) => void; once: (e: string, cb: () => void) => void }
         }).__STORYBOOK_ADDONS_CHANNEL__
-        channel.once("storyRendered", () => resolve())
+        // Settle on whichever comes first: the re-render, a render error, or a timeout.
+        for (const event of ["storyRendered", "storyErrored", "storyThrewException"]) channel.once(event, () => resolve(event))
+        setTimeout(() => resolve("timeout"), 5000)
         channel.emit("updateGlobals", { globals: { theme: t } })
       }),
     theme,
   )
+  if (outcome !== "rendered" && outcome !== "storyRendered") {
+    throw new Error(`Switching the story to the ${theme} theme failed (${outcome}); see the story's own error above.`)
+  }
   await page.waitForFunction((t) => document.documentElement.classList.contains(t), theme)
 }
 
@@ -58,6 +63,21 @@ async function setTheme(page: Page, theme: "light" | "dark") {
  * `a11y.context` narrows what's checked. Always add a comment saying why.
  */
 const config: TestRunnerConfig = {
+  // The built-in prepare (load the iframe), plus a flag the preview reads before
+  // anything renders, to turn off the a11y addon's own runs (.storybook/preview.tsx).
+  async prepare({ page }) {
+    await page.addInitScript(() => {
+      ;(window as unknown as { __A11Y_TEST_RUNNER__: boolean }).__A11Y_TEST_RUNNER__ = true
+    })
+    const iframe = new URL("iframe.html", process.env.TARGET_URL).toString()
+    await page.goto(iframe, { waitUntil: "load" }).catch((error: Error) => {
+      if (error.message?.includes("ERR_CONNECTION_REFUSED")) {
+        throw new Error(`Could not access the Storybook instance at ${process.env.TARGET_URL}. Is it running?\n\n${error.message}`)
+      }
+      throw error
+    })
+  },
+
   async postVisit(page, context) {
     // The story already failed to render or play: report that, not a11y on a half-rendered page.
     if (context.hasFailure) return
@@ -85,7 +105,8 @@ const config: TestRunnerConfig = {
         await setTheme(page, theme)
         const args = { spec: a11y.config, options: a11y.options, rules, context: a11y.context ?? DEFAULT_CONTEXT }
         const results = (await page.evaluate(async (a: typeof args) => {
-          // The addon's own runs are off under the runner (see .storybook/preview.tsx), so this axe is ours.
+          // The addon's own runs are off under the runner (see prepare above), so it
+          // never loads axe; this is the copy injected above.
           const axe = (window as unknown as { axe: typeof import("axe-core") }).axe
           axe.reset()
           if (a.spec) axe.configure(a.spec)
@@ -103,6 +124,9 @@ const config: TestRunnerConfig = {
       // The page is reused for the next story in the file: leave it on the
       // default theme. A failure here mustn't hide the error above.
       await setTheme(page, "light").catch((error) => console.warn(`Couldn't restore the light theme: ${error}`))
+      // Stories with parameters.themeToggle store their theme (next-themes): clear
+      // it so the next story on the page starts from the default, whatever ran before.
+      await page.evaluate(() => localStorage.removeItem("storybook-theme")).catch(() => {})
     }
 
     if (failures.length) {

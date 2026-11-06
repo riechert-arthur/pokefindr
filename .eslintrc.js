@@ -132,6 +132,7 @@ module.exports = {
         "__tests__/**",
         "*.config.*",
         ".eslintrc.js",
+        ".storybook/test-runner.ts",
         "scripts/**",
       ],
       rules: { "no-restricted-syntax": "off" },

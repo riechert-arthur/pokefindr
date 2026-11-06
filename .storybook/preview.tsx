@@ -43,10 +43,12 @@ const preview: Preview = {
   },
   initialGlobals: {
     theme: "light",
-    // When Playwright drives the page (the a11y test runner), the addon doesn't
-    // run axe itself: .storybook/test-runner.ts does, in light and dark, and two
-    // runs would share one axe instance.
-    ...(typeof navigator !== "undefined" && navigator.webdriver ? { a11y: { manual: true } } : {}),
+    // Under the a11y test runner (it sets this flag before the page loads), the
+    // addon doesn't run axe itself: .storybook/test-runner.ts does, in light and
+    // dark, and two runs would share one axe instance.
+    ...(typeof window !== "undefined" && (window as unknown as { __A11Y_TEST_RUNNER__?: boolean }).__A11Y_TEST_RUNNER__
+      ? { a11y: { manual: true } }
+      : {}),
   },
   decorators: [
     // The same providers as the app: next-themes sets the light/dark class on
