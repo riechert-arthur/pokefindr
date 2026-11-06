@@ -63,13 +63,43 @@ export const profiles = pgTable("profiles", {
     .$onUpdate(() => new Date()),
 })
 
+/** Mapbox's per-field match result for a geocoded address, plus its overall `confidence`. */
+export type MatchCode = Record<string, string>
+
 const locationColumns = {
   id: uuid("id").primaryKey().defaultRandom(),
   machineId: text("machineID"),
   name: text("name"),
   description: text("description"),
+  retailer: text("retailer"),
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  postalCode: text("postal_code"),
   geog: geographyPoint("geog"),
   isOfficial: boolean("is_official"),
+  /** Inactive locations are hidden from the map but keep their reviews. */
+  isActive: boolean("is_active").notNull().default(true),
+  /** Where the row came from, e.g. "pokemoncenter" for the scraped list. */
+  source: text("source"),
+  mapboxId: text("mapbox_id"),
+  /** Mapbox's `coordinates.accuracy`: rooftop, parcel, point, interpolated or approximate. */
+  geocodeAccuracy: text("geocode_accuracy"),
+  matchCode: jsonb("match_code").$type<MatchCode>(),
+  /** Set when someone checked or corrected this machine by hand (`_manual_override` in the JSON). */
+  manualOverride: boolean("manual_override").notNull().default(false),
+  /**
+   * "file" when the JSON's `_manual_override` set the override, so the import
+   * clears it once the JSON drops the flag. Null for an override made in the
+   * database, which the import keeps.
+   */
+  manualOverrideSource: text("manual_override_source"),
+  /** The full feature properties from the JSON, kept while the data moves off it. */
+  raw: jsonb("raw"),
+  // Set on every update by the locations_set_updated_at trigger (migration 0001), whoever writes.
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 }
 
 export const locations = pgTable(
