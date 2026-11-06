@@ -12,7 +12,7 @@ lives in this repo. Browse every component with `npm run storybook`.
 
 All colors are CSS variables in [`src/app/globals.css`](../src/app/globals.css), defined once for
 light (`:root`) and once for dark (`.dark`). Values are HSL channels, so Tailwind can add opacity
-(`bg-primary/10`). **Use the Tailwind class, never a raw color.** Dark mode then works for free.
+(`bg-primary/10`); a few, like `chart-*`, alias another token instead. **Use the Tailwind class, never a raw color.** Dark mode then works for free.
 
 | Token | Class examples | Use for |
 |---|---|---|
@@ -33,8 +33,10 @@ light (`:root`) and once for dark (`.dark`). Values are HSL channels, so Tailwin
 | `chart-1…5` | — | Charts. They alias the kind colors first, so charts match the map. |
 
 To add a token: add it to both `:root` and `.dark` in `globals.css`, map it in
-`tailwind.config.ts` → `theme.extend.colors`, and add it to `COLOR_TOKENS` in
-`src/lib/design/tokens.ts` (a test checks every token Tailwind uses is defined). Check contrast in both themes.
+`tailwind.config.ts` → `theme.extend.colors`, and, if its value is HSL channels, add it to
+`COLOR_TOKENS` in `src/lib/design/tokens.ts` (a test checks each of those is channels in both
+themes, and that every token Tailwind uses is defined). An alias (`--chart-6: var(--primary)`)
+doesn't go in `COLOR_TOKENS`. Check contrast in both themes.
 
 ## Type
 
@@ -64,11 +66,13 @@ text size next to a `leading-*` keeps both.
 
 - Spacing is Tailwind's 4px scale. Common steps: `gap-1.5`/`gap-2` inside a control, `p-3`/`p-4`
   inside cards and panels, `gap-6`/`gap-8` between sections.
-- Radius: `rounded-md` for controls, `rounded-lg` (= `--radius`, 8px) for cards and panels,
-  `rounded-xl` for large floating surfaces (search, composer), `rounded-full` for chips and dots.
+- Radius: `rounded-md` for controls, `rounded-lg` (= `--radius`, 8px) for panels, popovers and
+  empty states, `rounded-xl` for cards (`Card`) and large floating surfaces (search, composer),
+  `rounded-full` for chips and dots.
 - Elevation: `shadow-sm` (and plain `shadow`) for chips and buttons on the map, `shadow-md` for
-  floating panels and popovers, `shadow-lg` for the hero search and dialogs, `shadow-xl` for drawers
-  and side panels. Shadows are tokens too (`--shadow-*`), so they deepen in dark mode. Being
+  floating panels and popovers, `shadow-lg` for the hero search, dialogs and sheets (including
+  `ResponsivePanel`), `shadow-xl` for the app's fixed side panels (the sidebar drawer, the location
+  panel). Shadows are tokens too (`--shadow-*`), so they deepen in dark mode. Being
   `var()` values, they can't take a color modifier (`shadow-lg shadow-primary/10`); use an arbitrary
   shadow with a token instead.
 - Breakpoints are Tailwind's defaults, defined once in
@@ -92,9 +96,17 @@ countLabel("vending", 1) // "1 vending machine"
 ```
 
 Always go through `KINDS` (or `KindDot` / `KindIcon` / `TypeChip`) so the map, chips, list rows
-and assistant cards agree. For a kind from API data, use `toKind(value)`: unknown or missing values
-become vending (with a warning in development). Adding a kind means adding it here (and to
-`LocationKind` in `src/lib/types/locations.ts`), a `--kind-*` token, and a story.
+and assistant cards agree. For a kind from API data, use `toKind(value)`: a missing value becomes
+vending, and so does an unknown one, with a warning outside production.
+
+Adding a kind:
+
+1. `--kind-<name>` in both `:root` and `.dark` (`globals.css`), checked for contrast.
+2. `kind.<name>` in `tailwind.config.ts` → `theme.extend.colors.kind`, so `bg-kind-<name>` exists,
+   and `kind-<name>` in `COLOR_TOKENS` (`src/lib/design/tokens.ts`).
+3. The kind in `LocationKind` (`src/lib/types/locations.ts`) and its entry in `KINDS` (label, short
+   label, icon, `bg-`/`text-` classes). `KIND_ORDER` follows `KINDS`.
+4. A story showing it (the `KindDot` and `TypeChip` stories render every kind).
 
 ## Components
 
@@ -136,9 +148,11 @@ one in place of the current one.
 
 ## Icons
 
-- [lucide-react](https://lucide.dev) only. Import the `…Icon` names (`MapPinIcon`, not `MapPin`).
-  Custom icons use `createLucideIcon` so they match (see `VendingMachineIcon`) and live next to the
-  component that uses them.
+- UI icons come from [lucide-react](https://lucide.dev) (either export name works: `MapPin` or
+  `MapPinIcon`). A missing single-color UI icon is made with `createLucideIcon` so it matches, next
+  to the code that uses it (see `VendingMachineIcon` in `kinds.ts`).
+- Multi-color artwork (social logos, the map pins) lives in `src/components/icons/` as plain SVG
+  components. It's exempt from the color lint because it uses fixed colors.
 - Sizes: `size-4` inline with body text and in buttons, `size-5` in toolbars and map controls,
   `size-6` in the sidebar and nav.
 - Decorative icons get `aria-hidden`. Icon-only buttons get an `aria-label` that says what happens
@@ -179,16 +193,23 @@ Then run `npm run storybook` and check it in light and dark, and run the checks 
 
 CI runs [axe](https://github.com/dequelabs/axe-core) on every story, in light and dark, through the
 Storybook test runner ([`.storybook/test-runner.ts`](../.storybook/test-runner.ts)). **Serious and
-critical violations fail the build**; minor and moderate ones are printed as warnings. The
-Accessibility tab in Storybook shows the same results while you work.
+critical violations fail the build**; minor and moderate ones are printed as warnings.
+
+The Accessibility tab in Storybook runs the same axe while you work, with two differences:
+
+- It checks the theme you're viewing; CI checks light and dark.
+- It also reports page-level rules (`region`, `landmark-one-main`, `page-has-heading-one`), which
+  CI turns off because a story is one component, not a page.
 
 Run it locally:
 
 ```sh
 npm run build-storybook
 npx playwright install chromium          # once
-python3 -m http.server 6006 -b 127.0.0.1 -d storybook-static &
+python3 -m http.server 6006 -b 127.0.0.1 -d storybook-static >/dev/null 2>&1 & server=$!
+until curl -sf http://127.0.0.1:6006/index.json >/dev/null; do sleep 1; done
 npm run test-storybook
+kill $server
 ```
 
 Fix the component or the token rather than the story. Contrast targets: 4.5:1 for text, 3:1 for
@@ -206,9 +227,11 @@ export const OnMap: Story = {
 }
 ```
 
-`a11y: { test: "off" }` (or the older `disable: true`) skips a story entirely; use it for stories
-that only make sense in a page. `a11y: { context: "#selector" }` narrows what's checked. The test
-runner reads the same parameters as the Accessibility tab.
+`a11y: { test: "off" }` (or the older `disable: true`) skips a story in CI and in the tab; use it
+for stories that only make sense in a page. `a11y: { context: "#selector" }` narrows what's
+checked, in both. `a11y.config` and `a11y.options` apply in both too. `test: "todo"`, the default
+in `.storybook/preview.tsx`, only makes the tab show violations as warnings: CI still fails on
+serious and critical ones.
 
 ## Guardrails
 

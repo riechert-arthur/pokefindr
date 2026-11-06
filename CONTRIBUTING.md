@@ -20,7 +20,7 @@ Read [docs/design-system.md](docs/design-system.md) first. In short:
   `src/components/pokefindr` before writing new markup.
 - Every component in those folders has a story in `src/stories/`. Check it in light and dark with
   `npm run storybook`.
-- Icons are lucide (`…Icon` imports); icon-only buttons need an `aria-label`.
+- UI icons are lucide; icon-only buttons need an `aria-label`.
 
 ## Other guides
 
