@@ -35,7 +35,20 @@ async function main() {
   console.log(JSON.stringify(result, null, 2))
 }
 
-main().catch((err) => {
-  console.error(err instanceof Error ? err.message : err)
-  process.exit(1)
-})
+// Close the db pool (if a job opened one) so the process exits instead of
+// waiting on idle connections.
+async function closeResources() {
+  const { closeDb } = await import("@/server/db/client")
+  await closeDb().catch(() => {})
+}
+
+main()
+  .then(async () => {
+    await closeResources()
+    process.exit(0)
+  })
+  .catch(async (err) => {
+    console.error(err instanceof Error ? err.message : err)
+    await closeResources()
+    process.exit(1)
+  })

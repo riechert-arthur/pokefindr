@@ -33,11 +33,13 @@ const serverSchema = z.object({
   DATABASE_POOL_MAX: blankAsUnset(z.coerce.number().int().positive().default(5)),
 
   /**
-   * Shared secret for `/api/jobs/<name>`. Vercel Cron sends it as
-   * `Authorization: Bearer <CRON_SECRET>`. Optional: without it, every job
-   * request is rejected.
+   * Shared secret for `/api/jobs/<name>` (Vercel Cron sends it as
+   * `Authorization: Bearer <CRON_SECRET>`) and the key queue messages are
+   * signed with. Optional: without it, every job request and queue message is
+   * rejected. 16 characters is Vercel's own minimum; use a long random value
+   * (`openssl rand -base64 48`).
    */
-  CRON_SECRET: blankAsUnset(z.string().min(32, "must be at least 32 characters").optional()),
+  CRON_SECRET: blankAsUnset(z.string().min(16, "must be at least 16 characters").optional()),
   /** Set to "1" by Vercel on its build and runtime. Decides whether jobs go through Vercel Queues. */
   VERCEL: blankAsUnset(z.string().optional()),
 

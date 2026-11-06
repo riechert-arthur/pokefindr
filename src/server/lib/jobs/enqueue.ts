@@ -1,43 +1,59 @@
 import "server-only"
 import { send } from "@vercel/queue"
 import { getServerConfig } from "@/server/config"
-import { isJobName, type JobName } from "./registry"
-import { runJob } from "./run"
-import type { JobResult } from "./types"
+import { isJobName } from "./registry"
+import { runJob, UnknownJobError } from "./run"
+import { signJobMessage } from "./signing"
 
 /** The one Vercel Queues topic. Messages carry the job name, so adding a job needs no new topic. */
 export const JOBS_TOPIC = "jobs"
 
+/**
+ * What goes on the queue. `body` is the payload serialized once, so the
+ * signature covers the exact text the consumer parses.
+ */
 export interface JobMessage {
-  job: JobName
-  payload: unknown
+  v: 1
+  job: string
+  body: string
+  sig: string
 }
 
 export interface EnqueueOptions {
-  /** Deduplicates sends for 24 hours (e.g. `submission-created:<id>`). At most 256 characters. */
+  /** Deduplicates sends for 24 hours (e.g. `submission-created:<id>`). At most 256 characters. Vercel only. */
   idempotencyKey?: string
   delaySeconds?: number
 }
 
 export type EnqueueResult =
   | { mode: "queued"; messageId: string | null }
-  | { mode: "inline"; result: JobResult }
+  /** `done` settles when the background run finishes. Callers normally ignore it; tests await it. */
+  | { mode: "inline"; done: Promise<void> }
 
 /**
- * Runs a job in the background. On Vercel it publishes to Vercel Queues, and
- * `/api/queues/jobs` runs it with retries. Anywhere else (local dev, tests,
- * another host) it runs the job inline and waits for it.
+ * Runs a job in the background and returns at once.
+ *
+ * - On Vercel: publishes a signed message to Vercel Queues, and
+ *   `/api/queues/jobs` runs it with retries.
+ * - Anywhere else (local dev, tests, another host): starts the job in this
+ *   process without blocking the caller. `delaySeconds` is honored with a
+ *   timer. There are no retries or idempotency keys; failures are logged, not
+ *   thrown. On serverless hosts other than Vercel, the run may be cut short
+ *   when the response ends.
  *
  * This is the only module that sends to Vercel Queues. To move off Vercel,
  * replace the `send` call here and the consumer route; jobs don't change.
  *
  * Keep payloads small (ids, not documents): every 4 KiB is billed as an operation.
  */
-export async function enqueueJob(job: JobName, payload: unknown = null, options: EnqueueOptions = {}): Promise<EnqueueResult> {
-  if (!isJobName(job)) throw new Error(`Unknown job: ${String(job)}`)
+export async function enqueueJob(job: string, payload: unknown = null, options: EnqueueOptions = {}): Promise<EnqueueResult> {
+  if (!isJobName(job)) throw new UnknownJobError(job)
+  const config = getServerConfig()
 
-  if (getServerConfig().VERCEL) {
-    const message: JobMessage = { job, payload }
+  if (config.VERCEL) {
+    if (!config.CRON_SECRET) throw new Error("CRON_SECRET must be set to enqueue jobs (it signs queue messages)")
+    const body = JSON.stringify(payload ?? null)
+    const message: JobMessage = { v: 1, job, body, sig: signJobMessage(job, body, config.CRON_SECRET) }
     const { messageId } = await send(JOBS_TOPIC, message, {
       idempotencyKey: options.idempotencyKey,
       delaySeconds: options.delaySeconds,
@@ -45,5 +61,15 @@ export async function enqueueJob(job: JobName, payload: unknown = null, options:
     return { mode: "queued", messageId }
   }
 
-  return { mode: "inline", result: await runJob(job, payload, { trigger: "inline" }) }
+  if (options.idempotencyKey) {
+    console.info("[jobs] idempotencyKey is ignored off Vercel", { job })
+  }
+  const done = new Promise<void>((resolve) => {
+    setTimeout(() => {
+      runJob(job, payload, { trigger: "inline" })
+        .catch(() => {}) // runJob already logged it; never surface to the caller
+        .finally(resolve)
+    }, Math.max(0, options.delaySeconds ?? 0) * 1000)
+  })
+  return { mode: "inline", done }
 }

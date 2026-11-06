@@ -26,7 +26,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
@@ -44,7 +44,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - run: npm ci --no-audit --no-fund
       # Integration tests need Postgres and run in their own job.
@@ -91,7 +91,7 @@ jobs:
       - if: steps.present.outputs.found == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - if: steps.present.outputs.found == 'true'
         run: npm ci --no-audit --no-fund
