@@ -14,6 +14,3 @@ export interface LocationFeatureProperties {
 
 export type LocationFeature = Feature<Point, LocationFeatureProperties>
 export type LocationFeatureCollection = FeatureCollection<Point, LocationFeatureProperties>
-
-/** Cache tag for anything derived from the set of map locations. */
-export const LOCATIONS_CACHE_TAG = "locations"

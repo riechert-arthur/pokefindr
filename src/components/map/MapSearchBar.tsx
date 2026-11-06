@@ -3,14 +3,14 @@
 import { publicConfig } from "@/config.public"
 import axios, { CancelTokenSource } from "axios"
 import { useState, useEffect, useRef, useCallback } from "react"
-import type { Feature, Point, FeatureCollection } from "geojson"
-import type { MachineProperties } from "@/components/map/PokemonCenterLocationPins"
+import type { Point } from "geojson"
+import type { LocationFeature, LocationFeatureCollection } from "@/lib/types/locations"
 import { XMarkIcon, MagnifyingGlassIcon, Bars3Icon } from "@heroicons/react/24/outline"
 import { useSidebar } from "@/components/providers/SidebarContextProvider"
 
 interface MapSearchBarProps {
-  collection: FeatureCollection<Point, MachineProperties>
-  onSelect: (feat: Feature<Point, MachineProperties>) => void
+  collection: LocationFeatureCollection
+  onSelect: (feat: LocationFeature) => void
   radiusMeters?: number
   selectedLocation?: { address: string; city: string; state: string } | null;
 }
@@ -42,7 +42,7 @@ export function MapSearchBar({
 }: MapSearchBarProps) {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<
-    Array<Feature<Point, MachineProperties> & { distance: number }>
+    Array<LocationFeature & { distance: number }>
   >([])
   const cancelRef = useRef<CancelTokenSource | null>(null)
   const { toggleSidebar } = useSidebar()
@@ -128,7 +128,7 @@ export function MapSearchBar({
 
         const nearby = collection.features
           .filter(
-            (feat): feat is Feature<Point, MachineProperties> =>
+            (feat): feat is LocationFeature & { geometry: Point } =>
               !!feat.geometry &&
               feat.geometry.type === "Point" &&
               Array.isArray(feat.geometry.coordinates)
@@ -216,7 +216,7 @@ export function MapSearchBar({
             const distMi = (feat.distance / 1609.34).toFixed(1)
             return (
               <li
-                key={feat.properties.machineID}
+                key={feat.properties.id}
                 className="px-3 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
                 onClick={() => {
                   onSelect(feat)

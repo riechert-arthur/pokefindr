@@ -128,10 +128,10 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
   })
 
   const loadReviews = useCallback(
-    async (lat: number, lng: number) => {
+    async (locationId: string) => {
       try {
         const res = await axios.get<{ reviews: Review[] }>("/api/get-reviews", {
-          params: { lat, lng },
+          params: { locationId },
           withCredentials: true,
         })
         setReviews(res.data.reviews || [])
@@ -144,20 +144,17 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
 
   useEffect(() => {
     if (!info) return
-    loadReviews(info.latitude, info.longitude)
+    loadReviews(info.id)
   }, [info, loadReviews])
 
   const onReviewSubmit = async (values: ReviewFormValues) => {
     if (!info) return
 
     try {
-      const { latitude, longitude } = info
-
       await axios.post(
         "/api/reviews",
         {
-          lat: latitude,
-          lng: longitude,
+          locationId: info.id,
           rating: values.rating,
           text: values.text,
         },
@@ -165,7 +162,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
       )
 
       reviewForm.reset()
-      await loadReviews(latitude, longitude)
+      await loadReviews(info.id)
     } catch (err) {
       handleSubmitError(err)
     }

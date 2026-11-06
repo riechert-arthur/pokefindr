@@ -1,74 +1,20 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getAdminClient } from '@/lib/supabase/db'
+import { z } from 'zod'
+import { listLocationReviews } from '@/server/services/reviews'
 
-const MAX_DISTANCE_METERS = 50      
+const locationIdSchema = z.string().uuid()
 
 export async function GET(req: NextRequest) {
-  const url      = new URL(req.url)
-  const latParam = url.searchParams.get('lat')
-  const lngParam = url.searchParams.get('lng')
+  const parsed = locationIdSchema.safeParse(req.nextUrl.searchParams.get('locationId'))
+  if (!parsed.success)
+    return NextResponse.json({ error: 'locationId query param must be a location id' }, { status: 400 })
 
-  if (!latParam || !lngParam)
-    return NextResponse.json(
-      { error: '(lat & lng) query params are required' },
-      { status: 400 },
-    )
-
-  const lat = Number(latParam)
-  const lng = Number(lngParam)
-  if (Number.isNaN(lat) || Number.isNaN(lng))
-    return NextResponse.json({ error: 'Invalid coordinates' }, { status: 400 })
-
-  const { data: loc, error: locErr } = await getAdminClient()
-    .rpc('get_location_by_point', {
-      lat_input:  lat,
-      lng_input:  lng,
-      max_meters: MAX_DISTANCE_METERS,
-    })
-    .maybeSingle()
-
-  console.log("retrieved point: ", loc)
-
-  if (locErr)
-    return NextResponse.json(
-      { error: locErr.message },
-      { status: 500 },
-    )
-  if (!loc)
-    return NextResponse.json(
-      { reviews: [] },     
-      { status: 200 },
-    )
-
-  const { data: ratings, error: ratingsErr } = await getAdminClient()
-    .from('location_ratings')
-    .select('rating, text, user_id')
-    .eq('location_id', loc.id)
-
-  if (ratingsErr)
-    return NextResponse.json(
-      { error: ratingsErr.message },
-      { status: 500 },
-    )
-
-  const userIds = [...new Set(ratings.map(r => r.user_id!))]
-  const { data: profiles, error: profilesErr } = await getAdminClient()
-    .from('profiles')
-    .select('id, username')
-    .in('id', userIds)
-
-  if (profilesErr)
-    return NextResponse.json(
-      { error: profilesErr.message },
-      { status: 500 },
-    )
-
-  const reviews = ratings.map(r => ({
-    rating:   r.rating,
-    text:     r.text ?? '',
-    username: profiles.find(p => p.id === r.user_id)?.username ?? 'Unknown',
-  }))
-
-  return NextResponse.json({ reviews }, { status: 200 })
+  try {
+    const reviews = await listLocationReviews(parsed.data)
+    return NextResponse.json({ reviews }, { status: 200 })
+  } catch (err) {
+    console.error('[api/get-reviews] failed to load reviews', err)
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+  }
 }

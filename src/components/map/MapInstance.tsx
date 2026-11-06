@@ -6,11 +6,11 @@ import { useEffect, useRef, useState } from "react"
 import Map, { FullscreenControl, NavigationControl } from "react-map-gl"
 import type { MapRef } from "react-map-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
-import { PokemonCenterLocationPins, type MachineProperties } from "./PokemonCenterLocationPins"
+import { PokemonCenterLocationPins } from "./PokemonCenterLocationPins"
 import { UserLocationPin } from "./UserLocationPin"
 import { useUserLocationContext } from "@/components/providers/UserLocationContextProvider"
 import { MapSearchBar } from "./MapSearchBar"
-import type { Feature, Point } from "geojson"
+import type { LocationFeature } from "@/lib/types/locations"
 import { useLocations } from "./useLocations"
 import { LocationPopupProps } from "./LocationPinPopUps"
 import { useSidebar } from "../providers/SidebarContextProvider"
@@ -40,7 +40,7 @@ const MapInstance: FC = () => {
   > | null>(null)
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const { session } = useSessionContext()
-  const { collection } = useLocations()
+  const collection = useLocations()
 
   useEffect(() => {
     if (userLocation && !userLocationError && mapRef.current) {
@@ -52,7 +52,7 @@ const MapInstance: FC = () => {
     }
   }, [userLocation, userLocationError])
 
-  const handleSelect = (feat: Feature<Point, MachineProperties>) => {
+  const handleSelect = (feat: LocationFeature) => {
     const [lng, lat] = feat.geometry.coordinates
     mapRef.current?.flyTo({ center: [lng, lat], zoom: 14, duration: 1000 })
     setClickedInfo({

@@ -1,47 +1,18 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getAdminClient } from '@/lib/supabase/db'
+import { listUserReviews } from '@/server/services/reviews'
 
 export async function GET(req: NextRequest) {
-  const userId = req.headers.get("x-user-id")
+  const userId = req.headers.get('x-user-id')
   if (!userId) {
-    return NextResponse.json(
-      { error: "Unauthenticated" },
-      { status: 401 },
-    )
+    return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
   }
 
-  const { data, error } = await getAdminClient()
-    .from('location_ratings')
-    .select(`
-      id,
-      rating,
-      text,
-      created_at,
-      locations!inner (
-        name,
-        description 
-      )
-    `)
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-
-  if (error) {
-    console.error('Error fetching reviews', error)
+  try {
+    const reviews = await listUserReviews(userId)
+    return NextResponse.json({ reviews }, { status: 200 })
+  } catch (err) {
+    console.error('[api/my-reviews] failed to load reviews', err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
-
-  const reviews = (data || []).map((r) => ({
-    id:       r.id,
-    rating:   r.rating,
-    comment:  r.text,
-    created:  r.created_at,
-    location: {
-      name:    r.locations.name,
-      description: r.locations.description,
-    },
-  }))
-
-  return NextResponse.json({ reviews }, { status: 200 })
 }
-

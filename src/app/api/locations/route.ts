@@ -1,24 +1,17 @@
 import { NextResponse } from "next/server"
-import { unstable_cache } from "next/cache"
 import { getActiveLocationsGeoJSON } from "@/server/services/locations"
-import { LOCATIONS_CACHE_TAG } from "@/lib/types/locations"
 
-// Served from the Next.js data cache for up to an hour. The location import
-// runs outside Next.js and can't revalidate it, so the map can lag an import
-// by that long. Anything inside the app that changes locations should call
-// revalidateTag(LOCATIONS_CACHE_TAG).
-const getCachedLocations = unstable_cache(
-  () => getActiveLocationsGeoJSON(),
-  ["locations-geojson-v1"],
-  { tags: [LOCATIONS_CACHE_TAG], revalidate: 3600 },
-)
+// Never prerendered or kept in the Next.js data cache: the location import runs
+// outside Next.js and couldn't clear it. The short CDN cache below is the only
+// cache, so the map trails the database by about a minute at most.
+export const dynamic = "force-dynamic"
 
 export async function GET() {
   try {
-    const collection = await getCachedLocations()
+    const collection = await getActiveLocationsGeoJSON()
     return NextResponse.json(collection, {
       headers: {
-        // Short CDN cache: absorbs traffic spikes without hiding updates for long.
+        // Absorbs traffic spikes: about one database query per minute per region.
         "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300",
       },
     })

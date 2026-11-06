@@ -9,8 +9,6 @@ const EMPTY: LocationFeatureCollection = { type: "FeatureCollection", features: 
 /** Loads the map's locations from GET /api/locations. */
 export function useLocations() {
   const [collection, setCollection] = useState<LocationFeatureCollection>(EMPTY)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<Error | null>(null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -22,17 +20,12 @@ export function useLocations() {
       })
       .catch((err: unknown) => {
         if (controller.signal.aborted) return
-        const e = err instanceof Error ? err : new Error(String(err))
-        console.error(e)
-        setError(e)
+        console.error(err)
         toast.error("Couldn't load vending machine locations. Please refresh to try again.")
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setIsLoading(false)
       })
 
     return () => controller.abort()
   }, [])
 
-  return { collection, isLoading, error }
+  return collection
 }
