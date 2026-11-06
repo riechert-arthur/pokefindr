@@ -1,7 +1,7 @@
 import React from "react"
 import { describe, expect, it } from "vitest"
 import { render, screen } from "@testing-library/react"
-import { Button } from "@/components/ui/Button"
+import { Button } from "@/components/ui/button"
 
 describe("Button", () => {
   it("renders a native button with custom props and classes", () => {

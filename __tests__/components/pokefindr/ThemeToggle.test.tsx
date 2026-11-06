@@ -5,7 +5,7 @@ const setTheme = vi.fn()
 let state = { theme: "system", resolvedTheme: "light" }
 vi.mock("next-themes", () => ({ useTheme: () => ({ ...state, setTheme }) }))
 
-import { ThemeToggle } from "@/components/ui/ThemeToggle"
+import { ThemeToggle } from "@/components/pokefindr/ThemeToggle"
 
 describe("ThemeToggle toggle variant", () => {
   it.each([

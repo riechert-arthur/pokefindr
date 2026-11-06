@@ -1,15 +1,15 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/Button"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/Card"
-import { Input } from "@/components/ui/Input"
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import {
   Form,
   FormField,
@@ -17,7 +17,7 @@ import {
   FormItem,
   FormMessage,
   FormLabel,
-} from "@/components/ui/Form"
+} from "@/components/ui/form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
@@ -27,6 +27,7 @@ import { loginSchema } from "@/lib/schemas"
 import { useRouter } from "next/navigation"
 import axios from "axios"
 import { toast } from "sonner"
+import { broadcastAuth } from "@/lib/auth/broadcast"
 
 export function LoginForm({
   className,
@@ -46,7 +47,7 @@ export function LoginForm({
     try {
       await axios.post("/api/auth/login", values, { withCredentials: true })
       toast.success("Logged in!")
-      new BroadcastChannel("auth").postMessage("login")
+      broadcastAuth("login")
       router.refresh()
       router.push("/")
     } catch (err: unknown) {
@@ -60,7 +61,7 @@ export function LoginForm({
     try {
       const { data } = await axios.post("/api/auth/oauth", { provider })
       if (data.url) {
-        new BroadcastChannel("auth").postMessage("login")
+        // No session yet: the OAuth callback page broadcasts "login" once it exists.
         window.location.href = data.url
       } else {
         toast.error("OAuth login failed.")

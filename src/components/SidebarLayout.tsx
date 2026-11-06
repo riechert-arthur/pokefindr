@@ -7,7 +7,7 @@ import { useSidebar } from '@/components/providers/SidebarContextProvider'
 import { DiscordIcon } from './icons/DiscordIcon'
 import { useSessionContext } from './providers/SessionProvider'
 import { BookOpenIcon, ChevronLeft, HouseIcon, MapPinIcon, SettingsIcon } from 'lucide-react'
-import { ThemeToggle } from '@/components/ui/ThemeToggle'
+import { ThemeToggle } from '@/components/pokefindr/ThemeToggle'
 
 interface SidebarLayoutProps {
   children: ReactNode

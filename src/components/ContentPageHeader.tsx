@@ -6,8 +6,11 @@ import { Logo } from "@/components/brand/Logo"
 import { useState } from "react"
 import { Dialog, DialogPanel } from "@headlessui/react"
 import Link from "next/link"
-import Avatar from "@/components/ui/Avatar"
+import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { useSessionContext } from "./providers/SessionProvider"
+
+/** A full-width link in the nav drawer and header ("Log in", Settings, Log out). */
+const NAV_ITEM = "-mx-3 flex items-center gap-2 rounded-lg px-3 py-2.5 text-base/7 font-semibold text-foreground hover:bg-muted/50"
 
 export interface NavigationLink {
   name: string
@@ -65,12 +68,14 @@ export const MobileMenu: FC<MobileMenuProps> = ({
               {!session ? (
                 <a
                   href="/login"
-                  className="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-foreground hover:bg-muted/50"
+                  className={NAV_ITEM}
                 >
                   Log in
                 </a>
               ) : (
-                <Avatar
+                <UserMenu
+                  variant="list"
+                  itemClassName={NAV_ITEM}
                   size={36}
                   userName={session.username}
                 />
@@ -128,12 +133,12 @@ export const ContentPageHeader: FC<HeaderProps> = ({ navigation }) => {
             {!session ? (
               <a
                 href="/login"
-                className="-mx-3 block rounded-lg px-3 py-2.5 text-base/7 font-semibold text-foreground hover:bg-muted/50"
+                className={NAV_ITEM}
               >
                 Log in &rarr;
               </a>
             ) : (
-              <Avatar 
+              <UserMenu 
                 size={42}
                 userName={session.username}
               />

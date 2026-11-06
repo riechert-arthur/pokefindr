@@ -3,7 +3,7 @@ import Link from "next/link"
 import Head from "next/head"
 import { FAQLoader } from "@/components/wrappers/FAQLoader"
 import Image from "next/image"
-import { buttonVariants } from "@/components/ui/Button"
+import { buttonVariants } from "@/components/ui/button"
 
 export const metadata = {
   "title": "Find all Pokemon Vending Machine Locations - Free Map | PokeFindr",

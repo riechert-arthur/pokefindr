@@ -1,7 +1,7 @@
 import React from "react"
 import { describe, expect, it, vi } from "vitest"
 import { fireEvent, render, screen } from "@testing-library/react"
-import { StarRating } from "@/components/ui/StarRating"
+import { StarRating } from "@/components/pokefindr/StarRating"
 
 describe("StarRating", () => {
   it("renders a read-only rating as a labelled image", () => {

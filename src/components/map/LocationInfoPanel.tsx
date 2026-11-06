@@ -3,7 +3,7 @@ import React, { FC, useState, useEffect, useCallback, useRef } from "react"
 import { SquarePenIcon, XIcon } from "lucide-react"
 import axios from "axios"
 import { LocationPopupProps } from "./LocationPinPopUps"
-import { StarRating } from "@/components/ui/StarRating"
+import { StarRating } from "@/components/pokefindr/StarRating"
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/Dialog"
+} from "@/components/ui/dialog"
 import {
   Form,
   FormField,
@@ -19,8 +19,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/Form"
-import { Button } from "@/components/ui/Button"
+} from "@/components/ui/form"
+import { Button } from "@/components/ui/button"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
