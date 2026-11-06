@@ -2,7 +2,7 @@
  * Location details that used to live only in src/data/vending_machines_mod.json:
  * address fields, geocoding metadata, the manual-override flag and the
  * active flag (#73). Added to `locations` and to `locations_staging`, where
- * `npm run db:import-locations` lands rows before merging them.
+ * the location import (0002_import_locations) lands rows before merging them.
  *
  * Additive only, so the previous release keeps working while this deploys.
  */

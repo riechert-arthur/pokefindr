@@ -19,7 +19,7 @@
     "db:baseline": "tsx scripts/db/baseline.ts",
     "db:pull": "drizzle-kit pull",
     "db:studio": "drizzle-kit studio",
-    "db:import-locations": "tsx scripts/db/import-locations.ts"
+    "db:import-locations": "tsx scripts/one-off/import-locations/cli.ts"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
