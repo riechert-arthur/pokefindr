@@ -17,7 +17,7 @@ interface LogoProps {
  * theme. Static copies live in public/brand/ for places tokens can't reach.
  */
 export function Logo({ variant = "mark", size = 32, className, title = "PokeFindr" }: LogoProps) {
-  const gradientId = `logo-grad-${useId().replace(/:/g, "")}`
+  const gradientId = `logo-grad-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`
   const mark = (
     <svg
       viewBox="0 0 32 32"

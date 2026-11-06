@@ -91,7 +91,7 @@ function contrast(a: string, b: string): number {
 describe("no raw colors outside globals.css", () => {
   // globals.css defines the tokens. Illustrations (multi-color SVG artwork)
   // and generated images, which can't read CSS variables, are the other
-  // exceptions (the same files .eslintrc.json exempts).
+  // exceptions.
   const EXEMPT = [
     path.join("src", "app", "globals.css"),
     path.join("src", "components", "icons") + path.sep,

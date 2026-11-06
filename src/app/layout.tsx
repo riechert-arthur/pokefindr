@@ -7,6 +7,8 @@ import AffiliateBannerWrapper from "@/components/wrappers/AffiliateBannerWrapper
 import { Toaster } from "@/components/ui/Sonner"
 
 export const metadata = {
+  // Absolute base for og:image, twitter:image and other metadata URLs.
+  metadataBase: new URL("https://pokefindr.app"),
   "robots": {
     "index": true,
     "follow": true

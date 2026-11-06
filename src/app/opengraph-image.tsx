@@ -24,7 +24,7 @@ export default async function OpengraphImage() {
           <img src={BRAND_MARK_DATA_URI} width={72} height={72} alt="" />
           <div style={{ display: "flex", fontSize: 44, letterSpacing: "-0.03em" }}>
             <span style={{ fontWeight: 500 }}>Poke</span>
-            <span style={{ fontWeight: 800, color: "#9b2fd9" }}>Findr</span>
+            <span style={{ fontWeight: 800, backgroundImage: "linear-gradient(135deg, #c026d3, #7c3aed)", backgroundClip: "text", color: "transparent" }}>Findr</span>
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", marginTop: 48, fontSize: 76, fontWeight: 700, lineHeight: 1.02, letterSpacing: "-0.035em" }}>

@@ -55,7 +55,7 @@ export default function OAuthCallback() {
         <div className="z-1000 flex w-full max-w-sm flex-col gap-6">
           <Link href="/" className="flex items-center gap-2 self-center font-medium">
             <div className="bg-transparent text-primary-foreground flex size-6 items-center justify-center rounded-md">
-              <Logo size={20} /> 
+              <Logo size={20} title="" /> 
             </div>
             Pokefindr 
           </Link>
