@@ -1,4 +1,5 @@
 import "./globals.css"
+import { JetBrains_Mono, Noto_Sans } from "next/font/google"
 import { ContextProviders } from "@/components/providers/ContextProviders"
 import { Analytics } from "@vercel/analytics/next"
 import AffiliateBannerWrapper from "@/components/wrappers/AffiliateBannerWrapper"
@@ -19,13 +20,19 @@ export const metadata = {
   }
 }
 
+// Fonts from the redesign prototype, self-hosted by next/font with size-adjusted
+// fallbacks so text doesn't shift when they load. Exposed as CSS variables for
+// Tailwind's font-sans / font-mono.
+const sans = Noto_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700", "800"], variable: "--font-sans", display: "swap" })
+const mono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono", display: "swap" })
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
       <body className="antialiased">
         <ContextProviders>
           <main>{children}</main>

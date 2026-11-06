@@ -34,8 +34,8 @@ describe("design tokens", () => {
     }
   })
 
-  it("only references tokens from tailwind.config.ts that are defined in light and dark", () => {
-    const used = [...tailwind.matchAll(/var\(--([\w-]+)\)/g)].map((m) => m[1]).filter((t) => t !== "radius")
+  it("only references color tokens from tailwind.config.ts that are defined in light and dark", () => {
+    const used = [...tailwind.matchAll(/var\(--([\w-]+)\)/g)].map((m) => m[1]).filter((t) => !/^(radius|font-|shadow-)/.test(t))
     expect(used.length).toBeGreaterThan(0)
     for (const token of used) {
       expect(light.has(token), `${token} in :root`).toBe(true)
@@ -194,5 +194,16 @@ describe("no raw colors outside globals.css", () => {
     expect(RAW_COLOR.test(lines[1])).toBe(true)
     expect(lines[2].trim()).toBe("")
     expect(lines[3]).toBe("url(http://x)")
+  })
+})
+
+describe("type scale and elevation", () => {
+  it.each(["display", "title", "heading", "subheading", "body-lg", "body", "caption", "overline"])("defines text-%s", (size) => {
+    expect(tailwind).toMatch(new RegExp(`['"]?${size}['"]?: \\[`))
+  })
+
+  it.each(["shadow-sm", "shadow-md", "shadow-lg"])("defines --%s in light and dark", (token) => {
+    expect(light.get(token)).toBeTruthy()
+    expect(dark.get(token)).toBeTruthy()
   })
 })

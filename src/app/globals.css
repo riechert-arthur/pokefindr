@@ -63,6 +63,10 @@
     --chart-4: var(--primary);
     --chart-5: var(--brand);
     --radius: 0.5rem;
+    /* Elevation */
+    --shadow-sm: 0 1px 2px rgb(10 10 10 / 0.06);
+    --shadow-md: 0 1px 2px rgb(10 10 10 / 0.06), 0 8px 24px rgb(10 10 10 / 0.08);
+    --shadow-lg: 0 1px 2px rgb(10 10 10 / 0.05), 0 18px 50px -12px rgb(10 10 10 / 0.18);
   }
 
   .dark {
@@ -114,6 +118,9 @@
     --chart-3: var(--kind-event);
     --chart-4: var(--primary);
     --chart-5: var(--brand);
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.45);
+    --shadow-lg: 0 1px 2px rgb(0 0 0 / 0.4), 0 18px 50px -12px rgb(0 0 0 / 0.6);
   }
 }
 
@@ -122,6 +129,9 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background font-sans text-foreground;
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
   }
 }
