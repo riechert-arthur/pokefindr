@@ -1,0 +1,86 @@
+[
+  {
+    "machineID": "Q00350",
+    "name": "150 East Old West Highway",
+    "description": "150 East Old West Highway, Apache Junction, Arizona 85119, United States",
+    "longitude": -111.544047,
+    "latitude": 33.413887
+  },
+  {
+    "machineID": "Q01036",
+    "name": "2227 South Shore Center",
+    "description": "2227 South Shore Center, Alameda, California 94501, United States",
+    "longitude": -122.250819,
+    "latitude": 37.75731
+  },
+  {
+    "machineID": "Q00265",
+    "name": "12350 West 64th Avenue",
+    "description": "12350 West 64th Avenue, Arvada, Colorado 80004, United States",
+    "longitude": -105.136449,
+    "latitude": 39.811342
+  },
+  {
+    "machineID": "Q01551",
+    "name": "2400 Peoples Plaza",
+    "description": "2400 Peoples Plaza, Newark, Delaware 19702, United States",
+    "longitude": -75.749047,
+    "latitude": 39.600414
+  },
+  {
+    "machineID": "Q01444",
+    "name": "1855 Wisconsin Avenue Northwest",
+    "description": "1855 Wisconsin Avenue Northwest, Washington, District of Columbia 20007, United States",
+    "longitude": -77.067291,
+    "latitude": 38.916099
+  },
+  {
+    "machineID": "Q00602",
+    "name": "3330 Cobb Parkway Northwest",
+    "description": "3330 Cobb Parkway, Acworth, Georgia 30101, United States",
+    "longitude": -84.6768,
+    "latitude": 34.036145
+  },
+  {
+    "machineID": "Q01453",
+    "name": "5230 West Franklin Road",
+    "description": "5230 West Franklin Road, Boise, Idaho 83705, United States",
+    "longitude": -116.246027,
+    "latitude": 43.603952
+  },
+  {
+    "machineID": "Q01193",
+    "name": "1501 East Algonquin Road",
+    "description": "1501 East Algonquin Road, Algonquin, Illinois 60102, United States",
+    "longitude": -88.274356,
+    "latitude": 42.158803
+  },
+  {
+    "machineID": "Q01016",
+    "name": "11700 Olio Road",
+    "description": "11700 Olio Road, Fishers, Indiana 46037, United States",
+    "longitude": -85.922221,
+    "latitude": 39.959647
+  },
+  {
+    "machineID": "Q01023",
+    "name": "1751 Patrick Drive",
+    "description": "1751 Patrick Drive, Burlington, Kentucky 41005, United States",
+    "longitude": -84.692685,
+    "latitude": 39.018159
+  },
+  {
+    "machineID": "Q01380",
+    "name": "2635 Housley Road",
+    "description": "2635 Housley Road, Annapolis, Maryland 21401, United States",
+    "longitude": -76.55512,
+    "latitude": 38.987208
+  },
+  {
+    "machineID": "Q01575",
+    "name": "125 Robert F. Toner Boulevard",
+    "description": "125 Robert F. Toner Boulevard, North Attleboro, Massachusetts 02763, United States",
+    "longitude": -71.300738,
+    "latitude": 41.970825
+  }
+]

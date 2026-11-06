@@ -1,5 +1,36 @@
-# Local development services. Start with `npm run db:up`.
+# Local stack. Start or update everything with `make run` (docs/database.md).
+#
+#   db    PostGIS, on localhost:5433 for host tools. One database per git branch
+#         (DB_NAME, set by the Makefile; main's is "pokefindr")
+#   init  one-off: installs dependencies, creates the branch database if needed,
+#         applies migrations, checks the schema, seeds
+#   web   Next.js dev server on localhost:3000, started once init has succeeded
 name: pokefindr
+
+# Shared by every service that runs the app's code. To add a worker:
+#
+#   worker-etl:
+#     <<: *app
+#     command: ["npx", "tsx", "scripts/workers/etl.ts"]
+#     depends_on:
+#       init:
+#         condition: service_completed_successfully
+x-app: &app
+  # Built once, by init (below); the other services reuse the local image.
+  image: pokefindr-dev:latest
+  pull_policy: never
+  volumes:
+    - .:/app
+    - node_modules:/app/node_modules
+    - next:/app/.next
+  environment:
+    # Containers always use this stack's database for the current branch,
+    # whatever .env.local says.
+    DATABASE_URL: postgres://pokefindr:pokefindr@db:5432/${DB_NAME:-pokefindr}
+    DATABASE_URL_UNPOOLED: postgres://pokefindr:pokefindr@db:5432/${DB_NAME:-pokefindr}
+    BASE_DATABASE: pokefindr
+    NEXT_TELEMETRY_DISABLED: "1"
+
 services:
   db:
     image: postgis/postgis:16-3.4
@@ -8,14 +39,43 @@ services:
       POSTGRES_PASSWORD: pokefindr
       POSTGRES_DB: pokefindr
     ports:
-      - "5433:5432"
+      - "${DB_PORT:-5433}:5432"
     volumes:
       - pokefindr-db:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U pokefindr -d pokefindr"]
+      # -h 127.0.0.1: on a fresh volume the image's init step runs a temporary
+      # server on the Unix socket only. Checking over TCP waits for the real one.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U pokefindr -d pokefindr"]
       interval: 2s
       timeout: 3s
       retries: 30
 
+  init:
+    <<: *app
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    command: ["sh", "-c", "npx tsx scripts/db/branchDatabase.ts && npm run --silent db:migrate && npm run --silent db:check && npm run --silent db:seed"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    <<: *app
+    command: ["npx", "next", "dev", "--hostname", "0.0.0.0"]
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/map').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 5s
+      timeout: 60s
+      start_period: 120s
+      retries: 3
+
 volumes:
   pokefindr-db:
+  node_modules:
+  next:

@@ -8,17 +8,13 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+With Docker running:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+make run    # database, migrations, seed data and the app, all in Docker
 ```
+
+Then open http://localhost:3000. `make run` is safe to rerun at any time, e.g. after a pull. `make help` lists the other commands (`stop`, `logs`, `shell`, `prune`, `reset`). Each git branch gets its own local database. See [docs/database.md](docs/database.md) for details.
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
