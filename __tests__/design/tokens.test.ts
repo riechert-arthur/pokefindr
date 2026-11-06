@@ -37,11 +37,13 @@ describe("design tokens", () => {
     }
   })
 
-  // --radius is defined once (not per theme); the fonts come from next/font.
+  // --radius is defined once (not per theme); the fonts come from next/font;
+  // --radix-* variables are set by Radix at runtime (e.g. accordion height).
   const NOT_THEMED = ["radius", "font-sans", "font-mono"]
+  const isThemed = (t: string) => !NOT_THEMED.includes(t) && !t.startsWith("radix-")
 
   it("only references tokens from tailwind.config.ts that are defined in light and dark", () => {
-    const used = [...tailwind.matchAll(/var\(--([\w-]+)\)/g)].map((m) => m[1]).filter((t) => !NOT_THEMED.includes(t))
+    const used = [...tailwind.matchAll(/var\(--([\w-]+)\)/g)].map((m) => m[1]).filter(isThemed)
     expect(used.length).toBeGreaterThan(0)
     for (const font of ["font-sans", "font-mono"]) {
       expect(layout, `layout.tsx sets --${font}`).toContain(`variable: "--${font}"`)
