@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 import { fireEvent, render, screen } from "@testing-library/react"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
+import { Command, CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -83,5 +83,52 @@ describe("shadcn primitives (batch 1)", () => {
     )
     expect(screen.getByText("Live")).toHaveClass("bg-primary")
     expect(screen.getByText("Sample")).toHaveClass("text-foreground")
+  })
+
+  it("Tooltip works without a TooltipProvider above it", async () => {
+    render(
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger>Locate</TooltipTrigger>
+        <TooltipContent>Show my location</TooltipContent>
+      </Tooltip>,
+    )
+    fireEvent.focus(screen.getByRole("button", { name: "Locate" }))
+    expect((await screen.findAllByText("Show my location")).length).toBeGreaterThan(0)
+  })
+
+  it("CommandDialog has an accessible name", () => {
+    render(
+      <CommandDialog open title="Search locations">
+        <CommandInput placeholder="Search" />
+      </CommandDialog>,
+    )
+    expect(screen.getByRole("dialog", { name: "Search locations" })).toBeInTheDocument()
+  })
+
+  it("CommandEmpty keeps its base styles when given a className", () => {
+    render(
+      <Command>
+        <CommandList>
+          <CommandEmpty className="text-muted-foreground">Nothing</CommandEmpty>
+        </CommandList>
+      </Command>,
+    )
+    expect(screen.getByText("Nothing")).toHaveClass("py-6", "text-center", "text-muted-foreground")
+  })
+
+  it("ToggleGroupItem's own variant wins over the group's", () => {
+    render(
+      <ToggleGroup type="single" variant="outline">
+        <ToggleGroupItem value="a">A</ToggleGroupItem>
+        <ToggleGroupItem value="b" variant="default">B</ToggleGroupItem>
+      </ToggleGroup>,
+    )
+    expect(screen.getByRole("radio", { name: "A" })).toHaveClass("border")
+    expect(screen.getByRole("radio", { name: "B" })).not.toHaveClass("border")
+  })
+
+  it("Badge renders inline, so it can sit inside a paragraph", () => {
+    render(<p>Status <Badge>Live</Badge></p>)
+    expect(screen.getByText("Live").tagName).toBe("SPAN")
   })
 })
