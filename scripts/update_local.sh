@@ -33,30 +33,10 @@ echo "📦 Installing dependencies..."
 $PIP install --upgrade pip
 $PIP install -r scripts/requirements.txt
 
-# ─── STEP 1: Scrape & Merge ─────────────────────────────
-echo "🔍 Running scrape_and_merge.py"
-$PYTHON scripts/scrape_and_merge.py
+# The old weekly steps (scrape_and_merge.py, sanity_check.py, committing the
+# JSON and push_supabase.py) were removed in #82: push_supabase.py overwrote
+# hand-corrected locations. Scheduled location updates belong in the location
+# ETL pipeline (scripts/location_etl_pipeline/), which must respect
+# manual_override.
 
-# ─── STEP 2: Sanity Check ────────────────────────────────
-echo "🔍 Running sanity_check.py"
-$PYTHON scripts/sanity_check.py
-
-# ─── STEP 3: Commit & Push Changes ──────────────────────
-echo "🔍 Checking for JSON changes"
-git add src/data/vending_machines.json \
-        src/data/vending_machines_mod.json \
-        src/data/vending_machines_diff.json \
-        src/data/vending_machines_flagged.json
-if git diff --cached --quiet; then
-  echo "ℹ️  No changes to commit."
-else
-  git commit -m "ci: weekly update vending_machines data"
-  git push --force-with-lease origin main
-fi
-
-# ─── STEP 4: Upsert to Supabase ─────────────────────────
-echo "🔍 Running push_supabase.py"
-$PYTHON scripts/push_supabase.py
-
-echo "✅ Weekly update complete."
-
+echo "✅ Environment ready."
