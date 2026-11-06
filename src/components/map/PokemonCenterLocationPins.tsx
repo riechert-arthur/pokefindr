@@ -16,7 +16,7 @@ import type {
   LocationFeatureCollection,
   LocationFeatureProperties,
 } from "@/lib/types/locations"
-import { readToken } from "@/lib/design/tokens"
+import { readTokens } from "@/lib/design/tokens"
 
 interface PokemonCenterLocationPinsProps {
   collection: LocationFeatureCollection
@@ -32,46 +32,50 @@ interface PokemonCenterLocationPinsProps {
 
 const CLUSTER_MAX_ZOOM = 8
 
-/** Cluster colors come from the design tokens, read when the source renders. */
-const clusterCircleLayer = (): LayerProps => ({
-  id: "cluster-circle",
-  type: "circle",
-  source: "machines",
-  filter: ["has", "point_count"],
-  maxzoom: CLUSTER_MAX_ZOOM + 1,
-  paint: {
-    "circle-color": [
-      "step",
-      ["get", "point_count"],
-      readToken("primary"),
-      10,
-      readToken("brand-2"),
-      30,
-      readToken("brand"),
-    ],
-    "circle-radius": ["step", ["get", "point_count"], 15, 10, 20, 30, 25],
-    "circle-stroke-width": 2,
-    "circle-stroke-color": readToken("map-dot-ring"),
-    "circle-opacity": 0.8,
-  },
-})
-
-const clusterCountLayer: LayerProps = {
-  id: "cluster-count",
-  type: "symbol",
-  source: "machines",
-  filter: ["has", "point_count"],
-  minzoom: 0,
-  maxzoom: CLUSTER_MAX_ZOOM + 1,
-  layout: {
-    "text-field": "{point_count_abbreviated}",
-    "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
-    "text-size": 17,
-    "text-allow-overlap": true,
-    "text-ignore-placement": true,
-    "text-offset": [0, 0.55],
-    "text-anchor": "bottom",
-  },
+/**
+ * Cluster layers, colored from the design tokens with one style lookup.
+ * Call when the source renders so the colors match the current theme.
+ */
+const clusterLayers = (): { circle: LayerProps; count: LayerProps } => {
+  const c = readTokens(["primary", "brand-2", "brand", "map-dot-ring", "primary-foreground"])
+  return {
+    circle: {
+      id: "cluster-circle",
+      type: "circle",
+      source: "machines",
+      filter: ["has", "point_count"],
+      maxzoom: CLUSTER_MAX_ZOOM + 1,
+      paint: {
+        "circle-color": ["step", ["get", "point_count"], c.primary, 10, c["brand-2"], 30, c.brand],
+        "circle-radius": ["step", ["get", "point_count"], 15, 10, 20, 30, 25],
+        "circle-stroke-width": 2,
+        "circle-stroke-color": c["map-dot-ring"],
+        "circle-opacity": 0.8,
+      },
+    },
+    count: {
+      id: "cluster-count",
+      type: "symbol",
+      source: "machines",
+      filter: ["has", "point_count"],
+      minzoom: 0,
+      maxzoom: CLUSTER_MAX_ZOOM + 1,
+      layout: {
+        "text-field": "{point_count_abbreviated}",
+        "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+        "text-size": 17,
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
+        "text-offset": [0, 0.55],
+        "text-anchor": "bottom",
+      },
+      // All three fills are saturated in light mode and pale in dark mode, so
+      // the primary foreground (near-white / near-black) reads on each.
+      paint: {
+        "text-color": c["primary-foreground"],
+      },
+    },
+  }
 }
 
 const unclusteredLayer: LayerProps = {
@@ -183,6 +187,7 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
   }, [mapRef])
 
   const renderedSource = useMemo(() => {
+    const layers = clusterLayers()
     return (
       <Source
         id="machines"
@@ -193,8 +198,8 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
         clusterMaxZoom={CLUSTER_MAX_ZOOM}
         clusterRadius={30}
       >
-        <Layer {...clusterCircleLayer()} />
-        <Layer {...clusterCountLayer} />
+        <Layer {...layers.circle} />
+        <Layer {...layers.count} />
         <Layer {...unclusteredLayer} />
       </Source>
     )

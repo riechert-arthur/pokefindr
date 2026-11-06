@@ -23,24 +23,40 @@ export type LocationKind = "vending" | "shop" | "event"
 /** The token for a location kind's color. */
 export const kindToken = (kind: LocationKind): ColorToken => `kind-${kind}`
 
+const HSL_CHANNELS = /^-?\d+(\.\d+)?\s+\d+(\.\d+)?%\s+\d+(\.\d+)?%$/
+
 /**
  * Turns a token's HSL channels (`"221.2 83.2% 53.3%"`) into a CSS color with
  * commas (`"hsl(221.2, 83.2%, 53.3%)"`), which map libraries can parse.
  * Returns undefined for an empty or malformed value.
  */
 export function channelsToHsl(channels: string): string | undefined {
-  const parts = channels.trim().split(/\s+/)
-  if (parts.length !== 3) return undefined
-  return `hsl(${parts[0]}, ${parts[1]}, ${parts[2]})`
+  const value = channels.trim()
+  if (!HSL_CHANNELS.test(value)) return undefined
+  const [h, s, l] = value.split(/\s+/)
+  return `hsl(${h}, ${s}, ${l})`
 }
 
 /**
- * Reads a token's current value (it changes with the theme) as a CSS color.
- * Pass an element inside the themed tree when you have one; defaults to <html>.
- * Falls back to `fallback` during SSR or if the token is missing.
+ * Reads several tokens' current values (they change with the theme) as CSS
+ * colors, with one style lookup. Pass an element inside the themed tree when
+ * you have one; defaults to <html>. A token that is missing or malformed, or
+ * any token during SSR, gets `fallback`.
  */
+export function readTokens<T extends ColorToken>(
+  tokens: readonly T[],
+  fallback = "hsl(0, 0%, 50%)",
+  el?: Element,
+): Record<T, string> {
+  const style = typeof window === "undefined" ? undefined : getComputedStyle(el ?? document.documentElement)
+  const colors = {} as Record<T, string>
+  for (const token of tokens) {
+    colors[token] = (style && channelsToHsl(style.getPropertyValue(`--${token}`))) ?? fallback
+  }
+  return colors
+}
+
+/** Reads one token's current value as a CSS color. See `readTokens`. */
 export function readToken(token: ColorToken, fallback = "hsl(0, 0%, 50%)", el?: Element): string {
-  if (typeof window === "undefined") return fallback
-  const value = getComputedStyle(el ?? document.documentElement).getPropertyValue(`--${token}`)
-  return channelsToHsl(value) ?? fallback
+  return readTokens([token], fallback, el)[token]
 }

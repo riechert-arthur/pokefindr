@@ -8,13 +8,20 @@ const ROOT = path.resolve(__dirname, "../..")
 const css = readFileSync(path.join(ROOT, "src/app/globals.css"), "utf8")
 const tailwind = readFileSync(path.join(ROOT, "tailwind.config.ts"), "utf8")
 
-/** The declarations inside the first `selector { … }` block after `@layer base`. */
+/**
+ * The custom properties declared in the CSS rule whose selector list includes
+ * `selector`. Throws if no rule matches, so a reformat fails loudly here
+ * instead of as dozens of missing-token failures.
+ */
 function block(selector: string): Map<string, string> {
-  const start = css.indexOf(`${selector} {`)
-  const end = css.indexOf("}", start)
-  const decls = new Map<string, string>()
-  for (const m of css.slice(start, end).matchAll(/--([\w-]+):\s*([^;]+);/g)) decls.set(m[1], m[2].trim())
-  return decls
+  for (const rule of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const selectors = rule[1].replace(/\/\*[\s\S]*?\*\//g, "").split(",").map((s) => s.trim())
+    if (!selectors.includes(selector)) continue
+    const decls = new Map<string, string>()
+    for (const m of rule[2].matchAll(/--([\w-]+):\s*([^;]+);/g)) decls.set(m[1], m[2].trim())
+    return decls
+  }
+  throw new Error(`No "${selector}" rule in globals.css`)
 }
 
 const light = block(":root")
@@ -36,6 +43,8 @@ describe("design tokens", () => {
   it("converts channels to a comma-separated hsl() color", () => {
     expect(channelsToHsl(" 221.2 83.2% 53.3% ")).toBe("hsl(221.2, 83.2%, 53.3%)")
     expect(channelsToHsl("")).toBeUndefined()
+    expect(channelsToHsl("221.2 83.2 53.3")).toBeUndefined()
+    expect(channelsToHsl("red blue green")).toBeUndefined()
     expect(kindToken("shop")).toBe("kind-shop")
   })
 })
@@ -53,16 +62,34 @@ describe("no raw colors in components", () => {
   }
   walk(path.join(ROOT, "src/components"))
 
-  it("uses tokens instead of hex colors outside src/components/icons", () => {
+  /** Blanks out comments but keeps line numbers. */
+  const stripComments = (src: string) =>
+    src
+      .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "))
+      .replace(/(^|[^:"'`])\/\/.*$/gm, "$1")
+
+  // A hex color is #rgb, #rgba, #rrggbb or #rrggbbaa not followed by more of
+  // an id (so "#add-review" passes). Color functions are flagged unless they
+  // wrap a token, as in hsl(var(--primary)).
+  const RAW_COLOR = /(?<![\w&])#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![\w-])|\b(?:rgba?|hsla?|oklch|oklab|lab|lch)\((?!\s*var\()/
+
+  it("uses tokens instead of raw colors outside src/components/icons", () => {
     const offenders = files
       .filter((f) => !EXEMPT.some((e) => path.relative(ROOT, f).startsWith(e)))
       .flatMap((f) =>
-        readFileSync(f, "utf8")
+        stripComments(readFileSync(f, "utf8"))
           .split("\n")
           .map((line, i) => ({ line, i }))
-          .filter(({ line }) => /#[0-9a-fA-F]{3,8}\b/.test(line) && !/^\s*(\/\/|\*)/.test(line))
+          .filter(({ line }) => RAW_COLOR.test(line))
           .map(({ i }) => `${path.relative(ROOT, f)}:${i + 1}`),
       )
     expect(offenders).toEqual([])
+  })
+
+  it("catches raw colors and ignores ids and token wrappers", () => {
+    expect(RAW_COLOR.test(`style={{ color: "rgb(255, 0, 0)" }}`)).toBe(true)
+    expect(RAW_COLOR.test(`fill="#f28cb1"`)).toBe(true)
+    expect(RAW_COLOR.test(`href="#add-review"`)).toBe(false)
+    expect(RAW_COLOR.test(`color: hsl(var(--primary))`)).toBe(false)
   })
 })
