@@ -27,8 +27,8 @@ interface UserMenuProps {
   className?: string
   /**
    * "dropdown" (default): the avatar opens a menu. "list": the avatar, name and
-   * links laid out inline, for places a popover can't open, such as the mobile
-   * nav drawer (a Headless UI dialog that would pull focus back from it).
+   * links laid out inline, for the mobile nav drawer, where Settings and Log
+   * out are then one tap away instead of behind a second menu.
    */
   variant?: "dropdown" | "list"
   /** Classes for each Settings / Log out row in the "list" variant, to match the surrounding nav. */

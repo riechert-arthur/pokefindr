@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss"
 import typography from "@tailwindcss/typography"
 import defaultTheme from "tailwindcss/defaultTheme"
+import { SCREENS } from "./src/lib/design/breakpoints"
 
 export default {
     darkMode: ["class"],
@@ -10,6 +11,8 @@ export default {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
+  	// Shared with useMediaQuery (src/lib/design/breakpoints.ts).
+  	screens: SCREENS,
   	extend: {
   		colors: {
   			background: 'hsl(var(--background))',
@@ -99,6 +102,14 @@ export default {
   			body: ['0.875rem', { lineHeight: '1.45' }],
   			caption: ['0.75rem', { lineHeight: '1.4' }],
   			overline: ['0.6875rem', { lineHeight: '1.2', letterSpacing: '0.08em', fontWeight: '600' }]
+  		},
+  		keyframes: {
+  			'accordion-down': { from: { height: '0' }, to: { height: 'var(--radix-accordion-content-height)' } },
+  			'accordion-up': { from: { height: 'var(--radix-accordion-content-height)' }, to: { height: '0' } }
+  		},
+  		animation: {
+  			'accordion-down': 'accordion-down 0.2s ease-out',
+  			'accordion-up': 'accordion-up 0.2s ease-out'
   		},
   		/*
   		 * Elevation from the redesign prototype, themed for light and dark.
