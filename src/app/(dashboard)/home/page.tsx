@@ -105,7 +105,7 @@ export default function ReviewsPage() {
       <header className="absolute inset-x-0 top-0 z-40 flex h-16 border-b border-border">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <button onClick={toggleSidebar} className="md:hidden mr-2 p-1 rounded" aria-label="Toggle menu">
-            <MenuIcon className="size-6 text-muted-foreground hover:text-blue-600" />
+            <MenuIcon className="size-6 text-muted-foreground hover:text-primary/80" />
           </button>
           <div />
           <div className="flex items-center gap-x-8">
@@ -185,7 +185,7 @@ export default function ReviewsPage() {
                 >Cancel</button>
                 <button
                   type="submit"
-                  className="px-3 py-1 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 rounded"
+                  className="px-3 py-1 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded"
                 >Save</button>
               </div>
             </form>

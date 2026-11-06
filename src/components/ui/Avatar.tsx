@@ -60,8 +60,9 @@ export default function Avatar({
           />
         ) : (
           <div
+            // primary-foreground on brand is checked at 4.5:1 in both themes (__tests__/design/tokens.test.ts).
             style={{ width: size, height: size }}
-            className="rounded-full flex items-center justify-center bg-fuchsia-700 text-white font-semibold uppercase text-lg"
+            className="rounded-full flex items-center justify-center bg-brand text-primary-foreground font-semibold uppercase text-lg"
           >
             {userName.charAt(0)}
           </div>

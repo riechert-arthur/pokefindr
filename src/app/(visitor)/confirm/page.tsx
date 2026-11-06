@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { buttonVariants } from "@/components/ui/Button"
 
 export default function ConfirmEmailPage() {
   return (
@@ -14,7 +15,7 @@ export default function ConfirmEmailPage() {
           <div className="mt-10 flex items-center justify-center gap-x-6">
             <Link
               href="/"
-              className="rounded-md bg-indigo-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              className={buttonVariants({ size: "lg" })}
             >
               Go back home
             </Link>

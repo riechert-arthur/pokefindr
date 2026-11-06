@@ -18,7 +18,7 @@ const PrivacyPolicyPage: FC = () => {
           Visit our website at{" "}
           <a
             href="https://pokefindr.app"
-            className="text-blue-600 hover:underline"
+            className="text-primary hover:underline"
           >
             https://pokefindr.app
           </a>
@@ -37,7 +37,7 @@ const PrivacyPolicyPage: FC = () => {
         have questions or concerns, please contact us at{" "}
         <a
           href="mailto:riechertarthur@gmail.com"
-          className="text-blue-600 hover:underline"
+          className="text-primary hover:underline"
         >
           riechertarthur@gmail.com
         </a>
@@ -99,7 +99,7 @@ const PrivacyPolicyPage: FC = () => {
         <strong>How do I exercise my rights?</strong> You can contact us at{" "}
         <a
           href="mailto:riechertarthur@gmail.com"
-          className="text-blue-600 hover:underline"
+          className="text-primary hover:underline"
         >
           riechertarthur@gmail.com
         </a>
@@ -202,7 +202,7 @@ const PrivacyPolicyPage: FC = () => {
         at{" "}
         <a
           href="mailto:riechertarthur@gmail.com"
-          className="text-blue-600 hover:underline"
+          className="text-primary hover:underline"
         >
           riechertarthur@gmail.com
         </a>{" "}
@@ -240,7 +240,7 @@ const PrivacyPolicyPage: FC = () => {
         If you have questions or comments, contact us at{" "}
         <a
           href="mailto:riechertarthur@gmail.com"
-          className="text-blue-600 hover:underline"
+          className="text-primary hover:underline"
         >
           riechertarthur@gmail.com
         </a>
@@ -255,7 +255,7 @@ const PrivacyPolicyPage: FC = () => {
         please contact us at
         <a
           href="mailto:riechertarthur@gmail.com"
-          className="text-blue-600 hover:underline ml-1"
+          className="text-primary hover:underline ml-1"
         >
           riechertarthur@gmail.com
         </a>
