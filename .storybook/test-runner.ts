@@ -32,11 +32,20 @@ type A11yParameters = {
  * components like the Toaster all follow, then waits for the class.
  */
 async function setTheme(page: Page, theme: "light" | "dark") {
-  await page.evaluate((t) => {
-    const channel = (window as unknown as { __STORYBOOK_ADDONS_CHANNEL__: { emit: (e: string, p: unknown) => void } })
-      .__STORYBOOK_ADDONS_CHANNEL__
-    channel.emit("updateGlobals", { globals: { theme: t } })
-  }, theme)
+  // Resolves once the story has re-rendered for the new globals (or right away
+  // if the theme is already set and nothing re-renders).
+  await page.evaluate(
+    (t) =>
+      new Promise<void>((resolve) => {
+        if (document.documentElement.classList.contains(t)) return resolve()
+        const channel = (window as unknown as {
+          __STORYBOOK_ADDONS_CHANNEL__: { emit: (e: string, p: unknown) => void; once: (e: string, cb: () => void) => void }
+        }).__STORYBOOK_ADDONS_CHANNEL__
+        channel.once("storyRendered", () => resolve())
+        channel.emit("updateGlobals", { globals: { theme: t } })
+      }),
+    theme,
+  )
   await page.waitForFunction((t) => document.documentElement.classList.contains(t), theme)
 }
 
@@ -57,11 +66,13 @@ const config: TestRunnerConfig = {
     const a11y = (story.parameters?.a11y ?? {}) as A11yParameters
     if (a11y.disable || a11y.test === "off") return
 
-    // Once per page (the runner reuses it across a file's stories): axe, and no
-    // transitions, so axe measures final colors after a theme flip.
-    if (!(await page.evaluate(() => "axe" in window))) {
-      await page.addScriptTag({ path: AXE_PATH })
-      await page.addStyleTag({ content: "*, *::before, *::after { transition: none !important; animation: none !important; }" })
+    // Once per page (the runner reuses it across a file's stories), each with
+    // its own check: axe, and no transitions or animations, so axe measures
+    // final colors after a theme flip or an enter animation.
+    if (!(await page.evaluate(() => "axe" in window))) await page.addScriptTag({ path: AXE_PATH })
+    if (!(await page.evaluate(() => !!document.getElementById("a11y-no-motion")))) {
+      const style = await page.addStyleTag({ content: "*, *::before, *::after { transition: none !important; animation: none !important; }" })
+      await style.evaluate((el) => (el as Element).setAttribute("id", "a11y-no-motion"))
     }
 
     // Rules a story disables in `config` stay off even if `options.runOnly` names them (as the addon does).
@@ -74,10 +85,8 @@ const config: TestRunnerConfig = {
         await setTheme(page, theme)
         const args = { spec: a11y.config, options: a11y.options, rules, context: a11y.context ?? DEFAULT_CONTEXT }
         const results = (await page.evaluate(async (a: typeof args) => {
-          const axe = (window as unknown as { axe: typeof import("axe-core") & { _running?: boolean } }).axe
-          // The a11y addon shares this axe and runs it after each render (including
-          // the re-render a theme switch causes); wait for that run to finish.
-          for (let i = 0; axe._running && i < 200; i++) await new Promise((r) => setTimeout(r, 25))
+          // The addon's own runs are off under the runner (see .storybook/preview.tsx), so this axe is ours.
+          const axe = (window as unknown as { axe: typeof import("axe-core") }).axe
           axe.reset()
           if (a.spec) axe.configure(a.spec)
           const options: RunOptions = { resultTypes: ["violations"], ...a.options, rules: { ...a.options?.rules, ...a.rules } }
@@ -91,8 +100,9 @@ const config: TestRunnerConfig = {
         }
       }
     } finally {
-      // The page is reused for the next story in the file: leave it on the default theme.
-      await setTheme(page, "light")
+      // The page is reused for the next story in the file: leave it on the
+      // default theme. A failure here mustn't hide the error above.
+      await setTheme(page, "light").catch((error) => console.warn(`Couldn't restore the light theme: ${error}`))
     }
 
     if (failures.length) {

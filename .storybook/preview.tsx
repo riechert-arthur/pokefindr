@@ -41,7 +41,13 @@ const preview: Preview = {
       toolbar: { title: "Theme", icon: "mirror", items: ["light", "dark"], dynamicTitle: true },
     },
   },
-  initialGlobals: { theme: "light" },
+  initialGlobals: {
+    theme: "light",
+    // When Playwright drives the page (the a11y test runner), the addon doesn't
+    // run axe itself: .storybook/test-runner.ts does, in light and dark, and two
+    // runs would share one axe instance.
+    ...(typeof navigator !== "undefined" && navigator.webdriver ? { a11y: { manual: true } } : {}),
+  },
   decorators: [
     // The same providers as the app: next-themes sets the light/dark class on
     // <html> (so tokens and theme-aware components like the Toaster agree), and

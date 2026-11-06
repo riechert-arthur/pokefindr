@@ -5,26 +5,50 @@ import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area"
 
 import { cn } from "@/lib/utils"
 
-const ScrollArea = React.forwardRef<
-  React.ElementRef<typeof ScrollAreaPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root>
->(({ className, children, ...props }, ref) => (
-  <ScrollAreaPrimitive.Root
-    ref={ref}
-    className={cn("relative overflow-hidden", className)}
-    {...props}
-  >
-    {/* Focusable, so keyboard users can scroll content that has no focusable items of its own. */}
-    <ScrollAreaPrimitive.Viewport
-      tabIndex={0}
-      className="h-full w-full rounded-[inherit] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-    >
-      {children}
-    </ScrollAreaPrimitive.Viewport>
-    <ScrollBar />
-    <ScrollAreaPrimitive.Corner />
-  </ScrollAreaPrimitive.Root>
-))
+/** True while the element's content overflows it, so there's something to scroll. */
+function useOverflows(ref: React.RefObject<HTMLElement | null>) {
+  const [overflows, setOverflows] = React.useState(false)
+  React.useEffect(() => {
+    const el = ref.current
+    if (!el || typeof ResizeObserver === "undefined") return
+    const check = () => setOverflows(el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth)
+    const observer = new ResizeObserver(check)
+    observer.observe(el)
+    if (el.firstElementChild) observer.observe(el.firstElementChild)
+    check()
+    return () => observer.disconnect()
+  }, [ref])
+  return overflows
+}
+
+interface ScrollAreaProps extends React.ComponentPropsWithoutRef<typeof ScrollAreaPrimitive.Root> {
+  /**
+   * Whether the viewport is a tab stop, so keyboard users can scroll it.
+   * Defaults to only while the content overflows; pass false when the
+   * content's own controls already let keyboard users reach everything.
+   */
+  focusable?: boolean
+}
+
+const ScrollArea = React.forwardRef<React.ElementRef<typeof ScrollAreaPrimitive.Root>, ScrollAreaProps>(
+  ({ className, children, focusable, ...props }, ref) => {
+    const viewport = React.useRef<HTMLDivElement>(null)
+    const overflows = useOverflows(viewport)
+    return (
+      <ScrollAreaPrimitive.Root ref={ref} className={cn("relative overflow-hidden", className)} {...props}>
+        <ScrollAreaPrimitive.Viewport
+          ref={viewport}
+          tabIndex={focusable ?? overflows ? 0 : undefined}
+          className="h-full w-full rounded-[inherit] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {children}
+        </ScrollAreaPrimitive.Viewport>
+        <ScrollBar />
+        <ScrollAreaPrimitive.Corner />
+      </ScrollAreaPrimitive.Root>
+    )
+  },
+)
 ScrollArea.displayName = ScrollAreaPrimitive.Root.displayName
 
 const ScrollBar = React.forwardRef<
