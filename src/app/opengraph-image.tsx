@@ -5,6 +5,8 @@ import { ogFonts } from "./og-fonts"
 export const alt = "PokeFindr: find Pokémon card vending machines near you"
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
+// Render at build time: brand-mark.ts reads public/ from disk.
+export const dynamic = "force-static"
 
 /** Social preview: the landing hero from the redesign prototype. */
 export default async function OpengraphImage() {

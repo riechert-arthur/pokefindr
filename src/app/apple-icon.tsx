@@ -3,6 +3,8 @@ import { BRAND_MARK_DATA_URI } from "./brand-mark"
 
 export const size = { width: 180, height: 180 }
 export const contentType = "image/png"
+// Render at build time: brand-mark.ts reads public/ from disk.
+export const dynamic = "force-static"
 
 /** iOS home-screen icon: the mark on a white rounded tile (iOS adds the corner mask). */
 export default function AppleIcon() {

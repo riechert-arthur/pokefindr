@@ -97,7 +97,6 @@ describe("no raw colors outside globals.css", () => {
     path.join("src", "components", "icons") + path.sep,
     path.join("src", "app", "opengraph-image.tsx"),
     path.join("src", "app", "apple-icon.tsx"),
-    path.join("src", "app", "brand-mark.ts"),
   ]
   const files: string[] = []
   const walk = (dir: string) => {

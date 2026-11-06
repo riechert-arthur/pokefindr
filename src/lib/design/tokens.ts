@@ -12,7 +12,7 @@ export const COLOR_TOKENS = [
   "primary", "primary-foreground", "secondary", "secondary-foreground", "muted", "muted-foreground",
   "accent", "accent-foreground", "destructive", "destructive-foreground", "border", "input", "ring",
   "brand", "brand-2", "spark", "success", "warning",
-  "kind-vending", "kind-shop", "kind-event", "me",
+  "kind-vending", "kind-shop", "kind-event", "me", "logo-card",
   "map-water", "map-land", "map-line", "map-unsupported", "map-unsupported-line", "map-choro-hi", "map-dot-ring", "map-radius",
 ] as const
 

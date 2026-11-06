@@ -7,17 +7,32 @@ const ROOT = path.resolve(__dirname, "../..")
 const read = (p: string) => readFileSync(path.join(ROOT, p), "utf8")
 const mark = read("public/brand/mark.svg")
 
-/** The mark's geometry: every path `d` and rect position/size, in order. */
+const attr = (tag: string, name: string) => tag.match(new RegExp(`\\s${name}="([^"]*)"`))?.[1] ?? ""
+
+/**
+ * The mark's shape, as strings to compare across copies: every path `d`,
+ * every rect's position, size, corner radius and opacity, the card's tilt
+ * transform and the gradient direction.
+ */
 const geometry = (svg: string) => [
-  ...[...svg.matchAll(/\bd="([^"]+)"/g)].map((m) => m[1]),
-  ...[...svg.matchAll(/<rect\b[^>]*?x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"/g)].map((m) => m.slice(1).join(",")),
+  ...[...svg.matchAll(/<path\b[^>]*>/g)].map((m) => `path ${attr(m[0], "d")}`),
+  ...[...svg.matchAll(/<rect\b[^>]*>/g)].map((m) =>
+    `rect ${["x", "y", "width", "height", "rx", "opacity"].map((a) => attr(m[0], a)).join(",")}`,
+  ),
+  ...[...svg.matchAll(/<g\b[^>]*transform="(rotate[^"]*)"/g)].map((m) => `rotate ${m[1]}`),
+  ...[...svg.matchAll(/<linearGradient\b[^>]*>/g)].map((m) =>
+    `gradient ${["x1", "y1", "x2", "y2"].map((a) => attr(m[0], a)).join(",")}`,
+  ),
 ]
 
 // The mark lives in several files because each consumer needs a different
 // form (themed React, static SVG, favicon). These checks keep them in sync.
 describe("brand mark copies", () => {
   it("has some geometry to compare", () => {
-    expect(geometry(mark).length).toBeGreaterThan(4)
+    const shapes = geometry(mark)
+    expect(shapes.filter((g) => g.startsWith("rect"))).toHaveLength(4)
+    expect(shapes.some((g) => g.startsWith("rotate"))).toBe(true)
+    expect(shapes.some((g) => g.startsWith("gradient"))).toBe(true)
   })
 
   it("uses the same SVG for the favicon as public/brand/mark.svg", () => {
@@ -26,6 +41,7 @@ describe("brand mark copies", () => {
 
   it.each(["src/components/brand/Logo.tsx", "public/brand/wordmark.svg"])("draws the same mark in %s", (file) => {
     const other = geometry(read(file))
+    // The wordmark also has outlined text paths, so check containment.
     for (const shape of geometry(mark)) expect(other, shape).toContain(shape)
   })
 

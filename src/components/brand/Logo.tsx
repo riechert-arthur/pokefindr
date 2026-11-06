@@ -39,7 +39,7 @@ export function Logo({ variant = "mark", size = 32, className, title = "PokeFind
         fill={`url(#${gradientId})`}
       />
       <g transform="rotate(-10 16 12.5)">
-        <rect x="11" y="6" width="10" height="13.5" rx="1.8" style={{ fill: "hsl(var(--card))" }} />
+        <rect x="11" y="6" width="10" height="13.5" rx="1.8" style={{ fill: "hsl(var(--logo-card))" }} />
         <rect x="12.6" y="7.6" width="6.8" height="5.4" rx=".8" fill={`url(#${gradientId})`} opacity=".35" />
         <rect x="12.6" y="14.4" width="6.8" height="1.2" rx=".6" fill={`url(#${gradientId})`} opacity=".45" />
         <rect x="12.6" y="16.6" width="4.4" height="1.2" rx=".6" fill={`url(#${gradientId})`} opacity=".3" />

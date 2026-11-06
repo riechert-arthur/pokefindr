@@ -5,10 +5,11 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider"
 import { Analytics } from "@vercel/analytics/next"
 import AffiliateBannerWrapper from "@/components/wrappers/AffiliateBannerWrapper"
 import { Toaster } from "@/components/ui/Sonner"
+import { publicConfig } from "@/config.public"
 
 export const metadata = {
   // Absolute base for og:image, twitter:image and other metadata URLs.
-  metadataBase: new URL("https://pokefindr.app"),
+  metadataBase: publicConfig.siteUrl ? new URL(publicConfig.siteUrl) : undefined,
   "robots": {
     "index": true,
     "follow": true
