@@ -50,6 +50,22 @@ jobs:
       # Integration tests need Postgres and run in their own job.
       - run: npx vitest run --exclude "__tests__/integration/**" --reporter=default --reporter=github-actions
 
+  storybook:
+    name: Storybook build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      # Fails if any story stops compiling.
+      - run: npm run build-storybook
+        env:
+          STORYBOOK_DISABLE_TELEMETRY: 1
+
   integration:
     name: Integration tests
     runs-on: ubuntu-latest

@@ -44,3 +44,4 @@ env/
 
 # drizzle-kit introspection output (npm run db:pull)
 /drizzle-introspect/
+storybook-static
