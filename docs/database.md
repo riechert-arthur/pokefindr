@@ -221,10 +221,12 @@ checks never replay it.
   (`locations_set_updated_at`, migration 0001), so every writer bumps it, not
   just the ORM and the import.
 
-The weekly GitHub job (`weekly-update.yml`) commits `vending_machines.json`,
-not `vending_machines_mod.json`, so its scrapes never reach the import. Its
-last step, `scripts/push_supabase.py`, also writes to `locations` directly and
-ignores `manual_override`; it is being removed in #82.
+Nothing else writes `locations` on a schedule. The old weekly GitHub job
+(`weekly-update.yml`) and its scripts were removed in #82: its last step,
+`scripts/push_supabase.py`, wrote to `locations` directly and ignored
+`manual_override`, and its scrapes went to `vending_machines.json`, which the
+import never reads. Scheduled updates will come from the location ETL
+pipeline, which must respect `manual_override`.
 
 To run the import by hand, for example on a local database:
 
