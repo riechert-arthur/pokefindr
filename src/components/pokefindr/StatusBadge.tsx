@@ -2,7 +2,8 @@ import type { ReactNode } from "react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
-export type Status = "live" | "sample" | "pending" | "coming-soon" | "sponsored"
+export const STATUSES = ["live", "sample", "pending", "coming-soon", "sponsored"] as const
+export type Status = (typeof STATUSES)[number]
 
 const STYLES: Record<Status, { label: string; className: string }> = {
   live: { label: "Live", className: "border-success/40 text-success" },

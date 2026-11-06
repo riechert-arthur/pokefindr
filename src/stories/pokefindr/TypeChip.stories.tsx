@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite"
+import { fn } from "storybook/test"
 import { useState } from "react"
 import { TypeChip } from "@/components/pokefindr/TypeChip"
 import { KIND_ORDER, type LocationKind } from "@/components/pokefindr/kinds"
@@ -16,8 +17,14 @@ function ChipRow({ short }: { short?: boolean }) {
   )
 }
 
-const meta = { title: "PokeFindr/TypeChip", component: ChipRow } satisfies Meta<typeof ChipRow>
+const meta = {
+  title: "PokeFindr/TypeChip",
+  component: TypeChip,
+  args: { kind: "vending", count: 1457, pressed: true, short: true, onPressedChange: fn() },
+} satisfies Meta<typeof TypeChip>
 export default meta
 type Story = StoryObj<typeof meta>
-export const Row: Story = { args: { short: true } }
-export const LongLabels: Story = { args: { short: false } }
+/** One chip; its props are in Controls. */
+export const Single: Story = {}
+export const Row: Story = { render: () => <ChipRow short /> }
+export const LongLabels: Story = { render: () => <ChipRow /> }

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite"
 import axios from "axios"
 import { UserMenu } from "@/components/pokefindr/UserMenu"
+import { Toaster } from "@/components/ui/sonner"
 
 const meta = {
   title: "PokeFindr/UserMenu",
@@ -22,3 +23,22 @@ export default meta
 export const Default: StoryObj<typeof meta> = {}
 /** Inline Settings and Log out, for the mobile nav drawer. */
 export const List: StoryObj<typeof meta> = { args: { variant: "list" } }
+/** Log out fails: the menu stays and a toast explains. */
+export const LogoutFails: StoryObj<typeof meta> = {
+  args: { variant: "list" },
+  beforeEach: () => {
+    const adapter = axios.defaults.adapter
+    axios.defaults.adapter = async () => Promise.reject(new Error("Network Error"))
+    return () => {
+      axios.defaults.adapter = adapter
+    }
+  },
+  decorators: [
+    (Story) => (
+      <>
+        <Story />
+        <Toaster />
+      </>
+    ),
+  ],
+}

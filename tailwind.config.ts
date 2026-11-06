@@ -10,6 +10,8 @@ export default {
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    // Stories use layout classes of their own (w-[44rem], w-56, ...).
+    "./src/stories/**/*.{ts,tsx}",
   ],
   theme: {
   	// Shared with useMediaQuery (src/lib/design/breakpoints.ts).

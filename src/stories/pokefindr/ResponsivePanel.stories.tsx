@@ -1,16 +1,19 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite"
+import { fn } from "storybook/test"
+import type { ComponentProps } from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { KindDot } from "@/components/pokefindr/KindDot"
 import { ResponsivePanel } from "@/components/pokefindr/ResponsivePanel"
 import { StarRating } from "@/components/pokefindr/StarRating"
 
-function Example() {
+/** Opens the panel from a button; the other props come from Controls. */
+function Example(args: ComponentProps<typeof ResponsivePanel>) {
   const [open, setOpen] = useState(false)
   return (
     <>
       <Button onClick={() => setOpen(true)}>View details</Button>
-      <ResponsivePanel open={open} onOpenChange={setOpen} title="QFC" description="1401 Broadway, Seattle, WA">
+      <ResponsivePanel {...args} open={open} onOpenChange={setOpen}>
         <div className="flex items-center gap-2 text-body">
           <KindDot kind="vending" /> Vending machine · Q00245
         </div>
@@ -22,6 +25,11 @@ function Example() {
   )
 }
 
-const meta = { title: "PokeFindr/ResponsivePanel", component: Example } satisfies Meta<typeof Example>
+const meta = {
+  title: "PokeFindr/ResponsivePanel",
+  component: ResponsivePanel,
+  args: { title: "QFC", description: "1401 Broadway, Seattle, WA", side: "left", modal: false, open: false, onOpenChange: fn(), children: null },
+  render: (args) => <Example {...args} />,
+} satisfies Meta<typeof ResponsivePanel>
 export default meta
 export const Default: StoryObj<typeof meta> = {}
