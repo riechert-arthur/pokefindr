@@ -171,3 +171,32 @@ The production database already has these tables, so
    runs at once record it once, and it writes the same row to
    `kysely.kysely_migration` that `db:migrate` would.
 3. From then on, `npm run db:migrate` applies only newer migrations.
+
+## Loading locations from the JSON
+
+`src/data/vending_machines_mod.json` is still what the map and the weekly job
+use. `npm run db:import-locations` copies it into `locations`, with every field
+the JSON has (address details, Mapbox id, accuracy, `match_code`, the full
+properties in `raw`, and `_manual_override` as `manual_override`):
+
+```bash
+npm run db:import-locations              # dry run: prints what --apply would do
+npm run db:import-locations -- --apply
+```
+
+- Runs in one transaction through `locations_staging`; a dry run rolls it back.
+- Upserts on `"machineID"` and writes only rows that change. Running it again
+  reports 0 inserted, 0 updated, so it's safe to rerun after the weekly job
+  changes the JSON.
+- A machine with `manual_override` in the database keeps its values unless the
+  JSON overrides it too.
+- Coordinates come from the GeoJSON `geometry` first (what the map draws, and
+  where hand corrections were saved), then `properties.coordinates`. A
+  geometry typed as latitude, longitude is swapped back with a warning.
+- Afterwards it checks that every machine in the file is in the table, active,
+  within 1e-6° of the file's position, and flagged when the file overrides it.
+  On any difference it rolls back and writes nothing. Machines in the table
+  but not in the file are listed, never deleted.
+
+`--file <geojson>` imports another file of the same shape; `--report <json>`
+saves the counts and verification.

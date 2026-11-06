@@ -63,13 +63,34 @@ export const profiles = pgTable("profiles", {
     .$onUpdate(() => new Date()),
 })
 
+/** Mapbox's per-field match result for a geocoded address, plus its overall `confidence`. */
+export type MatchCode = Record<string, string>
+
 const locationColumns = {
   id: uuid("id").primaryKey().defaultRandom(),
   machineId: text("machineID"),
   name: text("name"),
   description: text("description"),
+  retailer: text("retailer"),
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  postalCode: text("postal_code"),
   geog: geographyPoint("geog"),
   isOfficial: boolean("is_official"),
+  /** Inactive locations are hidden from the map but keep their reviews. */
+  isActive: boolean("is_active").notNull().default(true),
+  /** Where the row came from, e.g. "pokemoncenter" for the scraped list. */
+  source: text("source"),
+  mapboxId: text("mapbox_id"),
+  /** Mapbox's `coordinates.accuracy`: rooftop, parcel, point, interpolated or approximate. */
+  geocodeAccuracy: text("geocode_accuracy"),
+  matchCode: jsonb("match_code").$type<MatchCode>(),
+  /** Set when someone checked or corrected this machine by hand (`_manual_override` in the JSON). */
+  manualOverride: boolean("manual_override").notNull().default(false),
+  /** The full feature properties from the JSON, kept while the data moves off it. */
+  raw: jsonb("raw"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 }
 
 export const locations = pgTable(
@@ -82,6 +103,7 @@ export const locations = pgTable(
   (t) => [
     uniqueIndex("locations_machine_id_key").on(t.machineId),
     index("locations_geog_gist").using("gist", t.geog),
+    index("locations_active_idx").on(t.isActive),
   ],
 )
 
