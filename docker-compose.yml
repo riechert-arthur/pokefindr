@@ -5,6 +5,7 @@
 #   init  one-off: installs dependencies, creates the branch database if needed,
 #         applies migrations, checks the schema, seeds
 #   web   Next.js dev server on localhost:3000, started once init has succeeded
+#   storybook  component workshop on localhost:6006, started once init has succeeded
 name: pokefindr
 
 # Shared by every service that runs the app's code. To add a worker:
@@ -70,6 +71,21 @@ services:
         condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/map').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 5s
+      timeout: 60s
+      start_period: 120s
+      retries: 3
+
+  storybook:
+    <<: *app
+    command: ["npx", "storybook", "dev", "--port", "6006", "--host", "0.0.0.0", "--no-open", "--ci"]
+    ports:
+      - "${STORYBOOK_PORT:-6006}:6006"
+    depends_on:
+      init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:6006/index.json').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
       interval: 5s
       timeout: 60s
       start_period: 120s

@@ -32,7 +32,7 @@ For the current Supabase project:
 Everything runs in Docker (`docker-compose.yml`), so the host only needs Docker and make:
 
 ```bash
-make run     # start or update the whole stack; open http://localhost:3000
+make run     # start or update the whole stack; app on http://localhost:3000, Storybook on :6006
 ```
 
 `make run` is idempotent. The first time, it creates `.env.local`, builds the
@@ -46,6 +46,7 @@ server isn't restarted.
 | `db` | PostGIS 16, also published on localhost:5433 for host tools |
 | `init` | Runs once per `make run`: installs dependencies if needed, creates the branch's database if it's new, `db:migrate`, `db:check`, `db:seed` |
 | `web` | `next dev` on localhost:3000, with hot reload. Starts after `init` succeeds |
+| `storybook` | `storybook dev` on localhost:6006, with hot reload. Starts after `init` succeeds |
 
 Workers will be services that share the app's definition (`x-app` in
 `docker-compose.yml`, which has an example) and start after `init`, so
@@ -66,7 +67,7 @@ Notes:
   `npm run db:studio` or running `npm run dev` outside Docker.
 - `node_modules` and `.next` live in Docker volumes. For editor type checking
   and the tests below, also run `npm install` on the host.
-- If a port is taken: `make run WEB_PORT=3001 DB_PORT=5434`.
+- If a port is taken: `make run WEB_PORT=3001 DB_PORT=5434 STORYBOOK_PORT=6007`.
 
 ### Branch databases
 
