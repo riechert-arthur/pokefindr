@@ -27,6 +27,7 @@ import { loginSchema } from "@/lib/schemas"
 import { useRouter } from "next/navigation"
 import axios from "axios"
 import { toast } from "sonner"
+import { broadcastAuth } from "@/lib/auth/broadcast"
 
 export function LoginForm({
   className,
@@ -46,7 +47,7 @@ export function LoginForm({
     try {
       await axios.post("/api/auth/login", values, { withCredentials: true })
       toast.success("Logged in!")
-      new BroadcastChannel("auth").postMessage("login")
+      broadcastAuth("login")
       router.refresh()
       router.push("/")
     } catch (err: unknown) {
@@ -60,7 +61,7 @@ export function LoginForm({
     try {
       const { data } = await axios.post("/api/auth/oauth", { provider })
       if (data.url) {
-        new BroadcastChannel("auth").postMessage("login")
+        broadcastAuth("login")
         window.location.href = data.url
       } else {
         toast.error("OAuth login failed.")

@@ -26,6 +26,7 @@ import { LoadingButton } from "@/components/wrappers/LoadingButton"
 import { registrationSchema } from "@/lib/schemas"
 import axios from "axios"
 import { useRouter } from "next/navigation"
+import { broadcastAuth } from "@/lib/auth/broadcast"
 
 export function RegistrationForm({
   className,
@@ -54,7 +55,7 @@ export function RegistrationForm({
         name: values.name,
       })
 
-      new BroadcastChannel("auth").postMessage("login")
+      broadcastAuth("login")
 
       router.refresh()
       router.push("/confirm")

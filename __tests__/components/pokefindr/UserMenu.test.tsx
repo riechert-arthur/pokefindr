@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { UserMenu } from "@/components/pokefindr/UserMenu"
 import axios from "axios"
+import { toast } from "sonner"
 
 const mocks = vi.hoisted(() => ({
   refresh: vi.fn(),
@@ -16,6 +17,8 @@ vi.mock("next/navigation", () => ({
   }),
 }))
 
+vi.mock("sonner", () => ({ toast: { error: vi.fn() } }))
+
 vi.mock("axios", () => ({
   default: {
     post: vi.fn(),
@@ -25,6 +28,7 @@ vi.mock("axios", () => ({
 describe("UserMenu", () => {
   const postMock = vi.mocked(axios.post)
   const postMessage = vi.fn()
+  const close = vi.fn()
 
   beforeEach(() => {
     postMock.mockResolvedValue({})
@@ -32,6 +36,7 @@ describe("UserMenu", () => {
       "BroadcastChannel",
       vi.fn(() => ({
         postMessage,
+        close,
       }))
     )
   })
@@ -62,8 +67,30 @@ describe("UserMenu", () => {
         withCredentials: true,
       })
       expect(postMessage).toHaveBeenCalledWith("logout")
+      expect(close).toHaveBeenCalled()
       expect(mocks.refresh).toHaveBeenCalled()
       expect(mocks.push).toHaveBeenCalledWith("/login")
     })
+  })
+
+  it("shows an error and stays put when logout fails", async () => {
+    postMock.mockRejectedValue(new Error("500"))
+    vi.spyOn(console, "error").mockImplementation(() => {})
+    render(<UserMenu size={42} userName="misty" variant="list" />)
+
+    fireEvent.click(screen.getByRole("button", { name: "Log out" }))
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalled())
+    expect(mocks.push).not.toHaveBeenCalled()
+    expect(postMessage).not.toHaveBeenCalled()
+  })
+
+  it("lays out Settings and Log out inline in the list variant", () => {
+    render(<UserMenu size={36} userName="misty" variant="list" />)
+
+    expect(screen.queryByRole("button", { name: /Account menu/ })).not.toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("href", "/settings")
+    expect(screen.getByRole("button", { name: "Log out" })).toBeInTheDocument()
+    expect(screen.getByText("misty")).toBeInTheDocument()
   })
 })

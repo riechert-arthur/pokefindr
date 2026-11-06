@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import axios from "axios"
+import { toast } from "sonner"
 import { LogOutIcon, SettingsIcon } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -13,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { broadcastAuth } from "@/lib/auth/broadcast"
 import { cn } from "@/lib/utils"
 
 interface UserMenuProps {
@@ -21,22 +23,57 @@ interface UserMenuProps {
   userName: string
   imageUrl?: string
   className?: string
+  /**
+   * "dropdown" (default): the avatar opens a menu. "list": the avatar, name and
+   * links laid out inline, for places a popover can't open, such as the mobile
+   * nav drawer (a Headless UI dialog that would pull focus back from it).
+   */
+  variant?: "dropdown" | "list"
 }
 
-/** The signed-in user's avatar, opening a menu with Settings and Log out. */
-export function UserMenu({ size, userName, imageUrl, className }: UserMenuProps) {
+function UserAvatar({ size, userName, imageUrl }: Pick<UserMenuProps, "size" | "userName" | "imageUrl">) {
+  return (
+    <Avatar style={{ width: size, height: size }}>
+      {imageUrl && <AvatarImage src={imageUrl} alt="" />}
+      <AvatarFallback className="bg-brand text-lg font-semibold uppercase text-primary-foreground">{userName.charAt(0)}</AvatarFallback>
+    </Avatar>
+  )
+}
+
+/** The signed-in user's avatar with Settings and Log out. */
+export function UserMenu({ size, userName, imageUrl, className, variant = "dropdown" }: UserMenuProps) {
   const router = useRouter()
 
   const handleLogout = async () => {
     try {
       await axios.post("/api/auth/logout", undefined, { withCredentials: true })
-      // Tell other tabs to drop their session too.
-      new BroadcastChannel("auth").postMessage("logout")
+      broadcastAuth("logout")
       router.refresh()
       router.push("/login")
     } catch (err) {
       console.error("Logout failed", err)
+      toast.error("Couldn't log out. Please try again.")
     }
+  }
+
+  if (variant === "list") {
+    const item = "-mx-3 flex items-center gap-2 rounded-lg px-3 py-2.5 text-base/7 font-semibold text-foreground hover:bg-muted/50"
+    return (
+      <div className={cn("space-y-1", className)}>
+        <div className="flex items-center gap-3 pb-2">
+          <UserAvatar size={size} userName={userName} imageUrl={imageUrl} />
+          <span className="truncate font-semibold text-foreground">{userName}</span>
+        </div>
+        <Link href="/settings" className={item}>
+          <SettingsIcon className="size-5" aria-hidden />
+          Settings
+        </Link>
+        <button type="button" onClick={handleLogout} className={cn(item, "w-full text-left")}>
+          <LogOutIcon className="size-5" aria-hidden />
+          Log out
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -45,10 +82,7 @@ export function UserMenu({ size, userName, imageUrl, className }: UserMenuProps)
         className={cn("rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", className)}
         aria-label={`Account menu for ${userName}`}
       >
-        <Avatar style={{ width: size, height: size }}>
-          {imageUrl && <AvatarImage src={imageUrl} alt="" />}
-          <AvatarFallback className="bg-brand font-semibold uppercase text-primary-foreground">{userName.charAt(0)}</AvatarFallback>
-        </Avatar>
+        <UserAvatar size={size} userName={userName} imageUrl={imageUrl} />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
         <DropdownMenuLabel className="truncate">{userName}</DropdownMenuLabel>

@@ -24,6 +24,7 @@ import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { callbackSchema } from "@/lib/schemas"
 import { z } from "zod"
+import { broadcastAuth } from "@/lib/auth/broadcast"
 
 export function CallbackForm({
   className,
@@ -48,7 +49,7 @@ export function CallbackForm({
         { withCredentials: true }
       )
 
-      new BroadcastChannel("auth").postMessage("login")
+      broadcastAuth("login")
       toast.success("Welcome aboard!")
       router.push("/")
     } catch (err: unknown) {

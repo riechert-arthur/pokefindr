@@ -7,6 +7,7 @@ import { Logo } from "@/components/brand/Logo"
 import Link from "next/link";
 import axios from "axios";
 import { LoadSpinner } from "@/components/wrappers/LoadSpinner";
+import { broadcastAuth } from "@/lib/auth/broadcast"
 
 export default function OAuthCallback() {
   const router = useRouter();
@@ -33,7 +34,7 @@ export default function OAuthCallback() {
         )
 
         if (status === 200) { 
-          new BroadcastChannel("auth").postMessage("login");
+          broadcastAuth("login");
           router.push("/home")
           return
         }

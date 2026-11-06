@@ -71,6 +71,7 @@ export const MobileMenu: FC<MobileMenuProps> = ({
                 </a>
               ) : (
                 <UserMenu
+                  variant="list"
                   size={36}
                   userName={session.username}
                 />
