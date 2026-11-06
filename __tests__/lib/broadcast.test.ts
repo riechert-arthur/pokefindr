@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { broadcastAuth } from "@/lib/auth/broadcast"
+import { broadcastAuth, subscribeAuth } from "@/lib/auth/broadcast"
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -17,5 +17,23 @@ describe("broadcastAuth", () => {
   it("does nothing where BroadcastChannel isn't available", () => {
     vi.stubGlobal("BroadcastChannel", undefined)
     expect(() => broadcastAuth("logout")).not.toThrow()
+  })
+
+  it("subscribes to login and logout messages only, and unsubscribes by closing", () => {
+    const channel: { onmessage?: (e: { data: unknown }) => void; close: () => void } = { close: vi.fn() }
+    vi.stubGlobal("BroadcastChannel", vi.fn(() => channel))
+    const onMessage = vi.fn()
+    const unsubscribe = subscribeAuth(onMessage)
+    channel.onmessage?.({ data: "login" })
+    channel.onmessage?.({ data: "something else" })
+    expect(onMessage).toHaveBeenCalledTimes(1)
+    expect(onMessage).toHaveBeenCalledWith("login")
+    unsubscribe()
+    expect(channel.close).toHaveBeenCalled()
+  })
+
+  it("subscribes to nothing where BroadcastChannel isn't available", () => {
+    vi.stubGlobal("BroadcastChannel", undefined)
+    expect(() => subscribeAuth(() => {})()).not.toThrow()
   })
 })

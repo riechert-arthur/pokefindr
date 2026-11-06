@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import axios from "axios"
 import { toast } from "sonner"
@@ -22,6 +23,7 @@ interface UserMenuProps {
   size: number
   userName: string
   imageUrl?: string
+  /** Classes for the outer element: the trigger button ("dropdown") or the wrapper ("list"). */
   className?: string
   /**
    * "dropdown" (default): the avatar opens a menu. "list": the avatar, name and
@@ -33,6 +35,7 @@ interface UserMenuProps {
 
 function UserAvatar({ size, userName, imageUrl }: Pick<UserMenuProps, "size" | "userName" | "imageUrl">) {
   return (
+    // primary-foreground on brand is checked at 4.5:1 in both themes (__tests__/design/tokens.test.ts).
     <Avatar style={{ width: size, height: size }}>
       {imageUrl && <AvatarImage src={imageUrl} alt="" />}
       <AvatarFallback className="bg-brand text-lg font-semibold uppercase text-primary-foreground">{userName.charAt(0)}</AvatarFallback>
@@ -43,8 +46,14 @@ function UserAvatar({ size, userName, imageUrl }: Pick<UserMenuProps, "size" | "
 /** The signed-in user's avatar with Settings and Log out. */
 export function UserMenu({ size, userName, imageUrl, className, variant = "dropdown" }: UserMenuProps) {
   const router = useRouter()
+  // One logout at a time: a second click would fail (no session) and show a false error.
+  const pending = useRef(false)
+  const [loggingOut, setLoggingOut] = useState(false)
 
   const handleLogout = async () => {
+    if (pending.current) return
+    pending.current = true
+    setLoggingOut(true)
     try {
       await axios.post("/api/auth/logout", undefined, { withCredentials: true })
       broadcastAuth("logout")
@@ -53,6 +62,8 @@ export function UserMenu({ size, userName, imageUrl, className, variant = "dropd
     } catch (err) {
       console.error("Logout failed", err)
       toast.error("Couldn't log out. Please try again.")
+      pending.current = false
+      setLoggingOut(false)
     }
   }
 
@@ -68,7 +79,8 @@ export function UserMenu({ size, userName, imageUrl, className, variant = "dropd
           <SettingsIcon className="size-5" aria-hidden />
           Settings
         </Link>
-        <button type="button" onClick={handleLogout} className={cn(item, "w-full text-left")}>
+        {/* w-full plus the item's -mx-3 would leave it 1.5rem short, so widen to match the link. */}
+        <button type="button" onClick={handleLogout} disabled={loggingOut} className={cn(item, "w-[calc(100%+1.5rem)] text-left disabled:opacity-50")}>
           <LogOutIcon className="size-5" aria-hidden />
           Log out
         </button>
@@ -93,7 +105,7 @@ export function UserMenu({ size, userName, imageUrl, className, variant = "dropd
             Settings
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={handleLogout}>
+        <DropdownMenuItem onSelect={handleLogout} disabled={loggingOut}>
           <LogOutIcon aria-hidden />
           Log out
         </DropdownMenuItem>

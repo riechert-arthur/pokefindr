@@ -9,6 +9,7 @@ import {
   type FC,
 } from "react";
 import axios from "axios";
+import { subscribeAuth } from "@/lib/auth/broadcast";
 
 export interface AuthUser {
   id: string;
@@ -45,13 +46,8 @@ export const SessionContextProvider: FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     fetchSession();
 
-    const bc = new BroadcastChannel("auth");
-    bc.onmessage = (msg) => {
-      if (msg.data === "login" || msg.data === "logout") {
-        fetchSession();
-      }
-    };
-    return () => bc.close();
+    // Re-read the session when another tab logs in or out.
+    return subscribeAuth(() => fetchSession());
   }, []);
 
   return (

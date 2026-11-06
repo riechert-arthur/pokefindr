@@ -93,4 +93,18 @@ describe("UserMenu", () => {
     expect(screen.getByRole("button", { name: "Log out" })).toBeInTheDocument()
     expect(screen.getByText("misty")).toBeInTheDocument()
   })
+
+  it("sends one logout request when Log out is clicked twice", async () => {
+    let resolve!: () => void
+    postMock.mockReturnValue(new Promise((r) => { resolve = () => r({}) }))
+    render(<UserMenu size={36} userName="misty" variant="list" />)
+
+    const button = screen.getByRole("button", { name: "Log out" })
+    fireEvent.click(button)
+    fireEvent.click(button)
+    resolve()
+
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/login"))
+    expect(postMock).toHaveBeenCalledTimes(1)
+  })
 })
