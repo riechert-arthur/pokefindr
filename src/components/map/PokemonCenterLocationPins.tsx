@@ -17,6 +17,7 @@ import type {
   LocationFeatureProperties,
 } from "@/lib/types/locations"
 import { readTokens } from "@/lib/design/tokens"
+import { useThemeKey } from "@/lib/design/useThemeKey"
 
 interface PokemonCenterLocationPinsProps {
   collection: LocationFeatureCollection
@@ -34,7 +35,7 @@ const CLUSTER_MAX_ZOOM = 8
 
 /**
  * Cluster layers, colored from the design tokens with one style lookup.
- * Call when the source renders so the colors match the current theme.
+ * Rebuild them when the theme changes (see useThemeKey) so the colors match.
  */
 const clusterLayers = (): { circle: LayerProps; count: LayerProps } => {
   const c = readTokens(["primary", "brand-2", "brand", "map-dot-ring", "primary-foreground"])
@@ -70,7 +71,8 @@ const clusterLayers = (): { circle: LayerProps; count: LayerProps } => {
         "text-anchor": "bottom",
       },
       // All three fills are saturated in light mode and pale in dark mode, so
-      // the primary foreground (near-white / near-black) reads on each.
+      // the primary foreground (near-white / near-black) reads on each. If the
+      // tokens can't be read, readTokens falls back to black text on gray.
       paint: {
         "text-color": c["primary-foreground"],
       },
@@ -91,6 +93,7 @@ const unclusteredLayer: LayerProps = {
 
 export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ collection, clickedInfo, setClickedInfo }) => {
   const mapRef = useMap()
+  const themeKey = useThemeKey()
   const [unclusteredPoints, setUnclusteredPoints] = useState<LocationFeature[]>([])
 
 
@@ -203,7 +206,9 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
         <Layer {...unclusteredLayer} />
       </Source>
     )
-  }, [collection])
+    // themeKey isn't read inside; it re-runs the memo so clusterLayers() re-reads the colors.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collection, themeKey])
 
   const activeInfo = clickedInfo || hoveredInfo
 
