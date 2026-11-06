@@ -14,21 +14,33 @@ const ToggleGroupContext = React.createContext<
   variant: "default",
 })
 
-const ToggleGroup = React.forwardRef<
-  React.ElementRef<typeof ToggleGroupPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof ToggleGroupPrimitive.Root> &
-    VariantProps<typeof toggleVariants>
->(({ className, variant, size, children, ...props }, ref) => (
-  <ToggleGroupPrimitive.Root
-    ref={ref}
-    className={cn("flex items-center justify-center gap-1", className)}
-    {...props}
-  >
-    <ToggleGroupContext.Provider value={{ variant, size }}>
-      {children}
-    </ToggleGroupContext.Provider>
-  </ToggleGroupPrimitive.Root>
-))
+type ToggleGroupProps = React.ComponentPropsWithoutRef<typeof ToggleGroupPrimitive.Root> &
+  VariantProps<typeof toggleVariants> & {
+    /**
+     * For a controlled type="single" group that must always have a value (a
+     * radius picker): clicking the pressed item doesn't clear it.
+     */
+    required?: boolean
+  }
+
+const ToggleGroup = React.forwardRef<React.ElementRef<typeof ToggleGroupPrimitive.Root>, ToggleGroupProps>(
+  ({ className, variant, size, children, required, ...props }, ref) => {
+    const context = React.useMemo(() => ({ variant, size }), [variant, size])
+    const rootProps =
+      required && props.type === "single"
+        ? { ...props, onValueChange: (value: string) => value && props.onValueChange?.(value) }
+        : props
+    return (
+      <ToggleGroupPrimitive.Root
+        ref={ref}
+        className={cn("flex items-center justify-center gap-1", className)}
+        {...rootProps}
+      >
+        <ToggleGroupContext.Provider value={context}>{children}</ToggleGroupContext.Provider>
+      </ToggleGroupPrimitive.Root>
+    )
+  },
+)
 
 ToggleGroup.displayName = ToggleGroupPrimitive.Root.displayName
 

@@ -1,7 +1,5 @@
 import React from "react"
-import { readFileSync } from "node:fs"
-import path from "node:path"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { fireEvent, render, screen } from "@testing-library/react"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -10,7 +8,59 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
+// ContextProviders' session and ad providers fetch on mount; pass children through.
+vi.mock("@/components/providers/SessionProvider", () => ({ SessionContextProvider: ({ children }: { children: React.ReactNode }) => children }))
+vi.mock("@/components/providers/AdContextProvider", () => ({ AdContextProvider: ({ children }: { children: React.ReactNode }) => children }))
+
+import { ContextProviders } from "@/components/providers/ContextProviders"
+
+const tooltip = (
+  <Tooltip>
+    <TooltipTrigger>Locate</TooltipTrigger>
+    <TooltipContent>Show my location</TooltipContent>
+  </Tooltip>
+)
+
 describe("shadcn primitives (batch 1)", () => {
+  it.each([
+    // Radix opens on focus right away, whatever the delay.
+    ["focus", (el: HTMLElement) => fireEvent.focus(el)],
+    // On hover it waits for the provider's delay (Radix's default is 700ms), so
+    // opening inside 300ms shows the provider's 0ms is used.
+    ["hover", (el: HTMLElement) => fireEvent.pointerMove(el, { pointerType: "mouse" })],
+  ])("Tooltip opens on %s using the TooltipProvider's delay", async (_how, open) => {
+    render(<TooltipProvider delayDuration={0}>{tooltip}</TooltipProvider>)
+    open(screen.getByRole("button", { name: "Locate" }))
+    expect((await screen.findAllByText("Show my location", {}, { timeout: 300 })).length).toBeGreaterThan(0)
+  })
+
+  it("Tooltip works inside the app's ContextProviders", () => {
+    // Throws "must be used within TooltipProvider" if ContextProviders lost it.
+    expect(() => render(<ContextProviders>{tooltip}</ContextProviders>)).not.toThrow()
+    expect(screen.getByRole("button", { name: "Locate" })).toBeInTheDocument()
+  })
+
+  it("Checkbox shows a dash, not a check, when indeterminate", () => {
+    const { container } = render(<Checkbox aria-label="All retailers" checked="indeterminate" />)
+    expect(screen.getByRole("checkbox")).toHaveAttribute("aria-checked", "mixed")
+    expect(container.querySelector("svg.lucide-minus")).toHaveClass("group-data-[state=indeterminate]:block")
+    expect(container.querySelector("svg.lucide-check")).toHaveClass("hidden", "group-data-[state=checked]:block")
+  })
+
+  it("a required single ToggleGroup doesn't clear when the pressed item is clicked", () => {
+    const onValueChange = vi.fn()
+    render(
+      <ToggleGroup type="single" required value="10" onValueChange={onValueChange}>
+        <ToggleGroupItem value="5">5 mi</ToggleGroupItem>
+        <ToggleGroupItem value="10">10 mi</ToggleGroupItem>
+      </ToggleGroup>,
+    )
+    fireEvent.click(screen.getByRole("radio", { name: "10 mi" }))
+    expect(onValueChange).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole("radio", { name: "5 mi" }))
+    expect(onValueChange).toHaveBeenCalledWith("5")
+  })
+
   it("Checkbox toggles and exposes its state", () => {
     render(<Checkbox aria-label="Safeway" />)
     const box = screen.getByRole("checkbox", { name: "Safeway" })
@@ -63,19 +113,6 @@ describe("shadcn primitives (batch 1)", () => {
     expect(screen.getByText("Retailers")).toBeInTheDocument()
   })
 
-  it("Tooltip renders its trigger and opens on focus", async () => {
-    render(
-      <TooltipProvider delayDuration={0}>
-        <Tooltip>
-          <TooltipTrigger>Locate</TooltipTrigger>
-          <TooltipContent>Show my location</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>,
-    )
-    fireEvent.focus(screen.getByRole("button", { name: "Locate" }))
-    expect((await screen.findAllByText("Show my location")).length).toBeGreaterThan(0)
-  })
-
   it("Badge variants use tokens", () => {
     render(
       <>
@@ -85,26 +122,6 @@ describe("shadcn primitives (batch 1)", () => {
     )
     expect(screen.getByText("Live")).toHaveClass("bg-primary")
     expect(screen.getByText("Sample")).toHaveClass("text-foreground")
-  })
-
-  it("Tooltip uses the surrounding TooltipProvider's delay on hover", async () => {
-    // Radix's default delay is 700ms. With the provider's 0ms the tooltip opens
-    // well inside the 300ms wait; it wouldn't if the provider were ignored.
-    render(
-      <TooltipProvider delayDuration={0}>
-        <Tooltip>
-          <TooltipTrigger>Locate</TooltipTrigger>
-          <TooltipContent>Show my location</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>,
-    )
-    fireEvent.pointerMove(screen.getByRole("button", { name: "Locate" }), { pointerType: "mouse" })
-    expect((await screen.findAllByText("Show my location", {}, { timeout: 300 })).length).toBeGreaterThan(0)
-  })
-
-  it("ContextProviders mounts a TooltipProvider for the app", () => {
-    const source = readFileSync(path.join(__dirname, "../../../src/components/providers/ContextProviders.tsx"), "utf8")
-    expect(source).toMatch(/<TooltipProvider>/)
   })
 
   it("CommandDialog has an accessible name", () => {

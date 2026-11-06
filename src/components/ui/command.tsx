@@ -26,7 +26,7 @@ Command.displayName = CommandPrimitive.displayName
 interface CommandDialogProps extends DialogProps {
   /** Accessible name for the dialog (visually hidden). */
   title?: string
-  /** Accessible description for the dialog (visually hidden). */
+  /** Accessible description for the dialog (visually hidden). Omit it to have none. */
   description?: string
   /** Props for the inner Command, e.g. shouldFilter={false} for server-backed results. */
   commandProps?: React.ComponentPropsWithoutRef<typeof CommandPrimitive>
@@ -34,16 +34,17 @@ interface CommandDialogProps extends DialogProps {
 
 const CommandDialog = ({
   children,
-  title = "Command palette",
-  description = "Search for a command to run.",
+  title = "Search",
+  description,
   commandProps,
   ...props
 }: CommandDialogProps) => {
   return (
     <Dialog {...props}>
-      <DialogContent className="overflow-hidden p-0">
+      {/* Without a description, opt out of aria-describedby so Radix doesn't warn. */}
+      <DialogContent className="overflow-hidden p-0" {...(description ? {} : { "aria-describedby": undefined })}>
         <DialogTitle className="sr-only">{title}</DialogTitle>
-        <DialogDescription className="sr-only">{description}</DialogDescription>
+        {description && <DialogDescription className="sr-only">{description}</DialogDescription>}
         <Command
           {...commandProps}
           className={cn(
