@@ -174,7 +174,7 @@ export function MapSearchBar({
         top: pos.y,
         zIndex: 1000,
       }}
-      className={`z-100 w-64 md:w-80 bg-card shadow-lg cursor-move md:translate-x-16 ${results.length > 0 ? "rounded-xl" : "rounded-full"}`}
+      className={`w-64 md:w-80 bg-card shadow-lg cursor-move md:translate-x-16 ${results.length > 0 ? "rounded-xl" : "rounded-full"}`}
     >
       <div className={`flex flex-row items-center pl-4 pr-3 border-b ${results.length > 0 ? "rounded-t-xl" : "rounded-full"}`}>
         <button onClick={toggleSidebar} className="md:hidden mr-2 p-1 rounded" aria-label="Toggle menu">
@@ -192,16 +192,16 @@ export function MapSearchBar({
           onBlur={() => setIsFocused(false)}
         />
         {results.length > 0 ? (
-          <button onClick={() => { setResults([]); setQuery("") }} aria-label="Clear search" className="size-7 z-100 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
+          <button onClick={() => { setResults([]); setQuery("") }} aria-label="Clear search" className="size-7 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
             <XIcon className="size-full hover:text-red-600" />
           </button>
         ) : (
-          <button onClick={performSearch} aria-label="Search" className="size-7 z-100 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
+          <button onClick={performSearch} aria-label="Search" className="size-7 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
             <SearchIcon className="size-full hover:text-blue-600" />
           </button>
         )}
         {results.length > 0 &&
-          <button onClick={() => onSelect(results[0])} aria-label="Go to first result" className="ml-2 size-7 z-100 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
+          <button onClick={() => onSelect(results[0])} aria-label="Go to first result" className="ml-2 size-7 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
             <SearchIcon className="size-full hover:text-blue-600" />
           </button>
         }

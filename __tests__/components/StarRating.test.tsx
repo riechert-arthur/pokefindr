@@ -26,13 +26,20 @@ describe("StarRating", () => {
 
   it("draws a half star as a filled half over an outline", () => {
     const { container } = render(<StarRating rating={3.5} />)
-    const half = container.firstElementChild!.children[3]
-    expect(half.querySelectorAll("svg")).toHaveLength(2)
+    const halves = container.querySelectorAll("svg.lucide-star-half")
+    expect(halves).toHaveLength(1)
+    const half = halves[0]
+    expect(half.getAttribute("fill")).toBe("currentColor")
+    // The outline star comes first, so the filled half is drawn on top of it.
+    const outline = half.previousElementSibling!
+    expect(outline.matches("svg.lucide-star")).toBe(true)
+    expect(outline.getAttribute("fill")).toBe("none")
   })
 
   it("labels each rating button", () => {
     render(<StarRating rating={2} onChange={() => {}} />)
-    expect(screen.getByRole("button", { name: "Rate 1 star" })).toHaveAttribute("aria-pressed", "true")
+    expect(screen.getByRole("button", { name: "Rate 2 stars" })).toHaveAttribute("aria-pressed", "true")
+    expect(screen.getByRole("button", { name: "Rate 1 star" })).toHaveAttribute("aria-pressed", "false")
     expect(screen.getByRole("button", { name: "Rate 4 stars" })).toHaveAttribute("aria-pressed", "false")
   })
 })

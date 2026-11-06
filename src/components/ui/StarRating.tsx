@@ -23,7 +23,7 @@ export const StarRating: React.FC<StarRatingProps> = ({ rating, starSize = 24, o
     } else if (rating >= threshold - 0.5) {
       // lucide's StarHalf is only the left half, so lay a filled half over an outline star.
       StarComponent = (
-        <span className="relative inline-block text-yellow-500" style={{ width: starSize, height: starSize }}>
+        <span className="relative block text-yellow-500" style={{ width: starSize, height: starSize }}>
           <Star size={starSize} className="absolute inset-0" />
           <StarHalf size={starSize} fill="currentColor" className="absolute inset-0" />
         </span>
@@ -44,7 +44,7 @@ export const StarRating: React.FC<StarRatingProps> = ({ rating, starSize = 24, o
           type="button"
           onClick={() => onChange(threshold)}
           aria-label={`Rate ${threshold} ${threshold === 1 ? "star" : "stars"}`}
-          aria-pressed={rating >= threshold}
+          aria-pressed={rating === threshold}
           className="focus:outline-none"
         >
           {StarComponent}
