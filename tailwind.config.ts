@@ -100,9 +100,15 @@ export default {
   			caption: ['0.75rem', { lineHeight: '1.4' }],
   			overline: ['0.6875rem', { lineHeight: '1.2', letterSpacing: '0.08em', fontWeight: '600' }]
   		},
+  		/*
+  		 * Elevation from the redesign prototype, themed for light and dark.
+  		 * These replace Tailwind's sm/md/lg (and plain `shadow`, which maps to
+  		 * the lightest level). Being var() values, they can't take a color
+  		 * modifier such as shadow-lg shadow-indigo-600/10.
+  		 */
   		boxShadow: {
   			sm: 'var(--shadow-sm)',
-  			DEFAULT: 'var(--shadow-md)',
+  			DEFAULT: 'var(--shadow-sm)',
   			md: 'var(--shadow-md)',
   			lg: 'var(--shadow-lg)'
   		}

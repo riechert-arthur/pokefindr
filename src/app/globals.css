@@ -129,7 +129,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background font-sans text-foreground;
+    @apply bg-background text-foreground;
   }
   h1, h2, h3 {
     text-wrap: balance;

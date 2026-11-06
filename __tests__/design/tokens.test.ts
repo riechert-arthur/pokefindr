@@ -35,7 +35,7 @@ describe("design tokens", () => {
   })
 
   it("only references color tokens from tailwind.config.ts that are defined in light and dark", () => {
-    const used = [...tailwind.matchAll(/var\(--([\w-]+)\)/g)].map((m) => m[1]).filter((t) => !/^(radius|font-|shadow-)/.test(t))
+    const used = [...tailwind.matchAll(/var\(--([\w-]+)\)/g)].map((m) => m[1]).filter((t) => !/^(radius|font-)/.test(t))
     expect(used.length).toBeGreaterThan(0)
     for (const token of used) {
       expect(light.has(token), `${token} in :root`).toBe(true)
@@ -199,11 +199,14 @@ describe("no raw colors outside globals.css", () => {
 
 describe("type scale and elevation", () => {
   it.each(["display", "title", "heading", "subheading", "body-lg", "body", "caption", "overline"])("defines text-%s", (size) => {
-    expect(tailwind).toMatch(new RegExp(`['"]?${size}['"]?: \\[`))
+    // Anchored, so "heading" doesn't match inside "subheading: [".
+    expect(tailwind).toMatch(new RegExp(`(^|[\\s{,])['"]?${size}['"]?: \\[`, "m"))
   })
 
-  it.each(["shadow-sm", "shadow-md", "shadow-lg"])("defines --%s in light and dark", (token) => {
-    expect(light.get(token)).toBeTruthy()
-    expect(dark.get(token)).toBeTruthy()
+  it("doesn't match a size inside a longer name", () => {
+    const re = (size: string) => new RegExp(`(^|[\\s{,])['"]?${size}['"]?: \\[`, "m")
+    expect(re("heading").test(`  subheading: [`)).toBe(false)
+    expect(re("heading").test(`  heading: [`)).toBe(true)
+    expect(re("body-lg").test(`  'body-lg': [`)).toBe(true)
   })
 })
