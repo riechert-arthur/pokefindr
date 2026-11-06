@@ -178,7 +178,7 @@ The production database already has these tables, so
 use. Migration `0002_import_locations` copies it into `locations` on every
 database, with every field the JSON has (address details, Mapbox id, accuracy,
 `match_code`, the full properties in `raw`, and `_manual_override` as
-`manual_override`). The code lives in `scripts/one-off/import-locations/`.
+`manual_override`). The code is one file, `scripts/one-off/import-locations.ts`.
 
 - It runs inside the migration transaction, through `locations_staging`.
 - It upserts on `"machineID"` and writes only rows that change, so running it

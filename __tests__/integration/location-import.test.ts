@@ -3,9 +3,16 @@ import postgres from "postgres"
 import { afterAll, describe, expect, it } from "vitest"
 import { sql as k } from "kysely"
 import { createMigrator } from "../../scripts/db/migrator"
-import { importLocations } from "../../scripts/one-off/import-locations"
-import { parseFeatures, readFeatureFile, type LocationRow, type SourceFeature } from "../../scripts/one-off/import-locations/features"
-import { loadStaging, mergeStaging, verifyImport } from "../../scripts/one-off/import-locations/merge"
+import {
+  importLocations,
+  loadStaging,
+  mergeStaging,
+  parseFeatures,
+  readFeatureFile,
+  verifyImport,
+  type LocationRow,
+  type SourceFeature,
+} from "../../scripts/one-off/import-locations"
 import { testDatabaseUrl } from "./testDatabase"
 
 const JSON_FILE = path.resolve(__dirname, "../../src/data/vending_machines_mod.json")

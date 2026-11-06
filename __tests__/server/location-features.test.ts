@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest"
-import { parseFeatures, toLocationRow, type SourceFeature } from "../../scripts/one-off/import-locations/features"
+import { parseFeatures, toLocationRow, type SourceFeature } from "../../scripts/one-off/import-locations"
 
 const base: SourceFeature = {
   type: "Feature",

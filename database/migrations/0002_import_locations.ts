@@ -1,13 +1,13 @@
 /**
  * Data: copies the machines in src/data/vending_machines_mod.json into
- * `locations` (#73), using scripts/one-off/import-locations. Runs inside the
+ * `locations` (#73), using scripts/one-off/import-locations.ts. Runs inside the
  * migration transaction, so a failed verification rolls back the whole run.
  *
  * Idempotent. Upserts on "machineID" and writes only changed rows, so running
  * it again changes nothing; to pick up later edits to the JSON, run
  * `npm run db:import-locations -- --apply`.
  *
- * Does nothing once the JSON is gone (#80). Keep scripts/one-off/import-locations
+ * Does nothing once the JSON is gone (#80). Keep scripts/one-off/import-locations.ts
  * as long as this file imports it, or make up() a no-op when deleting both.
  */
 import { existsSync } from "node:fs"
