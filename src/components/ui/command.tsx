@@ -126,6 +126,9 @@ const CommandSeparator = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <CommandPrimitive.Separator
     ref={ref}
+    // cmdk renders role="separator" inside role="listbox", which axe flags (aria-required-children).
+    // It's a visual divider only, so hide it from assistive tech.
+    aria-hidden
     className={cn("-mx-1 h-px bg-border", className)}
     {...props}
   />

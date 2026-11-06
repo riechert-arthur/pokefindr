@@ -29,6 +29,10 @@ const preview: Preview = {
   parameters: {
     layout: "centered",
     controls: { expanded: true },
+    // Components use next/navigation (App Router).
+    nextjs: { appDirectory: true },
+    // The panel shows every issue; CI gating (serious/critical only) lives in .storybook/test-runner.ts.
+    a11y: { test: "todo" },
   },
   // Light/dark from the toolbar.
   globalTypes: {
@@ -37,7 +41,15 @@ const preview: Preview = {
       toolbar: { title: "Theme", icon: "mirror", items: ["light", "dark"], dynamicTitle: true },
     },
   },
-  initialGlobals: { theme: "light" },
+  initialGlobals: {
+    theme: "light",
+    // Under the a11y test runner (it sets this flag before the page loads), the
+    // addon doesn't run axe itself: .storybook/test-runner.ts does, in light and
+    // dark, and two runs would share one axe instance.
+    ...(typeof window !== "undefined" && (window as unknown as { __A11Y_TEST_RUNNER__?: boolean }).__A11Y_TEST_RUNNER__
+      ? { a11y: { manual: true } }
+      : {}),
+  },
   decorators: [
     // The same providers as the app: next-themes sets the light/dark class on
     // <html> (so tokens and theme-aware components like the Toaster agree), and
