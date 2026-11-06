@@ -28,6 +28,7 @@ light (`:root`) and once for dark (`.dark`). Values are HSL channels, so Tailwin
 | `success`, `warning` | `text-success`, `border-warning/45` | Status badges ("Live", "Pending review") |
 | `kind-vending`, `kind-shop`, `kind-event` | `bg-kind-shop` | Location kinds only. Use `KINDS[kind]` instead of picking by hand. |
 | `me` | `bg-me` | The viewer's location dot |
+| `logo-card` | — | The logo's card face (white in both themes) |
 | `map-*` | — | Map paint. MapLibre can't read CSS classes, so read them with `readTokens()` from [`src/lib/design/tokens.ts`](../src/lib/design/tokens.ts). |
 | `chart-1…5` | — | Charts. They alias the kind colors first, so charts match the map. |
 
@@ -39,7 +40,8 @@ To add a token: add it to both `:root` and `.dark` in `globals.css`, map it in
 
 One family, **Noto Sans** (`font-sans`), plus **JetBrains Mono** (`font-mono`) for IDs and code.
 Both load through `next/font` in `src/app/layout.tsx`. Use the named sizes; each sets line height,
-tracking and (for headings) weight:
+tracking and (for headings) weight. They're defined once in
+[`src/lib/design/type-scale.ts`](../src/lib/design/type-scale.ts), which Tailwind and `cn()` both read:
 
 | Class | Size | Use for |
 |---|---|---|
@@ -54,15 +56,25 @@ tracking and (for headings) weight:
 
 Numbers that line up (counts, distances, prices) get `tabular-nums`.
 
+`cn()` (`src/lib/utils.ts`) merges classes with tailwind-merge, so when a caller's `className`
+conflicts with a component's default, the caller's wins (`cn("px-2.5", "px-2")` is `px-2`). A
+text size next to a `leading-*` keeps both.
+
 ## Spacing, radius and elevation
 
 - Spacing is Tailwind's 4px scale. Common steps: `gap-1.5`/`gap-2` inside a control, `p-3`/`p-4`
   inside cards and panels, `gap-6`/`gap-8` between sections.
 - Radius: `rounded-md` for controls, `rounded-lg` (= `--radius`, 8px) for cards and panels,
   `rounded-xl` for large floating surfaces (search, composer), `rounded-full` for chips and dots.
-- Elevation: `shadow-sm` for chips and buttons on the map, `shadow-md` for floating panels and
-  popovers, `shadow-lg` for the hero search and dialogs. Shadows are tokens too (`--shadow-*`), so
-  they deepen in dark mode.
+- Elevation: `shadow-sm` (and plain `shadow`) for chips and buttons on the map, `shadow-md` for
+  floating panels and popovers, `shadow-lg` for the hero search and dialogs, `shadow-xl` for drawers
+  and side panels. Shadows are tokens too (`--shadow-*`), so they deepen in dark mode. Being
+  `var()` values, they can't take a color modifier (`shadow-lg shadow-primary/10`); use an arbitrary
+  shadow with a token instead.
+- Breakpoints are Tailwind's defaults, defined once in
+  [`src/lib/design/breakpoints.ts`](../src/lib/design/breakpoints.ts) for both Tailwind and
+  `useMediaQuery` (`MD_UP`, `LG_UP` in `src/hooks/use-media-query.ts`), so `md:` classes and JS
+  switch at the same width.
 
 ## Location kinds
 
@@ -73,13 +85,16 @@ Vending machines, card shops and events each have a color, an icon and labels, a
 import { KINDS, KIND_ORDER, countLabel } from "@/components/pokefindr/kinds"
 
 KINDS.shop.label      // "Card shops"
+KINDS.shop.short      // "Shops"
 KINDS.shop.icon       // StoreIcon
 KINDS.shop.bg         // "bg-kind-shop"
 countLabel("vending", 1) // "1 vending machine"
 ```
 
 Always go through `KINDS` (or `KindDot` / `KindIcon` / `TypeChip`) so the map, chips, list rows
-and assistant cards agree. Adding a kind means adding it here, a `--kind-*` token, and a story.
+and assistant cards agree. For a kind from API data, use `toKind(value)`: unknown or missing values
+become vending (with a warning in development). Adding a kind means adding it here (and to
+`LocationKind` in `src/lib/types/locations.ts`), a `--kind-*` token, and a story.
 
 ## Components
 
@@ -97,9 +112,10 @@ Two folders, two naming rules (a test enforces both):
 | `StatusBadge` | Live · Sample · Pending review · Coming soon · Sponsored |
 | `EmptyState` | What a list or panel shows when it has nothing: title, one or two sentences, an action |
 | `SponsoredSlot` | The shell for one labeled, dismissible sponsored card (`compact` or `strip`) |
-| `StarRating` | Read-only stars, or a keyboard-friendly rating input when given `onChange` |
+| `StarRating` | Read-only stars ("4.5 out of 5 stars", half-star steps), or a 1–5 radio group with arrow keys when given `onChange` |
 | `ResponsivePanel` | Side sheet on desktop, bottom drawer on mobile (see below) |
-| `ThemeToggle`, `UserMenu` | Light/dark/system switch; avatar menu |
+| `ThemeToggle` | Light / dark / system (`segmented`, in settings) or a one-click light/dark switch (`toggle`, in the sidebar) |
+| `UserMenu` | The signed-in user's avatar: a dropdown with Settings and Log out, or `variant="list"` for the mobile nav drawer |
 | `brand/Logo` | The mark (`variant="mark"`) or mark + wordmark (`"full"`) |
 
 ## Which overlay?
@@ -109,9 +125,10 @@ Two folders, two naming rules (a test enforces both):
 | Details or a form about one thing (a location, "Add a place") | `ResponsivePanel`: `Sheet` from the side at ≥768px, `Drawer` from the bottom below |
 | A short decision that blocks everything else ("Delete this review?") | `Dialog` |
 | A small control anchored to a button (filters, radius) | `Popover` |
+| A long list or panel body that scrolls | `ScrollArea` (it's a tab stop only when its content overflows and has nothing focusable of its own) |
 | A list of actions on one thing | `DropdownMenu` |
 | Search with suggestions | `Command` (inside a `Popover` when it drops down) |
-| The name of an icon-only button | `Tooltip` (the button still needs its own `aria-label`) |
+| The name of an icon-only button | `Tooltip` (the button still needs its own `aria-label`; one `TooltipProvider` wraps the app) |
 | "Done" feedback after an action ("Link copied") | `toast()` from `sonner` |
 
 Don't put forms in a `Dialog` or `Popover`; they get a panel. Don't stack overlays: open the next
@@ -189,18 +206,26 @@ export const OnMap: Story = {
 }
 ```
 
-`a11y: { disable: true }` skips a story entirely; use it for stories that only make sense in a page.
+`a11y: { test: "off" }` (or the older `disable: true`) skips a story entirely; use it for stories
+that only make sense in a page. `a11y: { context: "#selector" }` narrows what's checked. The test
+runner reads the same parameters as the Accessibility tab.
 
 ## Guardrails
 
-ESLint (`.eslintrc.json`) blocks, in `src/components`, `src/app` and `src/stories`:
+ESLint (`.eslintrc.js`) blocks, everywhere in `src`:
 
-- Tailwind palette colors (`text-blue-600`, `bg-gray-100`): use a token.
-- Arbitrary colors (`bg-[#fff]`, `text-[rgb(…)]`), hex literals and `rgb()`/`hsl()` in code: use a
-  token, or `readTokens()` when code needs the value (maps, canvas).
+- Tailwind palette colors (`text-blue-600`, `hover:!bg-gray-100`, `border-t-red-500`): use a token.
+- Arbitrary colors (`bg-[#fff]`, `text-[rgb(…)]`, `bg-[oklch(…)]`, `[color:red]`,
+  `text-[theme(colors.blue.500)]`): use a token. `bg-[hsl(var(--brand)/0.3)]` is fine.
+- Hex colors and color functions (`rgb()`, `hsl()`, `oklch()`, `color-mix()`) in styles, color
+  attributes (`fill="#…"`), color-named variables and CSS strings: use a token class, or
+  `readTokens()` when code needs the value (maps, canvas). Text like "Fixed in #142" and anchors
+  like `href="#add"` aren't flagged.
 
-Exempt: `src/components/icons/**` and the image routes that render outside the page
-(`opengraph-image.tsx`, `apple-icon.tsx`, `brand-mark.ts`), which can't read CSS variables.
+Exempt: `src/components/icons/**`, the image routes under `src/app` (`opengraph-image`,
+`twitter-image`, `icon`, `apple-icon`), which can't read CSS variables, and the token runtime in
+`src/lib/design/`.
 
-Tests in `__tests__/design/` check that tokens are defined, raw colors stay out, the folder naming
-rules, lucide-only icons, the lint rules themselves, and story coverage.
+Tests in `__tests__/design/` check that tokens are defined in both themes (and key text/fill pairs
+meet 4.5:1), raw colors stay out, the folder naming rules, lucide-only icons, the logo copies match,
+the lint rules themselves, and that every component has a story that imports it.
