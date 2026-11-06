@@ -10,4 +10,4 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 export const Segmented: Story = {}
-export const Cycle: Story = { args: { variant: "cycle" } }
+export const Toggle: Story = { args: { variant: "toggle" } }
