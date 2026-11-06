@@ -1,10 +1,10 @@
 "use client"
 
 import type { FC, Dispatch, SetStateAction } from "react"
+import { MenuIcon, XIcon } from "lucide-react"
 import { PokeFindrIcon } from "@/components/icons/PokeFindrIcon"
 import { useState } from "react"
 import { Dialog, DialogPanel } from "@headlessui/react"
-import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline"
 import Link from "next/link"
 import Avatar from "@/components/ui/Avatar"
 import { useSessionContext } from "./providers/SessionProvider"
@@ -46,7 +46,7 @@ export const MobileMenu: FC<MobileMenuProps> = ({
             className="-m-2.5 rounded-md p-2.5 text-foreground"
           >
             <span className="sr-only">Close menu</span>
-            <XMarkIcon aria-hidden="true" className="size-6" />
+            <XIcon aria-hidden="true" className="size-6" />
           </button>
         </div>
         <div className="mt-6 flow-root">
@@ -111,7 +111,7 @@ export const ContentPageHeader: FC<HeaderProps> = ({ navigation }) => {
             className="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-foreground"
           >
             <span className="sr-only">Open main menu</span>
-            <Bars3Icon aria-hidden="true" className="size-6" />
+            <MenuIcon aria-hidden="true" className="size-6" />
           </button>
         </div>
         <div className="hidden lg:flex lg:gap-x-12">

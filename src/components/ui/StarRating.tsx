@@ -1,8 +1,6 @@
 
 import React from 'react'
-import { StarIcon as SolidStarIcon } from '@heroicons/react/20/solid'
-import { StarIcon as OutlineStarIcon } from '@heroicons/react/24/outline'
-import { StarHalf } from 'lucide-react'
+import { Star, StarHalf } from 'lucide-react'
 
 interface StarRatingProps {
   rating: number
@@ -16,9 +14,9 @@ export const StarRating: React.FC<StarRatingProps> = ({ rating, starSize = 24, o
     let StarComponent: React.ReactNode
     if (rating >= threshold) {
       StarComponent = (
-        <SolidStarIcon
-          width={starSize}
-          height={starSize}
+        <Star
+          size={starSize}
+          fill="currentColor"
           className="text-yellow-500"
         />
       )
@@ -31,9 +29,8 @@ export const StarRating: React.FC<StarRatingProps> = ({ rating, starSize = 24, o
       )
     } else {
       StarComponent = (
-        <OutlineStarIcon
-          width={starSize}
-          height={starSize}
+        <Star
+          size={starSize}
           className="text-yellow-500"
         />
       )

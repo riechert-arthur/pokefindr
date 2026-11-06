@@ -1,11 +1,11 @@
 "use client"
 
 import { publicConfig } from "@/config.public"
+import { MenuIcon, SearchIcon, XIcon } from "lucide-react"
 import axios, { CancelTokenSource } from "axios"
 import { useState, useEffect, useRef, useCallback } from "react"
 import type { Point } from "geojson"
 import type { LocationFeature, LocationFeatureCollection } from "@/lib/types/locations"
-import { XMarkIcon, MagnifyingGlassIcon, Bars3Icon } from "@heroicons/react/24/outline"
 import { useSidebar } from "@/components/providers/SidebarContextProvider"
 
 interface MapSearchBarProps {
@@ -178,7 +178,7 @@ export function MapSearchBar({
     >
       <div className={`flex flex-row items-center pl-4 pr-3 border-b ${results.length > 0 ? "rounded-t-xl" : "rounded-full"}`}>
         <button onClick={toggleSidebar} className="md:hidden mr-2 p-1 rounded" aria-label="Toggle menu">
-          <Bars3Icon className="w-6 h-6 text-muted-foreground hover:text-blue-600" />
+          <MenuIcon className="w-6 h-6 text-muted-foreground hover:text-blue-600" />
         </button>
 
         <input
@@ -193,16 +193,16 @@ export function MapSearchBar({
         />
         {results.length > 0 ? (
           <button onClick={() => { setResults([]); setQuery("") }} className="size-7 z-100 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
-            <XMarkIcon className="hover:text-red-600" />
+            <XIcon className="hover:text-red-600" />
           </button>
         ) : (
           <button onClick={performSearch} className="size-7 z-100 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
-            <MagnifyingGlassIcon className="hover:text-blue-600" />
+            <SearchIcon className="hover:text-blue-600" />
           </button>
         )}
         {results.length > 0 &&
           <button onClick={() => onSelect(results[0])} className="ml-2 size-7 z-100 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
-            <MagnifyingGlassIcon className="hover:text-blue-600" />
+            <SearchIcon className="hover:text-blue-600" />
           </button>
         }
       </div>
