@@ -26,7 +26,8 @@
     "db:pull": "drizzle-kit pull",
     "db:studio": "drizzle-kit studio",
     "db:import-locations": "tsx scripts/one-off/import-locations.ts",
-    "test-storybook": "test-storybook --url http://127.0.0.1:6006"
+    "test-storybook": "test-storybook --url http://127.0.0.1:6006",
+    "test-storybook:local": "bash scripts/test-storybook-local.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
