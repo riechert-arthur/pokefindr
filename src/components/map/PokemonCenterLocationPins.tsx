@@ -16,6 +16,8 @@ import type {
   LocationFeatureCollection,
   LocationFeatureProperties,
 } from "@/lib/types/locations"
+import { readTokens } from "@/lib/design/tokens"
+import { useThemeKey } from "@/lib/design/useThemeKey"
 
 interface PokemonCenterLocationPinsProps {
   collection: LocationFeatureCollection
@@ -31,45 +33,52 @@ interface PokemonCenterLocationPinsProps {
 
 const CLUSTER_MAX_ZOOM = 8
 
-const clusterCircleLayer: LayerProps = {
-  id: "cluster-circle",
-  type: "circle",
-  source: "machines",
-  filter: ["has", "point_count"],
-  maxzoom: CLUSTER_MAX_ZOOM + 1,
-  paint: {
-    "circle-color": [
-      "step",
-      ["get", "point_count"],
-      "#51bbd6",
-      10,
-      "#f1f075",
-      30,
-      "#f28cb1",
-    ],
-    "circle-radius": ["step", ["get", "point_count"], 15, 10, 20, 30, 25],
-    "circle-stroke-width": 2,
-    "circle-stroke-color": "#fff",
-    "circle-opacity": 0.8,
-  },
-}
-
-const clusterCountLayer: LayerProps = {
-  id: "cluster-count",
-  type: "symbol",
-  source: "machines",
-  filter: ["has", "point_count"],
-  minzoom: 0,
-  maxzoom: CLUSTER_MAX_ZOOM + 1,
-  layout: {
-    "text-field": "{point_count_abbreviated}",
-    "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
-    "text-size": 17,
-    "text-allow-overlap": true,
-    "text-ignore-placement": true,
-    "text-offset": [0, 0.55],
-    "text-anchor": "bottom",
-  },
+/**
+ * Cluster layers, colored from the design tokens with one style lookup.
+ * Rebuild them when the theme changes (see useThemeKey) so the colors match.
+ */
+const clusterLayers = (): { circle: LayerProps; count: LayerProps } => {
+  const c = readTokens(["primary", "brand-2", "brand", "map-dot-ring", "primary-foreground"])
+  return {
+    circle: {
+      id: "cluster-circle",
+      type: "circle",
+      source: "machines",
+      filter: ["has", "point_count"],
+      maxzoom: CLUSTER_MAX_ZOOM + 1,
+      paint: {
+        "circle-color": ["step", ["get", "point_count"], c.primary, 10, c["brand-2"], 30, c.brand],
+        "circle-radius": ["step", ["get", "point_count"], 15, 10, 20, 30, 25],
+        "circle-stroke-width": 2,
+        "circle-stroke-color": c["map-dot-ring"],
+        // Opaque, so the count's contrast doesn't depend on the basemap below.
+        "circle-opacity": 1,
+      },
+    },
+    count: {
+      id: "cluster-count",
+      type: "symbol",
+      source: "machines",
+      filter: ["has", "point_count"],
+      minzoom: 0,
+      maxzoom: CLUSTER_MAX_ZOOM + 1,
+      layout: {
+        "text-field": "{point_count_abbreviated}",
+        "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+        "text-size": 17,
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
+        "text-offset": [0, 0.55],
+        "text-anchor": "bottom",
+      },
+      // primary-foreground meets 4.5:1 on all three fills in both themes
+      // (checked in __tests__/design/tokens.test.ts). If the tokens can't be
+      // read, readTokens falls back to black text on gray.
+      paint: {
+        "text-color": c["primary-foreground"],
+      },
+    },
+  }
 }
 
 const unclusteredLayer: LayerProps = {
@@ -85,6 +94,7 @@ const unclusteredLayer: LayerProps = {
 
 export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ collection, clickedInfo, setClickedInfo }) => {
   const mapRef = useMap()
+  const themeKey = useThemeKey()
   const [unclusteredPoints, setUnclusteredPoints] = useState<LocationFeature[]>([])
 
 
@@ -180,6 +190,9 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
     }
   }, [mapRef])
 
+  // Re-read the colors only when the theme changes (themeKey), not on every new collection.
+  const layers = useMemo(clusterLayers, [themeKey])
+
   const renderedSource = useMemo(() => {
     return (
       <Source
@@ -191,12 +204,12 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
         clusterMaxZoom={CLUSTER_MAX_ZOOM}
         clusterRadius={30}
       >
-        <Layer {...clusterCircleLayer} />
-        <Layer {...clusterCountLayer} />
+        <Layer {...layers.circle} />
+        <Layer {...layers.count} />
         <Layer {...unclusteredLayer} />
       </Source>
     )
-  }, [collection])
+  }, [collection, layers])
 
   const activeInfo = clickedInfo || hoveredInfo
 

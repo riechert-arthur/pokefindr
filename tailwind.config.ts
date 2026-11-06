@@ -44,6 +44,29 @@ export default {
   			border: 'hsl(var(--border))',
   			input: 'hsl(var(--input))',
   			ring: 'hsl(var(--ring))',
+  			brand: {
+  				DEFAULT: 'hsl(var(--brand))',
+  				'2': 'hsl(var(--brand-2))'
+  			},
+  			spark: 'hsl(var(--spark))',
+  			success: 'hsl(var(--success))',
+  			warning: 'hsl(var(--warning))',
+  			kind: {
+  				vending: 'hsl(var(--kind-vending))',
+  				shop: 'hsl(var(--kind-shop))',
+  				event: 'hsl(var(--kind-event))'
+  			},
+  			me: 'hsl(var(--me))',
+  			map: {
+  				water: 'hsl(var(--map-water))',
+  				land: 'hsl(var(--map-land))',
+  				line: 'hsl(var(--map-line))',
+  				unsupported: 'hsl(var(--map-unsupported))',
+  				'unsupported-line': 'hsl(var(--map-unsupported-line))',
+  				'choro-hi': 'hsl(var(--map-choro-hi))',
+  				'dot-ring': 'hsl(var(--map-dot-ring))',
+  				radius: 'hsl(var(--map-radius))'
+  			},
   			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',
