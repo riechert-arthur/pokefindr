@@ -28,7 +28,7 @@ light (`:root`) and once for dark (`.dark`). Values are HSL channels, so Tailwin
 | `success`, `warning` | `text-success`, `border-warning/45` | Status badges ("Live", "Pending review") |
 | `kind-vending`, `kind-shop`, `kind-event` | `bg-kind-shop` | Location kinds only. Use `KINDS[kind]` instead of picking by hand. |
 | `me` | `bg-me` | The viewer's location dot |
-| `map-*` | — | Map paint. MapLibre can't read CSS classes, so read them with `readToken()` from [`src/lib/design/tokens.ts`](../src/lib/design/tokens.ts). |
+| `map-*` | — | Map paint. MapLibre can't read CSS classes, so read them with `readTokens()` from [`src/lib/design/tokens.ts`](../src/lib/design/tokens.ts). |
 | `chart-1…5` | — | Charts. They alias the kind colors first, so charts match the map. |
 
 To add a token: add it to both `:root` and `.dark` in `globals.css`, map it in
@@ -197,7 +197,7 @@ ESLint (`.eslintrc.json`) blocks, in `src/components`, `src/app` and `src/storie
 
 - Tailwind palette colors (`text-blue-600`, `bg-gray-100`): use a token.
 - Arbitrary colors (`bg-[#fff]`, `text-[rgb(…)]`), hex literals and `rgb()`/`hsl()` in code: use a
-  token, or `readToken()` when code needs the value (maps, canvas).
+  token, or `readTokens()` when code needs the value (maps, canvas).
 
 Exempt: `src/components/icons/**` and the image routes that render outside the page
 (`opengraph-image.tsx`, `apple-icon.tsx`, `brand-mark.ts`), which can't read CSS variables.
