@@ -23,4 +23,16 @@ describe("StarRating", () => {
     fireEvent.click(buttons[3])
     expect(onChange).toHaveBeenCalledWith(4)
   })
+
+  it("draws a half star as a filled half over an outline", () => {
+    const { container } = render(<StarRating rating={3.5} />)
+    const half = container.firstElementChild!.children[3]
+    expect(half.querySelectorAll("svg")).toHaveLength(2)
+  })
+
+  it("labels each rating button", () => {
+    render(<StarRating rating={2} onChange={() => {}} />)
+    expect(screen.getByRole("button", { name: "Rate 1 star" })).toHaveAttribute("aria-pressed", "true")
+    expect(screen.getByRole("button", { name: "Rate 4 stars" })).toHaveAttribute("aria-pressed", "false")
+  })
 })

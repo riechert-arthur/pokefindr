@@ -6,7 +6,7 @@ import { PokeFindrIcon } from '@/components/icons/PokeFindrIcon'
 import { useSidebar } from '@/components/providers/SidebarContextProvider'
 import { DiscordIcon } from './icons/DiscordIcon'
 import { useSessionContext } from './providers/SessionProvider'
-import { BookOpenIcon, ChevronLeft, HouseIcon, MapPinIcon, SettingsIcon } from "lucide-react"
+import { BookOpenIcon, ChevronLeft, HouseIcon, MapPinIcon, SettingsIcon } from 'lucide-react'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 
 interface SidebarLayoutProps {
@@ -34,20 +34,20 @@ export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
         </Link>
         <nav className="flex flex-col space-y-6">
           <Link href="/home" aria-label="Home" className="p-2 hover:bg-muted rounded-md">
-            <HouseIcon className="w-6 h-6 text-muted-foreground" />
+            <HouseIcon className="size-6 text-muted-foreground" />
           </Link>
           <Link href="/blog" aria-label="Blog" className="p-2 hover:bg-muted rounded-md">
-            <BookOpenIcon className="w-6 h-6 text-muted-foreground" />
+            <BookOpenIcon className="size-6 text-muted-foreground" />
           </Link>
-          <Link href="/map" aria-label="Discord"  className="p-2 hover:bg-muted rounded-md">
-            <MapPinIcon className="w-6 h-6 text-muted-foreground font-semibold" />
+          <Link href="/map" aria-label="Map"  className="p-2 hover:bg-muted rounded-md">
+            <MapPinIcon className="size-6 text-muted-foreground" />
           </Link>
           <Link href="https://discord.gg/f2uUR5bAZU" aria-label="Discord" target="_blank" className="p-2 hover:bg-muted rounded-md">
-            <DiscordIcon className="w-6 h-6 text-muted-foreground font-semibold" />
+            <DiscordIcon className="size-6 text-muted-foreground" />
           </Link>
           {session && (
-           <Link href="/settings" aria-label="Discord"  className="p-2 hover:bg-muted rounded-md">
-            <SettingsIcon className="w-6 h-6 text-muted-foreground font-semibold" />
+           <Link href="/settings" aria-label="Settings"  className="p-2 hover:bg-muted rounded-md">
+            <SettingsIcon className="size-6 text-muted-foreground" />
           </Link> 
           )} 
         </nav>

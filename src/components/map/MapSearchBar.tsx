@@ -178,7 +178,7 @@ export function MapSearchBar({
     >
       <div className={`flex flex-row items-center pl-4 pr-3 border-b ${results.length > 0 ? "rounded-t-xl" : "rounded-full"}`}>
         <button onClick={toggleSidebar} className="md:hidden mr-2 p-1 rounded" aria-label="Toggle menu">
-          <MenuIcon className="w-6 h-6 text-muted-foreground hover:text-blue-600" />
+          <MenuIcon className="size-6 text-muted-foreground hover:text-blue-600" />
         </button>
 
         <input
@@ -192,17 +192,17 @@ export function MapSearchBar({
           onBlur={() => setIsFocused(false)}
         />
         {results.length > 0 ? (
-          <button onClick={() => { setResults([]); setQuery("") }} className="size-7 z-100 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
-            <XIcon className="hover:text-red-600" />
+          <button onClick={() => { setResults([]); setQuery("") }} aria-label="Clear search" className="size-7 z-100 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
+            <XIcon className="size-full hover:text-red-600" />
           </button>
         ) : (
-          <button onClick={performSearch} className="size-7 z-100 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
-            <SearchIcon className="hover:text-blue-600" />
+          <button onClick={performSearch} aria-label="Search" className="size-7 z-100 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
+            <SearchIcon className="size-full hover:text-blue-600" />
           </button>
         )}
         {results.length > 0 &&
-          <button onClick={() => onSelect(results[0])} className="ml-2 size-7 z-100 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
-            <SearchIcon className="hover:text-blue-600" />
+          <button onClick={() => onSelect(results[0])} aria-label="Go to first result" className="ml-2 size-7 z-100 hover:cursor-pointer hover:scale-105 hover:text-blue-600">
+            <SearchIcon className="size-full hover:text-blue-600" />
           </button>
         }
       </div>
