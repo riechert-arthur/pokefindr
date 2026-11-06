@@ -47,10 +47,10 @@ const HeroSection: FC = () => {
       <div className="py-24 sm:py-32 lg:pb-40">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <div className="mx-auto max-w-2xl text-center">
-            <h1 className="text-balance text-5xl font-semibold tracking-tight text-gray-900 sm:text-7xl">
+            <h1 className="text-display text-foreground">
               Find Pokémon Vending Machines Near You
             </h1>
-            <p className="mt-8 text-pretty text-lg font-medium text-gray-500 sm:text-xl/8">
+            <p className="mt-8 text-pretty text-body-lg text-muted-foreground">
               Discover the nearest{" "}
               <strong>Pokemon Card vending machines</strong> using our
               interactive map. Find machines in stores, including{" "}

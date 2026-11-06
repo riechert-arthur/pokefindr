@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss"
 import typography from "@tailwindcss/typography"
+import defaultTheme from "tailwindcss/defaultTheme"
 
 export default {
     darkMode: ["class"],
@@ -76,9 +77,42 @@ export default {
   			}
   		},
   		borderRadius: {
+  			xl: 'calc(var(--radius) + 4px)',
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
+  		},
+  		fontFamily: {
+  			sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
+  			mono: ['var(--font-mono)', ...defaultTheme.fontFamily.mono]
+  		},
+  		/*
+  		 * Type scale from the redesign prototype. Use these instead of
+  		 * text-5xl/text-sm/etc. so headings, body and captions stay consistent.
+  		 */
+  		fontSize: {
+  			display: ['clamp(2.25rem, 1.5rem + 4vw, 4rem)', { lineHeight: '1.02', letterSpacing: '-0.035em', fontWeight: '700' }],
+  			title: ['clamp(1.625rem, 1.25rem + 1.6vw, 2.25rem)', { lineHeight: '1.1', letterSpacing: '-0.03em', fontWeight: '700' }],
+  			heading: ['1.25rem', { lineHeight: '1.3', letterSpacing: '-0.02em', fontWeight: '600' }],
+  			subheading: ['0.9375rem', { lineHeight: '1.35', letterSpacing: '-0.01em', fontWeight: '600' }],
+  			'body-lg': ['1.0625rem', { lineHeight: '1.55' }],
+  			body: ['0.875rem', { lineHeight: '1.45' }],
+  			caption: ['0.75rem', { lineHeight: '1.4' }],
+  			overline: ['0.6875rem', { lineHeight: '1.2', letterSpacing: '0.08em', fontWeight: '600' }]
+  		},
+  		/*
+  		 * Elevation from the redesign prototype, themed for light and dark.
+  		 * These replace Tailwind's sm/md/lg/xl (xl is for drawers and side
+  		 * panels); plain `shadow` maps to the lightest level. Being var()
+  		 * values, they can't take a color modifier such as shadow-lg
+  		 * shadow-indigo-600/10; use an arbitrary shadow with a token instead.
+  		 */
+  		boxShadow: {
+  			sm: 'var(--shadow-sm)',
+  			DEFAULT: 'var(--shadow-sm)',
+  			md: 'var(--shadow-md)',
+  			lg: 'var(--shadow-lg)',
+  			xl: 'var(--shadow-xl)'
   		}
   	}
   },
