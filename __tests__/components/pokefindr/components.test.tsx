@@ -69,7 +69,7 @@ describe("SponsoredSlot", () => {
   it("is labelled, links with rel=sponsored, and can be dismissed", () => {
     const onDismiss = vi.fn()
     render(<SponsoredSlot sponsor="Sample sponsor" title="Buy singles online" cta="See the deal" href="https://example.com" onDismiss={onDismiss} />)
-    expect(screen.getByRole("complementary", { name: "Sponsored" })).toHaveTextContent("Sponsored · Sample sponsor")
+    expect(screen.getByRole("complementary", { name: /^Sponsored: / })).toHaveTextContent("Sponsored · Sample sponsor")
     expect(screen.getByRole("link", { name: "Buy singles online" })).toHaveAttribute("rel", "sponsored nofollow noopener")
     fireEvent.click(screen.getByRole("button", { name: "Hide ads for this visit" }))
     expect(onDismiss).toHaveBeenCalled()
@@ -100,6 +100,24 @@ describe("class merging", () => {
     }
   })
 
+  it("keeps the dismiss button's room even when the caller sets padding", () => {
+    const { container } = render(
+      <SponsoredSlot sponsor="S" title="T" cta="Go" href="https://example.com" className="p-4" onDismiss={() => {}} />,
+    )
+    expect(container.firstElementChild).toHaveClass("p-4", "pr-9")
+  })
+
+  it("names each sponsored slot by its title", () => {
+    render(
+      <>
+        <SponsoredSlot sponsor="S" title="Deal A" cta="Go" href="https://example.com" />
+        <SponsoredSlot sponsor="S" title="Deal B" cta="Go" href="https://example.com" />
+      </>,
+    )
+    expect(screen.getByRole("complementary", { name: "Sponsored: Deal A" })).toBeInTheDocument()
+    expect(screen.getByRole("complementary", { name: "Sponsored: Deal B" })).toBeInTheDocument()
+  })
+
   it("keeps the strip's right padding clear for the dismiss button", () => {
     const { container } = render(
       <SponsoredSlot variant="strip" sponsor="S" title="T" cta="Go" href="https://example.com" onDismiss={() => {}} />,
@@ -109,9 +127,13 @@ describe("class merging", () => {
 
   it("treats unknown or missing kinds from the API as vending", () => {
     expect(toKind("shop")).toBe("shop")
+    vi.spyOn(console, "warn").mockImplementation(() => {})
     expect(toKind("card_shop")).toBe("vending")
     expect(toKind(undefined)).toBe("vending")
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
     expect(toKind("toString")).toBe("vending")
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"toString"'))
+    warn.mockRestore()
   })
 })
 

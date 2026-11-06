@@ -22,4 +22,9 @@ describe("cn", () => {
     expect(sizes.length).toBeGreaterThan(0)
     for (const size of sizes) expect(cn(`text-${size}`, "text-foreground"), size).toBe(`text-${size} text-foreground`)
   })
+
+  it("keeps leading-* next to a text size from the caller", () => {
+    expect(cn("font-semibold leading-none tracking-tight", "text-xl")).toBe("font-semibold leading-none tracking-tight text-xl")
+    expect(cn("leading-none", "text-subheading")).toBe("leading-none text-subheading")
+  })
 })

@@ -26,9 +26,16 @@ export function SponsoredSlot({ sponsor, title, body, cta, href, variant = "comp
   const strip = variant === "strip"
   return (
     <aside
-      aria-label="Sponsored"
+      // Named by its title, so several slots on a page are distinct landmarks.
+      aria-label={`Sponsored: ${title}`}
       data-variant={variant}
-      className={cn("relative flex items-center gap-3 rounded-lg border border-border bg-muted p-3 pr-9 text-body", strip && "pl-4 py-3.5", className)}
+      className={cn(
+        "relative flex items-center gap-3 rounded-lg border border-border bg-muted p-3 text-body",
+        strip && "pl-4 py-3.5",
+        className,
+        // Last, so a caller's p-* can't remove the room the dismiss button needs.
+        onDismiss && "pr-9",
+      )}
     >
       <span aria-hidden className="h-11 w-[2.125rem] shrink-0 -rotate-6 rounded-md bg-gradient-to-br from-brand to-brand-2 shadow-sm ring-[3px] ring-inset ring-background/70" />
       <span className="min-w-0 flex-1">

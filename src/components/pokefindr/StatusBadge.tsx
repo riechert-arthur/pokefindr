@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
@@ -14,7 +15,7 @@ const STYLES: Record<Status, { label: string; className: string }> = {
 interface StatusBadgeProps {
   status: Status
   /** Overrides the default label (e.g. "Sample data"). */
-  children?: React.ReactNode
+  children?: ReactNode
   className?: string
 }
 

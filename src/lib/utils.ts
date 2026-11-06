@@ -7,6 +7,12 @@ import { FONT_SIZE } from "@/lib/design/type-scale"
  * a text-foreground next to it.
  */
 const twMerge = extendTailwindMerge({
+  // A text size doesn't remove a leading-* next to it (by default it does,
+  // since text-xl sets a line height too). Components like CardTitle rely on
+  // "leading-none" surviving a "text-xl" from the caller, as it did by CSS order.
+  override: {
+    conflictingClassGroups: { "font-size": [] },
+  },
   extend: {
     classGroups: {
       "font-size": [{ text: Object.keys(FONT_SIZE) }],

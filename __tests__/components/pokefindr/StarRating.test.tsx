@@ -83,4 +83,18 @@ describe("StarRating", () => {
     expect(screen.getByRole("img", { name: "5 out of 5 stars" })).toBeInTheDocument()
     expect(container.querySelectorAll("svg.lucide-star-half")).toHaveLength(0)
   })
+
+  it("labels bad or out-of-range ratings sensibly", () => {
+    const { rerender } = render(<StarRating rating={Number.NaN} />)
+    expect(screen.getByRole("img", { name: "0 out of 5 stars" })).toBeInTheDocument()
+    rerender(<StarRating rating={5.3} />)
+    expect(screen.getByRole("img", { name: "5 out of 5 stars" })).toBeInTheDocument()
+  })
+
+  it("draws the selected whole star in input mode", () => {
+    const { container } = render(<StarRating rating={3.5} onChange={() => {}} />)
+    expect(screen.getByRole("radio", { name: "4 stars" })).toHaveAttribute("aria-checked", "true")
+    expect(container.querySelectorAll("svg.lucide-star-half")).toHaveLength(0)
+    expect(container.querySelectorAll('svg.lucide-star[fill="currentColor"]')).toHaveLength(4)
+  })
 })

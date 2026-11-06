@@ -16,8 +16,8 @@ interface StarRatingProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "on
 
 type Fill = "full" | "half" | "empty"
 
-/** Rounds to the nearest half star: 4.33 → 4.5, 4.2 → 4, 4.96 → 5. */
-const toHalf = (rating: number) => Math.round(rating * 2) / 2
+/** Rounds to the nearest half star within 0–5: 4.33 → 4.5, 4.96 → 5. NaN and null count as 0. */
+const toHalf = (rating: number) => (Number.isFinite(rating) ? Math.min(5, Math.max(0, Math.round(rating * 2) / 2)) : 0)
 
 const fillFor = (rating: number, star: number): Fill =>
   rating >= star ? "full" : rating >= star - 0.5 ? "half" : "empty"
@@ -48,18 +48,20 @@ export function StarRating({ rating, starSize = 24, onChange, label = "Rating", 
   const wrapper = cn("flex gap-0.5", className)
 
   if (!onChange) {
+    // Drawn and read at the same half-star step, so an average like 4.33
+    // shows and reads as "4.5 out of 5 stars".
+    const shown = toHalf(rating)
     return (
-      // Drawn and read at the same half-star step, so an average like 4.33
-      // shows and reads as "4.5 out of 5 stars".
-      <div role="img" aria-label={`${toHalf(rating)} out of 5 stars`} className={wrapper} {...rest}>
+      <div role="img" aria-label={`${shown} out of 5 stars`} className={wrapper} {...rest}>
         {[1, 2, 3, 4, 5].map((star) => (
-          <StarIcon key={star} fill={fillFor(toHalf(rating), star)} size={starSize} />
+          <StarIcon key={star} fill={fillFor(shown, star)} size={starSize} />
         ))}
       </div>
     )
   }
 
-  const selected = Math.round(rating)
+  // An input picks whole stars, so it draws the selected value, not a half.
+  const selected = Number.isFinite(rating) ? Math.min(5, Math.max(0, Math.round(rating))) : 0
   const select = (value: number) => {
     const next = Math.min(5, Math.max(1, value))
     onChange(next)
@@ -93,7 +95,7 @@ export function StarRating({ rating, starSize = 24, onChange, label = "Rating", 
           onClick={() => select(star)}
           className="rounded-md p-0.5 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <StarIcon fill={fillFor(rating, star)} size={starSize} />
+          <StarIcon fill={fillFor(selected, star)} size={starSize} />
         </button>
       ))}
     </div>

@@ -37,11 +37,24 @@ export const KINDS: Record<LocationKind, KindMeta> = {
   event: { label: "Events", short: "Events", one: "event", many: "events", icon: CalendarDaysIcon, bg: "bg-kind-event", text: "text-kind-event" },
 }
 
-export const KIND_ORDER: LocationKind[] = ["vending", "shop", "event"]
+/** Display order: the key order of KINDS. */
+export const KIND_ORDER = Object.keys(KINDS) as LocationKind[]
 
-/** A kind from untrusted data (the API): unknown or missing values are vending machines, today's only kind. */
-export const toKind = (value: unknown): LocationKind =>
-  typeof value === "string" && Object.hasOwn(KINDS, value) ? (value as LocationKind) : "vending"
+const warnedKinds = new Set<string>()
+
+/**
+ * A kind from untrusted data (the API). Missing values are vending machines,
+ * today's only kind. An unknown value also falls back to vending, and logs a
+ * warning once outside production, so a new kind on the server is noticed.
+ */
+export function toKind(value: unknown): LocationKind {
+  if (typeof value === "string" && Object.hasOwn(KINDS, value)) return value as LocationKind
+  if (value != null && process.env.NODE_ENV !== "production" && !warnedKinds.has(String(value))) {
+    warnedKinds.add(String(value))
+    console.warn(`toKind: unknown location kind "${String(value)}", showing it as vending`)
+  }
+  return "vending"
+}
 
 /** "1,457": counts are always formatted the same way. */
 export const formatCount = (n: number) => n.toLocaleString("en-US")
