@@ -1,7 +1,7 @@
 
 import React, { FC, useState, useEffect, useCallback, useRef } from "react"
+import { SquarePenIcon, XIcon } from "lucide-react"
 import axios from "axios"
-import { PencilSquareIcon, XMarkIcon } from "@heroicons/react/24/outline"
 import { LocationPopupProps } from "./LocationPinPopUps"
 import { StarRating } from "@/components/ui/StarRating"
 import {
@@ -210,7 +210,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
         <div className="flex-shrink-0 flex items-center justify-between p-4 border-b">
           <h2 className="text-lg font-semibold">Location Details</h2>
           <button onClick={handleClose} aria-label="Close panel">
-            <XMarkIcon className="h-6 w-6" />
+            <XIcon className="size-6" />
           </button>
         </div>
 
@@ -267,7 +267,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
                         }
                       }}
                     >
-                      <PencilSquareIcon className="w-6 h-6 mr-2" />
+                      <SquarePenIcon className="size-6 mr-2" />
                       Write a review
                     </Button>
                   </DialogTrigger>
@@ -291,11 +291,9 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Rating</FormLabel>
-                              <StarRating
-                                rating={field.value}
-                                starSize={24}
-                                onChange={field.onChange}
-                              />
+                              <FormControl>
+                                <StarRating rating={field.value} starSize={24} onChange={field.onChange} />
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -425,7 +423,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
                         variant="outline"
                         className="mt-4 flex items-center rounded-full border border-input py-1 px-3 font-medium text-foreground transition-transform hover:scale-105 hover:text-blue-500 hover:border-blue-500"
                       >
-                        <PencilSquareIcon className="w-6 h-6 mr-2" />
+                        <SquarePenIcon className="size-6 mr-2" />
                         Write a review
                       </Button>
                     </DialogTrigger>
@@ -449,11 +447,9 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
                             render={({ field }) => (
                               <FormItem>
                                 <FormLabel>Rating</FormLabel>
-                                <StarRating
-                                  rating={field.value}
-                                  starSize={24}
-                                  onChange={field.onChange}
-                                />
+                                <FormControl>
+                                  <StarRating rating={field.value} starSize={24} onChange={field.onChange} />
+                                </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}

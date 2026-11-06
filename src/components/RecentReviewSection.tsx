@@ -1,8 +1,7 @@
 
 import React from 'react'
+import { SquarePenIcon, Trash2Icon } from "lucide-react"
 import { StarRating } from '@/components/ui/StarRating'
-import TrashIcon from '@heroicons/react/24/outline/TrashIcon'
-import { PencilSquareIcon } from '@heroicons/react/20/solid'
 
 export interface Review {
   id: string
@@ -55,13 +54,13 @@ export const RecentReviewsSection: React.FC<RecentReviewsSectionProps> = ({ revi
                   onClick={() => onEdit(review)}
                   className="flex items-center mr-1 text-sm font-semibold text-blue-600 hover:text-indigo-500"
                 >
-                  <PencilSquareIcon className="mr-1 size-6" /> Edit
+                  <SquarePenIcon className="mr-1 size-6" /> Edit
                 </button>
                 <button
                   onClick={() => onDelete(review.id)}
                   className="flex items-center text-sm font-semibold text-red-600 hover:text-red-500"
                 >
-                  <TrashIcon className="size-6 mr-1" /> Delete
+                  <Trash2Icon className="size-6 mr-1" /> Delete
                 </button>
               </div>
             </li>

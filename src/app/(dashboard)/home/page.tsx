@@ -2,6 +2,7 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
+import { MenuIcon } from "lucide-react"
 import axios from 'axios'
 import {
   Dialog,
@@ -27,7 +28,6 @@ import { reviewSchema, type ReviewFormValues } from '@/components/map/LocationIn
 import { StarRating } from '@/components/ui/StarRating'
 import { useSessionContext } from '@/components/providers/SessionProvider'
 import { LoadSpinner } from '@/components/wrappers/LoadSpinner'
-import { Bars3Icon } from '@heroicons/react/24/outline'
 
 export default function ReviewsPage() {
   const { isSidebarOpen } = useSidebar()
@@ -105,13 +105,13 @@ export default function ReviewsPage() {
       <header className="absolute inset-x-0 top-0 z-40 flex h-16 border-b border-border">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <button onClick={toggleSidebar} className="md:hidden mr-2 p-1 rounded" aria-label="Toggle menu">
-            <Bars3Icon className="w-6 h-6 text-muted-foreground hover:text-blue-600" />
+            <MenuIcon className="size-6 text-muted-foreground hover:text-blue-600" />
           </button>
           <div />
           <div className="flex items-center gap-x-8">
             {/*<button className="-m-2.5 p-2.5 text-muted-foreground hover:text-foreground">
               <span className="sr-only">View notifications</span>
-              <BellIcon className="h-6 w-6" />
+              <BellIcon className="size-6" />
             </button>*/}
             <Avatar userName={session?.username ?? "Guest"} size={40}  />
           </div>
