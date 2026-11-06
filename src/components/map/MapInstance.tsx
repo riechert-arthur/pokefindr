@@ -17,6 +17,7 @@ import { useSidebar } from "../providers/SidebarContextProvider"
 import { LocationInfoPanel } from "./LocationInfoPanel"
 import Avatar from "@/components/ui/Avatar"
 import { useSessionContext } from "../providers/SessionProvider"
+import { useTheme } from "next-themes"
 
 interface ViewState {
   longitude: number
@@ -40,6 +41,7 @@ const MapInstance: FC = () => {
   > | null>(null)
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const { session } = useSessionContext()
+  const { resolvedTheme } = useTheme()
   const collection = useLocations()
 
   useEffect(() => {
@@ -78,7 +80,7 @@ const MapInstance: FC = () => {
         zIndex: 1,
         position: "relative",
       }}
-      mapStyle="mapbox://styles/mapbox/streets-v12"
+      mapStyle={resolvedTheme === "dark" ? "mapbox://styles/mapbox/dark-v11" : "mapbox://styles/mapbox/streets-v12"}
       onClick={() => {
         if(isSidebarOpen) {
           toggleSidebar()

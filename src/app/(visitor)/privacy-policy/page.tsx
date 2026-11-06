@@ -2,7 +2,7 @@ import type { FC } from "react"
 
 const PrivacyPolicyPage: FC = () => {
   return (
-    <div className="max-w-3xl mx-auto p-6 text-gray-800">
+    <div className="max-w-3xl mx-auto p-6 text-foreground">
       <h1 className="text-3xl font-bold mb-4">PRIVACY NOTICE</h1>
       <p className="mb-4">Last updated December 7, 2024</p>
 

@@ -3,7 +3,7 @@ import Link from "next/link"
 export default function ConfirmEmailPage() {
   return (
     <>
-      <main className="grid h-screen place-items-center bg-white px-6 py-24 sm:py-32 lg:px-8">
+      <main className="grid h-screen place-items-center bg-card px-6 py-24 sm:py-32 lg:px-8">
         <div className="text-center">
           <h1 className="mt-4 text-display text-foreground">
             Thank you! 
@@ -18,7 +18,7 @@ export default function ConfirmEmailPage() {
             >
               Go back home
             </Link>
-            <Link href="https://discord.gg/f2uUR5bAZU" className="text-sm font-semibold text-gray-900">
+            <Link href="https://discord.gg/f2uUR5bAZU" className="text-sm font-semibold text-foreground">
               Contact support <span aria-hidden="true">&rarr;</span>
             </Link>
           </div>

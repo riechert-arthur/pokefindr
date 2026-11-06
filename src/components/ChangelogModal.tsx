@@ -26,11 +26,11 @@ const ChangelogModal: FC = () => {
 
   return (
     <div onClick={handleClose} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000]">
-      <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-lg shadow-lg max-w-md w-full mx-4 p-6">
+      <div onClick={(e) => e.stopPropagation()} className="bg-card rounded-lg shadow-lg max-w-md w-full mx-4 p-6">
         <h2 className="text-xl font-semibold mb-2">
           What&apos;s New in Version {CURRENT_CHANGELOG_VERSION}
         </h2>
-        <p className="text-sm text-gray-600 mb-4">Released May 19, 2025</p>
+        <p className="text-sm text-muted-foreground mb-4">Released May 19, 2025</p>
         <ul className="list-disc list-inside space-y-1 mb-6">
           <li><strong>Free User Accounts</strong> – Users can now create accounts for free.</li>
           <li><strong>Review Management</strong> – Add, edit, and delete reviews for locations.</li>

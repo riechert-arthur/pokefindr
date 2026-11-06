@@ -174,17 +174,17 @@ export function MapSearchBar({
         top: pos.y,
         zIndex: 1000,
       }}
-      className={`z-100 w-64 md:w-80 bg-white shadow-lg cursor-move md:translate-x-16 ${results.length > 0 ? "rounded-xl" : "rounded-full"}`}
+      className={`z-100 w-64 md:w-80 bg-card shadow-lg cursor-move md:translate-x-16 ${results.length > 0 ? "rounded-xl" : "rounded-full"}`}
     >
       <div className={`flex flex-row items-center pl-4 pr-3 border-b ${results.length > 0 ? "rounded-t-xl" : "rounded-full"}`}>
         <button onClick={toggleSidebar} className="md:hidden mr-2 p-1 rounded" aria-label="Toggle menu">
-          <Bars3Icon className="w-6 h-6 text-gray-600 hover:text-blue-600" />
+          <Bars3Icon className="w-6 h-6 text-muted-foreground hover:text-blue-600" />
         </button>
 
         <input
           type="text"
           placeholder="Search address…"
-          className={`flex flex-row rounded-full w-full pr-4 py-3 text-base text-gray-450 font-medium focus:outline-none`}
+          className={`flex flex-row rounded-full w-full pr-4 py-3 text-base text-muted-foreground font-medium focus:outline-none`}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onMouseDown={(e) => e.stopPropagation()}
@@ -217,7 +217,7 @@ export function MapSearchBar({
             return (
               <li
                 key={feat.properties.id}
-                className="px-3 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
+                className="px-3 py-2 hover:bg-muted cursor-pointer flex justify-between items-center"
                 onClick={() => {
                   onSelect(feat)
                 }}
@@ -230,7 +230,7 @@ export function MapSearchBar({
                     {address}, {city}
                   </span>
                 </div>
-                <span className="text-xs text-gray-500">{distMi} mi</span>
+                <span className="text-xs text-muted-foreground">{distMi} mi</span>
               </li>
             )
           })}

@@ -184,7 +184,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
         ref={panelRef}
         className={`
           fixed bottom-0 left-0 w-full
-          bg-white shadow-xl rounded-t-3xl
+          bg-card shadow-xl rounded-t-3xl
           transform transition-[height] duration-200 ease-in-out
           md:hidden z-[1100] flex flex-col
           ${info ? "translate-y-0" : "translate-y-full"}
@@ -204,7 +204,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
         onPointerDown={onPointerDown}
       >
         {/* drag handle (visual only) */}
-        <div className="w-10 h-1.5 bg-gray-300 rounded mx-auto mt-2" />
+        <div className="w-10 h-1.5 bg-muted rounded mx-auto mt-2" />
 
         {/* header */}
         <div className="flex-shrink-0 flex items-center justify-between p-4 border-b">
@@ -260,7 +260,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
                   <DialogTrigger asChild>
                     <Button
                       variant="outline"
-                      className="mt-4 flex items-center rounded-full border border-gray-400 py-1 px-3 font-medium text-gray-700 transition-transform hover:scale-105 hover:text-blue-500 hover:border-blue-500"
+                      className="mt-4 flex items-center rounded-full border border-input py-1 px-3 font-medium text-foreground transition-transform hover:scale-105 hover:text-blue-500 hover:border-blue-500"
                       onClick={() => {
                         if (!isLoading && !session) {
                           router.push("/login")
@@ -347,7 +347,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
                       </span>
                       <StarRating  rating={review.rating} starSize={16} />
                     </div>
-                    <p className="text-sm text-gray-700 break-words">
+                    <p className="text-sm text-foreground break-words">
                       {text}
                       {tooLong && (
                         <button
@@ -384,7 +384,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
 
       {/* Desktop panel */}
       <div
-        className={`fixed top-0 left-[60px] w-96 h-full bg-white shadow-xl transform transition-transform duration-300 ease-in-out hidden md:flex flex-col ${
+        className={`fixed top-0 left-[60px] w-96 h-full bg-card shadow-xl transform transition-transform duration-300 ease-in-out hidden md:flex flex-col ${
           info ? "translate-x-0" : "-translate-x-full"
         }`}
         style={{ zIndex: 90 }}
@@ -403,11 +403,11 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
 
             <div className="p-6 space-y-2 overflow-y-auto flex-1">
               <h3 className="text-xl font-medium">{info.retailer}</h3>
-              <p className="text-sm text-gray-600">{info.address}</p>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">{info.address}</p>
+              <p className="text-sm text-muted-foreground">
                 {info.city}, {info.state}
               </p>
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-sm font-medium text-foreground">
                 Machine ID: {info.machineID}
               </p>
 
@@ -423,7 +423,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
                     <DialogTrigger asChild>
                       <Button
                         variant="outline"
-                        className="mt-4 flex items-center rounded-full border border-gray-400 py-1 px-3 font-medium text-gray-700 transition-transform hover:scale-105 hover:text-blue-500 hover:border-blue-500"
+                        className="mt-4 flex items-center rounded-full border border-input py-1 px-3 font-medium text-foreground transition-transform hover:scale-105 hover:text-blue-500 hover:border-blue-500"
                       >
                         <PencilSquareIcon className="w-6 h-6 mr-2" />
                         Write a review
@@ -505,7 +505,7 @@ export const LocationInfoPanel: FC<InfoPanelProps> = ({ info, onClose }) => {
                         </span>
                         <StarRating rating={review.rating} starSize={16} />
                       </div>
-                      <p className="text-sm text-gray-700 break-words">
+                      <p className="text-sm text-foreground break-words">
                         {text}
                         {tooLong && (
                           <button

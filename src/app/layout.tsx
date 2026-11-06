@@ -1,6 +1,7 @@
 import "./globals.css"
 import { JetBrains_Mono, Noto_Sans } from "next/font/google"
 import { ContextProviders } from "@/components/providers/ContextProviders"
+import { ThemeProvider } from "@/components/providers/ThemeProvider"
 import { Analytics } from "@vercel/analytics/next"
 import AffiliateBannerWrapper from "@/components/wrappers/AffiliateBannerWrapper"
 import { Toaster } from "sonner"
@@ -33,14 +34,16 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
+    <html lang="en" className={`${sans.variable} ${mono.variable}`} suppressHydrationWarning>
       <body className="antialiased">
-        <ContextProviders>
-          <main>{children}</main>
-          <Toaster />
-          <AffiliateBannerWrapper />
-          <Analytics />
-        </ContextProviders>
+        <ThemeProvider>
+          <ContextProviders>
+            <main>{children}</main>
+            <Toaster />
+            <AffiliateBannerWrapper />
+            <Analytics />
+          </ContextProviders>
+        </ThemeProvider>
       </body>
     </html>
   )
