@@ -3,7 +3,8 @@
 import type { FC, Dispatch, SetStateAction } from "react"
 import { MenuIcon } from "lucide-react"
 import { Logo } from "@/components/brand/Logo"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { LG_UP, useMediaQuery } from "@/hooks/use-media-query"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import Link from "next/link"
 import { UserMenu } from "@/components/pokefindr/UserMenu"
@@ -29,10 +30,16 @@ export const MobileMenu: FC<MobileMenuProps> = ({
   navigation,
 }) => {
   const { session } = useSessionContext()
+  // The menu is hidden from lg up. Close it when the window widens past lg, or
+  // its overlay and scroll lock would stay with no visible panel.
+  const desktop = useMediaQuery(LG_UP)
+  useEffect(() => {
+    if (desktop) setMobileMenuOpen(false)
+  }, [desktop, setMobileMenuOpen])
 
   return (
     <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-      <SheetContent side="right" className="w-full overflow-y-auto bg-card px-6 py-6 sm:max-w-sm lg:hidden">
+      <SheetContent side="right" closeLabel="Close menu" aria-describedby={undefined} className="w-full overflow-y-auto bg-card px-6 py-6 sm:max-w-sm lg:hidden">
         <SheetTitle className="sr-only">Menu</SheetTitle>
         <div className="flex items-center justify-between pr-8">
           <Link href="/" className="-m-1.5 p-1.5" onClick={() => setMobileMenuOpen(false)}>

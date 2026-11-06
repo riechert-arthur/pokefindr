@@ -1,6 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { MD_UP, useMediaQuery } from "@/hooks/use-media-query"
@@ -24,12 +24,20 @@ interface ResponsivePanelProps {
  */
 export function ResponsivePanel({ open, onOpenChange, title, description, side = "left", children, className }: ResponsivePanelProps) {
   const desktop = useMediaQuery(MD_UP, true)
+  // Keep the same kind of panel while it's open. Switching between Sheet and
+  // Drawer mid-way (a tablet rotating across md) would remount the children
+  // and lose typed input, scroll position and focus.
+  const [sheet, setSheet] = useState(desktop)
+  if (!open && sheet !== desktop) setSheet(desktop)
+  // Without a description, opt out of aria-describedby so Radix doesn't warn.
+  const describedBy = description ? {} : { "aria-describedby": undefined }
 
-  if (desktop) {
+  if (sheet) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side={side} className={cn("flex w-full flex-col gap-0 p-0 sm:max-w-md", className)}>
-          <SheetHeader className="border-b border-border p-4 text-left">
+        <SheetContent side={side} className={cn("flex w-full flex-col gap-0 p-0 sm:max-w-md", className)} {...describedBy}>
+          {/* pr-14 keeps a long title clear of the close button. */}
+          <SheetHeader className="border-b border-border p-4 pr-14 text-left">
             <SheetTitle className="text-subheading">{title}</SheetTitle>
             {description ? <SheetDescription>{description}</SheetDescription> : null}
           </SheetHeader>
@@ -41,7 +49,8 @@ export function ResponsivePanel({ open, onOpenChange, title, description, side =
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className={cn("max-h-[85vh]", className)}>
+      {/* dvh, not vh: on mobile vh includes the area behind the browser toolbars. */}
+      <DrawerContent className={cn("max-h-[85dvh]", className)} {...describedBy}>
         <DrawerHeader className="text-left">
           <DrawerTitle className="text-subheading">{title}</DrawerTitle>
           {description ? <DrawerDescription>{description}</DrawerDescription> : null}

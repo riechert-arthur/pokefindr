@@ -1,6 +1,6 @@
 import React from "react"
 import { describe, expect, it } from "vitest"
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
@@ -25,7 +25,7 @@ describe("shadcn primitives (batch 2)", () => {
     expect(screen.getByText("An automated retail machine.")).toBeInTheDocument()
   })
 
-  it("Tabs switch panels from the keyboard", () => {
+  it("Tabs switch panels from the keyboard", async () => {
     render(
       <Tabs defaultValue="results">
         <TabsList>
@@ -36,9 +36,19 @@ describe("shadcn primitives (batch 2)", () => {
         <TabsContent value="highlights">Highlights panel</TabsContent>
       </Tabs>,
     )
-    expect(screen.getByRole("tab", { name: "Results" })).toHaveAttribute("aria-selected", "true")
-    fireEvent.mouseDown(screen.getByRole("tab", { name: "Highlights" }))
-    expect(screen.getByRole("tab", { name: "Highlights" })).toHaveAttribute("aria-selected", "true")
+    const results = screen.getByRole("tab", { name: "Results" })
+    expect(results).toHaveAttribute("aria-selected", "true")
+    expect(screen.getByText("Results panel")).toBeInTheDocument()
+
+    // Arrow keys move focus along the tab list, and focus selects the tab.
+    results.focus()
+    fireEvent.keyDown(results, { key: "ArrowRight" })
+    const highlights = screen.getByRole("tab", { name: "Highlights" })
+    // Radix moves focus in a setTimeout.
+    await waitFor(() => expect(highlights).toHaveFocus())
+    expect(highlights).toHaveAttribute("aria-selected", "true")
+    expect(screen.getByText("Highlights panel")).toBeInTheDocument()
+    expect(screen.queryByText("Results panel")).not.toBeInTheDocument()
   })
 
   it("RadioGroup selects one option", () => {

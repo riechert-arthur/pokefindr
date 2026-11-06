@@ -5,8 +5,10 @@ import { Drawer as DrawerPrimitive } from "vaul"
 
 import { cn } from "@/lib/utils"
 
+// shouldScaleBackground is off: it needs a [data-vaul-drawer-wrapper] element,
+// which the app doesn't have, and it repaints <body> when one exists.
 const Drawer = ({
-  shouldScaleBackground = true,
+  shouldScaleBackground = false,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
   <DrawerPrimitive.Root
