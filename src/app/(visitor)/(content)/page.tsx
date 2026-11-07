@@ -2,6 +2,7 @@ import Head from "next/head"
 import { PHASE_PRODUCTION_BUILD } from "next/constants"
 import { FAQLoader } from "@/components/wrappers/FAQLoader"
 import { Hero, type HeroStats } from "@/components/landing/Hero"
+import { HeroMap } from "@/components/landing/HeroMap"
 import { getRegionCounts } from "@/server/services/region-counts"
 
 // The counts change only after an import; rebuild the page at most hourly.
@@ -92,7 +93,7 @@ const LandingPage = async () => {
         />
       </Head>
       <div className="isolate">
-        <Hero stats={stats} />
+        <Hero stats={stats} background={<HeroMap />} />
         <FAQLoader />
       </div>
     </>

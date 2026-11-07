@@ -2,6 +2,7 @@ import "server-only"
 import { sql, type SQL } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
 import { locations } from "@/server/db/schema"
+import { OUTSIDE_LOWER_48 } from "@/lib/map/states"
 import type { LocationFeature, LocationFeatureCollection, LocationKind, NearbyLocations, StateCities } from "@/lib/types/locations"
 import type { Bbox } from "@/lib/locations/bbox"
 
@@ -264,6 +265,23 @@ export async function getTopCities(
     total += n
   }
   return { cities: [...cities], counts: byKind, total }
+}
+
+/**
+ * Every active vending machine's point, rounded to 0.01° (~1 km), for the
+ * landing page's background map: small enough to send whole.
+ */
+export async function getVendingPoints(db: Database = getDb()): Promise<[number, number][]> {
+  const rows = await db.execute<{ lng: number; lat: number }>(sql`
+    select distinct round(ST_X(geog::geometry)::numeric, 2)::float8 as lng, round(ST_Y(geog::geometry)::numeric, 2)::float8 as lat
+    from ${locations}
+    where is_active and geog is not null and kind = 'vending'
+      -- The lower 48 and DC, as the map frames them (a row without a state counts by its point).
+      and country_code = 'US' and coalesce(state, '') not in (${sql.join(OUTSIDE_LOWER_48.map((s) => sql`${s}`), sql`, `)})
+      and ST_X(geog::geometry) between -125 and -66 and ST_Y(geog::geometry) between 24 and 50
+    order by 1, 2
+  `)
+  return rows.map((r) => [r.lng, r.lat])
 }
 
 export interface BboxQuery {
