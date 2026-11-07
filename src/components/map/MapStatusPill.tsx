@@ -80,7 +80,7 @@ export function MapStatusPill(props: MapStatusPillProps) {
           // The prototype puts it at the bottom on desktop; the floating affiliate
           // banner sits there until the ads redesign (R7), so it goes at the top,
           // where the prototype puts it on phones.
-          "top-4 max-md:top-[72px]",
+          "top-4 max-xl:top-[72px]",
           className,
         )}
       >
