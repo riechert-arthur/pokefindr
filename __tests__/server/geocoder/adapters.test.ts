@@ -186,12 +186,29 @@ describe("PhotonGeocoder", () => {
     ])
   })
 
-  it("asks only for settlements and states when the query has no number", async () => {
-    const request = mockFetch({ features: [] })
+  it("asks for places first when the query has no number", async () => {
+    const denver = (i: number) => feature([-104.98 + i, 39.74], { type: "city", name: `Denver ${i}`, state: "Colorado", countrycode: "US" })
+    const fetchMock = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({ features: [0, 1, 2, 3, 4].map(denver) })))
+    vi.stubGlobal("fetch", fetchMock)
     await new PhotonGeocoder().search("Denver")
-    const { searchParams } = request().url
-    expect(searchParams.getAll("layer")).toEqual(["city", "district", "state"])
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const { searchParams } = new URL(String(fetchMock.mock.calls[0][0]))
+    expect(searchParams.getAll("layer")).toEqual(["city", "district", "county", "state"])
     expect(searchParams.get("osm_tag")).toBe("place")
+  })
+
+  it("adds everything else when places don't fill the list (a mall, a landmark, a street)", async () => {
+    const mall = feature([-93.24, 44.85], { type: "house", name: "Mall of America", city: "Bloomington", state: "Minnesota", countrycode: "US" })
+    // Photon's fuzzy place matches for "Mall of America".
+    const fuzzy = feature([-93.79, 44.79], { type: "city", name: "Young America", state: "Minnesota", countrycode: "US" })
+    const fetchMock = vi.fn<typeof fetch>(async (url) =>
+      new Response(JSON.stringify({ features: new URL(String(url)).searchParams.has("osm_tag") ? [fuzzy] : [mall] })),
+    )
+    vi.stubGlobal("fetch", fetchMock)
+    const results = await new PhotonGeocoder().search("Mall of America")
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(new URL(String(fetchMock.mock.calls[1][0])).searchParams.has("layer")).toBe(false)
+    expect(results.map((r) => r.label)).toEqual(["Mall of America, Bloomington, MN", "Young America, MN"])
   })
 
   it("asks for everything when the query has a number", async () => {
