@@ -6,6 +6,7 @@ import {
   LAYERS,
   POINT_ZOOM,
   SOURCES,
+  shadingBeforeId,
   statesFillLayer,
   statesHoverLayer,
   statesLineLayer,
@@ -17,20 +18,15 @@ import { formatCount } from "@/components/pokefindr/kinds"
 import { cn } from "@/lib/utils"
 
 /**
- * The id of the basemap's first label layer, so the state shading can go
- * under the labels. Undefined until the style loads (the layers then go on
- * top) or if the style has no labels.
+ * The basemap layer the shading goes under (see shadingBeforeId), re-read
+ * whenever the style changes. Undefined until the style loads.
  */
 function useFirstLabelLayer(): string | undefined {
   const { current: map } = useMap()
   const [id, setId] = useState<string | undefined>()
   useEffect(() => {
     if (!map) return
-    const read = () => {
-      // Our own layers are added after the basemap's, so the first symbol layer is the basemap's.
-      const first = map.getStyle()?.layers.find((l) => l.type === "symbol")
-      setId(first?.id)
-    }
+    const read = () => setId(shadingBeforeId(map.getStyle()?.layers ?? []))
     if (map.isStyleLoaded()) read()
     map.on("style.load", read)
     return () => {
