@@ -66,8 +66,8 @@ const toSelected = (feat: LocationFeature): SelectedLocation => {
 const searchLabel = (params: MapSearchParams): string =>
   params.near === "me" ? "Your location" : params.q ? params.q : params.state && Object.hasOwn(STATES, params.state) ? STATES[params.state].name : ""
 
-const insideBounds = ([[w, south], [e, north]]: readonly [readonly [number, number], readonly [number, number]], lng: number, lat: number) =>
-  lng >= w && lng <= e && lat >= south && lat <= north
+type Box = readonly [readonly [number, number], readonly [number, number]]
+const overlaps = ([[w1, s1], [e1, n1]]: Box, [[w2, s2], [e2, n2]]: Box) => w1 <= e2 && w2 <= e1 && s1 <= n2 && s2 <= n1
 
 /** How long the map must be still before its camera goes into the URL. */
 const CAMERA_URL_DEBOUNCE_MS = 500
@@ -83,7 +83,8 @@ export interface MapInstanceProps {
 const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const mapRef = useRef<MapRef>(null)
   /** Camera padding that keeps fitted views clear of the panel. */
-  const pad = () => cameraPadding(mapRef.current?.getContainer())
+  /** `sheet`: the fit opens a list in the panel (a place's results, a location's details). */
+  const pad = (sheet = false) => cameraPadding(mapRef.current?.getContainer(), { sheet })
   const [params, setParams] = useQueryStates(mapSearchParams)
   // The selected location (ring), its popup, and whose details panel is open (see selectionReducer).
   // A shared location= link opens with its details.
@@ -222,13 +223,15 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
       // near=me carries no coordinates; go back to the radius around the viewer we already found.
       const found = meRef.current
       if (next.near === "me" && found) {
-        map.fitBounds(boundsOfRadius(found.lng, found.lat, next.r ?? DEFAULT_RADIUS), { padding: pad(), maxZoom: 13, duration: 1000 })
+        map.fitBounds(boundsOfRadius(found.lng, found.lat, next.r ?? DEFAULT_RADIUS), { padding: pad(true), maxZoom: 13, duration: 1000 })
         return
       }
       const { camera } = initialMapView(next)
       if ("bounds" in camera) {
         // An explicit `maxZoom: undefined` breaks the fit (NaN center); leave it out instead.
-        map.fitBounds(camera.bounds, camera.maxZoom === undefined ? { padding: pad(), duration: 1000 } : { padding: pad(), maxZoom: camera.maxZoom, duration: 1000 })
+        // A place or a state opens its list in the panel.
+        const padding = pad((next.lat != null && next.lng != null) || !!next.state)
+        map.fitBounds(camera.bounds, camera.maxZoom === undefined ? { padding, duration: 1000 } : { padding, maxZoom: camera.maxZoom, duration: 1000 })
       }
       else map.flyTo({ center: [camera.longitude, camera.latitude], zoom: camera.zoom, duration: 1000 })
     }
@@ -244,7 +247,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     (position: { lng: number; lat: number }) => {
       setMe(position)
       const r = params.r ?? DEFAULT_RADIUS
-      mapRef.current?.fitBounds(boundsOfRadius(position.lng, position.lat, r), { padding: pad(), maxZoom: 13, duration: 1400 })
+      mapRef.current?.fitBounds(boundsOfRadius(position.lng, position.lat, r), { padding: pad(true), maxZoom: 13, duration: 1400 })
       if (params.near !== "me") writeView(nearMeParams(r), { history: "push" })
     },
     [params.r, params.near, writeView],
@@ -290,11 +293,18 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const showLocation = (feat: LocationFeature) => {
     const map = mapRef.current
     const [lng, lat] = feat.geometry.coordinates
-    if (map && !map.getBounds().contains([lng, lat])) {
-      // `offset`, not `padding`: flyTo keeps padding on the map, and every
-      // later fitBounds would add it to its own.
-      const p = pad()
-      map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14), offset: [(p.left - p.right) / 2, (p.top - p.bottom) / 2], duration: 1200 })
+    if (map) {
+      // Into view beside the panel, with its dot showing: zoomed out past
+      // the dots (a pick from the US view) or hidden behind the panel, it flies.
+      const p = pad(true)
+      const { x, y } = map.project([lng, lat])
+      const { clientWidth: w, clientHeight: h } = map.getContainer()
+      const visible = x >= p.left && x <= w - p.right && y >= p.top && y <= h - p.bottom
+      if (!visible || map.getZoom() < POINT_ZOOM) {
+        // `offset`, not `padding`: flyTo keeps padding on the map, and every
+        // later fitBounds would add it to its own.
+        map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14), offset: [(p.left - p.right) / 2, (p.top - p.bottom) / 2], duration: 1200 })
+      }
     }
     dispatch({ type: "showDetails", location: toSelected(feat) })
     void setParams({ location: feat.properties.id }, { history: "push" }).then((search) => {
@@ -306,7 +316,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const handleRadiusChange = (r: (typeof RADII)[number]) => {
     if (!place) return
     writeView({ r }, { history: "replace" })
-    mapRef.current?.fitBounds(boundsOfRadius(place.lng, place.lat, r), { padding: pad(), maxZoom: 13, duration: 1000 })
+    mapRef.current?.fitBounds(boundsOfRadius(place.lng, place.lat, r), { padding: pad(true), maxZoom: 13, duration: 1000 })
   }
 
   /** The type chips: which kinds the map and lists show, all of them when every chip is on. */
@@ -328,7 +338,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     const { area } = pick
     if (area.kind === "state" && area.state && Object.hasOwn(STATES, area.state)) {
       handleStateSelect(area.state)
-      map?.fitBounds(STATES[area.state].bounds, { padding: pad(), maxZoom: 7.5, duration: 1400 })
+      map?.fitBounds(STATES[area.state].bounds, { padding: pad(true), maxZoom: 7.5, duration: 1400 })
       return
     }
     dispatch({ type: "closeDetails" })
@@ -337,7 +347,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
       { q: area.label, lng: roundPlace(area.lng), lat: roundPlace(area.lat), r, state: null, z: null, near: null, location: null },
       { history: "push" },
     )
-    map?.fitBounds(boundsOfRadius(area.lng, area.lat, r), { padding: pad(), maxZoom: 13, duration: 1400 })
+    map?.fitBounds(boundsOfRadius(area.lng, area.lat, r), { padding: pad(true), maxZoom: 13, duration: 1400 })
   }
 
   /** A hotspot or event (marker or list row): open its city, as the prototype does. */
@@ -400,9 +410,18 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     userMoving.current = false
     // A place's radius (or near=me) still frames the results, so they stay.
     if (place || params.near) return
-    // A state stays while the viewer looks around inside it; once the
-    // middle of the map leaves it, the camera is the view instead.
-    if (stateFocus && Object.hasOwn(STATES, stateFocus) && insideBounds(STATES[stateFocus].bounds, lng, lat)) return
+    // A state stays while the viewer looks around in it: while the part of
+    // the map beside the panel still overlaps it. (Right after a padded fit
+    // the map's own center can be outside a small state.)
+    if (stateFocus && Object.hasOwn(STATES, stateFocus)) {
+      const map = e.target
+      const p = pad(true)
+      const { clientWidth: w, clientHeight: h } = map.getContainer()
+      const nw = map.unproject([p.left, p.top])
+      const se = map.unproject([w - p.right, h - p.bottom])
+      const seen: Box = [[nw.lng, se.lat], [se.lng, nw.lat]]
+      if (overlaps(seen, STATES[stateFocus].bounds)) return
+    }
     // Otherwise the camera is the view, so a copied link opens where the viewer is looking.
     writeView(
       { ...(stateFocus ? { state: null } : {}), lat: roundCamera(lat), lng: roundCamera(lng), z: roundZoom(z) },
@@ -416,7 +435,10 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
       ? {
           bounds: camera.bounds,
           // An explicit `maxZoom: undefined` overrides MapLibre's default and breaks the fit.
-          fitBoundsOptions: camera.maxZoom === undefined ? { padding: cameraPadding() } : { padding: cameraPadding(), maxZoom: camera.maxZoom },
+          fitBoundsOptions:
+            camera.maxZoom === undefined
+              ? { padding: cameraPadding(undefined, { sheet: !!place || !!stateFocus }) }
+              : { padding: cameraPadding(undefined, { sheet: !!place || !!stateFocus }), maxZoom: camera.maxZoom },
         }
       : camera
 
