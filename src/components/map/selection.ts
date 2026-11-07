@@ -19,6 +19,8 @@ export type SelectionAction<T> =
   | { type: "closePopup" }
   | { type: "openDetails" }
   | { type: "closeDetails" }
+  /** The URL names a location's details (a shared link, or Back/Forward). */
+  | { type: "showDetails"; location: T }
 
 export function selectionReducer<T extends { id: string }>(state: Selection<T>, action: SelectionAction<T>): Selection<T> {
   switch (action.type) {
@@ -36,6 +38,10 @@ export function selectionReducer<T extends { id: string }>(state: Selection<T>, 
       return state.selected ? { ...state, popup: false, details: state.selected } : state
     case "closeDetails":
       return { ...state, details: null }
+    case "showDetails":
+      return state.details?.id === action.location.id && state.selected?.id === action.location.id
+        ? state
+        : { selected: action.location, popup: false, details: action.location }
   }
 }
 

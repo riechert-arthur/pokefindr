@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { getDb } from "@/server/db/client"
 import { locations } from "@/server/db/schema"
-import { getActiveLocationsGeoJSON, getLocationsInBbox } from "@/server/services/locations"
+import { getActiveLocationsGeoJSON, getLocationFeature, getLocationsInBbox } from "@/server/services/locations"
 import type { Bbox } from "@/lib/locations/bbox"
 
 describe("getActiveLocationsGeoJSON", () => {
@@ -94,5 +94,22 @@ describe("getLocationsInBbox", () => {
     const exact = await getLocationsInBbox({ bbox: seattle, types: ["vending", "shop", "event"], limit: 3 })
     expect(exact.features).toHaveLength(3)
     expect(exact.truncated).toBe(false)
+  })
+})
+
+describe("getLocationFeature", () => {
+  it("returns one active location, and null otherwise", async () => {
+    const db = getDb()
+    const [on, off] = await db
+      .insert(locations)
+      .values([
+        { machineId: "ON", retailer: "QFC", geog: { lng: -122.3, lat: 47.6 } },
+        { machineId: "OFF", retailer: "Old", geog: { lng: -122.3, lat: 47.6 }, isActive: false },
+      ])
+      .returning()
+    expect((await getLocationFeature(on.id))?.properties).toMatchObject({ id: on.id, machineID: "ON", kind: "vending" })
+    expect(await getLocationFeature(off.id)).toBeNull()
+    expect(await getLocationFeature("00000000-0000-0000-0000-000000000000")).toBeNull()
+    expect(await getLocationFeature("not-a-uuid")).toBeNull()
   })
 })

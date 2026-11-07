@@ -3,7 +3,8 @@ import path from "node:path"
 import { describe, expect, it } from "vitest"
 import type { Polygon } from "geojson"
 import { placeDotsLayer, shadingBeforeId, statesFillLayer, POINT_ZOOM, type MapColors } from "@/components/map/layers"
-import { boundsOf, shadeStates, type StateCollection } from "@/components/map/useStateShading"
+import { shadeStates, type StateCollection } from "@/components/map/useStateShading"
+import { boundsOf } from "@/lib/map/geo"
 import { mixColors } from "@/lib/design/tokens"
 import type { RegionCount } from "@/lib/types/locations"
 
@@ -16,6 +17,7 @@ const colors: MapColors = {
   "map-land": "hsl(0, 0%, 100%)",
   "map-line": "hsl(220, 11%, 79%)",
   "map-choro-hi": "hsl(0, 0%, 0%)",
+  "map-radius": "hsl(221, 83%, 53%)",
 }
 
 /** The parts of a style layer these tests read (LayerProps also covers custom layers, which have none). */

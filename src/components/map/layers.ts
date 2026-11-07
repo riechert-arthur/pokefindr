@@ -14,12 +14,15 @@ import { LOCATION_KINDS } from "@/lib/types/locations"
 export const POINT_ZOOM = 6
 
 export const SOURCES = {
+  radius: "radius",
   places: "places",
   selected: "selected",
   states: "states",
 } as const
 
 export const LAYERS = {
+  radiusFill: "radius-fill",
+  radiusLine: "radius-line",
   placeDots: "place-dots",
   selectedRing: "selected-ring",
   statesFill: "states-fill",
@@ -29,7 +32,7 @@ export const LAYERS = {
 
 const TOKENS = [
   "kind-vending", "kind-shop", "kind-event", "map-dot-ring", "foreground",
-  "map-land", "map-line", "map-choro-hi",
+  "map-land", "map-line", "map-choro-hi", "map-radius",
 ] as const
 
 export type MapColors = Record<(typeof TOKENS)[number], string>
@@ -52,6 +55,27 @@ export function placeDotsLayer(c: MapColors): LayerProps {
       "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, ["case", ["==", ["get", "kind"], "vending"], 3.5, 5], 12, 7, 16, 10],
       "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 6, 1.5, 14, 2.5],
       "circle-stroke-color": c["map-dot-ring"],
+      // Locations outside the search radius fade back.
+      "circle-opacity": ["case", ["boolean", ["get", "dim"], false], 0.3, 1],
+      "circle-stroke-opacity": ["case", ["boolean", ["get", "dim"], false], 0.3, 1],
+    },
+  }
+}
+
+/** The search radius: a faint fill and a dashed edge. */
+export function radiusLayers(c: MapColors): { fill: LayerProps; line: LayerProps } {
+  return {
+    fill: {
+      id: LAYERS.radiusFill,
+      type: "fill",
+      source: SOURCES.radius,
+      paint: { "fill-color": c["map-radius"], "fill-opacity": 0.07 },
+    },
+    line: {
+      id: LAYERS.radiusLine,
+      type: "line",
+      source: SOURCES.radius,
+      paint: { "line-color": c["map-radius"], "line-width": 1.5, "line-dasharray": [3, 2] },
     },
   }
 }

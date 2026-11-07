@@ -41,3 +41,17 @@ describe("selectionReducer", () => {
     })
   })
 })
+
+describe("showDetails (from the URL)", () => {
+  it("selects the place and opens its details without a popup", () => {
+    expect(run({ type: "showDetails", location: a })).toEqual({ selected: a, popup: false, details: a })
+  })
+
+  it("switches the panel when Back lands on another place's details", () => {
+    expect(run({ type: "select", location: b }, { type: "openDetails" }, { type: "showDetails", location: a })).toEqual({
+      selected: a,
+      popup: false,
+      details: a,
+    })
+  })
+})
