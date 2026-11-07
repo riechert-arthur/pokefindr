@@ -1,12 +1,13 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import { OUTSIDE_LOWER_48 } from "@/lib/map/states"
 import type { FeatureCollection, MultiPolygon, Polygon, Position } from "geojson"
 import { readTokens } from "@/lib/design/tokens"
 import { useIsDark, useThemeKey } from "@/lib/design/useThemeKey"
 
 /** The lower 48 and DC: the background frames the conterminous US, as in the prototype. */
-const OUTSIDE = new Set(["AK", "HI", "PR", "GU", "VI", "AS", "MP"])
+const OUTSIDE = new Set<string>(OUTSIDE_LOWER_48)
 /** A new ping this often, each lasting PING_MS: about seven at a time. */
 const PING_EVERY_MS = 260
 const PING_MS = 1800
@@ -51,8 +52,9 @@ async function getJson<T>(url: string, signal: AbortSignal): Promise<T> {
  * The landing hero's background, as in the prototype: the lower 48's state
  * outlines and every vending machine as a dot, with soft pings at random
  * machines. Two canvases: the outlines and dots are drawn once (again on
- * resize or a theme change), and only the pings redraw each frame. Static
- * under prefers-reduced-motion; paused while off-screen or in a hidden tab.
+ * resize or a theme change, without fetching again), and only the pings
+ * redraw each frame. Static under prefers-reduced-motion, which it follows
+ * live; paused while off-screen or in a hidden tab.
  * Purely decorative and absolutely positioned, so it can't shift layout.
  */
 export function HeroMap() {
@@ -60,6 +62,9 @@ export function HeroMap() {
   const pingRef = useRef<HTMLCanvasElement>(null)
   const themeKey = useThemeKey()
   const dark = useIsDark()
+  // The mount effect owns the canvases and data; a theme change only repaints.
+  const darkRef = useRef(dark)
+  const repaintRef = useRef<() => void>(() => {})
 
   useEffect(() => {
     const base = baseRef.current
@@ -68,8 +73,9 @@ export function HeroMap() {
     const ctx = top?.getContext("2d")
     if (!base || !top || !baseCtx || !ctx) return
     const controller = new AbortController()
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    const { brand, "brand-2": brand2 } = readTokens(["brand", "brand-2"])
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)")
+    let reduce = motion.matches
+    let colors = readTokens(["brand", "brand-2"])
 
     let outlines: Outlines | null = null
     let points: [number, number][] = []
@@ -98,6 +104,8 @@ export function HeroMap() {
 
     const paintBase = () => {
       if (!project || !outlines) return
+      const { brand, "brand-2": brand2 } = colors
+      const dark = darkRef.current
       baseCtx.setTransform(dpr, 0, 0, dpr, 0, 0)
       baseCtx.clearRect(0, 0, width, height)
       baseCtx.lineWidth = 1
@@ -142,8 +150,8 @@ export function HeroMap() {
         pings.push({ x, y, t0: t })
       }
       pings = pings.filter((p) => t - p.t0 < PING_MS)
-      ctx.strokeStyle = brand
-      ctx.fillStyle = brand
+      ctx.strokeStyle = colors.brand
+      ctx.fillStyle = colors.brand
       ctx.lineWidth = 1.5
       for (const p of pings) {
         const k = (t - p.t0) / PING_MS
@@ -169,14 +177,31 @@ export function HeroMap() {
       raf = 0
     }
 
+    const clearPings = () => {
+      pings = []
+      ctx.clearRect(0, 0, top.width, top.height)
+    }
     const redraw = () => {
       if (!layout()) return
       paintBase()
       // The pings' positions are in the old size's pixels.
-      pings = []
-      ctx.clearRect(0, 0, top.width, top.height)
+      clearPings()
       schedule()
     }
+    repaintRef.current = () => {
+      colors = readTokens(["brand", "brand-2"])
+      paintBase()
+      clearPings()
+      schedule()
+    }
+    const onMotion = () => {
+      reduce = motion.matches
+      if (reduce) {
+        stop()
+        clearPings()
+      } else schedule()
+    }
+    motion.addEventListener("change", onMotion)
 
     Promise.all([
       getJson<Outlines>("/geo/us-states.json", controller.signal),
@@ -184,8 +209,7 @@ export function HeroMap() {
     ])
       .then(([o, p]) => {
         outlines = o
-        // Only the lower 48, as the projection frames them.
-        points = p.points.filter(([lng, lat]) => lng > -126 && lat > 24 && lat < 50)
+        points = p.points
         redraw()
       })
       .catch((err: unknown) => {
@@ -210,7 +234,16 @@ export function HeroMap() {
       resize.disconnect()
       onScreen.disconnect()
       document.removeEventListener("visibilitychange", onVisibility)
+      motion.removeEventListener("change", onMotion)
+      repaintRef.current = () => {}
     }
+  }, [])
+
+  // A theme change: new colors on the same data. (Declared after the mount
+  // effect, so it runs after it; before the data arrives it paints nothing.)
+  useEffect(() => {
+    darkRef.current = dark
+    repaintRef.current()
   }, [themeKey, dark])
 
   return (
