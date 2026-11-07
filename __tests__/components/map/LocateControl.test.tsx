@@ -44,7 +44,7 @@ vi.mock("@/components/map/engine", () => ({
   },
 }))
 
-import { AUTO_LOCATE_TRIES, LocateControl, LOCATION_DENIED, LOCATION_UNAVAILABLE } from "@/components/map/LocateControl"
+import { AUTO_LOCATE_TRIES, LOCATE_GIVE_UP_MS, LocateControl, LOCATION_DENIED, LOCATION_UNAVAILABLE } from "@/components/map/LocateControl"
 
 afterEach(() => {
   delete (globalThis as { __ctrl?: unknown }).__ctrl
@@ -92,6 +92,30 @@ describe("LocateControl", () => {
     expect(toast).toHaveBeenCalledWith(LOCATION_DENIED.title, { description: LOCATION_DENIED.description })
     expect(onError).toHaveBeenCalled()
     expect(gc._container.dataset.locating).toBeUndefined()
+  })
+
+  it("gives up when no answer ever comes (a dismissed prompt in Firefox)", async () => {
+    vi.useFakeTimers()
+    const onError = vi.fn()
+    render(<LocateControl onLocate={() => {}} onError={onError} />)
+    const gc = FakeGeolocate.last
+    gc._finishSetupUI()
+    gc.trigger()
+    await vi.advanceTimersByTimeAsync(LOCATE_GIVE_UP_MS)
+    expect(gc._container.dataset.locating).toBeUndefined()
+    expect(toast).toHaveBeenCalledWith(LOCATION_UNAVAILABLE.title, { description: LOCATION_UNAVAILABLE.description })
+    expect(onError).toHaveBeenCalled()
+  })
+
+  it("doesn't give up after a position arrived", async () => {
+    vi.useFakeTimers()
+    render(<LocateControl onLocate={() => {}} />)
+    const gc = FakeGeolocate.last
+    gc._finishSetupUI()
+    gc.trigger()
+    gc.fire("geolocate", { coords: { longitude: 0, latitude: 0 } })
+    await vi.advanceTimersByTimeAsync(LOCATE_GIVE_UP_MS)
+    expect(toast).not.toHaveBeenCalled()
   })
 
   it("reports a trigger that throws instead of failing silently", () => {
