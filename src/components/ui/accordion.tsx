@@ -48,9 +48,13 @@ const AccordionContent = React.forwardRef<
     ref={ref}
     forceMount={forceMount}
     className={cn(
-      "overflow-hidden text-sm data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down",
+      "overflow-hidden text-sm",
       // Mounted while closed (text in the HTML): hide it, since Radix doesn't.
-      forceMount && "data-[state=closed]:hidden"
+      // No height animation then: Radix can't measure content that's always
+      // mounted, so it would jump open after a blank pause.
+      forceMount
+        ? "data-[state=closed]:hidden"
+        : "data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
     )}
     {...props}
   >
