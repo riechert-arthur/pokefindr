@@ -24,6 +24,10 @@ describe("bboxQuerySchema", () => {
     ["5,0,1,1", "west east of east"],
     ["0,5,1,1", "south north of north"],
     ["-180,-80,180,80", "too big"],
+    [",0,1,1", "an empty coordinate"],
+    ["0x10,0,20,1", "hex"],
+    ["1e1,0,20,1", "an exponent"],
+    [" 1,0,2,1", "spaces"],
   ])("rejects %s (%s)", (bbox) => {
     expect(parse(bbox).success).toBe(false)
   })

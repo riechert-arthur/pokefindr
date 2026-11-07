@@ -1,7 +1,7 @@
 "use client"
 
 import type { FC } from "react"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react"
 import { Map, FullscreenControl, NavigationControl, MAP_STYLES, type MapRef, type ViewStateChangeEvent } from "./engine"
 import { useViewportLocations, type ViewportMap } from "./useViewportLocations"
 import { MapStatusPill } from "./MapStatusPill"
@@ -20,9 +20,11 @@ import { MapStatus } from "./MapStatus"
 import { MAP_FAILURE_MESSAGES } from "./MapErrorBoundary"
 import { LAYERS, POINT_ZOOM, readMapColors } from "./layers"
 import { LocationLayers } from "./LocationLayers"
+import { NO_SELECTION, selectionReducer, type Selection } from "./selection"
 import { StateLayers, StateLegend } from "./StateLayers"
 import { useStateShading } from "./useStateShading"
 import { cn } from "@/lib/utils"
+import { INITIAL_LOAD_STATE, nextLoadState, type MapLoadState } from "./mapLoadState"
 
 /** The lower 48, which the map opens on (from the redesign prototype). */
 const US_BOUNDS: [[number, number], [number, number]] = [[-125.5, 24.0], [-66.5, 49.6]]
@@ -42,9 +44,11 @@ const MapInstance: FC = () => {
   const userLocationContext = useUserLocationContext()
   const { userLocation, userLocationError } = userLocationContext
   const mapRef = useRef<MapRef>(null)
-  // The location with the popup and ring, and the one whose details panel is open.
-  const [selected, setSelected] = useState<SelectedLocation | null>(null)
-  const [details, setDetails] = useState<SelectedLocation | null>(null)
+  // The selected location (ring), its popup, and whose details panel is open (see selectionReducer).
+  const [{ selected, popup, details }, dispatch] = useReducer(
+    selectionReducer<SelectedLocation>,
+    NO_SELECTION as Selection<SelectedLocation>,
+  )
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const { session } = useSessionContext()
   // MapInstance is client-only (MapLoader uses ssr: false), so this is right on first render.
@@ -63,8 +67,8 @@ const MapInstance: FC = () => {
     [viewport.features],
   )
   const [zoomedOut, setZoomedOut] = useState(true)
-  // "loading" until the style and first tiles are in; "failed" if that never happens.
-  const [loadState, setLoadState] = useState<"loading" | "loaded" | "failed">("loading")
+  // Loading until MapLibre's load event; failed if the map can't start (see nextLoadState).
+  const [loadState, setLoadState] = useState<MapLoadState>(INITIAL_LOAD_STATE)
 
   useEffect(() => {
     if (userLocation && !userLocationError && mapRef.current) {
@@ -77,14 +81,14 @@ const MapInstance: FC = () => {
   }, [userLocation, userLocationError])
 
   /** A dot was clicked: popup and ring, without moving the map. */
-  const handleDotSelect = useCallback((feat: LocationFeature) => setSelected(toSelected(feat)), [])
+  const handleDotSelect = useCallback((feat: LocationFeature) => dispatch({ type: "select", location: toSelected(feat) }), [])
 
   /** A search result was picked: fly to it, then popup and ring. */
   const handleSearchSelect = (feat: LocationFeature) => {
     const [lng, lat] = feat.geometry.coordinates
     const map = mapRef.current
     map?.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14), duration: 1200 })
-    setSelected(toSelected(feat))
+    dispatch({ type: "select", location: toSelected(feat) })
   }
 
   return (
@@ -103,22 +107,21 @@ const MapInstance: FC = () => {
         }}
         mapStyle={isDark ? MAP_STYLES.dark : MAP_STYLES.light}
         onLoad={(e) => {
-          setLoadState("loaded")
+          setLoadState((state) => nextLoadState(state, { type: "load" }))
           setMap(e.target)
           setZoomedOut(e.target.getZoom() < POINT_ZOOM)
         }}
         onZoom={(e: ViewStateChangeEvent) => setZoomedOut(e.viewState.zoom < POINT_ZOOM)}
         onError={(e) => {
           console.error("[map]", e.error)
-          // Errors after load (a missing tile, say) don't stop the map; one before
-          // load means the style or its sources didn't arrive.
-          setLoadState((current) => (current === "loading" ? "failed" : current))
+          const { sourceId, tile } = e as { sourceId?: string; tile?: unknown }
+          setLoadState((state) => nextLoadState(state, { type: "error", error: e.error, sourceId, tile }))
         }}
         onClick={(e) => {
           if (isSidebarOpen) toggleSidebar()
           // A click off the dots closes the popup, as MapLibre popups do by default.
           const hit = e.target.getLayer(LAYERS.placeDots) && e.target.queryRenderedFeatures(e.point, { layers: [LAYERS.placeDots] }).length
-          if (!hit) setSelected(null)
+          if (!hit) dispatch({ type: "closePopup" })
         }}
       >
         {states && <StateLayers states={states} max={max} bounds={bounds} colors={colors} />}
@@ -127,14 +130,14 @@ const MapInstance: FC = () => {
         <NavigationControl position="bottom-right" showCompass={false} />
         <UserLocationPin />
         <MapSearchBar selectedLocation={selected} collection={collection} onSelect={handleSearchSelect} />
-        {selected && (
+        {selected && popup && (
           <LocationPopup
             {...selected}
-            onClose={() => setSelected(null)}
-            onDetails={() => setDetails(selected)}
+            onClose={() => dispatch({ type: "closePopup" })}
+            onDetails={() => dispatch({ type: "openDetails" })}
           />
         )}
-        <LocationInfoPanel info={details} onClose={() => setDetails(null)} />
+        <LocationInfoPanel info={details} onClose={() => dispatch({ type: "closeDetails" })} />
         {states && zoomedOut && (
           <StateLegend
             max={max}
@@ -155,9 +158,9 @@ const MapInstance: FC = () => {
           </div>
         )}
       </Map>
-      {loadState !== "loaded" && (
-        <MapStatus kind={loadState === "failed" ? "error" : "loading"} className="absolute inset-0 z-10">
-          {loadState === "failed" ? MAP_FAILURE_MESSAGES.library : "Loading the map…"}
+      {loadState.status !== "loaded" && (
+        <MapStatus kind={loadState.status === "failed" ? "error" : "loading"} className="absolute inset-0 z-10">
+          {loadState.status === "failed" ? MAP_FAILURE_MESSAGES[loadState.failure] : "Loading the map…"}
         </MapStatus>
       )}
     </>

@@ -125,6 +125,8 @@ export const locations = pgTable(
   (t) => [
     uniqueIndex("locations_machine_id_key").on(t.machineId),
     index("locations_geog_gist").using("gist", t.geog),
+    // The viewport query (getLocationsInBbox) filters on planar boxes (migration 0002).
+    index("locations_geog_geometry_gist").using("gist", sql`(${t.geog}::geometry)`),
     ...locationChecks("locations", t),
   ],
 )
