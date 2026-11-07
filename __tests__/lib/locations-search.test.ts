@@ -10,8 +10,10 @@ describe("countsQuerySchema", () => {
       ],
       r: 10,
       types: ["vending"],
+      retailer: [],
     })
     expect(countsQuerySchema.parse({ points: "0,0", r: "50" }).types).toEqual(["vending", "shop", "event"])
+    expect(countsQuerySchema.parse({ points: "0,0", r: "10", retailer: "QFC, Safeway" }).retailer).toEqual(["QFC", "Safeway"])
   })
 
   it.each([
