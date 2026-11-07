@@ -16,6 +16,9 @@ const colors: MapColors = {
   "map-choro-hi": "hsl(0, 0%, 0%)",
 }
 
+/** The parts of a style layer these tests read (LayerProps also covers custom layers, which have none). */
+type StyleLayer = { minzoom?: number; maxzoom?: number; paint: Record<string, unknown> }
+
 const square = (w: number, s: number, e: number, n: number): Polygon => ({
   type: "Polygon",
   coordinates: [[[w, s], [e, s], [e, n], [w, n], [w, s]]],
@@ -23,10 +26,9 @@ const square = (w: number, s: number, e: number, n: number): Polygon => ({
 
 describe("map layers", () => {
   it("color each kind with its token and start at POINT_ZOOM", () => {
-    const layer = placeDotsLayer(colors)
+    const layer = placeDotsLayer(colors) as StyleLayer
     expect(layer.minzoom).toBe(POINT_ZOOM)
-    const paint = layer.paint as Record<string, unknown>
-    expect(paint["circle-color"]).toEqual([
+    expect(layer.paint["circle-color"]).toEqual([
       "match", ["get", "kind"],
       "vending", colors["kind-vending"], "shop", colors["kind-shop"], "event", colors["kind-event"],
       colors["kind-vending"],
@@ -34,9 +36,9 @@ describe("map layers", () => {
   })
 
   it("shade states only while zoomed out, scaled to the busiest state", () => {
-    const layer = statesFillLayer(colors, 100)
+    const layer = statesFillLayer(colors, 100) as StyleLayer
     expect(layer.maxzoom).toBe(POINT_ZOOM)
-    const [, , none, scale] = (layer.paint as { "fill-color": unknown[] })["fill-color"] as [string, unknown, string, unknown[]]
+    const [, , none, scale] = layer.paint["fill-color"] as [string, unknown, string, unknown[]]
     expect(none).toBe(colors["map-land"])
     expect(scale.slice(-2)).toEqual([10, colors["map-choro-hi"]])
   })
