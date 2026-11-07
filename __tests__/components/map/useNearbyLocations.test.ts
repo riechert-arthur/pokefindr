@@ -45,6 +45,7 @@ describe("useNearbyLocations", () => {
     rerender({ lng: -122.33, r: 25 })
     expect(result.current.status).toBe("loading")
     expect(result.current.results?.total).toBe(41)
+    expect(result.current.stale).toBe(true)
     // Another place: nothing of Seattle's under Portland's name.
     rerender({ lng: -122.68, r: 25 })
     expect(result.current.results).toBeNull()
