@@ -172,9 +172,11 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const leftStateByPan = useRef(false)
   useEffect(() => {
     const keepTyped = leftStateByPan.current
+    // Read now: the updater runs later, after the ref has moved on.
+    const previous = shownLabel.current
     leftStateByPan.current = false
-    setQuery((q) => (keepTyped && q !== shownLabel.current ? q : viewLabel))
     shownLabel.current = viewLabel
+    setQuery((q) => (keepTyped && q !== previous ? q : viewLabel))
   }, [viewLabel])
 
   // Back and Forward: when the URL's view (place, state, camera) changes, move
