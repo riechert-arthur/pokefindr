@@ -5,7 +5,7 @@ import { highlights, locations } from "@/server/db/schema"
 import { milesBetween } from "@/lib/map/geo"
 import type { Highlights, Hotspot, UpcomingEvent } from "@/lib/types/highlights"
 import { HOTSPOT_RADIUS_MILES } from "@/lib/highlights/constants"
-import { METERS_PER_MILE } from "./locations"
+import { METERS_PER_MILE, cityName, preferredSpelling } from "./locations"
 
 /** A hotspot counts the vending machines this many miles around a city. */
 export const HOTSPOT_RADIUS = HOTSPOT_RADIUS_MILES
@@ -26,15 +26,17 @@ export const EVENT_LIMIT = 3
  * next to Seattle's) don't fill the list.
  */
 export async function getHotspots(db: Database = getDb(), limit = HOTSPOT_LIMIT): Promise<Hotspot[]> {
+  // Named and grouped as the state sheet's cities are (getTopCities).
+  const name = cityName(sql`l.city`)
   const rows = await db.execute<Hotspot>(sql`
     with cities as (
       select l.state,
-        (array_agg(trim(l.city) order by trim(l.city) = lower(trim(l.city)), trim(l.city)))[1] as city,
+        ${preferredSpelling(name)} as city,
         avg(ST_X(l.geog::geometry)) as lng, avg(ST_Y(l.geog::geometry)) as lat
       from ${locations} l
       where l.is_active and l.geog is not null and l.kind = 'vending' and l.country_code = 'US'
-        and coalesce(trim(l.city), '') <> '' and coalesce(l.state, '') <> ''
-      group by l.state, lower(trim(l.city))
+        and ${name} <> '' and coalesce(l.state, '') <> ''
+      group by l.state, lower(${name})
       having count(*) >= ${HOTSPOT_MIN_OWN}
     )
     select c.city, c.state, round(c.lng::numeric, 4)::float8 as lng, round(c.lat::numeric, 4)::float8 as lat,
