@@ -292,15 +292,21 @@ describe("getTopCities", () => {
         { machineId: "A2", retailer: "QFC", city: "Seattle", state: "WA", geog: { lng: -122.3, lat: 47.6 } },
         { machineId: "A3", retailer: "Safeway", city: "Port  Angeles", state: "WA", geog: { lng: -123.4, lat: 48.1 } },
         { machineId: "A4", retailer: "Safeway", city: "Port\tAngeles", state: "WA", geog: { lng: -123.4, lat: 48.1 } },
+        { machineId: "A5", retailer: "Safeway", city: "Seattle\t", state: "WA", geog: { lng: -122.3, lat: 47.6 } },
+        { machineId: "A6", retailer: "Safeway", city: "\u00a0\t", state: "WA", geog: { lng: -122.3, lat: 47.6 } },
+        { machineId: "K1", retailer: "Safeway", city: "KING OF PRUSSIA", state: "WA", geog: { lng: -122.3, lat: 47.6 } },
+        { machineId: "K2", retailer: "Safeway", city: "King\u00a0of Prussia", state: "WA", geog: { lng: -122.3, lat: 47.6 } },
         // Western Australia shares the code.
         { machineId: "AU", retailer: "Coles", city: "Perth", state: "WA", countryCode: "AU", geog: { lng: 115.86, lat: -31.95 } },
       ])
     const all = await getTopCities("WA", ["vending"])
     expect(all.cities.map((c) => [c.city, c.count])).toEqual([
+      ["Seattle", 3],
+      ["King of Prussia", 2],
       ["Port Angeles", 2],
-      ["Seattle", 2],
     ])
-    expect(all.total).toBe(4)
+    // The whitespace-only city counts toward the state, not a city.
+    expect(all.total).toBe(8)
     const qfc = await getTopCities("WA", ["vending"], undefined, undefined, ["QFC"])
     expect(qfc.cities.map((c) => [c.city, c.count])).toEqual([["Seattle", 2]])
     expect(qfc.total).toBe(2)
