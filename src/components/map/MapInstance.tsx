@@ -15,6 +15,9 @@ import { LocationInfoPanel } from "./LocationInfoPanel"
 import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { useSessionContext } from "../providers/SessionProvider"
 import { useIsDark } from "@/lib/design/useThemeKey"
+import { MapStatus } from "./MapStatus"
+import { MAP_FAILURE_MESSAGES } from "./MapErrorBoundary"
+import { INITIAL_LOAD_STATE, nextLoadState, type MapLoadState } from "./mapLoadState"
 
 interface ViewState {
   longitude: number
@@ -41,6 +44,8 @@ const MapInstance: FC = () => {
   // MapInstance is client-only (MapLoader uses ssr: false), so this is right on first render.
   const isDark = useIsDark()
   const collection = useLocations()
+  // Loading until MapLibre's load event; failed if the map can't start (see nextLoadState).
+  const [loadState, setLoadState] = useState<MapLoadState>(INITIAL_LOAD_STATE)
 
   useEffect(() => {
     if (userLocation && !userLocationError && mapRef.current) {
@@ -68,38 +73,58 @@ const MapInstance: FC = () => {
   }
 
   return (
-    <Map
-      ref={mapRef}
-      initialViewState={initialViewState}
-      style={{
-        width: "100%",
-        height: "100%",
-        zIndex: 1,
-        position: "relative",
-      }}
-      mapStyle={isDark ? MAP_STYLES.dark : MAP_STYLES.light}
-      onClick={() => {
-        if(isSidebarOpen) {
-          toggleSidebar()
-        }
-      }}
-    >
-      <PokemonCenterLocationPins 
-        collection={collection}
-        clickedInfo={clickedInfo}
-        setClickedInfo={setClickedInfo}
-      />
-      <FullscreenControl position="bottom-right" />
-      <NavigationControl position="bottom-right" />
-      <UserLocationPin />
-      <MapSearchBar selectedLocation={clickedInfo} collection={collection} onSelect={handleSelect} />
-      <LocationInfoPanel info={clickedInfo} onClose={() => setClickedInfo(null)} />
-      {session && (
-        <div className="absolute top-4 right-5 z-50">
-          <UserMenu size={45} userName={session.username} />
-        </div>
+    <>
+      <Map
+        ref={mapRef}
+        initialViewState={initialViewState}
+        style={{
+          width: "100%",
+          height: "100%",
+          zIndex: 1,
+          position: "relative",
+        }}
+        mapStyle={isDark ? MAP_STYLES.dark : MAP_STYLES.light}
+        onLoad={() => setLoadState((state) => nextLoadState(state, { type: "load" }))}
+        onError={(e) => {
+          console.error("[map]", e.error)
+          const { sourceId, tile } = e as { sourceId?: string; tile?: unknown }
+          // react-maplibre's own startup failures come with no map (target null).
+          let styleLoaded = false
+          try {
+            styleLoaded = Boolean(e.target?.getStyle())
+          } catch {
+            // No style yet.
+          }
+          setLoadState((state) => nextLoadState(state, { type: "error", error: e.error, sourceId, tile, styleLoaded }))
+        }}
+        onClick={() => {
+          if(isSidebarOpen) {
+            toggleSidebar()
+          }
+        }}
+      >
+        <PokemonCenterLocationPins 
+          collection={collection}
+          clickedInfo={clickedInfo}
+          setClickedInfo={setClickedInfo}
+        />
+        <FullscreenControl position="bottom-right" />
+        <NavigationControl position="bottom-right" />
+        <UserLocationPin />
+        <MapSearchBar selectedLocation={clickedInfo} collection={collection} onSelect={handleSelect} />
+        <LocationInfoPanel info={clickedInfo} onClose={() => setClickedInfo(null)} />
+        {session && (
+          <div className="absolute top-4 right-5 z-50">
+            <UserMenu size={45} userName={session.username} />
+          </div>
+        )}
+      </Map>
+      {loadState.status !== "loaded" && (
+        <MapStatus kind={loadState.status === "failed" ? "error" : "loading"} className="absolute inset-0 z-10">
+          {loadState.status === "failed" ? MAP_FAILURE_MESSAGES[loadState.failure] : "Loading the map…"}
+        </MapStatus>
       )}
-    </Map>
+    </>
   )
 }
 
