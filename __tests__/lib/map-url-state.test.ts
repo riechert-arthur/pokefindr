@@ -29,7 +29,7 @@ describe("map URL parameters", () => {
 
 describe("initialMapView", () => {
   it("opens on the US without parameters", () => {
-    expect(initialMapView(load(""))).toEqual({ camera: { bounds: US_BOUNDS }, place: null, state: null })
+    expect(initialMapView(load(""))).toEqual({ camera: { bounds: US_BOUNDS }, place: null, state: null, nearMe: false })
   })
 
   it("fits a place's radius", () => {
@@ -57,7 +57,7 @@ describe("initialMapView", () => {
   })
 
   it("never reads coordinates for near=me", () => {
-    expect(initialMapView(load("near=me&r=10&q=x&lat=47&lng=-122&z=9"))).toEqual({ camera: { bounds: US_BOUNDS }, place: null, state: null })
+    expect(initialMapView(load("near=me&r=10&q=x&lat=47&lng=-122&z=9"))).toEqual({ camera: { bounds: US_BOUNDS }, place: null, state: null, nearMe: true })
   })
 
   it("ignores coordinates out of range", () => {

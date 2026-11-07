@@ -26,6 +26,8 @@ export interface InitialMapView {
   place: MapPlace | null
   /** Two-letter code of the state the map opened on. */
   state: string | null
+  /** near=me: ask for the viewer's location as soon as the map is ready. */
+  nearMe: boolean
 }
 
 const valid = (lng: number | null, lat: number | null): [number, number] | null =>
@@ -55,5 +57,5 @@ export function initialMapView(params: MapSearchParams, location: InitialLocatio
     camera = { longitude: point[0], latitude: point[1], zoom: Math.min(Math.max(params.z, 1.2), 20) }
   else camera = { bounds: US_BOUNDS }
 
-  return { camera, place, state }
+  return { camera, place, state, nearMe: params.near === "me" }
 }

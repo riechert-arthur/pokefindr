@@ -16,8 +16,7 @@ import {
 } from "./engine"
 import { useViewportLocations, type ViewportMap } from "./useViewportLocations"
 import { MapStatusPill } from "./MapStatusPill"
-import { UserLocationPin } from "./UserLocationPin"
-import { useUserLocationContext } from "@/components/providers/UserLocationContextProvider"
+import { LocateControl } from "./LocateControl"
 import { MapSearchBar } from "./MapSearchBar"
 import { LOCATION_KINDS, type LocationFeature, type LocationFeatureProperties, type LocationKind } from "@/lib/types/locations"
 import { useLocations } from "./useLocations"
@@ -34,7 +33,7 @@ import { LocationLayers } from "./LocationLayers"
 import { StateLayers, StateLegend } from "./StateLayers"
 import { useStateShading } from "./useStateShading"
 import { cn } from "@/lib/utils"
-import { milesBetween, radiusCircle } from "@/lib/map/geo"
+import { boundsOfRadius, milesBetween, radiusCircle } from "@/lib/map/geo"
 import { DEFAULT_RADIUS, mapSearchParams, roundCamera, roundZoom } from "@/lib/map/url-state"
 import type { InitialMapView } from "@/lib/map/initial-view"
 
@@ -58,8 +57,6 @@ export interface MapInstanceProps {
 }
 
 const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
-  const userLocationContext = useUserLocationContext()
-  const { userLocation, userLocationError } = userLocationContext
   const mapRef = useRef<MapRef>(null)
   const [params, setParams] = useQueryStates(mapSearchParams)
   // The location with the popup and ring, and the one whose details panel is open.
@@ -84,9 +81,13 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const kindSet = useMemo(() => new Set(kinds), [kinds])
   const retailers = params.retailer
 
-  // A searched place and its radius, from the URL.
-  const placeLng = params.q && params.near === null ? params.lng : null
-  const placeLat = params.q && params.near === null ? params.lat : null
+  // The viewer's position, once they share it. It never goes into the URL.
+  const [me, setMe] = useState<{ lng: number; lat: number } | null>(null)
+
+  // The search center and radius: the viewer (near=me) or a searched place from the URL.
+  const nearMe = params.near === "me"
+  const placeLng = nearMe ? (me?.lng ?? null) : params.q ? params.lng : null
+  const placeLat = nearMe ? (me?.lat ?? null) : params.q ? params.lat : null
   const placeRadius = params.r ?? DEFAULT_RADIUS
   const place = useMemo(
     () => (placeLng !== null && placeLat !== null ? { lng: placeLng, lat: placeLat, radius: placeRadius } : null),
@@ -120,16 +121,6 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   // Set when the viewer starts moving the map (not when the app flies it).
   const userMoving = useRef(false)
 
-  useEffect(() => {
-    if (userLocation && !userLocationError && mapRef.current) {
-      mapRef.current.flyTo({
-        center: [userLocation.longitude, userLocation.latitude],
-        zoom: 10,
-        essential: true,
-      })
-    }
-  }, [userLocation, userLocationError])
-
   // Back and forward: the details panel follows `location=`.
   useEffect(() => {
     if (!params.location) setDetails(null)
@@ -137,6 +128,25 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     // Only when the URL changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.location])
+
+  /**
+   * The viewer shared their position: show the radius around them and put
+   * near=me (never coordinates) in the URL.
+   */
+  const handleLocate = useCallback(
+    (position: { lng: number; lat: number }) => {
+      setMe(position)
+      const r = params.r ?? DEFAULT_RADIUS
+      mapRef.current?.fitBounds(boundsOfRadius(position.lng, position.lat, r), { padding: 40, maxZoom: 13, duration: 1400 })
+      if (params.near !== "me") {
+        void setParams(
+          { near: "me", r, q: null, lat: null, lng: null, z: null, state: null },
+          { history: "push" },
+        )
+      }
+    },
+    [params.r, params.near, setParams],
+  )
 
   /** A dot was clicked: popup and ring, without moving the map. */
   const handleDotSelect = useCallback((feat: LocationFeature) => setSelected(toSelected(feat)), [])
@@ -244,8 +254,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         </Source>
         <LocationLayers collection={inView} selected={selected} colors={colors} onSelect={handleDotSelect} />
         <FullscreenControl position="bottom-right" />
+        <LocateControl onLocate={handleLocate} autoLocate={view.nearMe} />
         <NavigationControl position="bottom-right" showCompass={false} />
-        <UserLocationPin />
         <MapSearchBar selectedLocation={selected} collection={collection} onSelect={handleSearchSelect} />
         {selected && (
           <LocationPopup
