@@ -146,6 +146,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   useEffect(() => {
     if (!params.location) {
       dispatch({ type: "closeDetails" })
+      pushedDetails.current = null
       return
     }
     const feature = knownLocations.get(params.location)
@@ -184,36 +185,56 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     return () => window.removeEventListener("popstate", onPopState)
   }, [])
 
+  // The open details, readable from callbacks without re-creating them.
+  const detailsRef = useRef(details)
+  detailsRef.current = details
+
+  /**
+   * The URL entry View details pushed, as its query string: closing steps
+   * back only while the URL is still exactly that entry. After a pan (the
+   * camera is written into it) or any other change, closing just drops
+   * `location`, so it never undoes what the viewer did meanwhile.
+   */
+  const pushedDetails = useRef<string | null>(null)
+
+  /** Selecting another place closes the open details; the URL drops them too. */
+  const select = useCallback(
+    (feat: LocationFeature) => {
+      const open = detailsRef.current
+      dispatch({ type: "select", location: toSelected(feat) })
+      if (open && open.id !== feat.properties.id) void setParams({ location: null })
+    },
+    [setParams],
+  )
+
   /** A dot was clicked: popup and ring, without moving the map. */
-  const handleDotSelect = useCallback((feat: LocationFeature) => dispatch({ type: "select", location: toSelected(feat) }), [])
+  const handleDotSelect = select
 
   /** A search result was picked: fly to it, then popup and ring. */
   const handleSearchSelect = (feat: LocationFeature) => {
     const [lng, lat] = feat.geometry.coordinates
     const map = mapRef.current
     map?.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14), duration: 1200 })
-    dispatch({ type: "select", location: toSelected(feat) })
+    select(feat)
   }
 
-  /**
-   * Details are a new view: a new history entry, so Back closes them.
-   * Closing details opened here steps back to that entry instead of adding
-   * another one; closing a shared link's details just drops `location`.
-   */
-  const pushedDetails = useRef(false)
+  /** Details are a new view: a new history entry, so Back closes them. */
   const openDetails = () => {
     if (!selected) return
     dispatch({ type: "openDetails" })
-    pushedDetails.current = true
-    void setParams({ location: selected.id }, { history: "push" })
+    void setParams({ location: selected.id }, { history: "push" }).then((search) => {
+      pushedDetails.current = search.toString()
+    })
   }
 
   const closeDetails = () => {
     dispatch({ type: "closeDetails" })
-    if (pushedDetails.current) {
-      pushedDetails.current = false
+    const current = new URLSearchParams(window.location.search).toString()
+    if (pushedDetails.current !== null && pushedDetails.current === current) {
+      pushedDetails.current = null
       window.history.back()
     } else {
+      pushedDetails.current = null
       void setParams({ location: null })
     }
   }
@@ -221,7 +242,9 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   /** A state was clicked (StateLayers zooms to it): a new view, so a new history entry. */
   const handleStateSelect = useCallback(
     (code: string) => {
-      writeView({ state: code, q: null, lat: null, lng: null, r: null, z: null, near: null }, { history: "push" })
+      // A new view: the details close with it.
+      dispatch({ type: "closeDetails" })
+      writeView({ state: code, q: null, lat: null, lng: null, r: null, z: null, near: null, location: null }, { history: "push" })
     },
     [writeView],
   )
