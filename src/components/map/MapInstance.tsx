@@ -62,6 +62,9 @@ const toSelected = (feat: LocationFeature): SelectedLocation => {
 const searchLabel = (params: MapSearchParams): string =>
   params.near === "me" ? "Your location" : params.q ? params.q : params.state && Object.hasOwn(STATES, params.state) ? STATES[params.state].name : ""
 
+const insideBounds = ([[w, south], [e, north]]: readonly [readonly [number, number], readonly [number, number]], lng: number, lat: number) =>
+  lng >= w && lng <= e && lat >= south && lat <= north
+
 /** How long the map must be still before its camera goes into the URL. */
 const CAMERA_URL_DEBOUNCE_MS = 500
 
@@ -134,7 +137,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const nearby = useNearbyLocations(place, kinds, retailers)
   // A state's busiest cities, while the view is a state.
   const stateFocus = !place && !nearMe ? urlView.state : null
-  const stateCities = useStateCities(stateFocus, kinds)
+  const stateCities = useStateCities(stateFocus, kinds, retailers)
   const [map, setMap] = useState<ViewportMap>()
   const viewport = useViewportLocations(map, { types: kinds })
   const inView = useMemo<FeatureCollection<Point, LocationFeatureProperties & { dim?: boolean }>>(() => {
@@ -373,13 +376,14 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     setSearchNear((prev) => (prev?.[0] === near?.[0] && prev?.[1] === near?.[1] ? prev : near))
     if (!userMoving.current) return
     userMoving.current = false
-    // A place's radius (or near=me) still frames the results, and a state
-    // its city list, so they stay.
-    if (place || params.near || stateFocus) return
+    // A place's radius (or near=me) still frames the results, so they stay.
+    if (place || params.near) return
+    // A state stays while the viewer looks around inside it; once the
+    // middle of the map leaves it, the camera is the view instead.
+    if (stateFocus && Object.hasOwn(STATES, stateFocus) && insideBounds(STATES[stateFocus].bounds, lng, lat)) return
     // Otherwise the camera is the view, so a copied link opens where the viewer is looking.
-    const { longitude, latitude, zoom } = e.viewState
     writeView(
-      { lat: roundCamera(latitude), lng: roundCamera(longitude), z: roundZoom(zoom) },
+      { ...(stateFocus ? { state: null } : {}), lat: roundCamera(lat), lng: roundCamera(lng), z: roundZoom(z) },
       { limitUrlUpdates: debounce(CAMERA_URL_DEBOUNCE_MS) },
     )
   }

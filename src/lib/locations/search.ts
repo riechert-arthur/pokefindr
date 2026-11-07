@@ -55,4 +55,5 @@ export const citiesQuerySchema = z.object({
     .transform((s) => stateCode(s) ?? "")
     .pipe(z.string().min(2, "must be a US state code, like WA")),
   types: kindsParam,
+  retailer: retailerParam,
 })

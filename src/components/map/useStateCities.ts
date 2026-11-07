@@ -11,12 +11,13 @@ export interface StateCitiesState {
   reload: () => void
 }
 
-/** A state's busiest cities for the shown kinds (GET /api/locations/cities). */
-export function useStateCities(state: string | null, kinds: readonly LocationKind[]): StateCitiesState {
+/** A state's busiest cities for the shown kinds and retailers (GET /api/locations/cities). */
+export function useStateCities(state: string | null, kinds: readonly LocationKind[], retailers: readonly string[] | null = null): StateCitiesState {
   const [data, setData] = useState<Omit<StateCitiesState, "reload">>({ status: "idle", state: null, cities: null })
   const [attempt, setAttempt] = useState(0)
   const reload = useCallback(() => setAttempt((n) => n + 1), [])
   const types = kinds.length === LOCATION_KINDS.length ? null : kinds.join(",")
+  const retailer = retailers?.length ? retailers.join(",") : null
 
   useEffect(() => {
     if (!state) {
@@ -25,6 +26,7 @@ export function useStateCities(state: string | null, kinds: readonly LocationKin
     }
     const params = new URLSearchParams({ state })
     if (types !== null) params.set("types", types)
+    if (retailer !== null) params.set("retailer", retailer)
     const controller = new AbortController()
     setData((d) => ({ ...d, status: "loading" }))
     fetch(`/api/locations/cities?${params}`, { signal: controller.signal })
@@ -39,7 +41,7 @@ export function useStateCities(state: string | null, kinds: readonly LocationKin
         setData((d) => ({ ...d, status: "error" }))
       })
     return () => controller.abort()
-  }, [state, types, attempt])
+  }, [state, types, retailer, attempt])
 
   return { ...data, reload }
 }

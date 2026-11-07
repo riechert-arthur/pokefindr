@@ -218,22 +218,28 @@ export async function getTopCities(
   types: readonly LocationKind[],
   db: Database = getDb(),
   limit = TOP_CITIES_LIMIT,
+  retailers: readonly string[] = [],
 ): Promise<StateCities> {
   if (types.length === 0) return { cities: [], counts: {}, total: 0 }
+  // A US state: another country's region can share the code (WA, Western Australia).
   const matched = sql`
     select * from ${locations} l
-    where l.is_active and l.geog is not null and l.state = ${state} and l.kind in (${kindsIn(types)})
+    where l.is_active and l.geog is not null and l.country_code = 'US' and l.state = ${state} and l.kind in (${kindsIn(types)})
+      ${retailerIn(retailers)}
   `
+  // The city as typed, with runs of spaces (tabs, NBSPs from a paste) as one.
+  const name = sql`regexp_replace(trim(m.city), '\\s+', ' ', 'g')`
   const [cities, counts] = await Promise.all([
     db.execute<StateCities["cities"][number]>(sql`
-      -- One name per city however it was typed, preferring a capitalized spelling.
-      select (array_agg(trim(m.city) order by trim(m.city) = lower(trim(m.city)), trim(m.city)))[1] as city,
+      -- One name per city however it was typed: title case if any row has it
+      -- ("Seattle" over "SEATTLE" and "seattle"), then any capitalized spelling.
+      select (array_agg(${name} order by ${name} <> initcap(${name}), ${name} = lower(${name}), ${name}))[1] as city,
         count(*)::int as count,
         round(avg(ST_X(m.geog::geometry))::numeric, 4)::float8 as lng,
         round(avg(ST_Y(m.geog::geometry))::numeric, 4)::float8 as lat
       from (${matched}) m
       where coalesce(trim(m.city), '') <> ''
-      group by lower(trim(m.city))
+      group by lower(${name})
       order by count desc, city
       limit ${limit}
     `),

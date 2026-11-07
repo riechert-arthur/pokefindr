@@ -283,4 +283,26 @@ describe("getTopCities", () => {
     expect((await getTopCities("WA", [])).cities).toEqual([])
     expect((await getTopCities("WA", ["vending"], undefined, 1)).cities).toHaveLength(1)
   })
+
+  it("merges spellings, prefers title case, keeps to the US and follows the retailer filter", async () => {
+    await getDb()
+      .insert(locations)
+      .values([
+        { machineId: "A1", retailer: "QFC", city: "SEATTLE", state: "WA", geog: { lng: -122.3, lat: 47.6 } },
+        { machineId: "A2", retailer: "QFC", city: "Seattle", state: "WA", geog: { lng: -122.3, lat: 47.6 } },
+        { machineId: "A3", retailer: "Safeway", city: "Port  Angeles", state: "WA", geog: { lng: -123.4, lat: 48.1 } },
+        { machineId: "A4", retailer: "Safeway", city: "Port\tAngeles", state: "WA", geog: { lng: -123.4, lat: 48.1 } },
+        // Western Australia shares the code.
+        { machineId: "AU", retailer: "Coles", city: "Perth", state: "WA", countryCode: "AU", geog: { lng: 115.86, lat: -31.95 } },
+      ])
+    const all = await getTopCities("WA", ["vending"])
+    expect(all.cities.map((c) => [c.city, c.count])).toEqual([
+      ["Port Angeles", 2],
+      ["Seattle", 2],
+    ])
+    expect(all.total).toBe(4)
+    const qfc = await getTopCities("WA", ["vending"], undefined, undefined, ["QFC"])
+    expect(qfc.cities.map((c) => [c.city, c.count])).toEqual([["Seattle", 2]])
+    expect(qfc.total).toBe(2)
+  })
 })
