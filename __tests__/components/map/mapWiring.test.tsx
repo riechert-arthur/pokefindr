@@ -6,7 +6,7 @@ import type { LocationFeature, LocationFeatureCollection } from "@/lib/types/loc
 class FakeMap {
   handlers = new Map<string, (e: unknown) => void>()
   styleListeners = new Set<() => void>()
-  layers: { id: string; type: string }[] = []
+  layers: { id: string; type: string; "source-layer"?: string }[] = []
   canvas = { style: { cursor: "" } }
   on(type: string, layerOrFn: string | (() => void), fn?: (e: unknown) => void) {
     if (typeof layerOrFn === "function") this.styleListeners.add(layerOrFn)
@@ -19,7 +19,7 @@ class FakeMap {
   getCanvas = () => this.canvas
   getStyle = () => ({ layers: this.layers })
   isStyleLoaded = () => true
-  setStyle(layers: { id: string; type: string }[]) {
+  setStyle(layers: { id: string; type: string; "source-layer"?: string }[]) {
     this.layers = layers
     this.styleListeners.forEach((l) => l())
   }
@@ -33,7 +33,7 @@ vi.mock("@/components/map/engine", () => ({
 }))
 
 import { LocationLayers } from "@/components/map/LocationLayers"
-import { useFirstLabelLayer } from "@/components/map/StateLayers"
+import { useBasemapStack } from "@/components/map/BasemapOverlays"
 import type { MapColors } from "@/components/map/layers"
 
 const feature = (id: string, lng: number, lat: number): LocationFeature => ({
@@ -59,17 +59,20 @@ describe("LocationLayers", () => {
   })
 })
 
-describe("useFirstLabelLayer", () => {
-  it("finds the label layer after every road, and follows style changes", () => {
+describe("useBasemapStack", () => {
+  it("puts the shading under copies of the basemap's water and borders, and follows style changes", () => {
     fake.layers = [
-      { id: "water", type: "fill" },
+      { id: "water", type: "fill", "source-layer": "water" },
       { id: "water_name", type: "symbol" },
-      { id: "motorway", type: "line" },
+      { id: "motorway", type: "line", "source-layer": "transportation" },
+      { id: "boundary_2", type: "line", "source-layer": "boundary" },
       { id: "city", type: "symbol" },
     ]
-    const { result } = renderHook(() => useFirstLabelLayer())
-    expect(result.current).toBe("city")
+    const { result } = renderHook(() => useBasemapStack())
+    expect(result.current.labelId).toBe("city")
+    expect(result.current.overlays.map((l) => l.id)).toEqual(["pf-overlay-water", "pf-overlay-boundary_2"])
+    expect(result.current.shadingBeforeId).toBe("pf-overlay-water")
     act(() => fake.setStyle([{ id: "land", type: "fill" }, { id: "place", type: "symbol" }]))
-    expect(result.current).toBe("place")
+    expect(result.current).toMatchObject({ labelId: "place", overlays: [], shadingBeforeId: "place" })
   })
 })

@@ -2,9 +2,10 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 import { describe, expect, it } from "vitest"
 import type { Polygon } from "geojson"
-import { placeDotsLayer, shadingBeforeId, statesFillLayer, POINT_ZOOM, type MapColors } from "@/components/map/layers"
+import { basemapOverlays, countryAtPoint, OVERLAY_PREFIX, placeDotsLayer, shadingBeforeId, statesFillLayer, POINT_ZOOM, type MapColors } from "@/components/map/layers"
+import type { LayerSpecification } from "@/components/map/engine"
 import { shadeStates, type StateCollection } from "@/components/map/useStateShading"
-import { boundsOf } from "@/lib/map/geo"
+import { boundsOf, worldWithHoles } from "@/lib/map/geo"
 import { mixColors } from "@/lib/design/tokens"
 import type { RegionCount } from "@/lib/types/locations"
 
@@ -18,6 +19,8 @@ const colors: MapColors = {
   "map-line": "hsl(220, 11%, 79%)",
   "map-choro-hi": "hsl(0, 0%, 0%)",
   "map-radius": "hsl(221, 83%, 53%)",
+  "map-unsupported": "hsl(60, 6%, 90%)",
+  "map-unsupported-line": "hsl(60, 4%, 82%)",
 }
 
 /** The parts of a style layer these tests read (LayerProps also covers custom layers, which have none). */
@@ -124,5 +127,86 @@ describe("shadingBeforeId", () => {
     ]
     expect(shadingBeforeId(layers)).toBe("city")
     expect(shadingBeforeId([{ id: "land", type: "fill" }])).toBeUndefined()
+  })
+})
+
+describe("worldWithHoles", () => {
+  const ccw = (ring: number[][]) => {
+    let a = 0
+    for (let i = 0; i < ring.length - 1; i++) a += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1]
+    return a > 0
+  }
+
+  it("covers the world with a hole per cut-out polygon, wound opposite the outer ring", () => {
+    const usa = square(-124, 25, -67, 49)
+    const alaska = { type: "MultiPolygon" as const, coordinates: [square(-170, 52, -130, 71).coordinates, [[...square(-160, 55, -159, 56).coordinates[0]].reverse()]] }
+    const mask = worldWithHoles([usa, alaska])
+    const [outer, ...holes] = mask.geometry.coordinates
+    expect(ccw(outer)).toBe(true)
+    expect(holes).toHaveLength(3)
+    for (const hole of holes) expect(ccw(hole)).toBe(false)
+  })
+})
+
+describe("basemapOverlays", () => {
+  it("copies the basemap's water and border layers, renamed", () => {
+    const layers = [
+      { id: "background", type: "background" },
+      { id: "water", type: "fill", source: "openmaptiles", "source-layer": "water", paint: { "fill-color": "#abc" } },
+      { id: "road", type: "line", source: "openmaptiles", "source-layer": "transportation" },
+      { id: "boundary_2", type: "line", source: "openmaptiles", "source-layer": "boundary", minzoom: 2 },
+      { id: `${OVERLAY_PREFIX}water`, type: "fill", source: "openmaptiles", "source-layer": "water" },
+    ] as unknown as LayerSpecification[]
+    expect(basemapOverlays(layers)).toEqual([
+      { id: `${OVERLAY_PREFIX}water`, type: "fill", source: "openmaptiles", "source-layer": "water", paint: { "fill-color": "#abc" } },
+      { id: `${OVERLAY_PREFIX}boundary_2`, type: "line", source: "openmaptiles", "source-layer": "boundary", minzoom: 2 },
+    ])
+  })
+
+  it("aren't mistaken for basemap layers when placing the shading", () => {
+    const layers = [
+      { id: "water", type: "fill" },
+      { id: "city", type: "symbol" },
+      { id: `${OVERLAY_PREFIX}water`, type: "fill" },
+    ]
+    expect(shadingBeforeId(layers)).toBe("city")
+  })
+})
+
+describe("basemapOverlays on the real basemaps", () => {
+  const read = (name: string) =>
+    JSON.parse(readFileSync(path.join(__dirname, `fixtures/openfreemap-${name}-layers.json`), "utf8")) as LayerSpecification[]
+
+  it.each(["positron", "dark"])("copies %s's water and country borders, which then sit under its labels", (name) => {
+    const layers = read(name)
+    const overlays = basemapOverlays(layers)
+    expect(overlays.some((l) => l.type === "fill" && (l as { "source-layer"?: string })["source-layer"] === "water")).toBe(true)
+    expect(overlays.some((l) => l.type === "line" && (l as { "source-layer"?: string })["source-layer"] === "boundary")).toBe(true)
+    // With the copies added, the shading still goes under the same label layer.
+    expect(shadingBeforeId([...layers, ...overlays])).toBe(shadingBeforeId(layers))
+  })
+})
+
+describe("countryAtPoint", () => {
+  const water = new Set([`${OVERLAY_PREFIX}water`])
+  const f = (layer: string, id?: number, name?: string) => ({ layer: { id: layer }, id, properties: name ? { name } : {} })
+
+  it("names the country under the pointer", () => {
+    expect(countryAtPoint([f("world-hit", 7, "Canada"), f("world-fill")], water)).toEqual({ kind: "country", id: 7, name: "Canada" })
+  })
+
+  it("stays quiet over the US and over water, where the rough outlines spill", () => {
+    expect(countryAtPoint([f("supported-hit"), f("world-hit", 7, "Canada")], water)).toEqual({ kind: "none" })
+    expect(countryAtPoint([f(`${OVERLAY_PREFIX}water`), f("world-hit", 7, "Canada")], water)).toEqual({ kind: "none" })
+  })
+
+  it("stays quiet over a location's dot that overhangs the border", () => {
+    expect(countryAtPoint([f("place-dots"), f("world-hit", 7, "Mexico"), f("world-fill")], water)).toEqual({ kind: "none" })
+    expect(countryAtPoint([f("selected-ring"), f("world-fill")], water)).toEqual({ kind: "none" })
+  })
+
+  it("still answers over grey the 110m outlines don't cover (Malta)", () => {
+    expect(countryAtPoint([f("world-fill")], water)).toEqual({ kind: "unnamed" })
+    expect(countryAtPoint([], water)).toEqual({ kind: "none" })
   })
 })
