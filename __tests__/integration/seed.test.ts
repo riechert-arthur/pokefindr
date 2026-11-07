@@ -1,6 +1,7 @@
 import { afterAll, describe, expect, it } from "vitest"
 import postgres from "postgres"
 import { readSeedLocations, seedLocations } from "../../scripts/db/seedLocations"
+import { SAMPLE_EVENTS, seedSampleHighlights } from "../../scripts/db/seedHighlights"
 import { testDatabaseUrl } from "./testDatabase"
 
 const sql = postgres(testDatabaseUrl(), { max: 1, onnotice: () => {} })
@@ -35,5 +36,16 @@ describe("seedLocations", () => {
       select name, st_x(geog::geometry) as lng, st_y(geog::geometry) as lat
       from locations where "machineID" = ${moved.machineID}`
     expect(row).toEqual({ name: "Renamed", lng: -100, lat: 40 })
+  })
+})
+
+describe("seedSampleHighlights", () => {
+  it("adds the sample events once, upcoming and labelled as samples", async () => {
+    const now = new Date("2026-11-07T15:00:00Z")
+    expect(await seedSampleHighlights(sql, now)).toBe(SAMPLE_EVENTS.length)
+    expect(await seedSampleHighlights(sql, now)).toBe(0)
+    const rows = await sql<{ title: string; starts_at: Date; is_sample: boolean }[]>`select title, starts_at, is_sample from highlights order by starts_at`
+    expect(rows.map((r) => r.title)).toEqual(["Card show", "League challenge", "Restock weekend"])
+    expect(rows.every((r) => r.is_sample && r.starts_at > now)).toBe(true)
   })
 })

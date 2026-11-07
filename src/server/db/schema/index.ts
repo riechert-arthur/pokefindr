@@ -176,6 +176,41 @@ export const locationRatings = pgTable(
   ],
 )
 
+/** What a highlight is (migration 0004). */
+export const HIGHLIGHT_KINDS = ["event", "featured"] as const
+export type HighlightKind = (typeof HIGHLIGHT_KINDS)[number]
+
+/**
+ * Featured events and places for the zoomed-out map (migration 0004). At a
+ * location or at its own point; `is_sample` marks invented rows.
+ */
+export const highlights = pgTable(
+  "highlights",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    kind: text("kind").$type<HighlightKind>().notNull(),
+    title: text("title").notNull(),
+    description: text("description"),
+    /** Required for events. */
+    startsAt: timestamp("starts_at", { withTimezone: true }),
+    endsAt: timestamp("ends_at", { withTimezone: true }),
+    locationId: uuid("location_id").references(() => locations.id, { onDelete: "set null" }),
+    geog: geographyPoint("geog"),
+    city: text("city"),
+    state: text("state"),
+    isPublished: boolean("is_published").notNull().default(true),
+    isSample: boolean("is_sample").notNull().default(false),
+    createdAt: createdAt().notNull(),
+  },
+  (t) => [
+    index("highlights_starts_at_idx").on(t.startsAt),
+    check("highlights_kind_check", sql`${t.kind} in ('event', 'featured')`),
+    check("highlights_place_check", sql`${t.locationId} is not null or ${t.geog} is not null`),
+    check("highlights_dates_check", sql`${t.endsAt} is null or ${t.startsAt} is null or ${t.endsAt} >= ${t.startsAt}`),
+    check("highlights_event_starts_check", sql`${t.kind} <> 'event' or ${t.startsAt} is not null`),
+  ],
+)
+
 export const statusReports = pgTable(
   "status_reports",
   {
