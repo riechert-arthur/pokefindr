@@ -200,6 +200,11 @@ describe("countryAtPoint", () => {
     expect(countryAtPoint([f(`${OVERLAY_PREFIX}water`), f("world-hit", 7, "Canada")], water)).toEqual({ kind: "none" })
   })
 
+  it("stays quiet over a location's dot that overhangs the border", () => {
+    expect(countryAtPoint([f("place-dots"), f("world-hit", 7, "Mexico"), f("world-fill")], water)).toEqual({ kind: "none" })
+    expect(countryAtPoint([f("selected-ring"), f("world-fill")], water)).toEqual({ kind: "none" })
+  })
+
   it("still answers over grey the 110m outlines don't cover (Malta)", () => {
     expect(countryAtPoint([f("world-fill")], water)).toEqual({ kind: "unnamed" })
     expect(countryAtPoint([], water)).toEqual({ kind: "none" })

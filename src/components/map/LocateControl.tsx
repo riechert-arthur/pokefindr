@@ -17,6 +17,13 @@ export const LOCATION_UNAVAILABLE = {
 
 const PERMISSION_DENIED = 1
 
+/**
+ * How long to wait for an answer before giving up. Firefox calls neither
+ * callback when the viewer dismisses the permission prompt, and the
+ * geolocation timeout only starts once permission is granted.
+ */
+export const LOCATE_GIVE_UP_MS = 15_000
+
 /** How many times (100 ms apart) a near=me link tries to start locating before giving up. */
 export const AUTO_LOCATE_TRIES = 20
 
@@ -70,9 +77,14 @@ export function LocateControl({ onLocate, onError, autoLocate = false }: LocateC
         finishSetupUI(supported)
       }
 
-      const fail = (message: { title: string; description: string }) => {
-        delete gc._container.dataset.located
+      let giveUp: ReturnType<typeof setTimeout> | undefined
+      const settle = () => {
+        clearTimeout(giveUp)
         delete gc._container.dataset.locating
+      }
+      const fail = (message: { title: string; description: string }) => {
+        settle()
+        delete gc._container.dataset.located
         toast(message.title, { description: message.description })
         handlers.current.onError?.()
       }
@@ -85,7 +97,13 @@ export function LocateControl({ onLocate, onError, autoLocate = false }: LocateC
       gc.trigger = () => {
         try {
           const started = trigger()
-          if (started !== false) gc._container.dataset.locating = "true"
+          if (started !== false) {
+            gc._container.dataset.locating = "true"
+            clearTimeout(giveUp)
+            giveUp = setTimeout(() => {
+              if (gc._container.dataset.locating) fail(LOCATION_UNAVAILABLE)
+            }, LOCATE_GIVE_UP_MS)
+          }
           return started
         } catch (err) {
           console.error("[map] couldn't start locating", err)
@@ -95,7 +113,7 @@ export function LocateControl({ onLocate, onError, autoLocate = false }: LocateC
       }
 
       gc.on("geolocate", (e: GeolocateResultEvent) => {
-        delete gc._container.dataset.locating
+        settle()
         gc._container.dataset.located = "true"
         handlers.current.onLocate({ lng: e.coords.longitude, lat: e.coords.latitude })
       })

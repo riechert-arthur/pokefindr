@@ -263,16 +263,18 @@ export function basemapOverlays(layers: readonly LayerSpecification[]): LayerSpe
 export type CountryHit = { kind: "none" } | { kind: "country"; id: string | number; name: string } | { kind: "unnamed" }
 
 /**
- * Decides the tooltip from one queryRenderedFeatures over the supported
- * outlines, the basemap's water copies, the 110m hit layer and the grey:
- * nothing over the US or water; a named country over the 110m outlines;
+ * Decides the tooltip from one queryRenderedFeatures over the location dots,
+ * the supported outlines, the basemap's water copies, the 110m hit layer and
+ * the grey: nothing over a dot, the US or water; a named country over the 110m outlines;
  * and over grey the 110m set doesn't cover (Malta, Singapore), an unnamed one.
  */
 export function countryAtPoint(
   features: readonly { layer: { id: string }; id?: string | number; properties: Record<string, unknown> }[],
   waterIds: ReadonlySet<string>,
 ): CountryHit {
-  if (features.some((f) => f.layer.id === LAYERS.supportedHit || waterIds.has(f.layer.id))) return { kind: "none" }
+  // A location's dot near a border is the location, not the country under it.
+  const quiet = new Set<string>([LAYERS.supportedHit, LAYERS.placeDots, LAYERS.selectedRing])
+  if (features.some((f) => quiet.has(f.layer.id) || waterIds.has(f.layer.id))) return { kind: "none" }
   const country = features.find((f) => f.layer.id === LAYERS.worldHit)
   if (country && country.id !== undefined) return { kind: "country", id: country.id, name: String(country.properties.name) }
   if (features.some((f) => f.layer.id === LAYERS.worldFill)) return { kind: "unnamed" }
