@@ -31,3 +31,22 @@ describe("supported countries", () => {
     expect(grey).not.toContain("United States of America")
   })
 })
+
+describe("country outlines", () => {
+  // A ring that jumps across the antimeridian twice is drawn the long way
+  // round, as a band across the whole map (Fiji and Russia did). One jump is
+  // a ring around a pole (Antarctica), which draws correctly.
+  it("never cross the antimeridian and come back", () => {
+    const crossing = outlines.features.filter((f) => {
+      const geometry = (f as unknown as { geometry: { type: string; coordinates: number[][][] | number[][][][] } }).geometry
+      const polygons = (geometry.type === "Polygon" ? [geometry.coordinates] : geometry.coordinates) as number[][][][]
+      return polygons.some((rings) =>
+        rings.some((ring) => {
+          const jumps = ring.slice(1).filter((p, i) => Math.abs(p[0] - ring[i][0]) > 180).length
+          return jumps > 0 && jumps % 2 === 0
+        }),
+      )
+    })
+    expect(crossing.map((f) => f.properties.name)).toEqual([])
+  })
+})
