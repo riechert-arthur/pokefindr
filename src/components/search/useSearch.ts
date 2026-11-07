@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { searchPlaces, type GeocodeResult } from "@/lib/geocode/client"
 import { MIN_QUERY_LENGTH } from "@/lib/geocode/query"
+import { MAX_LOCATION_QUERY } from "@/lib/locations/search"
 import { roundPlace } from "@/lib/map/url-state"
 import { LOCATION_KINDS, type LocationFeature, type LocationFeatureCollection, type LocationKind, type RegionCount } from "@/lib/types/locations"
 
@@ -138,8 +139,16 @@ export function useSearch(
         if (shownRetailers.length) locationParams.set("retailer", shownRetailers.join(","))
         const [places, found] = await Promise.all([
           searchPlaces(q, { near: center, limit: AREA_LIMIT, signal }),
-          locations && shown.length
-            ? getJson<LocationFeatureCollection>(`/api/locations/search?${locationParams}`, signal).then((fc) => fc.features)
+          // Our own places are extra, like the counts: a failure (or a query
+          // too long for them, like a pasted full address) leaves the areas.
+          locations && shown.length && q.length <= MAX_LOCATION_QUERY
+            ? getJson<LocationFeatureCollection>(`/api/locations/search?${locationParams}`, signal)
+                .then((fc) => fc.features)
+                .catch((err: unknown) => {
+                  if (signal.aborted) throw err
+                  console.warn("[search] couldn't search locations", err)
+                  return [] as LocationFeature[]
+                })
             : Promise.resolve([]),
         ])
         if (signal.aborted) return
