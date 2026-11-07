@@ -228,18 +228,20 @@ export async function getTopCities(
     where l.is_active and l.geog is not null and l.country_code = 'US' and l.state = ${state} and l.kind in (${kindsIn(types)})
       ${retailerIn(retailers)}
   `
-  // The city as typed, with runs of spaces (tabs, NBSPs from a paste) as one.
-  const name = sql`regexp_replace(trim(m.city), '\\s+', ' ', 'g')`
+  // The city as typed, with runs of whitespace (tabs, NBSPs from a paste) as
+  // one space and none at the ends. (\s alone misses NBSP under C ctype.)
+  const name = sql`trim(regexp_replace(coalesce(m.city, ''), '[\\s\u00a0]+', ' ', 'g'))`
   const [cities, counts] = await Promise.all([
     db.execute<StateCities["cities"][number]>(sql`
       -- One name per city however it was typed: title case if any row has it
-      -- ("Seattle" over "SEATTLE" and "seattle"), then any capitalized spelling.
-      select (array_agg(${name} order by ${name} <> initcap(${name}), ${name} = lower(${name}), ${name}))[1] as city,
+      -- ("Seattle" over "SEATTLE" and "seattle"), then not all caps
+      -- ("King of Prussia" over "KING OF PRUSSIA"), then not all lowercase.
+      select (array_agg(${name} order by ${name} <> initcap(${name}), ${name} = upper(${name}), ${name} = lower(${name}), ${name}))[1] as city,
         count(*)::int as count,
         round(avg(ST_X(m.geog::geometry))::numeric, 4)::float8 as lng,
         round(avg(ST_Y(m.geog::geometry))::numeric, 4)::float8 as lat
       from (${matched}) m
-      where coalesce(trim(m.city), '') <> ''
+      where ${name} <> ''
       group by lower(${name})
       order by count desc, city
       limit ${limit}

@@ -39,7 +39,7 @@ export async function getHotspots(db: Database = getDb(), limit = HOTSPOT_LIMIT)
     )
     select c.city, c.state, round(c.lng::numeric, 4)::float8 as lng, round(c.lat::numeric, 4)::float8 as lat,
       (select count(*)::int from ${locations} l
-        where l.is_active and l.kind = 'vending'
+        where l.is_active and l.kind = 'vending' and l.country_code = 'US'
           and ST_DWithin(l.geog, ST_SetSRID(ST_MakePoint(c.lng, c.lat), 4326)::geography, ${HOTSPOT_RADIUS * METERS_PER_MILE}, false)
       ) as count
     from cities c
