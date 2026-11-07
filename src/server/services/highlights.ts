@@ -65,7 +65,8 @@ export async function getUpcomingEvents(db: Database = getDb(), now = new Date()
     from ${highlights} h
     left join ${locations} l on l.id = h.location_id
     where h.kind = 'event' and h.is_published and coalesce(h.geog, l.geog) is not null
-      and coalesce(h.ends_at, h.starts_at) >= ${now.toISOString()}::timestamptz
+      -- An event without an end lasts a day: a card show stays listed while it runs.
+      and coalesce(h.ends_at, h.starts_at + interval '1 day') > ${now.toISOString()}::timestamptz
     order by h.starts_at, h.id
     limit ${limit}
   `)

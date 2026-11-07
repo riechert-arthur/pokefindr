@@ -54,12 +54,22 @@ describe("getUpcomingEvents", () => {
       { kind: "event", title: "Hidden", startsAt: at("2026-11-10T18:00:00Z"), isPublished: false, geog: { lng: 0, lat: 0 } },
       { kind: "featured", title: "Not an event", geog: { lng: 0, lat: 0 } },
       { kind: "event", title: "Card show", startsAt: at("2026-11-13T18:00:00Z"), city: "Denver", state: "CO", geog: { lng: -104.99, lat: 39.74 }, isSample: true },
+      // Started two hours ago with no end: still on today.
+      { kind: "event", title: "League night", startsAt: at("2026-11-07T10:00:00Z"), city: "Dallas", state: "TX", geog: { lng: -96.8, lat: 32.78 } },
     ])
-    const events = await getUpcomingEvents(db, now)
-    expect(events.map((e) => e.title)).toEqual(["Restock weekend", "Trade night", "Card show"])
-    expect(events[1]).toMatchObject({ city: "Boulder", state: "CO", lng: -105.27, lat: 40.01, isSample: false, endsAt: null })
-    expect(events[2]).toMatchObject({ startsAt: "2026-11-13T18:00:00.000Z", isSample: true })
+    const events = await getUpcomingEvents(db, now, 5)
+    expect(events.map((e) => e.title)).toEqual(["Restock weekend", "League night", "Trade night", "Card show"])
+    expect(events[2]).toMatchObject({ city: "Boulder", state: "CO", lng: -105.27, lat: 40.01, isSample: false, endsAt: null })
+    expect(events[3]).toMatchObject({ startsAt: "2026-11-13T18:00:00.000Z", isSample: true })
     expect(await getUpcomingEvents(db, now, 1)).toHaveLength(1)
+  })
+
+  it("goes with its location when the location is deleted", async () => {
+    const db = getDb()
+    const [shop] = await db.insert(locations).values({ name: "Den of Cards", kind: "shop", geog: { lng: -105.27, lat: 40.01 } }).returning()
+    await db.insert(highlights).values({ kind: "event", title: "Trade night", startsAt: new Date(), locationId: shop.id })
+    await db.delete(locations)
+    expect(await db.select().from(highlights)).toEqual([])
   })
 
   it("rejects an event without a place or a start", async () => {

@@ -194,7 +194,7 @@ export const highlights = pgTable(
     /** Required for events. */
     startsAt: timestamp("starts_at", { withTimezone: true }),
     endsAt: timestamp("ends_at", { withTimezone: true }),
-    locationId: uuid("location_id").references(() => locations.id, { onDelete: "set null" }),
+    locationId: uuid("location_id").references(() => locations.id, { onDelete: "cascade" }),
     geog: geographyPoint("geog"),
     city: text("city"),
     state: text("state"),
