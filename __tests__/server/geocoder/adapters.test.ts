@@ -6,6 +6,7 @@ vi.mock("server-only", () => ({}))
 import { MapboxGeocoder } from "@/server/adapters/geocoder/mapbox"
 import { MapTilerGeocoder } from "@/server/adapters/geocoder/maptiler"
 import { NominatimGeocoder } from "@/server/adapters/geocoder/nominatim"
+import { PhotonGeocoder } from "@/server/adapters/geocoder/photon"
 import { GeocoderError } from "@/server/ports/geocoder"
 
 /** Answers every fetch with `body` and records the requests. */
@@ -131,5 +132,40 @@ describe("NominatimGeocoder", () => {
       { label: "Seattle, WA", lng: -122.3301, lat: 47.6038, bbox: [-122.4598, 47.4919, -122.2244, 47.7341], kind: "city", state: "WA" },
       { label: "1600 Pennsylvania Avenue Northwest, Washington, DC", lng: -77.0365, lat: 38.8977, bbox: undefined, kind: "address", state: "DC" },
     ])
+  })
+})
+
+describe("PhotonGeocoder", () => {
+  const feature = (coordinates: [number, number], properties: Record<string, unknown>) => ({ geometry: { coordinates }, properties })
+  const body = {
+    features: [
+      feature([-104.98, 39.74], { type: "city", name: "Denver", state: "Colorado", countrycode: "US", extent: [-105.11, 39.91, -104.6, 39.61] }),
+      feature([24.5, 66.7], { type: "other", osm_value: "postcode", name: "98101", city: "Kemijärvi", countrycode: "FI" }),
+      feature([-122.33, 47.61], { type: "other", osm_value: "postcode", name: "98101", city: "Seattle", state: "Washington", countrycode: "US" }),
+      feature([-77.04, 38.9], { type: "house", name: "White House", housenumber: "1600", street: "Pennsylvania Avenue Northwest", city: "Washington", state: "District of Columbia", countrycode: "US" }),
+      feature([-120.7, 47.4], { type: "state", name: "Washington", countrycode: "US" }),
+      feature([-122.3, 47.45], { type: "house", name: "Seattle-Tacoma International Airport", state: "Washington", countrycode: "US" }),
+    ],
+  }
+
+  it("searches inside the US box, over-asks, and keeps only US results", async () => {
+    const request = mockFetch(body)
+    const results = await new PhotonGeocoder().search("98101", { limit: 5, near: [-122.3, 47.6] })
+    const { url } = request()
+    expect(url.origin + url.pathname).toBe("https://photon.komoot.io/api/")
+    expect(Object.fromEntries(url.searchParams)).toMatchObject({ q: "98101", lang: "en", limit: "15", bbox: "-180,17,-64,72", lon: "-122.3", lat: "47.6" })
+    expect(results).toEqual([
+      { label: "Denver, CO", lng: -104.98, lat: 39.74, bbox: [-105.11, 39.61, -104.6, 39.91], kind: "city", state: "CO" },
+      { label: "98101, Seattle, WA", lng: -122.33, lat: 47.61, bbox: undefined, kind: "postcode", state: "WA" },
+      { label: "1600 Pennsylvania Avenue Northwest, Washington, DC", lng: -77.04, lat: 38.9, bbox: undefined, kind: "address", state: "DC" },
+      { label: "Washington", lng: -120.7, lat: 47.4, bbox: undefined, kind: "state", state: "WA" },
+      { label: "Seattle-Tacoma International Airport, WA", lng: -122.3, lat: 47.45, bbox: undefined, kind: "other", state: "WA" },
+    ])
+  })
+
+  it("uses a self-hosted instance", async () => {
+    const request = mockFetch({ features: [] })
+    await new PhotonGeocoder("https://photon.internal:2322").search("Denver")
+    expect(request().url.origin).toBe("https://photon.internal:2322")
   })
 })

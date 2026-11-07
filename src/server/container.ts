@@ -2,6 +2,7 @@ import "server-only"
 import { getServerConfig, type ServerConfig } from "@/server/config"
 import type { Geocoder } from "@/server/ports/geocoder"
 import { FakeGeocoder } from "@/server/adapters/geocoder/fake"
+import { PhotonGeocoder } from "@/server/adapters/geocoder/photon"
 import { MapboxGeocoder } from "@/server/adapters/geocoder/mapbox"
 import { MapTilerGeocoder } from "@/server/adapters/geocoder/maptiler"
 import { NominatimGeocoder } from "@/server/adapters/geocoder/nominatim"
@@ -13,6 +14,8 @@ import { NominatimGeocoder } from "@/server/adapters/geocoder/nominatim"
  */
 export function makeGeocoder(config: ServerConfig): Geocoder {
   switch (config.GEOCODER_PROVIDER) {
+    case "photon":
+      return new PhotonGeocoder(config.GEOCODER_BASE_URL)
     case "mapbox":
       return new MapboxGeocoder(config.GEOCODER_API_KEY!)
     case "maptiler":

@@ -13,7 +13,7 @@ import { z } from "zod"
 const blankAsUnset = <T extends z.ZodTypeAny>(schema: T) =>
   z.preprocess((value) => (value === "" ? undefined : value), schema)
 
-export const GEOCODER_PROVIDERS = ["fake", "mapbox", "maptiler", "nominatim"] as const
+export const GEOCODER_PROVIDERS = ["fake", "photon", "mapbox", "maptiler", "nominatim"] as const
 
 const serverSchema = z.object({
   // Only compared to "production", so any other value (e.g. "staging") is allowed.
@@ -51,17 +51,22 @@ const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
 
   /**
-   * Which geocoder answers the search box (src/server/container.ts). `fake`
-   * knows a handful of cities and needs no account: tests, CI and local dev.
+   * Which geocoder answers the search box (src/server/container.ts). Unset,
+   * production uses `photon` (free, no key, built for type-ahead) and
+   * everything else `fake`, which knows a handful of cities: tests, CI and
+   * local dev work with no account.
    */
-  GEOCODER_PROVIDER: blankAsUnset(z.enum(GEOCODER_PROVIDERS).default("fake")),
+  GEOCODER_PROVIDER: blankAsUnset(z.enum(GEOCODER_PROVIDERS).optional()),
   /** Required for mapbox and maptiler. */
   GEOCODER_API_KEY: blankAsUnset(z.string().min(1).optional()),
   /** Required for nominatim: its usage policy asks for a User-Agent naming the app and a contact. */
   GEOCODER_USER_AGENT: blankAsUnset(z.string().min(1).optional()),
-  /** A self-hosted instance instead of the provider's public one (nominatim). */
+  /** A self-hosted instance instead of the provider's public one (photon, nominatim). */
   GEOCODER_BASE_URL: blankAsUnset(z.string().url().optional()),
-}).superRefine((env, ctx) => {
+}).transform((env) => ({
+  ...env,
+  GEOCODER_PROVIDER: env.GEOCODER_PROVIDER ?? (env.NODE_ENV === "production" ? "photon" : "fake"),
+})).superRefine((env, ctx) => {
   if ((env.GEOCODER_PROVIDER === "mapbox" || env.GEOCODER_PROVIDER === "maptiler") && !env.GEOCODER_API_KEY)
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["GEOCODER_API_KEY"], message: `required when GEOCODER_PROVIDER is ${env.GEOCODER_PROVIDER}` })
   if (env.GEOCODER_PROVIDER === "nominatim" && !env.GEOCODER_USER_AGENT)

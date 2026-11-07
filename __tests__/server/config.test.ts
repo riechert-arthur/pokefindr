@@ -70,6 +70,11 @@ describe("getServerConfig", () => {
     expect(getServerConfig().GEOCODER_PROVIDER).toBe("fake")
   })
 
+  it("defaults the geocoder to photon in production, which needs no key", () => {
+    vi.stubEnv("NODE_ENV", "production")
+    expect(getServerConfig().GEOCODER_PROVIDER).toBe("photon")
+  })
+
   it.each([["mapbox"], ["maptiler"]])("requires GEOCODER_API_KEY for %s", (provider) => {
     vi.stubEnv("GEOCODER_PROVIDER", provider)
     expect(() => getServerConfig()).toThrowError(/GEOCODER_API_KEY: required when GEOCODER_PROVIDER is/)
