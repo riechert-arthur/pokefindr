@@ -14,7 +14,12 @@ export interface LocationFeatureProperties {
   kind?: LocationKind
 }
 
-export type LocationKind = "vending" | "shop" | "event"
+/** Every kind of place, as stored in `locations.kind`. */
+export const LOCATION_KINDS = ["vending", "shop", "event"] as const
+export type LocationKind = (typeof LOCATION_KINDS)[number]
 
 export type LocationFeature = Feature<Point, LocationFeatureProperties>
-export type LocationFeatureCollection = FeatureCollection<Point, LocationFeatureProperties>
+export type LocationFeatureCollection = FeatureCollection<Point, LocationFeatureProperties> & {
+  /** Set on viewport queries: true when more locations matched than were returned. */
+  truncated?: boolean
+}

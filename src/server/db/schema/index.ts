@@ -36,9 +36,11 @@ import {
   timestamp,
   uniqueIndex,
   uuid,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 import { geographyPoint } from "../geography"
+import type { LocationKind } from "@/lib/types/locations"
 
 const createdAt = () => timestamp("created_at", { withTimezone: true }).defaultNow()
 
@@ -94,6 +96,10 @@ const locationColumns = {
    * database, which the import keeps.
    */
   manualOverrideSource: text("manual_override_source"),
+  /** vending, shop or event (LOCATION_KINDS). */
+  kind: text("kind").$type<LocationKind>().notNull().default("vending"),
+  /** ISO 3166-1 alpha-2. `state` is the admin region within it. */
+  countryCode: text("country_code").notNull().default("US"),
   /** The full feature properties from the JSON, kept while the data moves off it. */
   raw: jsonb("raw"),
   // Set on every update by the locations_set_updated_at trigger (migration 0001), whoever writes.
@@ -101,6 +107,12 @@ const locationColumns = {
     .defaultNow()
     .$onUpdate(() => new Date()),
 }
+
+/** Checks shared by `locations` and `locations_staging` (migration 0002). */
+const locationChecks = (table: string, t: { kind: AnyPgColumn; countryCode: AnyPgColumn }) => [
+  check(`${table}_kind_check`, sql`${t.kind} in ('vending', 'shop', 'event')`),
+  check(`${table}_country_code_check`, sql`${t.countryCode} ~ '^[A-Z]{2}$'`),
+]
 
 export const locations = pgTable(
   "locations",
@@ -112,6 +124,7 @@ export const locations = pgTable(
   (t) => [
     uniqueIndex("locations_machine_id_key").on(t.machineId),
     index("locations_geog_gist").using("gist", t.geog),
+    ...locationChecks("locations", t),
   ],
 )
 
@@ -127,6 +140,7 @@ export const locationsStaging = pgTable(
   (t) => [
     uniqueIndex("locations_staging_machineID_idx").on(t.machineId),
     index("locations_staging_geog_idx").using("gist", t.geog),
+    ...locationChecks("locations_staging", t),
   ],
 )
 
