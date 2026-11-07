@@ -31,7 +31,7 @@ export type {
   ViewState,
   ViewStateChangeEvent,
 } from "@vis.gl/react-maplibre"
-export type { ExpressionSpecification, LayerSpecification } from "maplibre-gl"
+export type { ExpressionSpecification, LayerSpecification, PaddingOptions } from "maplibre-gl"
 
 /**
  * Basemap styles from OpenFreeMap (free, no key), the basemap the redesign

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { countsQuerySchema, searchQuerySchema } from "@/lib/locations/search"
+import { countsQuerySchema, nearQuerySchema, searchQuerySchema } from "@/lib/locations/search"
 
 describe("countsQuerySchema", () => {
   it("parses points, a radius and kinds", () => {
@@ -37,5 +37,25 @@ describe("searchQuerySchema", () => {
     ["near in scientific notation", { q: "kroger", near: "1e2,0" }],
   ])("rejects %s", (_, query) => {
     expect(searchQuerySchema.safeParse(query).success).toBe(false)
+  })
+})
+
+describe("nearQuerySchema", () => {
+  it("parses the place, radius, kinds and retailers", () => {
+    expect(nearQuerySchema.parse({ lng: "-122.3285", lat: "47.6196", r: "10", retailer: "QFC, Safeway" })).toEqual({
+      lng: -122.3285,
+      lat: 47.6196,
+      r: 10,
+      types: ["vending", "shop", "event"],
+      retailer: ["QFC", "Safeway"],
+    })
+  })
+
+  it.each([
+    ["no point", { lng: "", lat: "", r: "10" }],
+    ["a radius the map doesn't offer", { lng: "0", lat: "0", r: "100" }],
+    ["a longitude out of range", { lng: "181", lat: "0", r: "10" }],
+  ])("rejects %s", (_, query) => {
+    expect(nearQuerySchema.safeParse(query).success).toBe(false)
   })
 })

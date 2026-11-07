@@ -72,8 +72,8 @@ export function MapStatusPill(props: MapStatusPillProps) {
           "pointer-events-none absolute left-1/2 z-[8] flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-border bg-card px-3 py-[7px] text-[13px] text-card-foreground shadow-md",
           // The prototype puts it at the bottom on desktop; the floating affiliate
           // banner sits there until the ads redesign (R7), so it goes at the top,
-          // where the prototype puts it on phones.
-          "top-4 max-xl:top-[72px]",
+          // where the prototype puts it on phones. MapInstance centers it beside the panel.
+          "top-3 sm:top-4",
           className,
         )}
       >

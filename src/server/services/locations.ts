@@ -2,11 +2,32 @@ import "server-only"
 import { sql, type SQL } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
 import { locations } from "@/server/db/schema"
-import type { LocationFeature, LocationFeatureCollection, LocationKind } from "@/lib/types/locations"
+import type { LocationFeature, LocationFeatureCollection, LocationKind, NearbyLocations } from "@/lib/types/locations"
 import type { Bbox } from "@/lib/locations/bbox"
 
 /** The most locations one viewport request returns. */
 export const BBOX_LIMIT = 2000
+
+/**
+ * One row of `locations` (as `p`) as a GeoJSON Feature, the shape the map
+ * and lists read. `extra` adds properties, e.g. a distance.
+ */
+const featureJson = (extra: SQL = sql``) => sql`
+  json_build_object(
+    'type', 'Feature',
+    'id', p.id,
+    'geometry', ST_AsGeoJSON(p.geog::geometry, 6)::json,
+    'properties', json_build_object(
+      'id', p.id,
+      'machineID', coalesce(p."machineID", ''),
+      'retailer', coalesce(p.retailer, p.name, ''),
+      'address', coalesce(p.address, ''),
+      'city', coalesce(p.city, ''),
+      'state', coalesce(p.state, ''),
+      'kind', p.kind
+      ${extra}
+    )
+  )`
 
 /**
  * Active, positioned locations matching `where`, as a GeoJSON
@@ -36,20 +57,7 @@ async function queryFeatures(
       'type', 'FeatureCollection',
       'features', coalesce((
         select json_agg(
-          json_build_object(
-            'type', 'Feature',
-            'id', p.id,
-            'geometry', ST_AsGeoJSON(p.geog::geometry, 6)::json,
-            'properties', json_build_object(
-              'id', p.id,
-              'machineID', coalesce(p."machineID", ''),
-              'retailer', coalesce(p.retailer, p.name, ''),
-              'address', coalesce(p.address, ''),
-              'city', coalesce(p.city, ''),
-              'state', coalesce(p.state, ''),
-              'kind', p.kind
-            )
-          )
+          ${featureJson()}
           order by ${orderBy}
         )
         from page p
@@ -136,6 +144,60 @@ export async function searchLocations(
   )
   delete fc.truncated
   return fc
+}
+
+/** The most results one radius search returns; the list shows them all, closest first. */
+export const NEAR_LIMIT = 500
+
+export interface NearQuery {
+  /** [lng, lat] of the place. */
+  center: readonly [number, number]
+  radiusMiles: number
+  types: readonly LocationKind[]
+  /** Vending retailers to keep; other kinds aren't filtered. Empty or absent means all. */
+  retailers?: readonly string[]
+  limit?: number
+}
+
+/**
+ * Active locations within `radiusMiles` of `center`, closest first, each
+ * with its `distance` in miles: the results list of a place search. `counts`
+ * and `total` cover every match, even past `limit` (then `truncated` is set).
+ */
+export async function getLocationsNear(
+  { center, radiusMiles, types, retailers = [], limit = NEAR_LIMIT }: NearQuery,
+  db: Database = getDb(),
+): Promise<NearbyLocations> {
+  if (types.length === 0) return { type: "FeatureCollection", features: [], counts: {}, total: 0, truncated: false }
+  const point = pointOf(center)
+  const retailerFilter = retailers.length
+    ? sql`and (l.kind <> 'vending' or coalesce(l.retailer, l.name) in (${sql.join(retailers.map((r) => sql`${r}`), sql`, `)}))`
+    : sql``
+  const rows = await db.execute<{ fc: NearbyLocations }>(sql`
+    with matched as (
+      -- On the sphere (use_spheroid false), as the map measures (milesBetween),
+      -- so the list holds exactly the dots the map shows inside the circle.
+      select l.*, ST_Distance(l.geog, ${point}, false) / ${METERS_PER_MILE} as miles
+      from ${locations} l
+      where l.is_active and l.geog is not null and l.kind in (${kindsIn(types)})
+        and ST_DWithin(l.geog, ${point}, ${radiusMiles * METERS_PER_MILE}, false)
+        ${retailerFilter}
+    ),
+    page as (
+      select * from matched order by miles, id limit ${limit}
+    )
+    select json_build_object(
+      'type', 'FeatureCollection',
+      'features', coalesce((
+        select json_agg(${featureJson(sql`, 'distance', round(p.miles::numeric, 2)`)} order by p.miles, p.id)
+        from page p
+      ), '[]'::json),
+      'counts', coalesce((select json_object_agg(kind, n) from (select kind, count(*)::int as n from matched group by kind) k), '{}'::json),
+      'total', (select count(*)::int from matched),
+      'truncated', (select count(*) from matched) > (select count(*) from page)
+    ) as fc
+  `)
+  return rows[0].fc
 }
 
 export interface BboxQuery {

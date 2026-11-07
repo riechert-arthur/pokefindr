@@ -24,6 +24,15 @@ export type LocationFeatureCollection = FeatureCollection<Point, LocationFeature
   truncated?: boolean
 }
 
+/** GET /api/locations/near: a place's results, closest first. */
+export type NearbyLocations = FeatureCollection<Point, LocationFeatureProperties & { /** Miles from the place, to 0.01. */ distance: number }> & {
+  /** Matches per kind, over every match (not just the returned page). */
+  counts: Partial<Record<LocationKind, number>>
+  total: number
+  /** More matched than `limit`; the list shows the closest. */
+  truncated: boolean
+}
+
 /** Locations of one kind in one region (a US state today), from GET /api/locations/aggregates. */
 export interface RegionCount {
   /** ISO 3166-1 alpha-2, e.g. "US". */
