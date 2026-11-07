@@ -90,6 +90,9 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
 
   // The viewer's position, once they share it. It never goes into the URL.
   const [me, setMe] = useState<{ lng: number; lat: number } | null>(null)
+  // Readable from the popstate handler, which is set up once.
+  const meRef = useRef(me)
+  meRef.current = me
 
   // The search center and radius: the viewer (near=me), or the searched place
   // from the URL, checked the same way as on the server (coordinates in
@@ -165,9 +168,15 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
       if (key === lastViewKey.current) return
       // Remember it now: React's copy of the URL may not have caught up yet.
       lastViewKey.current = key
-      const { camera } = initialMapView(next)
       const map = mapRef.current
       if (!map) return
+      // near=me carries no coordinates; go back to the radius around the viewer we already found.
+      const found = meRef.current
+      if (next.near === "me" && found) {
+        map.fitBounds(boundsOfRadius(found.lng, found.lat, next.r ?? DEFAULT_RADIUS), { padding: 40, maxZoom: 13, duration: 1000 })
+        return
+      }
+      const { camera } = initialMapView(next)
       if ("bounds" in camera) {
         // An explicit `maxZoom: undefined` breaks the fit (NaN center); leave it out instead.
         map.fitBounds(camera.bounds, camera.maxZoom === undefined ? { padding: 40, duration: 1000 } : { padding: 40, maxZoom: camera.maxZoom, duration: 1000 })
