@@ -66,6 +66,28 @@ describe("getServerConfig", () => {
     expect(() => getServerConfig()).toThrowError(/DATABASE_URL/)
   })
 
+  it("defaults the geocoder to fake, with no key", () => {
+    expect(getServerConfig().GEOCODER_PROVIDER).toBe("fake")
+  })
+
+  it.each([["mapbox"], ["maptiler"]])("requires GEOCODER_API_KEY for %s", (provider) => {
+    vi.stubEnv("GEOCODER_PROVIDER", provider)
+    expect(() => getServerConfig()).toThrowError(/GEOCODER_API_KEY: required when GEOCODER_PROVIDER is/)
+    resetServerConfigForTests()
+    vi.stubEnv("GEOCODER_API_KEY", "key")
+    expect(getServerConfig().GEOCODER_PROVIDER).toBe(provider)
+  })
+
+  it("requires GEOCODER_USER_AGENT for nominatim", () => {
+    vi.stubEnv("GEOCODER_PROVIDER", "nominatim")
+    expect(() => getServerConfig()).toThrowError(/GEOCODER_USER_AGENT/)
+  })
+
+  it("rejects an unknown GEOCODER_PROVIDER", () => {
+    vi.stubEnv("GEOCODER_PROVIDER", "google")
+    expect(() => getServerConfig()).toThrowError(/GEOCODER_PROVIDER/)
+  })
+
   it("caches the parsed result", () => {
     const first = getServerConfig()
     vi.stubEnv("APP_URL", "https://changed.example")

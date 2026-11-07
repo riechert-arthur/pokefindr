@@ -66,3 +66,17 @@ export const STATES: Record<string, { name: string; bounds: LngLatBounds }> = {
 
 /** Two-letter state codes, e.g. "WA". */
 export const isStateCode = (code: string): boolean => Object.hasOwn(STATES, code)
+
+const CODE_BY_NAME = new Map(Object.entries(STATES).map(([code, { name }]) => [name.toLowerCase(), code]))
+
+/**
+ * A state's two-letter code from its name ("Washington" → "WA") or its code
+ * in any case or ISO form ("wa", "US-WA"); undefined when it isn't a state.
+ */
+export function stateCode(value: string | null | undefined): string | undefined {
+  if (!value) return undefined
+  const v = value.trim()
+  const code = v.toUpperCase().replace(/^US-/, "")
+  if (isStateCode(code)) return code
+  return CODE_BY_NAME.get(v.toLowerCase())
+}

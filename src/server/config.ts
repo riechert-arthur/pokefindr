@@ -13,6 +13,8 @@ import { z } from "zod"
 const blankAsUnset = <T extends z.ZodTypeAny>(schema: T) =>
   z.preprocess((value) => (value === "" ? undefined : value), schema)
 
+export const GEOCODER_PROVIDERS = ["fake", "mapbox", "maptiler", "nominatim"] as const
+
 const serverSchema = z.object({
   // Only compared to "production", so any other value (e.g. "staging") is allowed.
   NODE_ENV: z.string().default("development"),
@@ -47,6 +49,23 @@ const serverSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+
+  /**
+   * Which geocoder answers the search box (src/server/container.ts). `fake`
+   * knows a handful of cities and needs no account: tests, CI and local dev.
+   */
+  GEOCODER_PROVIDER: blankAsUnset(z.enum(GEOCODER_PROVIDERS).default("fake")),
+  /** Required for mapbox and maptiler. */
+  GEOCODER_API_KEY: blankAsUnset(z.string().min(1).optional()),
+  /** Required for nominatim: its usage policy asks for a User-Agent naming the app and a contact. */
+  GEOCODER_USER_AGENT: blankAsUnset(z.string().min(1).optional()),
+  /** A self-hosted instance instead of the provider's public one (nominatim). */
+  GEOCODER_BASE_URL: blankAsUnset(z.string().url().optional()),
+}).superRefine((env, ctx) => {
+  if ((env.GEOCODER_PROVIDER === "mapbox" || env.GEOCODER_PROVIDER === "maptiler") && !env.GEOCODER_API_KEY)
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["GEOCODER_API_KEY"], message: `required when GEOCODER_PROVIDER is ${env.GEOCODER_PROVIDER}` })
+  if (env.GEOCODER_PROVIDER === "nominatim" && !env.GEOCODER_USER_AGENT)
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["GEOCODER_USER_AGENT"], message: "required when GEOCODER_PROVIDER is nominatim" })
 })
 
 export type ServerConfig = z.infer<typeof serverSchema>
