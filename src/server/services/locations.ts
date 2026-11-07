@@ -2,7 +2,7 @@ import "server-only"
 import { sql, type SQL } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
 import { locations } from "@/server/db/schema"
-import type { LocationFeatureCollection, LocationKind } from "@/lib/types/locations"
+import type { LocationFeature, LocationFeatureCollection, LocationKind } from "@/lib/types/locations"
 import type { Bbox } from "@/lib/locations/bbox"
 
 /** The most locations one viewport request returns. */
@@ -92,4 +92,13 @@ export async function getLocationsInBbox(
       and l.kind in (${kinds})`,
     limit,
   )
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/** One active, positioned location as a feature, or null (also for an id that isn't a uuid). */
+export async function getLocationFeature(id: string, db: Database = getDb()): Promise<LocationFeature | null> {
+  if (!UUID.test(id)) return null
+  const fc = await queryFeatures(db, sql`l.id = ${id}`, 1)
+  return fc.features[0] ?? null
 }

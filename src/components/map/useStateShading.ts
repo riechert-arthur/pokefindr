@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useState } from "react"
 import type { Feature, FeatureCollection, MultiPolygon, Polygon } from "geojson"
 import type { LocationKind, RegionCount } from "@/lib/types/locations"
+import { boundsOf, type LngLatBounds } from "@/lib/map/geo"
+
+export type { LngLatBounds }
 
 /** US state outlines (US Census, simplified), served from public/geo. */
 export const STATES_URL = "/geo/us-states.json"
@@ -17,33 +20,6 @@ export interface StateProperties {
 
 export type StateFeature = Feature<Polygon | MultiPolygon, StateProperties>
 export type StateCollection = FeatureCollection<Polygon | MultiPolygon, StateProperties>
-
-/** [[west, south], [east, north]] */
-export type LngLatBounds = [[number, number], [number, number]]
-
-/**
- * A geometry's bounding box. A shape that crosses the antimeridian (Alaska's
- * Aleutians) gets a box that continues west past -180 instead of one
- * spanning the whole world.
- */
-export function boundsOf(geometry: Polygon | MultiPolygon): LngLatBounds {
-  const rings = geometry.type === "Polygon" ? [geometry.coordinates] : geometry.coordinates
-  const box = (shift: boolean): LngLatBounds => {
-    let w = Infinity, s = Infinity, e = -Infinity, n = -Infinity
-    for (const polygon of rings) {
-      for (const [x, lat] of polygon[0]) {
-        const lng = shift && x > 0 ? x - 360 : x
-        if (lng < w) w = lng
-        if (lng > e) e = lng
-        if (lat < s) s = lat
-        if (lat > n) n = lat
-      }
-    }
-    return [[w, s], [e, n]]
-  }
-  const plain = box(false)
-  return plain[1][0] - plain[0][0] > 180 ? box(true) : plain
-}
 
 /**
  * Sums `counts` per US state for the given kinds and writes them onto the

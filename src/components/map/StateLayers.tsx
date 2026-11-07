@@ -45,13 +45,15 @@ interface StateLayersProps {
   max: number
   bounds: ReadonlyMap<string, LngLatBounds>
   colors: MapColors
+  /** Called with a state's code after clicking it zooms there. */
+  onSelect?: (code: string) => void
 }
 
 /**
  * The zoomed-out map: states shaded by how many locations they have, with a
  * hover outline. Clicking a state with locations zooms to it.
  */
-export function StateLayers({ states, max, bounds, colors }: StateLayersProps) {
+export function StateLayers({ states, max, bounds, colors, onSelect }: StateLayersProps) {
   const { current: map } = useMap()
   const beforeId = useFirstLabelLayer()
 
@@ -77,7 +79,9 @@ export function StateLayers({ states, max, bounds, colors }: StateLayersProps) {
       const f = e.features?.[0]
       if (!f || map.getZoom() >= POINT_ZOOM || !f.properties.count) return
       const box = bounds.get(f.properties.region)
-      if (box) map.fitBounds(box, { padding: 40, maxZoom: 7.5, duration: 1400 })
+      if (!box) return
+      map.fitBounds(box, { padding: 40, maxZoom: 7.5, duration: 1400 })
+      onSelect?.(f.properties.region)
     }
     map.on("mousemove", LAYERS.statesFill, onMove)
     map.on("mouseleave", LAYERS.statesFill, onLeave)
@@ -87,7 +91,7 @@ export function StateLayers({ states, max, bounds, colors }: StateLayersProps) {
       map.off("mouseleave", LAYERS.statesFill, onLeave)
       map.off("click", LAYERS.statesFill, onClick)
     }
-  }, [map, bounds])
+  }, [map, bounds, onSelect])
 
   const fill = useMemo(() => statesFillLayer(colors, max), [colors, max])
   const hover = useMemo(() => statesHoverLayer(colors), [colors])

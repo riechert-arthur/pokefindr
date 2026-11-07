@@ -2,13 +2,24 @@
 
 import type { FC } from "react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { Map, FullscreenControl, NavigationControl, MAP_STYLES, type MapRef, type ViewStateChangeEvent } from "./engine"
+import { debounce, useQueryStates } from "nuqs"
+import type { FeatureCollection, Point } from "geojson"
+import {
+  Map,
+  FullscreenControl,
+  Layer,
+  NavigationControl,
+  Source,
+  MAP_STYLES,
+  type MapRef,
+  type ViewStateChangeEvent,
+} from "./engine"
 import { useViewportLocations, type ViewportMap } from "./useViewportLocations"
 import { MapStatusPill } from "./MapStatusPill"
 import { UserLocationPin } from "./UserLocationPin"
 import { useUserLocationContext } from "@/components/providers/UserLocationContextProvider"
 import { MapSearchBar } from "./MapSearchBar"
-import { LOCATION_KINDS, type LocationFeature, type LocationKind } from "@/lib/types/locations"
+import { LOCATION_KINDS, type LocationFeature, type LocationFeatureProperties, type LocationKind } from "@/lib/types/locations"
 import { useLocations } from "./useLocations"
 import { LocationPopup, type LocationPopupProps } from "./LocationPinPopUps"
 import { useSidebar } from "../providers/SidebarContextProvider"
@@ -18,19 +29,16 @@ import { useSessionContext } from "../providers/SessionProvider"
 import { useIsDark, useThemeKey } from "@/lib/design/useThemeKey"
 import { MapStatus } from "./MapStatus"
 import { MAP_FAILURE_MESSAGES } from "./MapErrorBoundary"
-import { LAYERS, POINT_ZOOM, readMapColors } from "./layers"
+import { LAYERS, POINT_ZOOM, SOURCES, radiusLayers, readMapColors } from "./layers"
 import { LocationLayers } from "./LocationLayers"
 import { StateLayers, StateLegend } from "./StateLayers"
 import { useStateShading } from "./useStateShading"
 import { cn } from "@/lib/utils"
-
-/** The lower 48, which the map opens on (from the redesign prototype). */
-const US_BOUNDS: [[number, number], [number, number]] = [[-125.5, 24.0], [-66.5, 49.6]]
+import { milesBetween, radiusCircle } from "@/lib/map/geo"
+import { DEFAULT_RADIUS, mapSearchParams, roundCamera, roundZoom } from "@/lib/map/url-state"
+import type { InitialMapView } from "@/lib/map/initial-view"
 
 type SelectedLocation = Omit<LocationPopupProps, "onClose" | "onDetails">
-
-const ALL_KINDS: ReadonlySet<LocationKind> = new Set(LOCATION_KINDS)
-const SHOWN_KINDS: readonly LocationKind[] = LOCATION_KINDS
 
 const toSelected = (feat: LocationFeature): SelectedLocation => {
   const [longitude, latitude] = feat.geometry.coordinates
@@ -38,13 +46,25 @@ const toSelected = (feat: LocationFeature): SelectedLocation => {
   return { longitude, latitude, id, retailer, address, city, state, machineID, kind }
 }
 
-const MapInstance: FC = () => {
+/** How long the map must be still before its camera goes into the URL. */
+const CAMERA_URL_DEBOUNCE_MS = 500
+
+const EMPTY_AREA: FeatureCollection = { type: "FeatureCollection", features: [] }
+
+export interface MapInstanceProps {
+  view: InitialMapView
+  /** The location named by `location=`, looked up on the server. */
+  location: LocationFeature | null
+}
+
+const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const userLocationContext = useUserLocationContext()
   const { userLocation, userLocationError } = userLocationContext
   const mapRef = useRef<MapRef>(null)
+  const [params, setParams] = useQueryStates(mapSearchParams)
   // The location with the popup and ring, and the one whose details panel is open.
-  const [selected, setSelected] = useState<SelectedLocation | null>(null)
-  const [details, setDetails] = useState<SelectedLocation | null>(null)
+  const [selected, setSelected] = useState<SelectedLocation | null>(() => (location ? toSelected(location) : null))
+  const [details, setDetails] = useState<SelectedLocation | null>(() => (location ? toSelected(location) : null))
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const { session } = useSessionContext()
   // MapInstance is client-only (MapLoader uses ssr: false), so this is right on first render.
@@ -53,18 +73,52 @@ const MapInstance: FC = () => {
   // Re-read the token colors only when the theme changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const colors = useMemo(readMapColors, [themeKey])
+
+  // What to show, from the URL: every kind and retailer unless it names some.
+  const typesKey = params.types?.join(",")
+  const kinds = useMemo<readonly LocationKind[]>(
+    () => params.types ?? LOCATION_KINDS,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [typesKey],
+  )
+  const kindSet = useMemo(() => new Set(kinds), [kinds])
+  const retailers = params.retailer
+
+  // A searched place and its radius, from the URL.
+  const placeLng = params.q && params.near === null ? params.lng : null
+  const placeLat = params.q && params.near === null ? params.lat : null
+  const placeRadius = params.r ?? DEFAULT_RADIUS
+  const place = useMemo(
+    () => (placeLng !== null && placeLat !== null ? { lng: placeLng, lat: placeLat, radius: placeRadius } : null),
+    [placeLng, placeLat, placeRadius],
+  )
+  const area = useMemo(() => (place ? radiusCircle(place.lng, place.lat, place.radius) : EMPTY_AREA), [place])
+  const radius = useMemo(() => radiusLayers(colors), [colors])
+
   // Every location, for the search box only; the map draws what's in view.
   const collection = useLocations()
-  const { states, max, total, bounds } = useStateShading(ALL_KINDS)
+  const { states, max, total, bounds } = useStateShading(kindSet)
   const [map, setMap] = useState<ViewportMap>()
-  const viewport = useViewportLocations(map, { types: SHOWN_KINDS })
-  const inView = useMemo(
-    () => ({ type: "FeatureCollection" as const, features: viewport.features }),
-    [viewport.features],
-  )
+  const viewport = useViewportLocations(map, { types: kinds })
+  const inView = useMemo<FeatureCollection<Point, LocationFeatureProperties & { dim?: boolean }>>(() => {
+    const features = retailers?.length
+      ? viewport.features.filter((f) => f.properties.kind !== "vending" || retailers.includes(f.properties.retailer))
+      : viewport.features
+    if (!place) return { type: "FeatureCollection", features }
+    return {
+      type: "FeatureCollection",
+      features: features.map((f) => {
+        const [lng, lat] = f.geometry.coordinates
+        return { ...f, properties: { ...f.properties, dim: milesBetween(place.lng, place.lat, lng, lat) > place.radius } }
+      }),
+    }
+  }, [viewport.features, retailers, place])
+
   const [zoomedOut, setZoomedOut] = useState(true)
   // "loading" until the style and first tiles are in; "failed" if that never happens.
   const [loadState, setLoadState] = useState<"loading" | "loaded" | "failed">("loading")
+  // Set when the viewer starts moving the map (not when the app flies it).
+  const userMoving = useRef(false)
 
   useEffect(() => {
     if (userLocation && !userLocationError && mapRef.current) {
@@ -75,6 +129,14 @@ const MapInstance: FC = () => {
       })
     }
   }, [userLocation, userLocationError])
+
+  // Back and forward: the details panel follows `location=`.
+  useEffect(() => {
+    if (!params.location) setDetails(null)
+    else if (selected?.id === params.location) setDetails(selected)
+    // Only when the URL changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params.location])
 
   /** A dot was clicked: popup and ring, without moving the map. */
   const handleDotSelect = useCallback((feat: LocationFeature) => setSelected(toSelected(feat)), [])
@@ -87,11 +149,58 @@ const MapInstance: FC = () => {
     setSelected(toSelected(feat))
   }
 
+  /** Details are a new view: a new history entry, so Back closes them. */
+  const openDetails = (info: SelectedLocation) => {
+    setDetails(info)
+    void setParams({ location: info.id }, { history: "push" })
+  }
+
+  const closeDetails = () => {
+    setDetails(null)
+    void setParams({ location: null })
+  }
+
+  /** A state was clicked (StateLayers zooms to it): a new view, so a new history entry. */
+  const handleStateSelect = useCallback(
+    (code: string) => {
+      void setParams(
+        { state: code, q: null, lat: null, lng: null, r: null, z: null, near: null },
+        { history: "push" },
+      )
+    },
+    [setParams],
+  )
+
+  /**
+   * The viewer moved the map: keep its camera in the URL (replacing, so the
+   * history doesn't fill with pans), unless a place or state names the view.
+   */
+  const handleMoveEnd = (e: ViewStateChangeEvent) => {
+    if (!userMoving.current) return
+    userMoving.current = false
+    if (place || params.state || params.near) return
+    const { longitude, latitude, zoom } = e.viewState
+    void setParams(
+      { lat: roundCamera(latitude), lng: roundCamera(longitude), z: roundZoom(zoom) },
+      { limitUrlUpdates: debounce(CAMERA_URL_DEBOUNCE_MS) },
+    )
+  }
+
+  const { camera } = view
+  const initialViewState =
+    "bounds" in camera
+      ? {
+          bounds: camera.bounds,
+          // An explicit `maxZoom: undefined` overrides MapLibre's default and breaks the fit.
+          fitBoundsOptions: camera.maxZoom === undefined ? { padding: 40 } : { padding: 40, maxZoom: camera.maxZoom },
+        }
+      : camera
+
   return (
     <>
       <Map
         ref={mapRef}
-        initialViewState={{ bounds: US_BOUNDS, fitBoundsOptions: { padding: 40 } }}
+        initialViewState={initialViewState}
         minZoom={1.2}
         renderWorldCopies={false}
         attributionControl={{ compact: true, customAttribution: "State outlines: US Census" }}
@@ -108,6 +217,11 @@ const MapInstance: FC = () => {
           setZoomedOut(e.target.getZoom() < POINT_ZOOM)
         }}
         onZoom={(e: ViewStateChangeEvent) => setZoomedOut(e.viewState.zoom < POINT_ZOOM)}
+        onMoveStart={(e: ViewStateChangeEvent) => {
+          // Gestures carry the browser event; flyTo and fitBounds don't.
+          if (e.originalEvent) userMoving.current = true
+        }}
+        onMoveEnd={handleMoveEnd}
         onError={(e) => {
           console.error("[map]", e.error)
           // Errors after load (a missing tile, say) don't stop the map; one before
@@ -121,7 +235,13 @@ const MapInstance: FC = () => {
           if (!hit) setSelected(null)
         }}
       >
-        {states && <StateLayers states={states} max={max} bounds={bounds} colors={colors} />}
+        {states && (
+          <StateLayers states={states} max={max} bounds={bounds} colors={colors} onSelect={handleStateSelect} />
+        )}
+        <Source id={SOURCES.radius} type="geojson" data={area}>
+          <Layer {...radius.fill} />
+          <Layer {...radius.line} />
+        </Source>
         <LocationLayers collection={inView} selected={selected} colors={colors} onSelect={handleDotSelect} />
         <FullscreenControl position="bottom-right" />
         <NavigationControl position="bottom-right" showCompass={false} />
@@ -131,10 +251,10 @@ const MapInstance: FC = () => {
           <LocationPopup
             {...selected}
             onClose={() => setSelected(null)}
-            onDetails={() => setDetails(selected)}
+            onDetails={() => openDetails(selected)}
           />
         )}
-        <LocationInfoPanel info={details} onClose={() => setDetails(null)} />
+        <LocationInfoPanel info={details} onClose={closeDetails} />
         {states && zoomedOut && (
           <StateLegend
             max={max}
@@ -144,10 +264,10 @@ const MapInstance: FC = () => {
         <MapStatusPill
           zoomedOut={zoomedOut}
           total={total}
-          inView={viewport.features.length}
+          inView={inView.features.length}
           status={viewport.status}
           truncated={viewport.truncated}
-          kinds={SHOWN_KINDS}
+          kinds={kinds}
         />
         {session && (
           <div className="absolute top-4 right-5 z-50">
