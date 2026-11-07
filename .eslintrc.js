@@ -7,7 +7,7 @@
 const ENV_RULES = [
   {
     selector:
-      "MemberExpression[object.type='MemberExpression'][object.object.name='process'][object.property.name='env'][property.name!='NODE_ENV'][property.name!='NEXT_RUNTIME']",
+      "MemberExpression[object.type='MemberExpression'][object.object.name='process'][object.property.name='env'][property.name!='NODE_ENV'][property.name!='NEXT_RUNTIME'][property.name!='NEXT_PHASE']",
     message: "Read configuration through getServerConfig() (src/server/config.ts) or publicConfig (src/config.public.ts).",
   },
   {

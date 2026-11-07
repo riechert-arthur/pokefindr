@@ -33,6 +33,7 @@ interface PlaceSearchProps {
   locations?: boolean
   onClear?: () => void
   leading?: ReactNode
+  placement?: "auto" | "below"
   className?: string
 }
 

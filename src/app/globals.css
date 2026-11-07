@@ -300,3 +300,29 @@
     background-color: GrayText;
   }
 }
+
+/*
+ * The landing hero's background (Hero): two soft brand glows, faded out at
+ * the bottom, with a light wash behind the headline so it stays readable
+ * over the animated map (#113).
+ */
+.hero-bg {
+  -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent);
+  mask-image: linear-gradient(to bottom, black 70%, transparent);
+}
+.hero-bg::before {
+  content: "";
+  position: absolute;
+  inset: -20% -10% 0;
+  filter: blur(60px);
+  opacity: 0.5;
+  background:
+    radial-gradient(40% 35% at 18% 30%, hsl(var(--brand) / 0.45), transparent 70%),
+    radial-gradient(38% 40% at 82% 22%, hsl(var(--brand-2) / 0.4), transparent 70%);
+}
+.hero-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(46% 40% at 50% 46%, hsl(var(--background) / 0.82), transparent 75%);
+}
