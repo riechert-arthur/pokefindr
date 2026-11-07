@@ -6,7 +6,8 @@ import { addReview } from '@/server/services/reviews'
 const bodySchema = z.object({
   locationId: z.string().uuid(),
   rating: z.number().int().min(1).max(5),
-  text: z.string().trim().min(1),
+  // A rating alone is a review; the text is optional, up to 500 characters.
+  text: z.string().trim().max(500).default(''),
 })
 
 export async function POST(req: NextRequest) {
@@ -17,12 +18,12 @@ export async function POST(req: NextRequest) {
 
   const parsed = bodySchema.safeParse(await req.json().catch(() => null))
   if (!parsed.success)
-    return NextResponse.json({ error: 'Missing or invalid locationId / rating / text' }, { status: 400 })
+    return NextResponse.json({ error: 'Missing or invalid locationId / rating (1-5) / text (up to 500 characters)' }, { status: 400 })
 
   try {
-    const added = await addReview({ ...parsed.data, userId })
-    if (!added) return NextResponse.json({ error: 'Location not found' }, { status: 404 })
-    return NextResponse.json({ success: true }, { status: 200 })
+    const id = await addReview({ ...parsed.data, userId })
+    if (!id) return NextResponse.json({ error: 'Location not found' }, { status: 404 })
+    return NextResponse.json({ success: true, id }, { status: 200 })
   } catch (err) {
     console.error('[api/reviews] failed to add review', err)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
