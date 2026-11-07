@@ -1,5 +1,5 @@
 import React from "react"
-import { Popup } from "react-map-gl"
+import { Popup } from "./engine"
 
 export interface LocationPopupProps {
   longitude: number
@@ -29,7 +29,7 @@ export const LocationPopup: React.FC<LocationPopupProps> = ({
   onMouseLeave,
 }) => (
   <Popup
-    className="shadow-md rounded-xl z-10"
+    className="z-10"
     longitude={longitude}
     latitude={latitude}
     anchor="top"
@@ -37,7 +37,6 @@ export const LocationPopup: React.FC<LocationPopupProps> = ({
     closeButton={false}
   >
     <div
-      className="p-2"
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >

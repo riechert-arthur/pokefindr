@@ -1,6 +1,6 @@
 import { useUserLocationContext } from "@/components/providers/UserLocationContextProvider"
 import type { FC } from "react"
-import { Marker } from "react-map-gl"
+import { Marker } from "./engine"
 import { UserLocationPinIcon } from "@/components/icons/UserLocationPinIcon"
 
 export const UserLocationPin: FC = () => {

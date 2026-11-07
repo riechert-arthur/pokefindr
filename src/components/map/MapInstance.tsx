@@ -1,11 +1,8 @@
 "use client"
 
-import { publicConfig } from "@/config.public"
 import type { FC } from "react"
 import { useEffect, useRef, useState } from "react"
-import Map, { FullscreenControl, NavigationControl } from "react-map-gl"
-import type { MapRef } from "react-map-gl"
-import "mapbox-gl/dist/mapbox-gl.css"
+import { Map, FullscreenControl, NavigationControl, MAP_STYLES, type MapRef } from "./engine"
 import { PokemonCenterLocationPins } from "./PokemonCenterLocationPins"
 import { UserLocationPin } from "./UserLocationPin"
 import { useUserLocationContext } from "@/components/providers/UserLocationContextProvider"
@@ -74,14 +71,13 @@ const MapInstance: FC = () => {
     <Map
       ref={mapRef}
       initialViewState={initialViewState}
-      mapboxAccessToken={publicConfig.mapboxAccessToken}
       style={{
         width: "100%",
         height: "100%",
         zIndex: 1,
         position: "relative",
       }}
-      mapStyle={isDark ? "mapbox://styles/mapbox/dark-v11" : "mapbox://styles/mapbox/streets-v12"}
+      mapStyle={isDark ? MAP_STYLES.dark : MAP_STYLES.light}
       onClick={() => {
         if(isSidebarOpen) {
           toggleSidebar()
