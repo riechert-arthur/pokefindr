@@ -100,7 +100,7 @@ export default function ReviewsPage() {
   }
 
   return (
-    <div className={`${isSidebarOpen ? 'ml-16' : ''} md:ml-16`}>
+    <div className={isSidebarOpen ? 'max-sm:ml-16' : undefined}>
       {/* header */}
       <header className="absolute inset-x-0 top-0 z-40 flex h-16 border-b border-border">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
