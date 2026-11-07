@@ -1,7 +1,7 @@
 import "server-only"
 import type { GeocodeKind, GeocodeOptions, GeocodeResult, Geocoder } from "@/server/ports/geocoder"
 import { stateCode } from "@/lib/map/states"
-import { cityLabel, clean, countryOf, getJson, limitOf } from "./shared"
+import { cityLabel, clean, countryOf, endpoint, getJson, limitOf } from "./shared"
 
 interface MapTilerFeature {
   place_type: string[]
@@ -29,7 +29,7 @@ export class MapTilerGeocoder implements Geocoder {
   ) {}
 
   async search(query: string, opts?: GeocodeOptions): Promise<GeocodeResult[]> {
-    const url = new URL(`/geocoding/${encodeURIComponent(query)}.json`, this.baseUrl)
+    const url = endpoint(this.baseUrl, `geocoding/${encodeURIComponent(query)}.json`)
     const limit = limitOf(opts)
     url.search = new URLSearchParams({
       key: this.apiKey,
@@ -48,7 +48,13 @@ function toResult(f: MapTilerFeature): GeocodeResult {
   const kind = KINDS[f.place_type[0]] ?? "other"
   const region = f.context?.find((c) => c.id.startsWith("region"))
   const state = kind === "state" ? stateCode(f.text) : stateCode(region?.text)
-  const label = kind === "city" ? cityLabel(f.text, state) : kind === "state" ? f.text : f.place_name.replace(/, United States( of America)?$/, "")
+  const label = kind === "city" ? cityLabel(f.text, state) : kind === "state" ? f.text : shortPlaceName(f.place_name, region?.text, state)
   const [lng, lat] = f.center
   return { label, lng, lat, bbox: f.bbox, kind, state }
+}
+
+/** "98101, Seattle, Washington, United States" → "98101, Seattle, WA", like the other adapters. */
+function shortPlaceName(placeName: string, regionName?: string, state?: string): string {
+  const parts = placeName.split(", ").filter((p) => !/^United States( of America)?$/.test(p))
+  return parts.map((p) => (state && p === regionName ? state : p)).join(", ")
 }

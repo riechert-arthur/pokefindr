@@ -2,6 +2,7 @@ import "server-only"
 import { sql, type SQL } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
 import { locations } from "@/server/db/schema"
+import { OUTSIDE_LOWER_48 } from "@/lib/map/states"
 import type { LocationFeature, LocationFeatureCollection, LocationKind, NearbyLocations, StateCities } from "@/lib/types/locations"
 import type { Bbox } from "@/lib/locations/bbox"
 
@@ -82,6 +83,9 @@ export async function getActiveLocationsGeoJSON(
 export const METERS_PER_MILE = 1609.344
 
 const kindsIn = (types: readonly LocationKind[]) => sql.join(types.map((t) => sql`${t}`), sql`, `)
+/** Vending machines of these retailers only (other kinds aren't filtered), as the map's `retailer=` does. Empty means all. */
+const retailerIn = (retailers: readonly string[]) =>
+  retailers.length ? sql`and (l.kind <> 'vending' or coalesce(l.retailer, l.name) in (${sql.join(retailers.map((r) => sql`${r}`), sql`, `)}))` : sql``
 const pointOf = ([lng, lat]: readonly [number, number]) => sql`ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography`
 
 /**
@@ -93,6 +97,7 @@ export async function countLocationsNear(
   points: readonly (readonly [number, number])[],
   radiusMiles: number,
   types: readonly LocationKind[],
+  retailers: readonly string[] = [],
   db: Database = getDb(),
 ): Promise<number[]> {
   if (points.length === 0) return []
@@ -104,6 +109,7 @@ export async function countLocationsNear(
     left join ${locations} l
       on l.is_active and l.kind in (${kindsIn(types)})
       and ST_DWithin(l.geog, ST_SetSRID(ST_MakePoint(p.lng, p.lat), 4326)::geography, ${radiusMiles * METERS_PER_MILE})
+      ${retailerIn(retailers)}
     group by p.i
   `)
   const counts = points.map(() => 0)
@@ -117,6 +123,8 @@ export interface LocationSearch {
   types: readonly LocationKind[]
   /** [lng, lat]: closest first. Without it, by retailer. */
   near?: readonly [number, number]
+  /** Vending retailers to keep, as in the map's URL; empty means all. */
+  retailers?: readonly string[]
   limit?: number
 }
 
@@ -125,7 +133,7 @@ const likeEscape = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`)
 
 /** Active locations whose retailer, name, address or city contains `q`: the search list's Locations group. */
 export async function searchLocations(
-  { q, types, near, limit = 5 }: LocationSearch,
+  { q, types, near, retailers = [], limit = 5 }: LocationSearch,
   db: Database = getDb(),
 ): Promise<LocationFeatureCollection> {
   const term = q.trim()
@@ -138,7 +146,7 @@ export async function searchLocations(
       or l.address ilike ${like}
       or l.city ilike ${like}
       or l."machineID" = ${term.toUpperCase()}
-    )`,
+    ) ${retailerIn(retailers)}`,
     limit,
     near ? sql`ST_Distance(geog, ${pointOf(near)}), id` : sql`coalesce(retailer, name), city, id`,
   )
@@ -170,9 +178,6 @@ export async function getLocationsNear(
 ): Promise<NearbyLocations> {
   if (types.length === 0) return { type: "FeatureCollection", features: [], counts: {}, total: 0, truncated: false }
   const point = pointOf(center)
-  const retailerFilter = retailers.length
-    ? sql`and (l.kind <> 'vending' or coalesce(l.retailer, l.name) in (${sql.join(retailers.map((r) => sql`${r}`), sql`, `)}))`
-    : sql``
   const rows = await db.execute<{ fc: NearbyLocations }>(sql`
     with matched as (
       -- On the sphere (use_spheroid false), as the map measures (milesBetween),
@@ -181,7 +186,7 @@ export async function getLocationsNear(
       from ${locations} l
       where l.is_active and l.geog is not null and l.kind in (${kindsIn(types)})
         and ST_DWithin(l.geog, ${point}, ${radiusMiles * METERS_PER_MILE}, false)
-        ${retailerFilter}
+        ${retailerIn(retailers)}
     ),
     page as (
       select * from matched order by miles, id limit ${limit}
@@ -214,22 +219,28 @@ export async function getTopCities(
   types: readonly LocationKind[],
   db: Database = getDb(),
   limit = TOP_CITIES_LIMIT,
+  retailers: readonly string[] = [],
 ): Promise<StateCities> {
   if (types.length === 0) return { cities: [], counts: {}, total: 0 }
+  // A US state: another country's region can share the code (WA, Western Australia).
   const matched = sql`
     select * from ${locations} l
-    where l.is_active and l.geog is not null and l.state = ${state} and l.kind in (${kindsIn(types)})
+    where l.is_active and l.geog is not null and l.country_code = 'US' and l.state = ${state} and l.kind in (${kindsIn(types)})
+      ${retailerIn(retailers)}
   `
+  // The city as typed, with runs of spaces (tabs, NBSPs from a paste) as one.
+  const name = sql`regexp_replace(trim(m.city), '\\s+', ' ', 'g')`
   const [cities, counts] = await Promise.all([
     db.execute<StateCities["cities"][number]>(sql`
-      -- One name per city however it was typed, preferring a capitalized spelling.
-      select (array_agg(trim(m.city) order by trim(m.city) = lower(trim(m.city)), trim(m.city)))[1] as city,
+      -- One name per city however it was typed: title case if any row has it
+      -- ("Seattle" over "SEATTLE" and "seattle"), then any capitalized spelling.
+      select (array_agg(${name} order by ${name} <> initcap(${name}), ${name} = lower(${name}), ${name}))[1] as city,
         count(*)::int as count,
         round(avg(ST_X(m.geog::geometry))::numeric, 4)::float8 as lng,
         round(avg(ST_Y(m.geog::geometry))::numeric, 4)::float8 as lat
       from (${matched}) m
       where coalesce(trim(m.city), '') <> ''
-      group by lower(trim(m.city))
+      group by lower(${name})
       order by count desc, city
       limit ${limit}
     `),
@@ -253,6 +264,9 @@ export async function getVendingPoints(db: Database = getDb()): Promise<[number,
     select distinct round(ST_X(geog::geometry)::numeric, 2)::float8 as lng, round(ST_Y(geog::geometry)::numeric, 2)::float8 as lat
     from ${locations}
     where is_active and geog is not null and kind = 'vending'
+      -- The lower 48 and DC, as the map frames them (a row without a state counts by its point).
+      and country_code = 'US' and coalesce(state, '') not in (${sql.join(OUTSIDE_LOWER_48.map((s) => sql`${s}`), sql`, `)})
+      and ST_X(geog::geometry) between -125 and -66 and ST_Y(geog::geometry) between 24 and 50
     order by 1, 2
   `)
   return rows.map((r) => [r.lng, r.lat])

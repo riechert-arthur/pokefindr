@@ -8,7 +8,10 @@ export type NearbyStatus = "idle" | "loading" | "ready" | "error"
 
 export interface NearbyState {
   status: NearbyStatus
-  /** The last results; kept while the next ones load. */
+  /**
+   * The last results for this place; kept while a new radius or filter
+   * loads, but not for a new place (they'd show its count under the new name).
+   */
   results: NearbyLocations | null
   /** Asks again (after an error). */
   reload: () => void
@@ -31,7 +34,8 @@ export function useNearbyLocations(
   kinds: readonly LocationKind[],
   retailers: readonly string[] | null,
 ): NearbyState {
-  const [state, setState] = useState<Omit<NearbyState, "reload">>({ status: "idle", results: null })
+  // `center`: the place the results are for.
+  const [state, setState] = useState<{ status: NearbyStatus; results: NearbyLocations | null; center: string | null }>({ status: "idle", results: null, center: null })
   const [attempt, setAttempt] = useState(0)
   const reload = useCallback(() => setAttempt((n) => n + 1), [])
   const lng = place ? roundPlace(place.lng) : null
@@ -39,10 +43,11 @@ export function useNearbyLocations(
   const radius = place?.radius ?? null
   const types = kinds.length === LOCATION_KINDS.length ? null : kinds.join(",")
   const retailer = retailers?.length ? retailers.join(",") : null
+  const center = lng === null || lat === null ? null : `${lng},${lat}`
 
   useEffect(() => {
     if (lng === null || lat === null || radius === null) {
-      setState({ status: "idle", results: null })
+      setState({ status: "idle", results: null, center: null })
       return
     }
     const params = new URLSearchParams({ lng: String(lng), lat: String(lat), r: String(radius) })
@@ -54,7 +59,7 @@ export function useNearbyLocations(
       .then(async (res) => {
         if (!res.ok) throw new Error(`GET /api/locations/near failed (${res.status})`)
         const results = (await res.json()) as NearbyLocations
-        if (!controller.signal.aborted) setState({ status: "ready", results })
+        if (!controller.signal.aborted) setState({ status: "ready", results, center: `${lng},${lat}` })
       })
       .catch((err: unknown) => {
         if (controller.signal.aborted) return
@@ -64,5 +69,5 @@ export function useNearbyLocations(
     return () => controller.abort()
   }, [lng, lat, radius, types, retailer, attempt])
 
-  return { ...state, reload }
+  return { status: state.status, results: state.center === center ? state.results : null, reload }
 }

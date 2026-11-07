@@ -65,6 +65,9 @@ export const STATES: Record<string, { name: string; bounds: LngLatBounds }> = {
 }
 
 /** Two-letter state codes, e.g. "WA". */
+/** States and territories outside the conterminous US: the landing map frames the lower 48 and DC. */
+export const OUTSIDE_LOWER_48 = ["AK", "HI", "PR", "GU", "VI", "AS", "MP"] as const
+
 export const isStateCode = (code: string): boolean => Object.hasOwn(STATES, code)
 
 const CODE_BY_NAME = new Map(Object.entries(STATES).map(([code, { name }]) => [name.toLowerCase(), code]))
