@@ -8,21 +8,23 @@ export const SAMPLE_EVENTS = [
 ] as const
 
 /**
- * Adds the sample events, labelled `is_sample`, unless sample highlights are
- * already there (it never touches real ones). Returns how many it added.
+ * Replaces the sample events (`is_sample` rows only; it never touches real
+ * ones) with a fresh set dated from `now`, so re-seeding keeps them
+ * upcoming. In one transaction: never a partial set. Returns how many it added.
  */
 export async function seedSampleHighlights(sql: postgres.Sql, now = new Date()): Promise<number> {
-  const [{ n }] = await sql<{ n: number }[]>`select count(*)::int as n from highlights where is_sample`
-  if (n > 0) return 0
   const day = 24 * 60 * 60 * 1000
-  // Noon UTC, so the date reads the same across US time zones.
-  const noon = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 18)
-  for (const e of SAMPLE_EVENTS) {
-    const starts = new Date(noon + e.inDays * day)
-    const ends = e.lastsDays ? new Date(starts.getTime() + e.lastsDays * day) : null
-    await sql`
-      insert into highlights (kind, title, starts_at, ends_at, geog, city, state, is_sample)
-      values ('event', ${e.title}, ${starts}, ${ends}, st_setsrid(st_makepoint(${e.lng}, ${e.lat}), 4326)::geography, ${e.city}, ${e.state}, true)`
-  }
+  // 18:00 UTC: the same calendar day across US time zones.
+  const evening = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 18)
+  await sql.begin(async (tx) => {
+    await tx`delete from highlights where is_sample`
+    for (const e of SAMPLE_EVENTS) {
+      const starts = new Date(evening + e.inDays * day)
+      const ends = e.lastsDays ? new Date(starts.getTime() + e.lastsDays * day) : null
+      await tx`
+        insert into highlights (kind, title, starts_at, ends_at, geog, city, state, is_sample)
+        values ('event', ${e.title}, ${starts}, ${ends}, st_setsrid(st_makepoint(${e.lng}, ${e.lat}), 4326)::geography, ${e.city}, ${e.state}, true)`
+    }
+  })
   return SAMPLE_EVENTS.length
 }

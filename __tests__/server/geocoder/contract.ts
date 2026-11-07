@@ -20,6 +20,8 @@ export function geocoderContract(name: string, make: () => Geocoder, { timeout =
       const results = await make().search("98101", { limit: 3 })
       const zip = results.find((r) => r.kind === "postcode")
       expect(zip?.lat).toBeCloseTo(47.6, 0)
+      // Short, the same shape for every provider: "98101, Seattle, WA".
+      expect(zip?.label).toMatch(/^98101, .*Seattle, WA$/)
     })
 
     it("finds a street address", { timeout }, async () => {
@@ -27,6 +29,7 @@ export function geocoderContract(name: string, make: () => Geocoder, { timeout =
       const address = results.find((r) => r.kind === "address")
       expect(address?.lat).toBeCloseTo(38.9, 0)
       expect(address?.lng).toBeCloseTo(-77.04, 1)
+      expect(address?.label).toMatch(/^1600 Pennsylvania Ave.*, Washington, DC$/)
     })
 
     it("returns at most `limit` results", { timeout }, async () => {

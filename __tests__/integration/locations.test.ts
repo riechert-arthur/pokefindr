@@ -138,6 +138,9 @@ describe("countLocationsNear", () => {
     expect(await countLocationsNear([seattle], 50, ["vending"])).toEqual([3])
     expect(await countLocationsNear([seattle], 10, [])).toEqual([0])
     expect(await countLocationsNear([], 10, ["vending"])).toEqual([])
+    // A retailer filter narrows vending machines only, as the map's `retailer=` does.
+    expect(await countLocationsNear([seattle], 10, ["vending", "shop"], ["QFC"])).toEqual([2])
+    expect(await countLocationsNear([seattle], 10, ["vending"], ["Safeway", "QFC"])).toEqual([2])
   })
 })
 
@@ -172,6 +175,7 @@ describe("searchLocations", () => {
     expect(names(await searchLocations({ q: "den", types: ["shop"] }))).toEqual(["Den of Cards Boulder"])
     expect(names(await searchLocations({ q: "kroger", types: ["vending"], near: [-96.8, 32.8] }))).toEqual(["Kroger Dallas", "Kroger Denton"])
     expect(names(await searchLocations({ q: "kroger", types: ["vending"], near: [-97.1, 33.2], limit: 1 }))).toEqual(["Kroger Denton"])
+    expect(names(await searchLocations({ q: "den", types: ["vending", "shop"], retailers: ["Kroger"] })).sort()).toEqual(["Den of Cards Boulder", "Kroger Denton"])
   })
 
   it("treats % and _ as plain characters", async () => {
@@ -278,6 +282,28 @@ describe("getTopCities", () => {
     ])
     expect((await getTopCities("WA", [])).cities).toEqual([])
     expect((await getTopCities("WA", ["vending"], undefined, 1)).cities).toHaveLength(1)
+  })
+
+  it("merges spellings, prefers title case, keeps to the US and follows the retailer filter", async () => {
+    await getDb()
+      .insert(locations)
+      .values([
+        { machineId: "A1", retailer: "QFC", city: "SEATTLE", state: "WA", geog: { lng: -122.3, lat: 47.6 } },
+        { machineId: "A2", retailer: "QFC", city: "Seattle", state: "WA", geog: { lng: -122.3, lat: 47.6 } },
+        { machineId: "A3", retailer: "Safeway", city: "Port  Angeles", state: "WA", geog: { lng: -123.4, lat: 48.1 } },
+        { machineId: "A4", retailer: "Safeway", city: "Port\tAngeles", state: "WA", geog: { lng: -123.4, lat: 48.1 } },
+        // Western Australia shares the code.
+        { machineId: "AU", retailer: "Coles", city: "Perth", state: "WA", countryCode: "AU", geog: { lng: 115.86, lat: -31.95 } },
+      ])
+    const all = await getTopCities("WA", ["vending"])
+    expect(all.cities.map((c) => [c.city, c.count])).toEqual([
+      ["Port Angeles", 2],
+      ["Seattle", 2],
+    ])
+    expect(all.total).toBe(4)
+    const qfc = await getTopCities("WA", ["vending"], undefined, undefined, ["QFC"])
+    expect(qfc.cities.map((c) => [c.city, c.count])).toEqual([["Seattle", 2]])
+    expect(qfc.total).toBe(2)
   })
 })
 
