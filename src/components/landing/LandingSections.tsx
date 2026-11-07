@@ -97,7 +97,8 @@ export function FaqSection() {
         {FAQS.map((f) => (
           <AccordionItem key={f.id} value={String(f.id)} className="border-border">
             <AccordionTrigger className="gap-3 px-0.5 py-4 text-subheading text-foreground hover:no-underline">{f.question}</AccordionTrigger>
-            <AccordionContent className="max-w-[65ch] px-0.5 pb-[18px] text-body text-muted-foreground">
+            {/* Mounted while closed (and hidden), so every answer is in the page's HTML: crawlers, Ctrl-F and the FAQPage data see the same text. */}
+            <AccordionContent forceMount className="max-w-[65ch] px-0.5 pb-[18px] text-body text-muted-foreground">
               {answerParts(f.answer).map((p, i) =>
                 "href" in p ? (
                   <a key={i} href={p.href} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-4">
