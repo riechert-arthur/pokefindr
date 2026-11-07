@@ -163,10 +163,10 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   }, [params.location, knownLocations])
 
   // A new view (a pick, Back or Forward) puts its label in the search box.
-  useEffect(() => {
-    setQuery(searchLabel(params))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentViewKey])
+  // Keyed on the label, so a pan (a camera-only URL write) keeps what the
+  // viewer typed.
+  const viewLabel = searchLabel(params)
+  useEffect(() => setQuery(viewLabel), [viewLabel])
 
   // Back and Forward: when the URL's view (place, state, camera) changes, move
   // the map to it. The key of the view the map shows changes only on load, on
@@ -425,6 +425,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
             onClear={handleSearchClear}
             placeholder="Search city or address"
             kinds={kinds}
+            retailers={retailers ?? undefined}
+            radius={placeRadius}
             near={searchNear}
             locations
             leading={

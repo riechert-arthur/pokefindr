@@ -137,6 +137,9 @@ describe("countLocationsNear", () => {
     expect(await countLocationsNear([seattle], 50, ["vending"])).toEqual([3])
     expect(await countLocationsNear([seattle], 10, [])).toEqual([0])
     expect(await countLocationsNear([], 10, ["vending"])).toEqual([])
+    // A retailer filter narrows vending machines only, as the map's `retailer=` does.
+    expect(await countLocationsNear([seattle], 10, ["vending", "shop"], ["QFC"])).toEqual([2])
+    expect(await countLocationsNear([seattle], 10, ["vending"], ["Safeway", "QFC"])).toEqual([2])
   })
 })
 
@@ -171,6 +174,7 @@ describe("searchLocations", () => {
     expect(names(await searchLocations({ q: "den", types: ["shop"] }))).toEqual(["Den of Cards Boulder"])
     expect(names(await searchLocations({ q: "kroger", types: ["vending"], near: [-96.8, 32.8] }))).toEqual(["Kroger Dallas", "Kroger Denton"])
     expect(names(await searchLocations({ q: "kroger", types: ["vending"], near: [-97.1, 33.2], limit: 1 }))).toEqual(["Kroger Denton"])
+    expect(names(await searchLocations({ q: "den", types: ["vending", "shop"], retailers: ["Kroger"] })).sort()).toEqual(["Den of Cards Boulder", "Kroger Denton"])
   })
 
   it("treats % and _ as plain characters", async () => {

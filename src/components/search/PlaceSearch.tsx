@@ -10,6 +10,8 @@ import type { GeocodeResult } from "@/lib/geocode/client"
 import { LOCATION_KINDS, type LocationFeature, type LocationKind } from "@/lib/types/locations"
 import { AREA_COUNT_RADIUS, useSearch } from "./useSearch"
 
+const areaId = (i: number, a: GeocodeResult) => `area-${i}-${a.label}`
+
 /** What the viewer picked: an area (city, ZIP, address or state) or one of our locations. */
 export type PlacePick = { type: "area"; area: GeocodeResult } | { type: "location"; feature: LocationFeature }
 
@@ -21,6 +23,10 @@ interface PlaceSearchProps {
   placeholder: string
   /** Kinds counted and searched; every kind by default. */
   kinds?: readonly LocationKind[]
+  /** Vending retailers to count and list, as the map's `retailer=`; all by default. */
+  retailers?: readonly string[]
+  /** Miles around each area to count: the radius a pick opens with. */
+  radius?: number
   /** [lng, lat] to rank nearby areas and locations first. */
   near?: [number, number]
   /** Also list our own locations whose name or address matches (the map does; the landing page doesn't). */
@@ -31,19 +37,21 @@ interface PlaceSearchProps {
 }
 
 /** SearchCommand with live results: areas from /api/geocode with counts, and matching locations. */
-export function PlaceSearch({ kinds = LOCATION_KINDS, near, locations = false, onPick, onQueryChange, ...props }: PlaceSearchProps) {
+export function PlaceSearch({ kinds = LOCATION_KINDS, retailers, radius = AREA_COUNT_RADIUS, near, locations = false, onPick, onQueryChange, ...props }: PlaceSearchProps) {
   // Searches only what the viewer typed: a label the caller put in the box
-  // (the map's current place) isn't a question.
+  // (the map's current place) isn't a question, and neither is the text
+  // left in the box after a pick: panning the map doesn't search again.
   const [typed, setTyped] = useState<string | null>(null)
-  const results = useSearch(typed === props.query ? props.query : "", { kinds, near, locations })
+  const results = useSearch(typed === props.query ? props.query : "", { kinds, retailers, radius, near, locations })
 
   const items = useMemo<SearchCommandItem[]>(
     () => [
       ...results.areas.map((a, i) => ({
-        id: `area-${i}`,
+        // With the label, so a new list (not new counts) gets new ids.
+        id: areaId(i, a),
         group: "areas" as const,
         label: a.label,
-        meta: a.count === null ? undefined : a.kind === "state" ? placesLabel(a.count, kinds) : `${placesLabel(a.count, kinds)} within ${AREA_COUNT_RADIUS} mi`,
+        meta: a.count === null ? undefined : a.kind === "state" ? placesLabel(a.count, kinds) : `${placesLabel(a.count, kinds)} within ${radius} mi`,
         icon: a.kind === "state" ? <MapIcon aria-hidden className="size-4 shrink-0" /> : <MapPinIcon aria-hidden className="size-4 shrink-0" />,
       })),
       ...results.locations.map((f) => {
@@ -59,17 +67,15 @@ export function PlaceSearch({ kinds = LOCATION_KINDS, near, locations = false, o
         }
       }),
     ],
-    [results, kinds],
+    [results, kinds, radius],
   )
 
   const pick = (id: string) => {
-    if (id.startsWith("area-")) {
-      const area = results.areas[Number(id.slice("area-".length))]
-      if (area) onPick({ type: "area", area })
-    } else {
-      const feature = results.locations.find((f) => `location-${f.properties.id}` === id)
-      if (feature) onPick({ type: "location", feature })
-    }
+    setTyped(null)
+    const area = results.areas.find((a, i) => areaId(i, a) === id)
+    if (area) return onPick({ type: "area", area })
+    const feature = results.locations.find((f) => `location-${f.properties.id}` === id)
+    if (feature) onPick({ type: "location", feature })
   }
 
   return (

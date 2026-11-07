@@ -74,6 +74,9 @@ export async function getActiveLocationsGeoJSON(
 export const METERS_PER_MILE = 1609.344
 
 const kindsIn = (types: readonly LocationKind[]) => sql.join(types.map((t) => sql`${t}`), sql`, `)
+/** Vending machines of these retailers only (other kinds aren't filtered), as the map's `retailer=` does. Empty means all. */
+const retailerIn = (retailers: readonly string[]) =>
+  retailers.length ? sql`and (l.kind <> 'vending' or coalesce(l.retailer, l.name) in (${sql.join(retailers.map((r) => sql`${r}`), sql`, `)}))` : sql``
 const pointOf = ([lng, lat]: readonly [number, number]) => sql`ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography`
 
 /**
@@ -85,6 +88,7 @@ export async function countLocationsNear(
   points: readonly (readonly [number, number])[],
   radiusMiles: number,
   types: readonly LocationKind[],
+  retailers: readonly string[] = [],
   db: Database = getDb(),
 ): Promise<number[]> {
   if (points.length === 0) return []
@@ -96,6 +100,7 @@ export async function countLocationsNear(
     left join ${locations} l
       on l.is_active and l.kind in (${kindsIn(types)})
       and ST_DWithin(l.geog, ST_SetSRID(ST_MakePoint(p.lng, p.lat), 4326)::geography, ${radiusMiles * METERS_PER_MILE})
+      ${retailerIn(retailers)}
     group by p.i
   `)
   const counts = points.map(() => 0)
@@ -109,6 +114,8 @@ export interface LocationSearch {
   types: readonly LocationKind[]
   /** [lng, lat]: closest first. Without it, by retailer. */
   near?: readonly [number, number]
+  /** Vending retailers to keep, as in the map's URL; empty means all. */
+  retailers?: readonly string[]
   limit?: number
 }
 
@@ -117,7 +124,7 @@ const likeEscape = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`)
 
 /** Active locations whose retailer, name, address or city contains `q`: the search list's Locations group. */
 export async function searchLocations(
-  { q, types, near, limit = 5 }: LocationSearch,
+  { q, types, near, retailers = [], limit = 5 }: LocationSearch,
   db: Database = getDb(),
 ): Promise<LocationFeatureCollection> {
   const term = q.trim()
@@ -130,7 +137,7 @@ export async function searchLocations(
       or l.address ilike ${like}
       or l.city ilike ${like}
       or l."machineID" = ${term.toUpperCase()}
-    )`,
+    ) ${retailerIn(retailers)}`,
     limit,
     near ? sql`ST_Distance(geog, ${pointOf(near)}), id` : sql`coalesce(retailer, name), city, id`,
   )
