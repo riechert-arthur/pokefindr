@@ -214,6 +214,19 @@ describe("PhotonGeocoder", () => {
     expect(results.map((r) => r.label)).toEqual(["Mall of America, Bloomington, MN", "Young America, MN"])
   })
 
+  it("keeps the places found when the extra request fails", async () => {
+    const fuzzy = feature([-93.79, 44.79], { type: "city", name: "Young America", state: "Minnesota", countrycode: "US" })
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>(async (url) =>
+      new URL(String(url)).searchParams.has("osm_tag") ? new Response(JSON.stringify({ features: [fuzzy] })) : new Response("busy", { status: 429 }),
+    ))
+    expect((await new PhotonGeocoder().search("Mall of Am")).map((r) => r.label)).toEqual(["Young America, MN"])
+    // With nothing to fall back on, the failure surfaces.
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>(async (url) =>
+      new URL(String(url)).searchParams.has("osm_tag") ? new Response(JSON.stringify({ features: [] })) : new Response("busy", { status: 429 }),
+    ))
+    await expect(new PhotonGeocoder().search("Mall of Am")).rejects.toBeInstanceOf(GeocoderError)
+  })
+
   it("asks for everything when the query has a number", async () => {
     const request = mockFetch({ features: [] })
     await new PhotonGeocoder().search("1600 Pennsylvania")
