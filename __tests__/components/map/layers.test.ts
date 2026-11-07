@@ -1,6 +1,8 @@
+import { readFileSync } from "node:fs"
+import path from "node:path"
 import { describe, expect, it } from "vitest"
 import type { Polygon } from "geojson"
-import { placeDotsLayer, statesFillLayer, POINT_ZOOM, type MapColors } from "@/components/map/layers"
+import { placeDotsLayer, shadingBeforeId, statesFillLayer, POINT_ZOOM, type MapColors } from "@/components/map/layers"
 import { shadeStates, type StateCollection } from "@/components/map/useStateShading"
 import { boundsOf } from "@/lib/map/geo"
 import { mixColors } from "@/lib/design/tokens"
@@ -97,5 +99,30 @@ describe("boundsOf", () => {
       coordinates: [square(-170, 52, -130, 71).coordinates, square(172, 52, 179, 53).coordinates],
     }
     expect(boundsOf(alaska)).toEqual([[-188, 52], [-130, 71]])
+  })
+})
+
+describe("shadingBeforeId", () => {
+  // Layer ids and types of the OpenFreeMap styles in engine.ts, saved from the live styles.
+  const positron = JSON.parse(readFileSync(path.join(__dirname, "fixtures/openfreemap-positron-layers.json"), "utf8"))
+  const dark = JSON.parse(readFileSync(path.join(__dirname, "fixtures/openfreemap-dark-layers.json"), "utf8"))
+
+  it.each([["positron", positron], ["dark", dark]])("puts every road under the shading in %s", (_, layers: { id: string; type: string }[]) => {
+    const before = shadingBeforeId(layers)
+    const at = layers.findIndex((l) => l.id === before)
+    expect(at).toBeGreaterThan(0)
+    expect(layers.slice(at).filter((l) => l.type !== "symbol")).toEqual([])
+  })
+
+  it("ignores our own layers and handles styles without labels", () => {
+    const layers = [
+      { id: "land", type: "fill" },
+      { id: "water_name", type: "symbol" },
+      { id: "motorway", type: "line" },
+      { id: "city", type: "symbol" },
+      { id: "states-fill", type: "fill" },
+    ]
+    expect(shadingBeforeId(layers)).toBe("city")
+    expect(shadingBeforeId([{ id: "land", type: "fill" }])).toBeUndefined()
   })
 })

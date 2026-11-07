@@ -149,3 +149,24 @@ export function statesLineLayer(c: MapColors): LayerProps {
     },
   }
 }
+
+/**
+ * The basemap layer our shading goes under: its first label after its last
+ * fill or line. Everything drawn as shapes (roads and interstates included)
+ * ends up below the shading, and the place labels that follow stay on top.
+ * Basemaps interleave labels with roads (OpenFreeMap Dark puts water names
+ * before every road), so "the first label" isn't enough. Our own layers
+ * (`own`) are skipped. Undefined when there's no such label: then the
+ * shading goes on top of everything.
+ */
+export function shadingBeforeId(
+  layers: readonly { id: string; type: string }[],
+  own: ReadonlySet<string> = new Set(Object.values(LAYERS)),
+): string | undefined {
+  const basemap = layers.filter((l) => !own.has(l.id))
+  let lastShape = -1
+  basemap.forEach((l, i) => {
+    if (l.type !== "symbol") lastShape = i
+  })
+  return basemap.slice(lastShape + 1).find((l) => l.type === "symbol")?.id
+}
