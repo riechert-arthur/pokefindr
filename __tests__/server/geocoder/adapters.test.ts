@@ -112,6 +112,7 @@ describe("MapTilerGeocoder", () => {
         },
         { place_type: ["postal_code"], text: "98101", place_name: "98101, Seattle, Washington, United States", center: [-122.33, 47.61], context: [{ id: "region.2", text: "Washington" }] },
         { place_type: ["region"], text: "Washington", place_name: "Washington, United States", center: [-120.7, 47.4] },
+        { place_type: ["postal_code"], text: "10001", place_name: "10001, New York, New York, United States", center: [-74, 40.75], context: [{ id: "region.3", text: "New York" }] },
       ],
     })
     const results = await new MapTilerGeocoder("key").search("Seattle")
@@ -120,6 +121,8 @@ describe("MapTilerGeocoder", () => {
       { label: "Seattle, WA", kind: "city", state: "WA" },
       { label: "98101, Seattle, WA", kind: "postcode", state: "WA" },
       { label: "Washington", kind: "state", state: "WA" },
+      // A city named like its state keeps its name.
+      { label: "10001, New York, NY", kind: "postcode", state: "NY" },
     ])
   })
 })
@@ -209,6 +212,19 @@ describe("PhotonGeocoder", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(new URL(String(fetchMock.mock.calls[1][0])).searchParams.has("layer")).toBe(false)
     expect(results.map((r) => r.label)).toEqual(["Mall of America, Bloomington, MN", "Young America, MN"])
+  })
+
+  it("keeps the places found when the extra request fails", async () => {
+    const fuzzy = feature([-93.79, 44.79], { type: "city", name: "Young America", state: "Minnesota", countrycode: "US" })
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>(async (url) =>
+      new URL(String(url)).searchParams.has("osm_tag") ? new Response(JSON.stringify({ features: [fuzzy] })) : new Response("busy", { status: 429 }),
+    ))
+    expect((await new PhotonGeocoder().search("Mall of Am")).map((r) => r.label)).toEqual(["Young America, MN"])
+    // With nothing to fall back on, the failure surfaces.
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>(async (url) =>
+      new URL(String(url)).searchParams.has("osm_tag") ? new Response(JSON.stringify({ features: [] })) : new Response("busy", { status: 429 }),
+    ))
+    await expect(new PhotonGeocoder().search("Mall of Am")).rejects.toBeInstanceOf(GeocoderError)
   })
 
   it("asks for everything when the query has a number", async () => {

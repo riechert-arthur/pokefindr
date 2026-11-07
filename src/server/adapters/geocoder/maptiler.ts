@@ -53,8 +53,14 @@ function toResult(f: MapTilerFeature): GeocodeResult {
   return { label, lng, lat, bbox: f.bbox, kind, state }
 }
 
-/** "98101, Seattle, Washington, United States" → "98101, Seattle, WA", like the other adapters. */
+/**
+ * "98101, Seattle, Washington, United States" → "98101, Seattle, WA", like
+ * the other adapters. Only the last part naming the region is the state:
+ * "10001, New York, New York" → "10001, New York, NY".
+ */
 function shortPlaceName(placeName: string, regionName?: string, state?: string): string {
   const parts = placeName.split(", ").filter((p) => !/^United States( of America)?$/.test(p))
-  return parts.map((p) => (state && p === regionName ? state : p)).join(", ")
+  const i = state && regionName ? parts.lastIndexOf(regionName) : -1
+  if (i >= 0) parts[i] = state!
+  return parts.join(", ")
 }

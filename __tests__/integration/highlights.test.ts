@@ -36,6 +36,17 @@ describe("getHotspots", () => {
     ])
     expect(hotspots[0].lng).toBeCloseTo(-122.67, 2)
   })
+
+  it("counts only US machines around a border city", async () => {
+    await getDb()
+      .insert(locations)
+      .values([
+        ...machines("Detroit", "MI", -83.05, 42.33, 5),
+        // Windsor, Ontario, across the river.
+        ...machines("Windsor", "ON", -83.03, 42.3, 6).map((m) => ({ ...m, countryCode: "CA" })),
+      ])
+    expect((await getHotspots(getDb(), 3)).map((h) => [h.city, h.count])).toEqual([["Detroit", 5]])
+  })
 })
 
 describe("getUpcomingEvents", () => {
