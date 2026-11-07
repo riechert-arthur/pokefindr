@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { countsQuerySchema, nearQuerySchema, searchQuerySchema } from "@/lib/locations/search"
+import { citiesQuerySchema, countsQuerySchema, nearQuerySchema, searchQuerySchema } from "@/lib/locations/search"
 
 describe("countsQuerySchema", () => {
   it("parses points, a radius and kinds", () => {
@@ -57,5 +57,13 @@ describe("nearQuerySchema", () => {
     ["a longitude out of range", { lng: "181", lat: "0", r: "10" }],
   ])("rejects %s", (_, query) => {
     expect(nearQuerySchema.safeParse(query).success).toBe(false)
+  })
+})
+
+describe("citiesQuerySchema", () => {
+  it("takes a state code in any case", () => {
+    expect(citiesQuerySchema.parse({ state: "wa" })).toMatchObject({ state: "WA" })
+    expect(citiesQuerySchema.safeParse({ state: "ZZ" }).success).toBe(false)
+    expect(citiesQuerySchema.safeParse({ state: "" }).success).toBe(false)
   })
 })

@@ -41,6 +41,8 @@ import { cameraPadding } from "./camera"
 import { MapPanel } from "./MapPanel"
 import { ResultsSheet } from "./ResultsSheet"
 import { useNearbyLocations } from "./useNearbyLocations"
+import { StateSheet } from "./StateSheet"
+import { useStateCities } from "./useStateCities"
 import { cn } from "@/lib/utils"
 import { boundsOfRadius, milesBetween, radiusCircle, US_BOUNDS } from "@/lib/map/geo"
 import { STATES } from "@/lib/map/states"
@@ -130,6 +132,9 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const { states, max, total, bounds, kindTotals } = useStateShading(kindSet)
   // The results list for the place (or the viewer), closest first.
   const nearby = useNearbyLocations(place, kinds, retailers)
+  // A state's busiest cities, while the view is a state.
+  const stateFocus = !place && !nearMe ? urlView.state : null
+  const stateCities = useStateCities(stateFocus, kinds)
   const [map, setMap] = useState<ViewportMap>()
   const viewport = useViewportLocations(map, { types: kinds })
   const inView = useMemo<FeatureCollection<Point, LocationFeatureProperties & { dim?: boolean }>>(() => {
@@ -363,13 +368,13 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     setSearchNear((prev) => (prev?.[0] === near?.[0] && prev?.[1] === near?.[1] ? prev : near))
     if (!userMoving.current) return
     userMoving.current = false
-    // A place's radius (or near=me) still frames the results, so it stays.
-    if (place || params.near) return
-    // Panning away from a state makes the camera the view, so a copied link
-    // opens where the viewer is looking.
+    // A place's radius (or near=me) still frames the results, and a state
+    // its city list, so they stay.
+    if (place || params.near || stateFocus) return
+    // Otherwise the camera is the view, so a copied link opens where the viewer is looking.
     const { longitude, latitude, zoom } = e.viewState
     writeView(
-      { state: null, lat: roundCamera(latitude), lng: roundCamera(longitude), z: roundZoom(zoom) },
+      { lat: roundCamera(latitude), lng: roundCamera(longitude), z: roundZoom(zoom) },
       { limitUrlUpdates: debounce(CAMERA_URL_DEBOUNCE_MS) },
     )
   }
@@ -474,9 +479,19 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
           kinds={kinds}
           kindTotals={kindTotals}
           onKindsChange={handleKindsChange}
-          sheetLabel="Results"
+          sheetLabel={place ? "Results" : stateFocus ? STATES[stateFocus].name : undefined}
           sheet={
-            place && (
+            stateFocus ? (
+              <StateSheet
+                code={stateFocus}
+                name={STATES[stateFocus].name}
+                kinds={kinds}
+                data={stateCities}
+                onBack={handleSearchClear}
+                onCity={(c) => handleSearchPick({ type: "area", area: { label: `${c.city}, ${stateFocus}`, lng: c.lng, lat: c.lat, kind: "city", state: stateFocus } })}
+              />
+            ) : (
+              place && (
               <ResultsSheet
                 label={nearMe ? null : (urlView.place?.label ?? null)}
                 radius={place.radius as (typeof RADII)[number]}
@@ -486,6 +501,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
                 selectedId={selected?.id}
                 onOpen={showLocation}
               />
+              )
             )
           }
         />

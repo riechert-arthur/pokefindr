@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { getDb } from "@/server/db/client"
 import { locations } from "@/server/db/schema"
-import { countLocationsNear, getActiveLocationsGeoJSON, getLocationFeature, getLocationsInBbox, getLocationsNear, searchLocations } from "@/server/services/locations"
+import { countLocationsNear, getActiveLocationsGeoJSON, getLocationFeature, getLocationsInBbox, getLocationsNear, getTopCities, searchLocations } from "@/server/services/locations"
 import { milesBetween } from "@/lib/map/geo"
 import type { Bbox } from "@/lib/locations/bbox"
 
@@ -246,5 +246,37 @@ describe("getLocationsNear", () => {
     expect(inside.length).toBeGreaterThan(10)
     expect(inside.length).toBeLessThan(72)
     expect([...listed].sort()).toEqual(inside.sort())
+  })
+})
+
+describe("getTopCities", () => {
+  it("ranks a state's cities by active locations of the shown kinds, each at the middle of its locations", async () => {
+    await getDb()
+      .insert(locations)
+      .values([
+        { machineId: "S1", retailer: "QFC", city: "Seattle", state: "WA", geog: { lng: -122.3, lat: 47.6 } },
+        { machineId: "S2", retailer: "QFC", city: " seattle ", state: "WA", geog: { lng: -122.4, lat: 47.7 } },
+        { machineId: "T1", retailer: "Safeway", city: "Tacoma", state: "WA", geog: { lng: -122.44, lat: 47.25 } },
+        { name: "Card shop", kind: "shop", city: "Tacoma", state: "WA", geog: { lng: -122.45, lat: 47.25 } },
+        { machineId: "NC", retailer: "QFC", city: "", state: "WA", geog: { lng: -120, lat: 47 } },
+        { machineId: "OFF", retailer: "QFC", city: "Seattle", state: "WA", geog: { lng: -122.3, lat: 47.6 }, isActive: false },
+        { machineId: "P1", retailer: "Fred Meyer", city: "Portland", state: "OR", geog: { lng: -122.68, lat: 45.52 } },
+      ])
+    const all = await getTopCities("WA", ["vending", "shop", "event"])
+    expect(all.cities).toEqual([
+      { city: "Seattle", count: 2, lng: -122.35, lat: 47.65 },
+      { city: "Tacoma", count: 2, lng: -122.445, lat: 47.25 },
+    ])
+    // The city-less location counts toward the state, not a city.
+    expect(all.counts).toEqual({ vending: 4, shop: 1 })
+    expect(all.total).toBe(5)
+
+    const vending = await getTopCities("WA", ["vending"])
+    expect(vending.cities.map((c) => [c.city, c.count])).toEqual([
+      ["Seattle", 2],
+      ["Tacoma", 1],
+    ])
+    expect((await getTopCities("WA", [])).cities).toEqual([])
+    expect((await getTopCities("WA", ["vending"], undefined, 1)).cities).toHaveLength(1)
   })
 })
