@@ -1,7 +1,8 @@
-import Head from "next/head"
-import { FAQLoader } from "@/components/wrappers/FAQLoader"
 import { Hero, type HeroStats } from "@/components/landing/Hero"
 import { HeroMap } from "@/components/landing/HeroMap"
+import { FaqSection, HowItWorks, LocationTypes } from "@/components/landing/LandingSections"
+import { faqJsonLd } from "@/lib/faq"
+import type { LocationKind } from "@/lib/types/locations"
 import { getRegionCounts } from "@/server/services/region-counts"
 
 // The counts change only after an import; rebuild the page at most hourly.
@@ -30,14 +31,18 @@ export const metadata = {
   }
 }
 
-/** Live counts for the hero, from the region counts view; the hero goes without them if the database is down. */
-async function heroStats(): Promise<HeroStats | null> {
+/** Live counts from the region counts view; the page goes without them if the database is down. */
+async function landingCounts(): Promise<{ hero: HeroStats; kinds: Partial<Record<LocationKind, number>> } | null> {
   try {
-    const counts = await getRegionCounts()
-    const vending = counts.filter((c) => c.country === "US" && c.kind === "vending")
+    const counts = (await getRegionCounts()).filter((c) => c.country === "US")
+    const kinds: Partial<Record<LocationKind, number>> = {}
+    for (const c of counts) kinds[c.kind] = (kinds[c.kind] ?? 0) + c.count
     return {
-      vending: vending.reduce((n, c) => n + c.count, 0),
-      states: new Set(vending.filter((c) => c.region && c.count > 0).map((c) => c.region)).size,
+      hero: {
+        vending: kinds.vending ?? 0,
+        states: new Set(counts.filter((c) => c.kind === "vending" && c.region && c.count > 0).map((c) => c.region)).size,
+      },
+      kinds,
     }
   } catch (err) {
     console.error("[landing] couldn't load the counts", err)
@@ -45,52 +50,29 @@ async function heroStats(): Promise<HeroStats | null> {
   }
 }
 
-const LandingPage = async () => {
-  const stats = await heroStats()
+const WEB_PAGE_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  name: "Find Pokémon Vending Machines Near You",
+  description: "Search a city to see every Pokémon card vending machine nearby on a free map.",
+  url: "https://pokefindr.app/",
+}
+
+/** JSON-LD as a script tag; `<` is escaped so the data can't close the tag. */
+const jsonLd = (data: unknown) => ({ __html: JSON.stringify(data).replace(/</g, "\\u003c") })
+
+export default async function LandingPage() {
+  const counts = await landingCounts()
   return (
     <>
-      <Head>
-        <script
-          id="webpage-schema"
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebPage",
-              name: "Find Pokemon Vending Machines Near You",
-              description:
-                "View our interactive map to locate Pokemon Card vending machines.",
-              url: "https://pokefindr.app/map",
-            }),
-          }}
-        />
-        <script
-          id="faq-schema"
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "FAQPage",
-              mainEntity: [
-                {
-                  "@type": "Question",
-                  name: "How do I find a Pokemon vending machine?",
-                  acceptedAnswer: {
-                    "@type": "Answer",
-                    text: "Use our interactive map to find the nearest Pokemon vending machines near you.",
-                  },
-                },
-              ],
-            }),
-          }}
-        />
-      </Head>
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(WEB_PAGE_JSON_LD)} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(faqJsonLd())} />
       <div className="isolate">
-        <Hero stats={stats} background={<HeroMap />} />
-        <FAQLoader />
+        <Hero stats={counts?.hero ?? null} background={<HeroMap />} />
+        <HowItWorks />
+        <LocationTypes counts={counts?.kinds ?? null} />
+        <FaqSection />
       </div>
     </>
   )
 }
-
-export default LandingPage
