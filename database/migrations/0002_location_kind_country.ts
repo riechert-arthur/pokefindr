@@ -7,6 +7,11 @@
  *   Region counts group by country, then `state` (the admin region).
  *
  * Added to `locations` and `locations_staging`, which keeps the same columns.
+ *
+ * Also a GiST index on `geog::geometry` for the map's viewport query. The
+ * query filters with planar `&&` on geometry: on geography, `&&` compares
+ * boxes on the sphere, whose edges bow out, so it returned points well
+ * outside the requested box and missed some inside it.
  * Additive with defaults, so the previous release keeps working while this
  * deploys.
  */
@@ -24,9 +29,11 @@ export async function up(db: Kysely<unknown>): Promise<void> {
         add constraint ${sql.id(`${table}_country_code_check`)} check (country_code ~ '^[A-Z]{2}$')
     `.execute(db)
   }
+  await sql`create index locations_geog_geometry_gist on locations using gist ((geog::geometry))`.execute(db)
 }
 
 export async function down(db: Kysely<unknown>): Promise<void> {
+  await sql`drop index locations_geog_geometry_gist`.execute(db)
   for (const table of TABLES) {
     // Dropping the columns drops their check constraints too.
     await sql`alter table ${sql.table(table)} drop column country_code, drop column kind`.execute(db)

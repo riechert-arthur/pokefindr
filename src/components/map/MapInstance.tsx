@@ -21,6 +21,7 @@ import { LocationLayers } from "./LocationLayers"
 import { StateLayers, StateLegend } from "./StateLayers"
 import { useStateShading } from "./useStateShading"
 import { cn } from "@/lib/utils"
+import { INITIAL_LOAD_STATE, nextLoadState, type MapLoadState } from "./mapLoadState"
 
 /** The lower 48, which the map opens on (from the redesign prototype). */
 const US_BOUNDS: [[number, number], [number, number]] = [[-125.5, 24.0], [-66.5, 49.6]]
@@ -53,8 +54,8 @@ const MapInstance: FC = () => {
   const collection = useLocations()
   const { states, max, bounds } = useStateShading(ALL_KINDS)
   const [zoomedOut, setZoomedOut] = useState(true)
-  // "loading" until the style and first tiles are in; "failed" if that never happens.
-  const [loadState, setLoadState] = useState<"loading" | "loaded" | "failed">("loading")
+  // Loading until MapLibre's load event; failed if the map can't start (see nextLoadState).
+  const [loadState, setLoadState] = useState<MapLoadState>(INITIAL_LOAD_STATE)
 
   useEffect(() => {
     if (userLocation && !userLocationError && mapRef.current) {
@@ -93,15 +94,14 @@ const MapInstance: FC = () => {
         }}
         mapStyle={isDark ? MAP_STYLES.dark : MAP_STYLES.light}
         onLoad={(e) => {
-          setLoadState("loaded")
+          setLoadState((state) => nextLoadState(state, { type: "load" }))
           setZoomedOut(e.target.getZoom() < POINT_ZOOM)
         }}
         onZoom={(e: ViewStateChangeEvent) => setZoomedOut(e.viewState.zoom < POINT_ZOOM)}
         onError={(e) => {
           console.error("[map]", e.error)
-          // Errors after load (a missing tile, say) don't stop the map; one before
-          // load means the style or its sources didn't arrive.
-          setLoadState((current) => (current === "loading" ? "failed" : current))
+          const { sourceId, tile } = e as { sourceId?: string; tile?: unknown }
+          setLoadState((state) => nextLoadState(state, { type: "error", error: e.error, sourceId, tile }))
         }}
         onClick={(e) => {
           if (isSidebarOpen) toggleSidebar()
@@ -136,9 +136,9 @@ const MapInstance: FC = () => {
           </div>
         )}
       </Map>
-      {loadState !== "loaded" && (
-        <MapStatus kind={loadState === "failed" ? "error" : "loading"} className="absolute inset-0 z-10">
-          {loadState === "failed" ? MAP_FAILURE_MESSAGES.library : "Loading the map…"}
+      {loadState.status !== "loaded" && (
+        <MapStatus kind={loadState.status === "failed" ? "error" : "loading"} className="absolute inset-0 z-10">
+          {loadState.status === "failed" ? MAP_FAILURE_MESSAGES[loadState.failure] : "Loading the map…"}
         </MapStatus>
       )}
     </>
