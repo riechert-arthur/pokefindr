@@ -1,7 +1,7 @@
 import "server-only"
 import type { GeocodeKind, GeocodeOptions, GeocodeResult, Geocoder } from "@/server/ports/geocoder"
 import { stateCode } from "@/lib/map/states"
-import { cityLabel, clean, countryOf, getJson, limitOf } from "./shared"
+import { cityLabel, clean, countryOf, endpoint, getJson, limitOf } from "./shared"
 
 interface NominatimPlace {
   lat: string
@@ -40,7 +40,7 @@ export class NominatimGeocoder implements Geocoder {
   ) {}
 
   async search(query: string, opts?: GeocodeOptions): Promise<GeocodeResult[]> {
-    const url = new URL("/search", this.baseUrl)
+    const url = endpoint(this.baseUrl, "search")
     const limit = limitOf(opts)
     url.search = new URLSearchParams({
       q: query,
