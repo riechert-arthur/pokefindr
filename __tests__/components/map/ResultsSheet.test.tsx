@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import { fireEvent, render, screen, within } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react"
 import { breakdown, ResultsSheet } from "@/components/map/ResultsSheet"
 import type { NearbyLocations } from "@/lib/types/locations"
 import type { NearbyState } from "@/components/map/useNearbyLocations"
@@ -78,6 +78,16 @@ describe("ResultsSheet", () => {
     renderSheet({ nearby: state({ status: "error", reload }) })
     fireEvent.click(screen.getByRole("button", { name: "Try again" }))
     expect(reload).toHaveBeenCalled()
+  })
+
+  it("shows no counts for results of another radius or filter, and no early 'Nothing within'", () => {
+    renderSheet({ radius: 25, nearby: state({ status: "error", stale: true }) })
+    expect(screen.getByRole("heading", { name: "Places near Seattle, WA" })).toBeInTheDocument()
+    expect(screen.queryByText("2 vending machines · 1 card shop")).not.toBeInTheDocument()
+    cleanup()
+    renderSheet({ radius: 25, nearby: state({ status: "loading", stale: true, results: { ...RESULTS, features: [], counts: {}, total: 0 } }) })
+    expect(screen.queryByText("Nothing within 25 mi")).not.toBeInTheDocument()
+    expect(screen.getByLabelText("Loading results")).toBeInTheDocument()
   })
 
   it("says when the list is cut", () => {

@@ -40,7 +40,9 @@ const where = ({ address, city, state }: LocationFeature["properties"]) => (addr
  * near it by kind, the radius, and every location inside it, closest first.
  */
 export function ResultsSheet({ label, radius, onRadiusChange, kinds, nearby, selectedId, onOpen }: ResultsSheetProps) {
-  const { results, status } = nearby
+  const { results, status, stale = false } = nearby
+  // Counts only for results that match the radius and filters shown.
+  const fresh = results && !stale ? results : null
   const near = label ?? "you"
   const wider = RADII.find((r) => r > radius)
 
@@ -49,11 +51,11 @@ export function ResultsSheet({ label, radius, onRadiusChange, kinds, nearby, sel
       <div className="flex flex-col gap-2.5 border-b border-border px-4 pb-2.5 pt-3.5">
         <div aria-live="polite" aria-atomic>
           <h2 className="text-subheading text-foreground">
-            {results ? `${placesLabel(results.total, kinds)} near ${near}` : `Places near ${near}`}
+            {fresh ? `${placesLabel(fresh.total, kinds)} near ${near}` : `Places near ${near}`}
           </h2>
           <p className="text-body text-muted-foreground">
-            {results && results.total > 0
-              ? breakdown(results.counts, kinds)
+            {fresh && fresh.total > 0
+              ? breakdown(fresh.counts, kinds)
               : `Sorted by distance from ${label ? "the center" : "you"}`}
           </p>
         </div>
@@ -87,7 +89,7 @@ export function ResultsSheet({ label, radius, onRadiusChange, kinds, nearby, sel
           <EmptyState title="Couldn't load these results" className="m-1.5" action={<Button size="sm" variant="outline" onClick={nearby.reload}>Try again</Button>}>
             Check your connection and try again.
           </EmptyState>
-        ) : !results ? (
+        ) : !results || (stale && results.features.length === 0) ? (
           <div aria-label="Loading results" className="flex flex-col gap-1 p-1">
             {[0, 1, 2, 3].map((i) => (
               <div key={i} className="flex gap-2.5 p-2.5">
