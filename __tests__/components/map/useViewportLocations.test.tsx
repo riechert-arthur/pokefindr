@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { act, renderHook } from "@testing-library/react"
 import { useViewportLocations, viewportQuery, VIEWPORT_DEBOUNCE_MS, type ViewportMap } from "@/components/map/useViewportLocations"
 import type { LocationFeatureCollection } from "@/lib/types/locations"
+import { MAX_BBOX_AREA } from "@/lib/locations/bbox"
 
 /** A map that the test moves by hand. */
 class FakeMap implements ViewportMap {
@@ -29,13 +30,17 @@ const fc = (ids: string[]): LocationFeatureCollection => ({
   })),
 })
 
-/** fetch that answers each request only when the test says so. */
-function controllableFetch() {
+/**
+ * fetch that answers each request only when the test says so. With
+ * `ignoreAbort`, an aborted request still resolves later (a response that was
+ * already on its way), so only the hook's own checks keep it out.
+ */
+function controllableFetch({ ignoreAbort = false } = {}) {
   const pending: { url: string; signal: AbortSignal; resolve: (body: LocationFeatureCollection) => void }[] = []
   const fetchMock = vi.fn((url: string, init: RequestInit) => {
     return new Promise<Response>((resolve, reject) => {
       const signal = init.signal!
-      signal.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")))
+      if (!ignoreAbort) signal.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")))
       pending.push({ url, signal, resolve: (body) => resolve(new Response(JSON.stringify(body))) })
     })
   })
@@ -75,7 +80,8 @@ describe("useViewportLocations", () => {
   })
 
   it("never ends on an earlier view's results when panning quickly", async () => {
-    const { fetchMock, pending } = controllableFetch()
+    // The earlier view's response arrives even though its request was aborted.
+    const { fetchMock, pending } = controllableFetch({ ignoreAbort: true })
     vi.stubGlobal("fetch", fetchMock)
     const map = new FakeMap()
     const { result } = renderHook(() => useViewportLocations(map, { types: ["vending"] }))
@@ -132,7 +138,18 @@ describe("viewportQuery", () => {
     const map = new FakeMap()
     map.box = { w: -122.456, s: 47.481, e: -122.221, n: 47.739 }
     expect(viewportQuery(map, ["vending", "shop"])).toBe("bbox=-122.46,47.48,-122.22,47.74&types=vending,shop")
-    map.box = { w: -190, s: -95, e: 190, n: 95 }
-    expect(viewportQuery(map, [])).toBe("bbox=-180,-90,180,90&types=")
+    map.box = { w: -180.004, s: 84.5, e: -175, n: 90.004 }
+    expect(viewportQuery(map, [])).toBe("bbox=-180,84.5,-175,90&types=")
+  })
+})
+
+describe("viewportQuery on a huge view", () => {
+  it("shrinks a box over the API's limit around its center", () => {
+    const map = new FakeMap()
+    map.box = { w: -140, s: 10, e: -60, n: 60 } // 4,000 square degrees
+    const [w, s, e, n] = viewportQuery(map, ["vending"]).match(/bbox=([^&]+)/)![1].split(",").map(Number)
+    expect((e - w) * (n - s)).toBeLessThanOrEqual(MAX_BBOX_AREA)
+    expect((w + e) / 2).toBeCloseTo(-100, 0)
+    expect((s + n) / 2).toBeCloseTo(35, 0)
   })
 })

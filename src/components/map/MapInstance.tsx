@@ -97,6 +97,11 @@ const MapInstance: FC = () => {
         ref={mapRef}
         initialViewState={{ bounds: US_BOUNDS, fitBoundsOptions: { padding: 40 } }}
         minZoom={1.2}
+        // Flat and north-up, as in the prototype (no compass). A tilted view
+        // reaches toward the horizon and asks the API for far too big a box.
+        maxPitch={0}
+        dragRotate={false}
+        touchPitch={false}
         renderWorldCopies={false}
         attributionControl={{ compact: true, customAttribution: "State outlines: US Census" }}
         style={{

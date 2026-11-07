@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import type { LocationFeature, LocationFeatureCollection, LocationKind } from "@/lib/types/locations"
 import { POINT_ZOOM } from "./layers"
+import { MAX_BBOX_AREA } from "@/lib/locations/bbox"
 
 /** The parts of a MapLibre map this hook uses, so tests can pass a fake. */
 export interface ViewportMap {
@@ -38,19 +39,23 @@ export const VIEWPORT_DEBOUNCE_MS = 250
 /**
  * The query for a view: its box rounded outward to 0.01° (so nearby views
  * share CDN cache entries, and the box always covers the screen), clamped to
- * the world, plus the kinds.
+ * the world, plus the kinds. A box over the API's limit (MAX_BBOX_AREA; a
+ * very large screen at zoom 6) is shrunk around its center to fit.
  */
 export function viewportQuery(map: ViewportMap, types: readonly LocationKind[]): string {
   const b = map.getBounds()
+  let [w, s, e, n] = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]
+  const area = (e - w) * (n - s)
+  if (area > MAX_BBOX_AREA) {
+    // Leave room for the outward rounding below.
+    const k = Math.sqrt((MAX_BBOX_AREA * 0.98) / area)
+    const [cx, cy, hw, hh] = [(w + e) / 2, (s + n) / 2, ((e - w) * k) / 2, ((n - s) * k) / 2]
+    ;[w, s, e, n] = [cx - hw, cy - hh, cx + hw, cy + hh]
+  }
   const down = (v: number) => Math.floor(v * 100) / 100
   const up = (v: number) => Math.ceil(v * 100) / 100
   const clamp = (v: number, limit: number) => Math.max(-limit, Math.min(limit, v))
-  const bbox = [
-    clamp(down(b.getWest()), 180),
-    clamp(down(b.getSouth()), 90),
-    clamp(up(b.getEast()), 180),
-    clamp(up(b.getNorth()), 90),
-  ].join(",")
+  const bbox = [clamp(down(w), 180), clamp(down(s), 90), clamp(up(e), 180), clamp(up(n), 90)].join(",")
   return `bbox=${bbox}&types=${types.join(",")}`
 }
 
