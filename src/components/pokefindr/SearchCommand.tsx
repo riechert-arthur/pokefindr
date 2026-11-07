@@ -39,6 +39,12 @@ interface SearchCommandProps {
   leading?: ReactNode
   /** The shortest query that searches. */
   minLength?: number
+  /**
+   * Where the list drops: `auto` flips above when there's no room below (the
+   * map's bottom panel on phones); `below` always opens under the box and
+   * shrinks to fit (the landing page, which scrolls).
+   */
+  placement?: "auto" | "below"
   className?: string
 }
 
@@ -66,6 +72,7 @@ export function SearchCommand({
   onClear,
   leading,
   minLength = 2,
+  placement = "auto",
   className,
 }: SearchCommandProps) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -197,7 +204,9 @@ export function SearchCommand({
         </PopoverAnchor>
         <PopoverContent
           align="start"
+          side="bottom"
           sideOffset={6}
+          avoidCollisions={placement === "auto"}
           // Focus stays in the input: typing and the arrow keys keep working.
           onOpenAutoFocus={(e) => e.preventDefault()}
           onCloseAutoFocus={(e) => e.preventDefault()}
@@ -207,7 +216,8 @@ export function SearchCommand({
           }}
           className="w-[var(--radix-popover-trigger-width)] rounded-lg p-1"
         >
-          <CommandList className="max-h-80">
+          {/* At most 20rem, and never past the space the popover has (less the footer). */}
+          <CommandList className="max-h-[min(20rem,calc(var(--radix-popover-content-available-height)-3.5rem))]">
             <CommandPrimitive.Empty className="px-2.5 py-3.5 text-body text-muted-foreground">
               {status === "error" ? (
                 "Search isn't working right now. Try again in a moment."
