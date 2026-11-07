@@ -106,7 +106,10 @@ export function MapSearchBar({
 
   const performSearch = async () => {
     abortRef.current?.abort()
-    if (query.trim().length < MIN_QUERY_LENGTH) return
+    if (query.trim().length < MIN_QUERY_LENGTH) {
+      setResults([])
+      return
+    }
     const controller = new AbortController()
     abortRef.current = controller
 
