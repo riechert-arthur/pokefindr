@@ -15,6 +15,7 @@ import type { LngLatBounds, StateCollection } from "./useStateShading"
 import { Card } from "@/components/ui/card"
 import { formatCount } from "@/components/pokefindr/kinds"
 import { cn } from "@/lib/utils"
+import { cameraPadding } from "./camera"
 
 interface StateLayersProps {
   states: StateCollection
@@ -57,7 +58,7 @@ export function StateLayers({ states, max, bounds, colors, beforeId, onSelect }:
       if (!f || map.getZoom() >= POINT_ZOOM || !f.properties.count) return
       const box = bounds.get(f.properties.region)
       if (!box) return
-      map.fitBounds(box, { padding: 40, maxZoom: 7.5, duration: 1400 })
+      map.fitBounds(box, { padding: cameraPadding(map.getContainer()), maxZoom: 7.5, duration: 1400 })
       onSelect?.(f.properties.region)
     }
     map.on("mousemove", LAYERS.statesFill, onMove)

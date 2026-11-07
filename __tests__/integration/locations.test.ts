@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest"
 import { getDb } from "@/server/db/client"
 import { locations } from "@/server/db/schema"
-import { countLocationsNear, getActiveLocationsGeoJSON, getLocationFeature, getLocationsInBbox, searchLocations } from "@/server/services/locations"
+import { countLocationsNear, getActiveLocationsGeoJSON, getLocationFeature, getLocationsInBbox, getLocationsNear, searchLocations } from "@/server/services/locations"
+import { milesBetween } from "@/lib/map/geo"
 import type { Bbox } from "@/lib/locations/bbox"
 
 describe("getActiveLocationsGeoJSON", () => {
@@ -183,5 +184,71 @@ describe("searchLocations", () => {
     // Only the address with a literal %, not every location.
     expect(names(await searchLocations({ q: "%", types: ["vending"] }))).toEqual(["Kroger Dallas"])
     expect(names(await searchLocations({ q: "_", types: ["vending"] }))).toEqual([])
+  })
+})
+
+describe("getLocationsNear", () => {
+  const seattle = [-122.3285, 47.6196] as const
+
+  it("lists active locations inside the radius, closest first, with distances and counts", async () => {
+    await getDb()
+      .insert(locations)
+      .values([
+        { machineId: "FAR", retailer: "Safeway", geog: { lng: -122.35, lat: 47.7 } }, // ~5.6 mi
+        { machineId: "NEAR", retailer: "QFC", geog: { lng: -122.32, lat: 47.62 } }, // ~0.4 mi
+        { name: "Card shop", kind: "shop", geog: { lng: -122.33, lat: 47.6 } },
+        { machineId: "OUT", retailer: "QFC", geog: { lng: -122.44, lat: 47.25 } }, // Tacoma
+        { machineId: "OFF", retailer: "QFC", geog: { lng: -122.33, lat: 47.62 }, isActive: false },
+      ])
+    const fc = await getLocationsNear({ center: seattle, radiusMiles: 10, types: ["vending", "shop", "event"] })
+    expect(fc.features.map((f) => f.properties.machineID || f.properties.retailer)).toEqual(["NEAR", "Card shop", "FAR"])
+    expect(fc.features[0].properties.distance).toBeCloseTo(0.4, 1)
+    expect(fc.counts).toEqual({ vending: 2, shop: 1 })
+    expect(fc.total).toBe(3)
+    expect(fc.truncated).toBe(false)
+
+    const five = await getLocationsNear({ center: seattle, radiusMiles: 5, types: ["vending"] })
+    expect(five.features.map((f) => f.properties.machineID)).toEqual(["NEAR"])
+    expect(five.counts).toEqual({ vending: 1 })
+  })
+
+  it("filters vending machines by retailer and leaves other kinds alone", async () => {
+    await getDb()
+      .insert(locations)
+      .values([
+        { machineId: "Q", retailer: "QFC", geog: { lng: -122.32, lat: 47.62 } },
+        { machineId: "S", retailer: "Safeway", geog: { lng: -122.31, lat: 47.62 } },
+        { name: "Card shop", kind: "shop", geog: { lng: -122.33, lat: 47.6 } },
+      ])
+    const fc = await getLocationsNear({ center: seattle, radiusMiles: 10, types: ["vending", "shop"], retailers: ["Safeway"] })
+    expect(fc.features.map((f) => f.properties.machineID || f.properties.retailer).sort()).toEqual(["Card shop", "S"])
+  })
+
+  it("counts every match past the limit and says the list is cut", async () => {
+    await getDb()
+      .insert(locations)
+      .values([0, 1, 2].map((i) => ({ machineId: `M${i}`, retailer: "QFC", geog: { lng: -122.32 + i * 0.01, lat: 47.62 } })))
+    const fc = await getLocationsNear({ center: seattle, radiusMiles: 10, types: ["vending"], limit: 2 })
+    expect(fc.features.map((f) => f.properties.machineID)).toEqual(["M0", "M1"])
+    expect(fc.total).toBe(3)
+    expect(fc.truncated).toBe(true)
+  })
+
+  it("holds exactly the locations the map shows inside the circle", async () => {
+    // A ring of points straddling the 10 mi edge, 0.05 mi apart in distance.
+    const values = Array.from({ length: 72 }, (_, i) => {
+      const bearing = (i * 5 * Math.PI) / 180
+      const miles = 9.9 + (i % 5) * 0.05
+      const dLat = (miles / 69.05) * Math.cos(bearing)
+      const dLng = ((miles / 69.05) * Math.sin(bearing)) / Math.cos((seattle[1] * Math.PI) / 180)
+      return { machineId: `R${i}`, retailer: "QFC", geog: { lng: seattle[0] + dLng, lat: seattle[1] + dLat } }
+    })
+    await getDb().insert(locations).values(values)
+    const fc = await getLocationsNear({ center: seattle, radiusMiles: 10, types: ["vending"] })
+    const listed = new Set(fc.features.map((f) => f.properties.machineID))
+    const inside = values.filter((v) => milesBetween(seattle[0], seattle[1], v.geog.lng, v.geog.lat) <= 10).map((v) => v.machineId)
+    expect(inside.length).toBeGreaterThan(10)
+    expect(inside.length).toBeLessThan(72)
+    expect([...listed].sort()).toEqual(inside.sort())
   })
 })

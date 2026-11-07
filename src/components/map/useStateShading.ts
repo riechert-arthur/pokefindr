@@ -90,5 +90,13 @@ export function useStateShading(kinds: ReadonlySet<LocationKind>) {
     [outlines, counts, kinds],
   )
 
-  return { states: shaded?.states ?? null, max: shaded?.max ?? 1, total: shaded?.total ?? null, bounds }
+  // Each kind's US total, whatever is shown: the counts on the type chips.
+  const kindTotals = useMemo(() => {
+    if (!counts) return null
+    const out: Partial<Record<LocationKind, number>> = {}
+    for (const c of counts) if (c.country === "US") out[c.kind] = (out[c.kind] ?? 0) + c.count
+    return out
+  }, [counts])
+
+  return { states: shaded?.states ?? null, max: shaded?.max ?? 1, total: shaded?.total ?? null, bounds, kindTotals }
 }

@@ -21,7 +21,7 @@ import { MenuIcon } from "lucide-react"
 import { PlaceSearch, type PlacePick } from "@/components/search/PlaceSearch"
 import { APP_NAV_ID } from "@/components/pokefindr/AppRail"
 import { Button } from "@/components/ui/button"
-import { type LocationFeature, type LocationFeatureProperties, type LocationKind } from "@/lib/types/locations"
+import { LOCATION_KINDS, type LocationFeature, type LocationFeatureProperties, type LocationKind } from "@/lib/types/locations"
 import { useLocations } from "./useLocations"
 import { LocationPopup, type LocationPopupProps } from "./LocationPinPopUps"
 import { useSidebar } from "../providers/SidebarContextProvider"
@@ -37,10 +37,14 @@ import { NO_SELECTION, selectionReducer, type Selection } from "./selection"
 import { StateLegend } from "./StateLayers"
 import { MapShading } from "./MapShading"
 import { useStateShading } from "./useStateShading"
+import { cameraPadding } from "./camera"
+import { MapPanel } from "./MapPanel"
+import { ResultsSheet } from "./ResultsSheet"
+import { useNearbyLocations } from "./useNearbyLocations"
 import { cn } from "@/lib/utils"
 import { boundsOfRadius, milesBetween, radiusCircle, US_BOUNDS } from "@/lib/map/geo"
 import { STATES } from "@/lib/map/states"
-import { DEFAULT_RADIUS, loadMapSearchParams, mapSearchParams, nearMeParams, roundCamera, roundPlace, roundZoom, type MapSearchParams } from "@/lib/map/url-state"
+import { DEFAULT_RADIUS, RADII, loadMapSearchParams, mapSearchParams, nearMeParams, roundCamera, roundPlace, roundZoom, type MapSearchParams } from "@/lib/map/url-state"
 import { initialMapView, shownKinds, viewKey, type InitialMapView } from "@/lib/map/initial-view"
 import { INITIAL_LOAD_STATE, nextLoadState, type MapLoadState } from "./mapLoadState"
 
@@ -69,6 +73,9 @@ export interface MapInstanceProps {
 
 const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const mapRef = useRef<MapRef>(null)
+  /** Camera padding that keeps fitted views clear of the panel. */
+  /** `sheet`: the fit opens a list in the panel (a place's results, a location's details). */
+  const pad = (sheet = false) => cameraPadding(mapRef.current?.getContainer(), { sheet })
   const [params, setParams] = useQueryStates(mapSearchParams)
   // The selected location (ring), its popup, and whose details panel is open (see selectionReducer).
   // A shared location= link opens with its details.
@@ -121,7 +128,9 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
 
   // Every location, for the search box only; the map draws what's in view.
   const collection = useLocations()
-  const { states, max, total, bounds } = useStateShading(kindSet)
+  const { states, max, total, bounds, kindTotals } = useStateShading(kindSet)
+  // The results list for the place (or the viewer), closest first.
+  const nearby = useNearbyLocations(place, kinds, retailers)
   const [map, setMap] = useState<ViewportMap>()
   const viewport = useViewportLocations(map, { types: kinds })
   const inView = useMemo<FeatureCollection<Point, LocationFeatureProperties & { dim?: boolean }>>(() => {
@@ -203,13 +212,14 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
       // near=me carries no coordinates; go back to the radius around the viewer we already found.
       const found = meRef.current
       if (next.near === "me" && found) {
-        map.fitBounds(boundsOfRadius(found.lng, found.lat, next.r ?? DEFAULT_RADIUS), { padding: 40, maxZoom: 13, duration: 1000 })
+        map.fitBounds(boundsOfRadius(found.lng, found.lat, next.r ?? DEFAULT_RADIUS), { padding: pad(true), maxZoom: 13, duration: 1000 })
         return
       }
       const { camera } = initialMapView(next)
       if ("bounds" in camera) {
         // An explicit `maxZoom: undefined` breaks the fit (NaN center); leave it out instead.
-        map.fitBounds(camera.bounds, camera.maxZoom === undefined ? { padding: 40, duration: 1000 } : { padding: 40, maxZoom: camera.maxZoom, duration: 1000 })
+        const padding = pad(next.lat != null && next.lng != null)
+        map.fitBounds(camera.bounds, camera.maxZoom === undefined ? { padding, duration: 1000 } : { padding, maxZoom: camera.maxZoom, duration: 1000 })
       }
       else map.flyTo({ center: [camera.longitude, camera.latitude], zoom: camera.zoom, duration: 1000 })
     }
@@ -225,7 +235,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     (position: { lng: number; lat: number }) => {
       setMe(position)
       const r = params.r ?? DEFAULT_RADIUS
-      mapRef.current?.fitBounds(boundsOfRadius(position.lng, position.lat, r), { padding: 40, maxZoom: 13, duration: 1400 })
+      mapRef.current?.fitBounds(boundsOfRadius(position.lng, position.lat, r), { padding: pad(true), maxZoom: 13, duration: 1400 })
       if (params.near !== "me") writeView(nearMeParams(r), { history: "push" })
     },
     [params.r, params.near, writeView],
@@ -265,6 +275,44 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const handleDotSelect = select
 
   /**
+   * Opens a location's details from a list (search or results), as a new
+   * history entry, and brings it into view.
+   */
+  const showLocation = (feat: LocationFeature) => {
+    const map = mapRef.current
+    const [lng, lat] = feat.geometry.coordinates
+    if (map) {
+      // Into view beside the panel, with its dot showing: zoomed out past
+      // the dots (a pick from the US view) or hidden behind the panel, it flies.
+      const p = pad(true)
+      const { x, y } = map.project([lng, lat])
+      const { clientWidth: w, clientHeight: h } = map.getContainer()
+      const visible = x >= p.left && x <= w - p.right && y >= p.top && y <= h - p.bottom
+      if (!visible || map.getZoom() < POINT_ZOOM) {
+        // `offset`, not `padding`: flyTo keeps padding on the map, and every
+        // later fitBounds would add it to its own.
+        map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14), offset: [(p.left - p.right) / 2, (p.top - p.bottom) / 2], duration: 1200 })
+      }
+    }
+    dispatch({ type: "showDetails", location: toSelected(feat) })
+    void setParams({ location: feat.properties.id }, { history: "push" }).then((search) => {
+      pushedDetails.current = search.toString()
+    })
+  }
+
+  /** The results' radius toggle: the same place, a wider or narrower circle. */
+  const handleRadiusChange = (r: (typeof RADII)[number]) => {
+    if (!place) return
+    writeView({ r }, { history: "replace" })
+    mapRef.current?.fitBounds(boundsOfRadius(place.lng, place.lat, r), { padding: pad(true), maxZoom: 13, duration: 1000 })
+  }
+
+  /** The type chips: which kinds the map and lists show, all of them when every chip is on. */
+  const handleKindsChange = (next: LocationKind[]) => {
+    void setParams({ types: next.length === LOCATION_KINDS.length ? null : next }, { history: "replace" })
+  }
+
+  /**
    * A search result was picked, as in the prototype's choosePlace: an area
    * becomes the place (radius) or the state in the URL, a new history entry,
    * and the map flies there; a location opens its details.
@@ -272,19 +320,13 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const handleSearchPick = (pick: PlacePick) => {
     const map = mapRef.current
     if (pick.type === "location") {
-      const feat = pick.feature
-      const [lng, lat] = feat.geometry.coordinates
-      map?.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14), duration: 1200 })
-      dispatch({ type: "showDetails", location: toSelected(feat) })
-      void setParams({ location: feat.properties.id }, { history: "push" }).then((search) => {
-        pushedDetails.current = search.toString()
-      })
+      showLocation(pick.feature)
       return
     }
     const { area } = pick
     if (area.kind === "state" && area.state && Object.hasOwn(STATES, area.state)) {
       handleStateSelect(area.state)
-      map?.fitBounds(STATES[area.state].bounds, { padding: 40, maxZoom: 7.5, duration: 1400 })
+      map?.fitBounds(STATES[area.state].bounds, { padding: pad(), maxZoom: 7.5, duration: 1400 })
       return
     }
     dispatch({ type: "closeDetails" })
@@ -293,7 +335,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
       { q: area.label, lng: roundPlace(area.lng), lat: roundPlace(area.lat), r, state: null, z: null, near: null, location: null },
       { history: "push" },
     )
-    map?.fitBounds(boundsOfRadius(area.lng, area.lat, r), { padding: 40, maxZoom: 13, duration: 1400 })
+    map?.fitBounds(boundsOfRadius(area.lng, area.lat, r), { padding: pad(true), maxZoom: 13, duration: 1400 })
   }
 
   /** The search box's ✕: back to the whole US, as a new view. */
@@ -302,7 +344,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     if (!params.q && !params.state && !params.near) return
     dispatch({ type: "closeDetails" })
     writeView({ q: null, lat: null, lng: null, r: null, z: null, state: null, near: null, location: null }, { history: "push" })
-    mapRef.current?.fitBounds(US_BOUNDS, { padding: 40, duration: 1400 })
+    mapRef.current?.fitBounds(US_BOUNDS, { padding: pad(), duration: 1400 })
   }
 
   /** Details are a new view: a new history entry, so Back closes them. */
@@ -364,7 +406,10 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
       ? {
           bounds: camera.bounds,
           // An explicit `maxZoom: undefined` overrides MapLibre's default and breaks the fit.
-          fitBoundsOptions: camera.maxZoom === undefined ? { padding: 40 } : { padding: 40, maxZoom: camera.maxZoom },
+          fitBoundsOptions:
+            camera.maxZoom === undefined
+              ? { padding: cameraPadding(undefined, { sheet: !!place }) }
+              : { padding: cameraPadding(undefined, { sheet: !!place }), maxZoom: camera.maxZoom },
         }
       : camera
 
@@ -427,36 +472,54 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         <FullscreenControl position="bottom-right" />
         <LocateControl onLocate={handleLocate} onError={handleLocateError} autoLocate={view.nearMe} />
         <NavigationControl position="bottom-right" showCompass={false} />
-        {/* The left panel, as in the prototype: search first. */}
-        <div className="pointer-events-none absolute inset-x-2 top-2 z-10 flex flex-col gap-2 sm:inset-x-auto sm:left-3 sm:top-3 sm:w-[360px]">
-          <PlaceSearch
-            className="pointer-events-auto"
-            query={query}
-            onQueryChange={setQuery}
-            onPick={handleSearchPick}
-            onClear={handleSearchClear}
-            placeholder="Search city or address"
-            kinds={kinds}
-            retailers={retailers ?? undefined}
-            radius={placeRadius}
-            near={searchNear}
-            locations
-            leading={
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={toggleSidebar}
-                className="-ml-1.5 size-8 shrink-0 sm:hidden"
-                aria-label="Open navigation"
-                aria-controls={APP_NAV_ID}
-                aria-expanded={isSidebarOpen}
-              >
-                <MenuIcon className="size-5" aria-hidden />
-              </Button>
-            }
-          />
-        </div>
+        {/* The left panel, as in the prototype: search, type chips, then the list for the view. */}
+        <MapPanel
+          search={
+            <PlaceSearch
+              query={query}
+              onQueryChange={setQuery}
+              onPick={handleSearchPick}
+              onClear={handleSearchClear}
+              placeholder="Search city or address"
+              kinds={kinds}
+              retailers={retailers ?? undefined}
+              radius={placeRadius}
+              near={searchNear}
+              locations
+              leading={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleSidebar}
+                  className="-ml-1.5 size-8 shrink-0 sm:hidden"
+                  aria-label="Open navigation"
+                  aria-controls={APP_NAV_ID}
+                  aria-expanded={isSidebarOpen}
+                >
+                  <MenuIcon className="size-5" aria-hidden />
+                </Button>
+              }
+            />
+          }
+          kinds={kinds}
+          kindTotals={kindTotals}
+          onKindsChange={handleKindsChange}
+          sheetLabel="Results"
+          sheet={
+            place && (
+              <ResultsSheet
+                label={nearMe ? null : (urlView.place?.label ?? null)}
+                radius={place.radius as (typeof RADII)[number]}
+                onRadiusChange={handleRadiusChange}
+                kinds={kinds}
+                nearby={nearby}
+                selectedId={selected?.id}
+                onOpen={showLocation}
+              />
+            )
+          }
+        />
         {selected && popup && (
           <LocationPopup
             {...selected}
@@ -478,6 +541,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
           status={viewport.status}
           truncated={viewport.truncated}
           kinds={kinds}
+          // Centered on the map right of the panel; below the legend while they'd overlap.
+          className={cn("sm:left-[calc(50%+186px)]", states && zoomedOut && (session ? "md:max-xl:top-[156px]" : "md:max-xl:top-[92px]"))}
         />
         {session && (
           <div className="absolute top-4 right-5 z-50">

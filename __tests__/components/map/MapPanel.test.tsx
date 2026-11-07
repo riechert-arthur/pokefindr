@@ -1,0 +1,30 @@
+import { describe, expect, it, vi } from "vitest"
+import { fireEvent, render, screen } from "@testing-library/react"
+import { MapPanel } from "@/components/map/MapPanel"
+
+describe("MapPanel", () => {
+  const renderPanel = (kinds: ("vending" | "shop" | "event")[]) => {
+    const onKindsChange = vi.fn()
+    render(<MapPanel search={<input aria-label="Search" />} kinds={kinds} kindTotals={{ vending: 1457 }} onKindsChange={onKindsChange} sheet={<p>Results</p>} sheetLabel="Results" />)
+    return onKindsChange
+  }
+
+  it("shows a chip per kind with its US total, and the sheet", () => {
+    renderPanel(["vending", "shop", "event"])
+    expect(screen.getByRole("button", { name: "Vending 1,457" })).toHaveAttribute("aria-pressed", "true")
+    expect(screen.getByRole("button", { name: "Shops 0" })).toBeInTheDocument()
+    expect(screen.getByRole("region", { name: "Results" })).toHaveTextContent("Results")
+  })
+
+  it("turns kinds on and off, in kind order", () => {
+    const onKindsChange = renderPanel(["shop"])
+    fireEvent.click(screen.getByRole("button", { name: "Vending 1,457" }))
+    expect(onKindsChange).toHaveBeenLastCalledWith(["vending", "shop"])
+  })
+
+  it("keeps the last kind on", () => {
+    const onKindsChange = renderPanel(["shop"])
+    fireEvent.click(screen.getByRole("button", { name: "Shops 0" }))
+    expect(onKindsChange).not.toHaveBeenCalled()
+  })
+})
