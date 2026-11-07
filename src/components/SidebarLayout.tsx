@@ -22,15 +22,21 @@ export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
   const { session } = useSessionContext()
   const railRef = useRef<HTMLElement>(null)
 
-  // The phone drawer: Escape closes it, and opening it moves focus into it.
+  // The phone drawer: opening it moves focus in, Escape closes it, and
+  // closing it (Escape, the chevron or the menu button) returns focus to
+  // whatever opened it, usually the page's menu button.
   useEffect(() => {
     if (!isSidebarOpen) return
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
     railRef.current?.querySelector<HTMLElement>("a, button")?.focus()
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") toggleSidebar()
     }
     window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
+    return () => {
+      window.removeEventListener("keydown", onKey)
+      if (opener?.isConnected) opener.focus()
+    }
   }, [isSidebarOpen, toggleSidebar])
 
   return (
