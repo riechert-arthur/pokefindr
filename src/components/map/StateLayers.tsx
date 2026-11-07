@@ -19,18 +19,25 @@ import { cn } from "@/lib/utils"
 
 /**
  * The basemap layer the shading goes under (see shadingBeforeId), re-read
- * whenever the style changes. Undefined until the style loads.
+ * whenever the style changes. Undefined until the style has layers.
  */
 export function useFirstLabelLayer(): string | undefined {
   const { current: map } = useMap()
   const [id, setId] = useState<string | undefined>()
   useEffect(() => {
     if (!map) return
-    const read = () => setId(shadingBeforeId(map.getStyle()?.layers ?? []))
-    if (map.isStyleLoaded()) read()
-    map.on("style.load", read)
+    // Read whenever the style changes, and right away. Waiting for
+    // `style.load` alone misses it when the style finished loading before
+    // this mounted (isStyleLoaded() stays false while tiles load), which left
+    // the shading on top of every road and label.
+    const read = () => {
+      const layers = map.getStyle()?.layers
+      if (layers?.length) setId(shadingBeforeId(layers))
+    }
+    read()
+    map.on("styledata", read)
     return () => {
-      map.off("style.load", read)
+      map.off("styledata", read)
     }
   }, [map])
   return id
