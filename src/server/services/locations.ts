@@ -244,6 +244,20 @@ export async function getTopCities(
   return { cities: [...cities], counts: byKind, total }
 }
 
+/**
+ * Every active vending machine's point, rounded to 0.01° (~1 km), for the
+ * landing page's background map: small enough to send whole.
+ */
+export async function getVendingPoints(db: Database = getDb()): Promise<[number, number][]> {
+  const rows = await db.execute<{ lng: number; lat: number }>(sql`
+    select distinct round(ST_X(geog::geometry)::numeric, 2)::float8 as lng, round(ST_Y(geog::geometry)::numeric, 2)::float8 as lat
+    from ${locations}
+    where is_active and geog is not null and kind = 'vending'
+    order by 1, 2
+  `)
+  return rows.map((r) => [r.lng, r.lat])
+}
+
 export interface BboxQuery {
   bbox: Bbox
   /** Kinds to include. Empty means none. */

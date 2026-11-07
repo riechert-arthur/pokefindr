@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { getDb } from "@/server/db/client"
 import { locations } from "@/server/db/schema"
-import { countLocationsNear, getActiveLocationsGeoJSON, getLocationFeature, getLocationsInBbox, getLocationsNear, getTopCities, searchLocations } from "@/server/services/locations"
+import { countLocationsNear, getActiveLocationsGeoJSON, getLocationFeature, getLocationsInBbox, getLocationsNear, getTopCities, getVendingPoints, searchLocations } from "@/server/services/locations"
 import { milesBetween } from "@/lib/map/geo"
 import type { Bbox } from "@/lib/locations/bbox"
 
@@ -278,5 +278,19 @@ describe("getTopCities", () => {
     ])
     expect((await getTopCities("WA", [])).cities).toEqual([])
     expect((await getTopCities("WA", ["vending"], undefined, 1)).cities).toHaveLength(1)
+  })
+})
+
+describe("getVendingPoints", () => {
+  it("returns each active vending machine's point to 0.01°, once", async () => {
+    await getDb()
+      .insert(locations)
+      .values([
+        { machineId: "A", retailer: "QFC", geog: { lng: -122.3321, lat: 47.6062 } },
+        { machineId: "B", retailer: "QFC", geog: { lng: -122.3299, lat: 47.6071 } }, // rounds to the same point
+        { name: "Card shop", kind: "shop", geog: { lng: -104.99, lat: 39.74 } },
+        { machineId: "OFF", retailer: "QFC", geog: { lng: -80, lat: 35 }, isActive: false },
+      ])
+    expect(await getVendingPoints()).toEqual([[-122.33, 47.61]])
   })
 })
