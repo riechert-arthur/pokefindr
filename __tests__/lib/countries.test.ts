@@ -1,7 +1,9 @@
 import { readFileSync } from "node:fs"
 import path from "node:path"
 import { describe, expect, it } from "vitest"
-import { SUPPORTED_COUNTRIES, SUPPORTED_COUNTRY_NUMERIC } from "@/lib/map/countries"
+import type { MultiPolygon, Polygon } from "geojson"
+import { SUPPORTED_COUNTRIES, SUPPORTED_COUNTRY_NUMERIC, UNSUPPORTED } from "@/lib/map/countries"
+import { worldWithHoles } from "@/lib/map/geo"
 import { worldLayers, type MapColors } from "@/components/map/layers"
 
 const outlines = JSON.parse(readFileSync(path.join(__dirname, "../../public/geo/countries-110m.json"), "utf8")) as {
@@ -60,5 +62,26 @@ describe("country outlines", () => {
       )
     })
     expect(crossing.map((f) => f.properties.name)).toEqual([])
+  })
+})
+
+describe("the grey's cut-out", () => {
+  it("is built from the real US outline: one hole per polygon, wound opposite the outer ring, under MapLibre's 500-ring cap", () => {
+    const us = JSON.parse(readFileSync(path.join(__dirname, "../../public/geo/us-nation.json"), "utf8")) as {
+      features: { geometry: Polygon | MultiPolygon }[]
+    }
+    const [outer, ...holes] = worldWithHoles(us.features.map((f) => f.geometry)).geometry.coordinates
+    const area = (ring: number[][]) => ring.slice(0, -1).reduce((a, p, i) => a + p[0] * ring[i + 1][1] - ring[i + 1][0] * p[1], 0)
+    const polygons = us.features.flatMap((f) => (f.geometry.type === "Polygon" ? [f.geometry.coordinates] : f.geometry.coordinates))
+    expect(holes).toHaveLength(polygons.length)
+    expect(holes.length + 1).toBeLessThan(500)
+    expect(area(outer)).toBeGreaterThan(0)
+    for (const hole of holes) expect(area(hole)).toBeLessThan(0)
+  })
+
+  it("names the covered countries in the toast", () => {
+    expect(UNSUPPORTED.toastBody).toBe("PokeFindr covers the US for now. More countries are on the way.")
+    expect(UNSUPPORTED.toastTitle("Mexico")).toBe("Mexico isn't supported yet")
+    expect(UNSUPPORTED.toastTitle(null)).toBe("This country isn't supported yet")
   })
 })

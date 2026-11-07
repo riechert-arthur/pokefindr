@@ -17,9 +17,11 @@ export const LOCATION_UNAVAILABLE = {
 
 const PERMISSION_DENIED = 1
 
+/** How many times (100 ms apart) a near=me link tries to start locating before giving up. */
+export const AUTO_LOCATE_TRIES = 20
+
 /** MapLibre internals the Strict Mode guard below wraps. */
 type GeolocateInternals = GeolocateControlInstance & {
-  _setupUI: () => void
   _finishSetupUI: (supported: boolean) => void
   _container: HTMLElement
 }
@@ -27,6 +29,8 @@ type GeolocateInternals = GeolocateControlInstance & {
 interface LocateControlProps {
   /** Called with the viewer's position each time they tap the button (or after `autoLocate`). */
   onLocate: (position: { lng: number; lat: number }) => void
+  /** Called when locating fails (denied, unavailable or timed out). */
+  onError?: () => void
   /** Locate once the map is ready: a shared `near=me` link asks the new viewer. */
   autoLocate?: boolean
 }
@@ -42,9 +46,9 @@ interface LocateControlProps {
  * page load. If the viewer says no, MapLibre disables the button for the
  * rest of the visit, so search stays the way in.
  */
-export function LocateControl({ onLocate, autoLocate = false }: LocateControlProps) {
-  const handlers = useRef({ onLocate })
-  handlers.current = { onLocate }
+export function LocateControl({ onLocate, onError, autoLocate = false }: LocateControlProps) {
+  const handlers = useRef({ onLocate, onError })
+  handlers.current = { onLocate, onError }
 
   const control = useControl(
     ({ mapLib }) => {
@@ -54,14 +58,10 @@ export function LocateControl({ onLocate, autoLocate = false }: LocateControlPro
         positionOptions: { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
       }) as GeolocateInternals
       // React Strict Mode adds, removes and re-adds the control. MapLibre
-      // builds the button and then finishes setup asynchronously, so both
-      // setups would finish and attach two click handlers, and every tap
-      // would switch tracking on and straight back off. Build the button
-      // once and finish setup once.
-      const setupUI = gc._setupUI.bind(gc)
-      gc._setupUI = () => {
-        if (!gc._container.hasChildNodes()) setupUI()
-      }
+      // finishes setup asynchronously after each add, so both setups would
+      // finish and attach two click handlers, and every tap would locate and
+      // cancel at once. Finish setup once. (Each add builds a fresh container
+      // and button; the first finish wires up the one on the map by then.)
       const finishSetupUI = gc._finishSetupUI.bind(gc)
       let finished = false
       gc._finishSetupUI = (supported) => {
@@ -69,14 +69,38 @@ export function LocateControl({ onLocate, autoLocate = false }: LocateControlPro
         finished = true
         finishSetupUI(supported)
       }
+
+      const fail = (message: { title: string; description: string }) => {
+        delete gc._container.dataset.located
+        delete gc._container.dataset.locating
+        toast(message.title, { description: message.description })
+        handlers.current.onError?.()
+      }
+
+      // MapLibre's one-shot mode shows nothing while it waits for a position
+      // (up to the 10 s timeout), so mark the button "locating" ourselves.
+      // trigger() can also throw (no navigator.geolocation while the
+      // Permissions API doesn't say "denied"): report it instead.
+      const trigger = gc.trigger.bind(gc)
+      gc.trigger = () => {
+        try {
+          const started = trigger()
+          if (started !== false) gc._container.dataset.locating = "true"
+          return started
+        } catch (err) {
+          console.error("[map] couldn't start locating", err)
+          fail(LOCATION_UNAVAILABLE)
+          return true
+        }
+      }
+
       gc.on("geolocate", (e: GeolocateResultEvent) => {
+        delete gc._container.dataset.locating
         gc._container.dataset.located = "true"
         handlers.current.onLocate({ lng: e.coords.longitude, lat: e.coords.latitude })
       })
       gc.on("error", (e: GeolocateErrorEvent) => {
-        delete gc._container.dataset.located
-        const message = e.code === PERMISSION_DENIED ? LOCATION_DENIED : LOCATION_UNAVAILABLE
-        toast(message.title, { description: message.description })
+        fail(e.code === PERMISSION_DENIED ? LOCATION_DENIED : LOCATION_UNAVAILABLE)
       })
       return gc
     },
@@ -85,10 +109,11 @@ export function LocateControl({ onLocate, autoLocate = false }: LocateControlPro
 
   useEffect(() => {
     if (!autoLocate) return
-    // Setup finishes asynchronously (MapLibre checks for geolocation support first).
+    // Setup finishes asynchronously (MapLibre checks for geolocation support
+    // first); trigger() returns false until then. Give up after ~2 s.
     let tries = 0
     const id = setInterval(() => {
-      if (control.trigger() !== false || ++tries > 20) clearInterval(id)
+      if (control.trigger() !== false || ++tries >= AUTO_LOCATE_TRIES) clearInterval(id)
     }, 100)
     return () => clearInterval(id)
   }, [autoLocate, control])

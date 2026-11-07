@@ -24,7 +24,7 @@ import { LOCATION_KINDS } from "@/lib/types/locations"
 
 /** Search radii in miles, from the redesign prototype. */
 export const RADII = [5, 10, 25, 50] as const
-export const DEFAULT_RADIUS = 10
+export const DEFAULT_RADIUS: (typeof RADII)[number] = 10
 
 export const mapSearchParams = {
   /** The searched place's label, e.g. "Seattle, WA". */
@@ -57,3 +57,12 @@ export const mapUrl = createSerializer(mapSearchParams)
 export const roundPlace = (v: number) => Math.round(v * 1e4) / 1e4
 export const roundCamera = (v: number) => Math.round(v * 1e3) / 1e3
 export const roundZoom = (v: number) => Math.round(v * 10) / 10
+
+/**
+ * The URL update once the viewer shares their position: near=me and the
+ * radius, with every coordinate and other view cleared, so a copied link
+ * never reveals where they are.
+ */
+export function nearMeParams(radius: (typeof RADII)[number]): Partial<MapSearchParams> {
+  return { near: "me", r: radius, q: null, lat: null, lng: null, z: null, state: null }
+}

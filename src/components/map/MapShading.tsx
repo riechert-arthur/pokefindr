@@ -1,10 +1,13 @@
 "use client"
 
+import { useMemo } from "react"
 import { BasemapOverlays, useBasemapStack } from "./BasemapOverlays"
 import { CountryLayers } from "./CountryLayers"
 import { StateLayers } from "./StateLayers"
 import type { MapColors } from "./layers"
 import type { LngLatBounds, StateCollection } from "./useStateShading"
+
+const NO_STATES: StateCollection = { type: "FeatureCollection", features: [] }
 
 interface MapShadingProps {
   colors: MapColors
@@ -23,21 +26,27 @@ interface MapShadingProps {
  */
 export function MapShading({ colors, states, max, bounds, onStateSelect }: MapShadingProps) {
   const stack = useBasemapStack()
+  const waterIds = useMemo(
+    () => stack.overlays.filter((l) => l.type === "fill").map((l) => l.id),
+    [stack.overlays],
+  )
   if (!stack.labelId) return null
+  // Rendered in this order, together, so the layers are added (and re-added
+  // after a theme switch) in this order: grey countries, state shading on
+  // top of them, then the overlays above both. Both shading groups mount
+  // with empty data and fill in as their data loads.
   return (
     <>
       <BasemapOverlays stack={stack} />
-      <CountryLayers colors={colors} beforeId={stack.shadingBeforeId} />
-      {states && (
-        <StateLayers
-          states={states}
-          max={max}
-          bounds={bounds}
-          colors={colors}
-          beforeId={stack.shadingBeforeId}
-          onSelect={onStateSelect}
-        />
-      )}
+      <CountryLayers colors={colors} beforeId={stack.shadingBeforeId} waterIds={waterIds} />
+      <StateLayers
+        states={states ?? NO_STATES}
+        max={max}
+        bounds={bounds}
+        colors={colors}
+        beforeId={stack.shadingBeforeId}
+        onSelect={onStateSelect}
+      />
     </>
   )
 }

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 import { describe, expect, it } from "vitest"
 import type { Polygon } from "geojson"
-import { basemapOverlays, OVERLAY_PREFIX, placeDotsLayer, shadingBeforeId, statesFillLayer, POINT_ZOOM, type MapColors } from "@/components/map/layers"
+import { basemapOverlays, countryAtPoint, OVERLAY_PREFIX, placeDotsLayer, shadingBeforeId, statesFillLayer, POINT_ZOOM, type MapColors } from "@/components/map/layers"
 import type { LayerSpecification } from "@/components/map/engine"
 import { shadeStates, type StateCollection } from "@/components/map/useStateShading"
 import { boundsOf, worldWithHoles } from "@/lib/map/geo"
@@ -170,5 +170,38 @@ describe("basemapOverlays", () => {
       { id: `${OVERLAY_PREFIX}water`, type: "fill" },
     ]
     expect(shadingBeforeId(layers)).toBe("city")
+  })
+})
+
+describe("basemapOverlays on the real basemaps", () => {
+  const read = (name: string) =>
+    JSON.parse(readFileSync(path.join(__dirname, `fixtures/openfreemap-${name}-layers.json`), "utf8")) as LayerSpecification[]
+
+  it.each(["positron", "dark"])("copies %s's water and country borders, which then sit under its labels", (name) => {
+    const layers = read(name)
+    const overlays = basemapOverlays(layers)
+    expect(overlays.some((l) => l.type === "fill" && (l as { "source-layer"?: string })["source-layer"] === "water")).toBe(true)
+    expect(overlays.some((l) => l.type === "line" && (l as { "source-layer"?: string })["source-layer"] === "boundary")).toBe(true)
+    // With the copies added, the shading still goes under the same label layer.
+    expect(shadingBeforeId([...layers, ...overlays])).toBe(shadingBeforeId(layers))
+  })
+})
+
+describe("countryAtPoint", () => {
+  const water = new Set([`${OVERLAY_PREFIX}water`])
+  const f = (layer: string, id?: number, name?: string) => ({ layer: { id: layer }, id, properties: name ? { name } : {} })
+
+  it("names the country under the pointer", () => {
+    expect(countryAtPoint([f("world-hit", 7, "Canada"), f("world-fill")], water)).toEqual({ kind: "country", id: 7, name: "Canada" })
+  })
+
+  it("stays quiet over the US and over water, where the rough outlines spill", () => {
+    expect(countryAtPoint([f("supported-hit"), f("world-hit", 7, "Canada")], water)).toEqual({ kind: "none" })
+    expect(countryAtPoint([f(`${OVERLAY_PREFIX}water`), f("world-hit", 7, "Canada")], water)).toEqual({ kind: "none" })
+  })
+
+  it("still answers over grey the 110m outlines don't cover (Malta)", () => {
+    expect(countryAtPoint([f("world-fill")], water)).toEqual({ kind: "unnamed" })
+    expect(countryAtPoint([], water)).toEqual({ kind: "none" })
   })
 })

@@ -26,6 +26,7 @@ export type {
   LayerProps,
   MapGeoJSONFeature,
   MapLayerMouseEvent,
+  MapMouseEvent,
   MapRef,
   ViewState,
   ViewStateChangeEvent,
