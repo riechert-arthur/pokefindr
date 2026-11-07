@@ -25,7 +25,6 @@ import { LOCATION_KINDS, type LocationFeature, type LocationFeatureProperties, t
 import { useLocations } from "./useLocations"
 import { LocationPopup, type LocationPopupProps } from "./LocationPinPopUps"
 import { useSidebar } from "../providers/SidebarContextProvider"
-import { LocationInfoPanel } from "./LocationInfoPanel"
 import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { useSessionContext } from "../providers/SessionProvider"
 import { useIsDark, useThemeKey } from "@/lib/design/useThemeKey"
@@ -39,6 +38,7 @@ import { MapShading } from "./MapShading"
 import { useStateShading } from "./useStateShading"
 import { cameraPadding } from "./camera"
 import { MapPanel } from "./MapPanel"
+import { DetailsSheet } from "./DetailsSheet"
 import { ResultsSheet } from "./ResultsSheet"
 import { useNearbyLocations } from "./useNearbyLocations"
 import { StateSheet } from "./StateSheet"
@@ -181,17 +181,40 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const userMoving = useRef(false)
 
   // The details panel follows `location=` (a shared link, Back or Forward).
+  // A location the map hasn't loaded comes from /api/locations/<id>.
   // globalThis: `Map` here is the map component from ./engine.
   const knownLocations = useMemo(() => new globalThis.Map(collection.features.map((f) => [f.properties.id, f])), [collection])
   useEffect(() => {
-    if (!params.location) {
+    const id = params.location
+    if (!id) {
       dispatch({ type: "closeDetails" })
       pushedDetails.current = null
       return
     }
-    const feature = knownLocations.get(params.location)
-    if (feature) dispatch({ type: "showDetails", location: toSelected(feature) })
-  }, [params.location, knownLocations])
+    const feature = knownLocations.get(id)
+    if (feature) {
+      dispatch({ type: "showDetails", location: toSelected(feature) })
+      return
+    }
+    if (detailsRef.current?.id === id) return
+    const controller = new AbortController()
+    fetch(`/api/locations/${encodeURIComponent(id)}`, { signal: controller.signal })
+      .then(async (res) => {
+        if (res.status === 404 || res.status === 400) return null
+        if (!res.ok) throw new Error(`GET /api/locations/${id} failed (${res.status})`)
+        return (await res.json()) as LocationFeature
+      })
+      .then((found) => {
+        if (controller.signal.aborted) return
+        if (found) dispatch({ type: "showDetails", location: toSelected(found) })
+        // Gone or never there: a link to nothing shouldn't stay in the URL.
+        else void setParams({ location: null }, { history: "replace" })
+      })
+      .catch((err: unknown) => {
+        if (!controller.signal.aborted) console.error("[map] couldn't load the location", err)
+      })
+    return () => controller.abort()
+  }, [params.location, knownLocations, setParams])
 
   // A new view (a pick, Back or Forward) puts its label in the search box.
   // Keyed on the label, so a pan (a camera-only URL write) keeps what the
@@ -547,9 +570,20 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
           kinds={kinds}
           kindTotals={kindTotals}
           onKindsChange={handleKindsChange}
-          sheetLabel={place ? "Results" : stateFocus ? STATES[stateFocus].name : "Across the US"}
+          sheetLabel={details ? details.retailer : place ? "Results" : stateFocus ? STATES[stateFocus].name : "Across the US"}
           sheet={
-            !place && !stateFocus ? (
+            details ? (
+              <DetailsSheet
+                key={details.id}
+                location={details}
+                backLabel={
+                  place ? (nearMe ? "Back to results near you" : `Back to ${urlView.place?.label ?? "results"}`) : stateFocus ? `Back to ${stateFocus}` : "Back"
+                }
+                onBack={closeDetails}
+                me={me}
+                from={place && !nearMe && urlView.place ? { label: urlView.place.label, lng: place.lng, lat: place.lat } : null}
+              />
+            ) : !place && !stateFocus ? (
               <UsSheet
                 highlights={highlights}
                 states={stateTotals}
@@ -589,7 +623,6 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
             onDetails={openDetails}
           />
         )}
-        <LocationInfoPanel info={details} onClose={closeDetails} />
         {states && zoomedOut && (
           <StateLegend
             max={max}
