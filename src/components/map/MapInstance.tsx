@@ -43,6 +43,10 @@ import { ResultsSheet } from "./ResultsSheet"
 import { useNearbyLocations } from "./useNearbyLocations"
 import { StateSheet } from "./StateSheet"
 import { useStateCities } from "./useStateCities"
+import { useHighlights } from "./useHighlights"
+import { HighlightMarkers } from "./HighlightMarkers"
+import { UsSheet, type StateTotal } from "./UsSheet"
+import type { Hotspot, UpcomingEvent } from "@/lib/types/highlights"
 import { cn } from "@/lib/utils"
 import { boundsOfRadius, milesBetween, radiusCircle, US_BOUNDS } from "@/lib/map/geo"
 import { STATES } from "@/lib/map/states"
@@ -139,6 +143,16 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   // A state's busiest cities, while the view is a state.
   const stateFocus = !place && !nearMe ? urlView.state : null
   const stateCities = useStateCities(stateFocus, kinds, retailers)
+  // Hotspots and events for the US view.
+  const highlights = useHighlights()
+  const stateTotals = useMemo<StateTotal[]>(
+    () =>
+      (states?.features ?? [])
+        .filter((f) => f.properties.region)
+        .map((f) => ({ code: f.properties.region, name: f.properties.name, count: f.properties.count }))
+        .sort((a, b) => b.count - a.count),
+    [states],
+  )
   const [map, setMap] = useState<ViewportMap>()
   const viewport = useViewportLocations(map, { types: kinds })
   const inView = useMemo<FeatureCollection<Point, LocationFeatureProperties & { dim?: boolean }>>(() => {
@@ -226,8 +240,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
       const { camera } = initialMapView(next)
       if ("bounds" in camera) {
         // An explicit `maxZoom: undefined` breaks the fit (NaN center); leave it out instead.
-        // A place or a state opens its list in the panel.
-        const padding = pad((next.lat != null && next.lng != null) || !!next.state)
+        // Every view has a list in the panel: a place's results, a state's cities, the US highlights.
+        const padding = pad(true)
         map.fitBounds(camera.bounds, camera.maxZoom === undefined ? { padding, duration: 1000 } : { padding, maxZoom: camera.maxZoom, duration: 1000 })
       }
       else map.flyTo({ center: [camera.longitude, camera.latitude], zoom: camera.zoom, duration: 1000 })
@@ -347,13 +361,21 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     map?.fitBounds(boundsOfRadius(area.lng, area.lat, r), { padding: pad(true), maxZoom: 13, duration: 1400 })
   }
 
+  /** A hotspot or event (marker or list row): open its city, as the prototype does. */
+  const openHotspot = (h: Hotspot) =>
+    handleSearchPick({ type: "area", area: { label: `${h.city}, ${h.state}`, lng: h.lng, lat: h.lat, kind: "city", state: h.state } })
+  const openEvent = (e: UpcomingEvent) =>
+    handleSearchPick({ type: "area", area: { label: [e.city, e.state].filter(Boolean).join(", ") || e.title, lng: e.lng, lat: e.lat, kind: "city", state: e.state } })
+  const openState = (code: string) =>
+    handleSearchPick({ type: "area", area: { label: STATES[code].name, lng: 0, lat: 0, kind: "state", state: code } })
+
   /** The search box's ✕: back to the whole US, as a new view. */
   const handleSearchClear = () => {
     setQuery("")
     if (!params.q && !params.state && !params.near) return
     dispatch({ type: "closeDetails" })
     writeView({ q: null, lat: null, lng: null, r: null, z: null, state: null, near: null, location: null }, { history: "push" })
-    mapRef.current?.fitBounds(US_BOUNDS, { padding: pad(), duration: 1400 })
+    mapRef.current?.fitBounds(US_BOUNDS, { padding: pad(true), duration: 1400 })
   }
 
   /** Details are a new view: a new history entry, so Back closes them. */
@@ -427,8 +449,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
           // An explicit `maxZoom: undefined` overrides MapLibre's default and breaks the fit.
           fitBoundsOptions:
             camera.maxZoom === undefined
-              ? { padding: cameraPadding(undefined, { sheet: !!place || !!stateFocus }) }
-              : { padding: cameraPadding(undefined, { sheet: !!place || !!stateFocus }), maxZoom: camera.maxZoom },
+              ? { padding: cameraPadding(undefined, { sheet: true }) }
+              : { padding: cameraPadding(undefined, { sheet: true }), maxZoom: camera.maxZoom },
         }
       : camera
 
@@ -487,6 +509,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
           <Layer {...radius.fill} />
           <Layer {...radius.line} />
         </Source>
+        {highlights && zoomedOut && <HighlightMarkers highlights={highlights} kinds={kinds} onHotspot={openHotspot} onEvent={openEvent} />}
         <LocationLayers collection={inView} selected={selected} colors={colors} onSelect={handleDotSelect} />
         <FullscreenControl position="bottom-right" />
         <LocateControl onLocate={handleLocate} onError={handleLocateError} autoLocate={view.nearMe} />
@@ -524,9 +547,18 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
           kinds={kinds}
           kindTotals={kindTotals}
           onKindsChange={handleKindsChange}
-          sheetLabel={place ? "Results" : stateFocus ? STATES[stateFocus].name : undefined}
+          sheetLabel={place ? "Results" : stateFocus ? STATES[stateFocus].name : "Across the US"}
           sheet={
-            stateFocus ? (
+            !place && !stateFocus ? (
+              <UsSheet
+                highlights={highlights}
+                states={stateTotals}
+                kinds={kinds}
+                onHotspot={openHotspot}
+                onEvent={openEvent}
+                onState={openState}
+              />
+            ) : stateFocus ? (
               <StateSheet
                 code={stateFocus}
                 name={STATES[stateFocus].name}
