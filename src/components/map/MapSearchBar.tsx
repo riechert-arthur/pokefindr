@@ -7,6 +7,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import type { Point } from "geojson"
 import type { LocationFeature, LocationFeatureCollection } from "@/lib/types/locations"
 import { useSidebar } from "@/components/providers/SidebarContextProvider"
+import { APP_NAV_ID } from "@/components/pokefindr/AppRail"
 import { KindDot } from "@/components/pokefindr/KindDot"
 import { toKind } from "@/components/pokefindr/kinds"
 
@@ -47,7 +48,7 @@ export function MapSearchBar({
     Array<LocationFeature & { distance: number }>
   >([])
   const cancelRef = useRef<CancelTokenSource | null>(null)
-  const { toggleSidebar } = useSidebar()
+  const { isSidebarOpen, toggleSidebar } = useSidebar()
   const token = publicConfig.mapboxGeocodingToken
   const [isFocused, setIsFocused] = useState(false)
 
@@ -59,10 +60,13 @@ export function MapSearchBar({
   const onMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.button !== 0) return
     if (e.target !== containerRef.current) return
+    // `left`/`top` are relative to the map, which starts right of the app
+    // rail, so measure the grab point from the map's corner.
     const rect = containerRef.current!.getBoundingClientRect()
+    const parent = containerRef.current!.offsetParent?.getBoundingClientRect() ?? { left: 0, top: 0 }
     dragOffset.current = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+      x: e.clientX - rect.left + parent.left,
+      y: e.clientY - rect.top + parent.top,
     }
     setDragging(true)
     e.preventDefault()
@@ -179,7 +183,7 @@ export function MapSearchBar({
       className={`w-64 md:w-80 bg-card shadow-lg cursor-move ${results.length > 0 ? "rounded-xl" : "rounded-full"}`}
     >
       <div className={`flex flex-row items-center pl-4 pr-3 border-b ${results.length > 0 ? "rounded-t-xl" : "rounded-full"}`}>
-        <button onClick={toggleSidebar} className="md:hidden mr-2 p-1 rounded" aria-label="Toggle menu">
+        <button onClick={toggleSidebar} className="sm:hidden mr-2 p-1 rounded" aria-label="Open navigation" aria-controls={APP_NAV_ID} aria-expanded={isSidebarOpen}>
           <MenuIcon className="size-6 text-muted-foreground hover:text-primary/80" />
         </button>
 

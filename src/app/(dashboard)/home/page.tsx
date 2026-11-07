@@ -23,6 +23,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { useSidebar } from '@/components/providers/SidebarContextProvider'
+import { APP_NAV_ID } from '@/components/pokefindr/AppRail'
 import { RecentReviewsSection, Review } from '@/components/RecentReviewSection'
 import { reviewSchema, type ReviewFormValues } from '@/components/map/LocationInfoPanel'
 import { StarRating } from '@/components/pokefindr/StarRating'
@@ -104,7 +105,7 @@ export default function ReviewsPage() {
       {/* header */}
       <header className="absolute inset-x-0 top-0 z-40 flex h-16 border-b border-border">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <button onClick={toggleSidebar} className="md:hidden mr-2 p-1 rounded" aria-label="Toggle menu">
+          <button onClick={toggleSidebar} className="sm:hidden mr-2 p-1 rounded" aria-label="Open navigation" aria-controls={APP_NAV_ID} aria-expanded={isSidebarOpen}>
             <MenuIcon className="size-6 text-muted-foreground hover:text-primary/80" />
           </button>
           <div />

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import type { ComponentType, SVGProps } from "react"
+import type { ComponentType, Ref, SVGProps } from "react"
 import { BookOpenIcon, HouseIcon, MapPinIcon, SettingsIcon } from "lucide-react"
 import { Logo } from "@/components/brand/Logo"
 import { DiscordIcon } from "@/components/icons/DiscordIcon"
@@ -46,9 +46,13 @@ function RailLink({ item, current }: { item: RailItem; current: boolean }) {
   )
 }
 
+/** The rail's element id, for the phone menu buttons' aria-controls. */
+export const APP_NAV_ID = "app-navigation"
+
 interface AppRailProps {
   /** Shows Settings. */
   signedIn?: boolean
+  ref?: Ref<HTMLElement>
   className?: string
 }
 
@@ -58,14 +62,16 @@ interface AppRailProps {
  * the current page shaded. Discord, Settings and the theme toggle sit at the
  * bottom; the prototype leaves them out, but the app needs them somewhere.
  */
-export function AppRail({ signedIn = false, className }: AppRailProps) {
+export function AppRail({ signedIn = false, className, ref }: AppRailProps) {
   const pathname = usePathname()
   const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
 
   return (
     <nav
+      id={APP_NAV_ID}
       aria-label="App navigation"
       className={cn("flex w-16 flex-none flex-col items-center gap-2 border-r border-border bg-card py-3.5", className)}
+      ref={ref}
     >
       <Link href="/" aria-label="PokeFindr home" className="mb-2 grid size-10 place-items-center">
         <Logo size={30} />
