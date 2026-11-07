@@ -1,6 +1,7 @@
 import "server-only"
 import { z } from "zod"
 import { defineJob, type Job } from "./types"
+import { refreshRegionCountsJob } from "@/server/services/region-counts"
 
 /** Does nothing. Exists so the cron, queue and CLI wiring can be tested on its own. */
 const noop = defineJob({
@@ -20,6 +21,7 @@ const noop = defineJob({
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- each job keeps its own payload type
 export const jobs: Record<string, Job<any>> = {
   noop,
+  "refresh-region-counts": refreshRegionCountsJob,
 }
 
 export function isJobName(name: string): boolean {

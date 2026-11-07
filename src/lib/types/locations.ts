@@ -23,3 +23,13 @@ export type LocationFeatureCollection = FeatureCollection<Point, LocationFeature
   /** Set on viewport queries: true when more locations matched than were returned. */
   truncated?: boolean
 }
+
+/** Locations of one kind in one region (a US state today), from GET /api/locations/aggregates. */
+export interface RegionCount {
+  /** ISO 3166-1 alpha-2, e.g. "US". */
+  country: string
+  /** State or province code, e.g. "WA". Empty when the locations have no state. */
+  region: string
+  kind: LocationKind
+  count: number
+}

@@ -31,6 +31,7 @@ import {
   jsonb,
   numeric,
   pgEnum,
+  pgMaterializedView,
   pgTable,
   text,
   timestamp,
@@ -145,6 +146,18 @@ export const locationsStaging = pgTable(
     ...locationChecks("locations_staging", t),
   ],
 )
+
+/**
+ * Active, positioned locations per country, region (state; '' when unknown)
+ * and kind (migration 0003). Refreshed by the `refresh-region-counts` job.
+ * `.existing()`: the migration owns its definition, so drizzle-kit leaves it alone.
+ */
+export const locationRegionCounts = pgMaterializedView("location_region_counts", {
+  country: text("country").notNull(),
+  region: text("region").notNull(),
+  kind: text("kind").$type<LocationKind>().notNull(),
+  count: integer("count").notNull(),
+}).existing()
 
 export const locationRatings = pgTable(
   "location_ratings",

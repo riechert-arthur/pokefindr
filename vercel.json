@@ -1,7 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
-    { "path": "/api/jobs/noop", "schedule": "0 6 * * *" }
+    { "path": "/api/jobs/noop", "schedule": "0 6 * * *" },
+    { "path": "/api/jobs/refresh-region-counts", "schedule": "15 6 * * *" }
   ],
   "functions": {
     "src/app/api/queues/jobs/route.ts": {
