@@ -29,9 +29,12 @@ export const countsQuerySchema = z.object({
   retailer: retailerParam,
 })
 
+/** The longest query /api/locations/search takes (the geocoder takes more, for full addresses). */
+export const MAX_LOCATION_QUERY = 100
+
 /** GET /api/locations/search?q=…&types=…&near=lng,lat&limit=… */
 export const searchQuerySchema = z.object({
-  q: z.string().trim().min(2).max(100),
+  q: z.string().trim().min(2).max(MAX_LOCATION_QUERY),
   types: kindsParam,
   near: pointParam.optional(),
   retailer: retailerParam,
