@@ -47,13 +47,14 @@ export function boundsOf(geometry: Polygon | MultiPolygon): LngLatBounds {
 
 /**
  * Sums `counts` per US state for the given kinds and writes them onto the
- * state outlines. Returns the outlines and the largest count (at least 1).
+ * state outlines. Returns the outlines, the largest count (at least 1) and
+ * the US total.
  */
 export function shadeStates(
   outlines: StateCollection,
   counts: readonly RegionCount[],
   kinds: ReadonlySet<LocationKind>,
-): { states: StateCollection; max: number } {
+): { states: StateCollection; max: number; total: number } {
   const byRegion = new Map<string, number>()
   for (const c of counts) {
     if (c.country !== "US" || !kinds.has(c.kind)) continue
@@ -66,7 +67,9 @@ export function shadeStates(
       properties: { ...f.properties, count: byRegion.get(f.properties.region) ?? 0 },
     })),
   }
-  return { states, max: Math.max(1, ...byRegion.values()) }
+  let total = 0
+  for (const n of byRegion.values()) total += n
+  return { states, max: Math.max(1, ...byRegion.values()), total }
 }
 
 async function getJson<T>(url: string, signal: AbortSignal): Promise<T> {
@@ -111,5 +114,5 @@ export function useStateShading(kinds: ReadonlySet<LocationKind>) {
     [outlines, counts, kinds],
   )
 
-  return { states: shaded?.states ?? null, max: shaded?.max ?? 1, bounds }
+  return { states: shaded?.states ?? null, max: shaded?.max ?? 1, total: shaded?.total ?? null, bounds }
 }

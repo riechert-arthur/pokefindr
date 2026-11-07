@@ -3,6 +3,8 @@
 import type { FC } from "react"
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react"
 import { Map, FullscreenControl, NavigationControl, MAP_STYLES, type MapRef, type ViewStateChangeEvent } from "./engine"
+import { useViewportLocations, type ViewportMap } from "./useViewportLocations"
+import { MapStatusPill } from "./MapStatusPill"
 import { UserLocationPin } from "./UserLocationPin"
 import { useUserLocationContext } from "@/components/providers/UserLocationContextProvider"
 import { MapSearchBar } from "./MapSearchBar"
@@ -30,6 +32,7 @@ const US_BOUNDS: [[number, number], [number, number]] = [[-125.5, 24.0], [-66.5,
 type SelectedLocation = Omit<LocationPopupProps, "onClose" | "onDetails">
 
 const ALL_KINDS: ReadonlySet<LocationKind> = new Set(LOCATION_KINDS)
+const SHOWN_KINDS: readonly LocationKind[] = LOCATION_KINDS
 
 const toSelected = (feat: LocationFeature): SelectedLocation => {
   const [longitude, latitude] = feat.geometry.coordinates
@@ -54,8 +57,15 @@ const MapInstance: FC = () => {
   // Re-read the token colors only when the theme changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const colors = useMemo(readMapColors, [themeKey])
+  // Every location, for the search box only; the map draws what's in view.
   const collection = useLocations()
-  const { states, max, bounds } = useStateShading(ALL_KINDS)
+  const { states, max, total, bounds } = useStateShading(ALL_KINDS)
+  const [map, setMap] = useState<ViewportMap>()
+  const viewport = useViewportLocations(map, { types: SHOWN_KINDS })
+  const inView = useMemo(
+    () => ({ type: "FeatureCollection" as const, features: viewport.features }),
+    [viewport.features],
+  )
   const [zoomedOut, setZoomedOut] = useState(true)
   // Loading until MapLibre's load event; failed if the map can't start (see nextLoadState).
   const [loadState, setLoadState] = useState<MapLoadState>(INITIAL_LOAD_STATE)
@@ -87,6 +97,11 @@ const MapInstance: FC = () => {
         ref={mapRef}
         initialViewState={{ bounds: US_BOUNDS, fitBoundsOptions: { padding: 40 } }}
         minZoom={1.2}
+        // Flat and north-up, as in the prototype (no compass). A tilted view
+        // reaches toward the horizon and asks the API for far too big a box.
+        maxPitch={0}
+        dragRotate={false}
+        touchPitch={false}
         renderWorldCopies={false}
         attributionControl={{ compact: true, customAttribution: "State outlines: US Census" }}
         style={{
@@ -98,6 +113,7 @@ const MapInstance: FC = () => {
         mapStyle={isDark ? MAP_STYLES.dark : MAP_STYLES.light}
         onLoad={(e) => {
           setLoadState((state) => nextLoadState(state, { type: "load" }))
+          setMap(e.target)
           setZoomedOut(e.target.getZoom() < POINT_ZOOM)
         }}
         onZoom={(e: ViewStateChangeEvent) => setZoomedOut(e.viewState.zoom < POINT_ZOOM)}
@@ -121,7 +137,7 @@ const MapInstance: FC = () => {
         }}
       >
         {states && <StateLayers states={states} max={max} bounds={bounds} colors={colors} />}
-        <LocationLayers collection={collection} selected={selected} colors={colors} onSelect={handleDotSelect} />
+        <LocationLayers collection={inView} selected={selected} colors={colors} onSelect={handleDotSelect} />
         <FullscreenControl position="bottom-right" />
         <NavigationControl position="bottom-right" showCompass={false} />
         <UserLocationPin />
@@ -140,6 +156,14 @@ const MapInstance: FC = () => {
             className={cn("absolute right-3 z-[8] hidden md:block", session ? "top-20" : "top-3")}
           />
         )}
+        <MapStatusPill
+          zoomedOut={zoomedOut}
+          total={total}
+          inView={viewport.features.length}
+          status={viewport.status}
+          truncated={viewport.truncated}
+          kinds={SHOWN_KINDS}
+        />
         {session && (
           <div className="absolute top-4 right-5 z-50">
             <UserMenu size={45} userName={session.username} />
