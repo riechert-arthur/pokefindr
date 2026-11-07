@@ -5,6 +5,12 @@ import { RADII } from "@/lib/map/url-state"
 /** A search radius in miles: one the map offers. */
 const radiusParam = z.coerce.number().refine((r) => (RADII as readonly number[]).includes(r), `must be one of ${RADII.join(", ")}`)
 
+/** Vending retailers, comma-separated, as in the map's URL (`retailer=`). Absent means all. */
+export const retailerParam = z
+  .string()
+  .optional()
+  .transform((s) => (s ? s.split(",").map((r) => r.trim()).filter(Boolean) : []))
+
 /** Most points one counts request may ask about: a search list's worth. */
 export const MAX_COUNT_POINTS = 10
 
@@ -19,6 +25,7 @@ export const countsQuerySchema = z.object({
     .pipe(z.array(pointParam).min(1).max(MAX_COUNT_POINTS)),
   r: radiusParam,
   types: kindsParam,
+  retailer: retailerParam,
 })
 
 /** GET /api/locations/search?q=…&types=…&near=lng,lat&limit=… */
@@ -26,6 +33,7 @@ export const searchQuerySchema = z.object({
   q: z.string().trim().min(2).max(100),
   types: kindsParam,
   near: pointParam.optional(),
+  retailer: retailerParam,
   limit: z.coerce.number().int().min(1).max(20).default(5),
 })
 
@@ -36,8 +44,5 @@ export const nearQuerySchema = z.object({
   r: radiusParam,
   types: kindsParam,
   /** Vending retailers, comma-separated, as in the map's URL. */
-  retailer: z
-    .string()
-    .optional()
-    .transform((s) => (s ? s.split(",").map((r) => r.trim()).filter(Boolean) : [])),
+  retailer: retailerParam,
 })

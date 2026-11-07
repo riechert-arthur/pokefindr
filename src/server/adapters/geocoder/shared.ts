@@ -15,10 +15,31 @@ export const countryOf = (opts?: GeocodeOptions) => (opts?.country ?? "us").toLo
  */
 export async function getJson<T>(url: URL, provider: string, opts?: GeocodeOptions, headers?: HeadersInit): Promise<T> {
   const signals = [AbortSignal.timeout(TIMEOUT_MS), ...(opts?.signal ? [opts.signal] : [])]
-  const res = await fetch(url, { headers: { Accept: "application/json", ...headers }, signal: AbortSignal.any(signals) })
+  let res: Response
+  try {
+    res = await fetch(url, { headers: { Accept: "application/json", ...headers }, signal: AbortSignal.any(signals) })
+  } catch (err) {
+    // The caller gave up: not a provider failure.
+    if (opts?.signal?.aborted) throw err
+    // A timeout, DNS or connection failure. The cause's message can hold the URL.
+    throw new GeocoderError(`${provider} geocoding failed (no response)`)
+  }
   if (!res.ok) throw new GeocoderError(`${provider} geocoding failed with status ${res.status}`, res.status)
-  return (await res.json()) as T
+  try {
+    return (await res.json()) as T
+  } catch (err) {
+    if (opts?.signal?.aborted) throw err
+    throw new GeocoderError(`${provider} geocoding failed (not JSON)`)
+  }
 }
+
+/** `path` under `base`, keeping any path in `base` (a self-hosted instance behind a prefix). */
+export function endpoint(base: string, path: string): URL {
+  return new URL(path.replace(/^\//, ""), base.endsWith("/") ? base : `${base}/`)
+}
+
+/** The rest of a label after the place's own name: the city and the state's code ("98101, Seattle, WA"). */
+export const shortLabel = (...parts: (string | undefined)[]) => parts.filter(Boolean).join(", ")
 
 /** "Denver, CO": a city with its state's code, or the name alone outside a state. */
 export const cityLabel = (name: string, state?: string) => (state ? `${name}, ${state}` : name)
