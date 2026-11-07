@@ -5,12 +5,13 @@ import {
   Layer,
   Marker,
   useMap,
-  type MapboxGeoJSONFeature,
-} from "react-map-gl"
-import type { LayerProps } from "react-map-gl"
+  MAP_FONT_BOLD,
+  type LayerProps,
+  type MapGeoJSONFeature,
+  type MapLayerMouseEvent,
+} from "./engine"
 import LocationPopup, { LocationPopupProps } from "./LocationPinPopUps"
 import type { Point } from "geojson"
-import { MapLayerMouseEvent } from "mapbox-gl"
 import type {
   LocationFeature,
   LocationFeatureCollection,
@@ -64,7 +65,7 @@ const clusterLayers = (): { circle: LayerProps; count: LayerProps } => {
       maxzoom: CLUSTER_MAX_ZOOM + 1,
       layout: {
         "text-field": "{point_count_abbreviated}",
-        "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+        "text-font": MAP_FONT_BOLD,
         "text-size": 17,
         "text-allow-overlap": true,
         "text-ignore-placement": true,
@@ -160,10 +161,10 @@ export const PokemonCenterLocationPins: FC<PokemonCenterLocationPinsProps> = ({ 
 
       const raw = map.querySourceFeatures("machines", {
         filter: ["!", ["has", "point_count"]],
-      }) as MapboxGeoJSONFeature[]
+      }) as MapGeoJSONFeature[]
 
       const onlyPoints = raw.filter(
-        (f): f is MapboxGeoJSONFeature & { geometry: Point } =>
+        (f): f is MapGeoJSONFeature & { geometry: Point } =>
           f.geometry.type === "Point"
       )
 
