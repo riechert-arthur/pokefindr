@@ -311,7 +311,14 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         onError={(e) => {
           console.error("[map]", e.error)
           const { sourceId, tile } = e as { sourceId?: string; tile?: unknown }
-          setLoadState((state) => nextLoadState(state, { type: "error", error: e.error, sourceId, tile }))
+          // react-maplibre's own startup failures come with no map (target null).
+          let styleLoaded = false
+          try {
+            styleLoaded = Boolean(e.target?.getStyle())
+          } catch {
+            // No style yet.
+          }
+          setLoadState((state) => nextLoadState(state, { type: "error", error: e.error, sourceId, tile, styleLoaded }))
         }}
         onClick={(e) => {
           if (isSidebarOpen) toggleSidebar()
