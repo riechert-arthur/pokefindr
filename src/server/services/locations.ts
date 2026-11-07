@@ -2,7 +2,7 @@ import "server-only"
 import { sql, type SQL } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
 import { locations } from "@/server/db/schema"
-import type { LocationFeature, LocationFeatureCollection, LocationKind, NearbyLocations } from "@/lib/types/locations"
+import type { LocationFeature, LocationFeatureCollection, LocationKind, NearbyLocations, StateCities } from "@/lib/types/locations"
 import type { Bbox } from "@/lib/locations/bbox"
 
 /** The most locations one viewport request returns. */
@@ -202,6 +202,58 @@ export async function getLocationsNear(
     ) as fc
   `)
   return rows[0].fc
+}
+
+/** The most cities one state lists. */
+export const TOP_CITIES_LIMIT = 30
+
+/**
+ * The cities in a state with the most active locations of `types`, most
+ * first, each placed at the middle of its locations (so a pick centers the
+ * radius on them), plus the state's counts per kind: the list for
+ * exploring a state.
+ */
+export async function getTopCities(
+  state: string,
+  types: readonly LocationKind[],
+  db: Database = getDb(),
+  limit = TOP_CITIES_LIMIT,
+  retailers: readonly string[] = [],
+): Promise<StateCities> {
+  if (types.length === 0) return { cities: [], counts: {}, total: 0 }
+  // A US state: another country's region can share the code (WA, Western Australia).
+  const matched = sql`
+    select * from ${locations} l
+    where l.is_active and l.geog is not null and l.country_code = 'US' and l.state = ${state} and l.kind in (${kindsIn(types)})
+      ${retailerIn(retailers)}
+  `
+  // The city as typed, with runs of whitespace (tabs, NBSPs from a paste) as
+  // one space and none at the ends. (\s alone misses NBSP under C ctype.)
+  const name = sql`trim(regexp_replace(coalesce(m.city, ''), '[\\s\u00a0]+', ' ', 'g'))`
+  const [cities, counts] = await Promise.all([
+    db.execute<StateCities["cities"][number]>(sql`
+      -- One name per city however it was typed: title case if any row has it
+      -- ("Seattle" over "SEATTLE" and "seattle"), then not all caps
+      -- ("King of Prussia" over "KING OF PRUSSIA"), then not all lowercase.
+      select (array_agg(${name} order by ${name} <> initcap(${name}), ${name} = upper(${name}), ${name} = lower(${name}), ${name}))[1] as city,
+        count(*)::int as count,
+        round(avg(ST_X(m.geog::geometry))::numeric, 4)::float8 as lng,
+        round(avg(ST_Y(m.geog::geometry))::numeric, 4)::float8 as lat
+      from (${matched}) m
+      where ${name} <> ''
+      group by lower(${name})
+      order by count desc, city
+      limit ${limit}
+    `),
+    db.execute<{ kind: LocationKind; n: number }>(sql`select m.kind, count(*)::int as n from (${matched}) m group by m.kind`),
+  ])
+  const byKind: StateCities["counts"] = {}
+  let total = 0
+  for (const { kind, n } of counts) {
+    byKind[kind] = n
+    total += n
+  }
+  return { cities: [...cities], counts: byKind, total }
 }
 
 export interface BboxQuery {

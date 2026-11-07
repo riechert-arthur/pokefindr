@@ -33,6 +33,14 @@ export type NearbyLocations = FeatureCollection<Point, LocationFeatureProperties
   truncated: boolean
 }
 
+/** GET /api/locations/cities: a state's busiest cities and its counts per kind. */
+export interface StateCities {
+  /** Most locations first; each at the middle of its locations. */
+  cities: { city: string; count: number; lng: number; lat: number }[]
+  counts: Partial<Record<LocationKind, number>>
+  total: number
+}
+
 /** Locations of one kind in one region (a US state today), from GET /api/locations/aggregates. */
 export interface RegionCount {
   /** ISO 3166-1 alpha-2, e.g. "US". */

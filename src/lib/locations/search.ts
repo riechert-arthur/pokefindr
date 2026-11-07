@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { coordinate, kindsParam, pointParam } from "./bbox"
 import { RADII } from "@/lib/map/url-state"
+import { stateCode } from "@/lib/map/states"
 
 /** A search radius in miles: one the map offers. */
 const radiusParam = z.coerce.number().refine((r) => (RADII as readonly number[]).includes(r), `must be one of ${RADII.join(", ")}`)
@@ -47,5 +48,15 @@ export const nearQuerySchema = z.object({
   r: radiusParam,
   types: kindsParam,
   /** Vending retailers, comma-separated, as in the map's URL. */
+  retailer: retailerParam,
+})
+
+/** GET /api/locations/cities?state=WA&types=… */
+export const citiesQuerySchema = z.object({
+  state: z
+    .string()
+    .transform((s) => stateCode(s) ?? "")
+    .pipe(z.string().min(2, "must be a US state code, like WA")),
+  types: kindsParam,
   retailer: retailerParam,
 })

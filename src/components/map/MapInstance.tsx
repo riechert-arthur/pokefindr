@@ -41,6 +41,8 @@ import { cameraPadding } from "./camera"
 import { MapPanel } from "./MapPanel"
 import { ResultsSheet } from "./ResultsSheet"
 import { useNearbyLocations } from "./useNearbyLocations"
+import { StateSheet } from "./StateSheet"
+import { useStateCities } from "./useStateCities"
 import { cn } from "@/lib/utils"
 import { boundsOfRadius, milesBetween, radiusCircle, US_BOUNDS } from "@/lib/map/geo"
 import { STATES } from "@/lib/map/states"
@@ -59,6 +61,9 @@ const toSelected = (feat: LocationFeature): SelectedLocation => {
 /** What the search box shows for the URL's view: the place, the state, or "Your location". */
 const searchLabel = (params: MapSearchParams): string =>
   params.near === "me" ? "Your location" : params.q ? params.q : params.state && Object.hasOwn(STATES, params.state) ? STATES[params.state].name : ""
+
+type Box = readonly [readonly [number, number], readonly [number, number]]
+const overlaps = ([[w1, s1], [e1, n1]]: Box, [[w2, s2], [e2, n2]]: Box) => w1 <= e2 && w2 <= e1 && s1 <= n2 && s2 <= n1
 
 /** How long the map must be still before its camera goes into the URL. */
 const CAMERA_URL_DEBOUNCE_MS = 500
@@ -131,6 +136,9 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const { states, max, total, bounds, kindTotals } = useStateShading(kindSet)
   // The results list for the place (or the viewer), closest first.
   const nearby = useNearbyLocations(place, kinds, retailers)
+  // A state's busiest cities, while the view is a state.
+  const stateFocus = !place && !nearMe ? urlView.state : null
+  const stateCities = useStateCities(stateFocus, kinds, retailers)
   const [map, setMap] = useState<ViewportMap>()
   const viewport = useViewportLocations(map, { types: kinds })
   const inView = useMemo<FeatureCollection<Point, LocationFeatureProperties & { dim?: boolean }>>(() => {
@@ -218,7 +226,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
       const { camera } = initialMapView(next)
       if ("bounds" in camera) {
         // An explicit `maxZoom: undefined` breaks the fit (NaN center); leave it out instead.
-        const padding = pad(next.lat != null && next.lng != null)
+        // A place or a state opens its list in the panel.
+        const padding = pad((next.lat != null && next.lng != null) || !!next.state)
         map.fitBounds(camera.bounds, camera.maxZoom === undefined ? { padding, duration: 1000 } : { padding, maxZoom: camera.maxZoom, duration: 1000 })
       }
       else map.flyTo({ center: [camera.longitude, camera.latitude], zoom: camera.zoom, duration: 1000 })
@@ -326,7 +335,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     const { area } = pick
     if (area.kind === "state" && area.state && Object.hasOwn(STATES, area.state)) {
       handleStateSelect(area.state)
-      map?.fitBounds(STATES[area.state].bounds, { padding: pad(), maxZoom: 7.5, duration: 1400 })
+      map?.fitBounds(STATES[area.state].bounds, { padding: pad(true), maxZoom: 7.5, duration: 1400 })
       return
     }
     dispatch({ type: "closeDetails" })
@@ -388,14 +397,24 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     setSearchNear((prev) => (prev?.[0] === near?.[0] && prev?.[1] === near?.[1] ? prev : near))
     if (!userMoving.current) return
     userMoving.current = false
-    // A place's radius (or near=me) still frames the results, so it stays.
+    // A place's radius (or near=me) still frames the results, so they stay.
     if (place || params.near) return
-    // Panning away from a state makes the camera the view, so a copied link
-    // opens where the viewer is looking.
-    const { longitude, latitude, zoom } = e.viewState
-    if (params.state) leftStateByPan.current = true
+    // A state stays while the viewer looks around in it: while the part of
+    // the map beside the panel still overlaps it. (Right after a padded fit
+    // the map's own center can be outside a small state.)
+    if (stateFocus && Object.hasOwn(STATES, stateFocus)) {
+      const map = e.target
+      const p = pad(true)
+      const { clientWidth: w, clientHeight: h } = map.getContainer()
+      const nw = map.unproject([p.left, p.top])
+      const se = map.unproject([w - p.right, h - p.bottom])
+      const seen: Box = [[nw.lng, se.lat], [se.lng, nw.lat]]
+      if (overlaps(seen, STATES[stateFocus].bounds)) return
+    }
+    // Otherwise the camera is the view, so a copied link opens where the viewer is looking.
+    if (stateFocus) leftStateByPan.current = true
     writeView(
-      { state: null, lat: roundCamera(latitude), lng: roundCamera(longitude), z: roundZoom(zoom) },
+      { ...(stateFocus ? { state: null } : {}), lat: roundCamera(lat), lng: roundCamera(lng), z: roundZoom(z) },
       { limitUrlUpdates: debounce(CAMERA_URL_DEBOUNCE_MS) },
     )
   }
@@ -408,8 +427,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
           // An explicit `maxZoom: undefined` overrides MapLibre's default and breaks the fit.
           fitBoundsOptions:
             camera.maxZoom === undefined
-              ? { padding: cameraPadding(undefined, { sheet: !!place }) }
-              : { padding: cameraPadding(undefined, { sheet: !!place }), maxZoom: camera.maxZoom },
+              ? { padding: cameraPadding(undefined, { sheet: !!place || !!stateFocus }) }
+              : { padding: cameraPadding(undefined, { sheet: !!place || !!stateFocus }), maxZoom: camera.maxZoom },
         }
       : camera
 
@@ -505,9 +524,19 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
           kinds={kinds}
           kindTotals={kindTotals}
           onKindsChange={handleKindsChange}
-          sheetLabel="Results"
+          sheetLabel={place ? "Results" : stateFocus ? STATES[stateFocus].name : undefined}
           sheet={
-            place && (
+            stateFocus ? (
+              <StateSheet
+                code={stateFocus}
+                name={STATES[stateFocus].name}
+                kinds={kinds}
+                data={stateCities}
+                onBack={handleSearchClear}
+                onCity={(c) => handleSearchPick({ type: "area", area: { label: `${c.city}, ${stateFocus}`, lng: c.lng, lat: c.lat, kind: "city", state: stateFocus } })}
+              />
+            ) : (
+              place && (
               <ResultsSheet
                 label={nearMe ? null : (urlView.place?.label ?? null)}
                 radius={place.radius as (typeof RADII)[number]}
@@ -517,6 +546,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
                 selectedId={selected?.id}
                 onOpen={showLocation}
               />
+              )
             )
           }
         />
