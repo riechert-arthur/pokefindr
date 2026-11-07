@@ -5,9 +5,13 @@
  *
  * - `alpha2`: ISO 3166-1 alpha-2, as stored in `locations.country_code`.
  * - `numeric`: ISO 3166-1 numeric, as in the outlines (public/geo/countries-110m.json).
+ * - `outline`: a detailed outline of the country. The grey covering the rest
+ *   of the world has a hole in this exact shape, so the grey meets the
+ *   country's own shading with no gap or overlap. (The 110m outlines are too
+ *   coarse for that; they only tell which country is under the pointer.)
  */
 export const SUPPORTED_COUNTRIES = [
-  { alpha2: "US", numeric: "840", name: "United States" },
+  { alpha2: "US", numeric: "840", name: "United States", outline: "/geo/us-nation.json" },
 ] as const
 
 /** Numeric codes of the supported countries, for map filters. */

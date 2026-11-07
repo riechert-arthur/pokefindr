@@ -64,3 +64,25 @@ export function milesBetween(lng1: number, lat1: number, lng2: number, lat2: num
   const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLng / 2) ** 2
   return 3958.8 * 2 * Math.asin(Math.sqrt(a))
 }
+
+/** Twice the signed area of a ring (positive when counterclockwise). */
+function signedArea(ring: number[][]): number {
+  let sum = 0
+  for (let i = 0; i < ring.length - 1; i++) sum += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1]
+  return sum
+}
+
+/**
+ * The whole world with holes where `cutouts` are: one polygon that covers
+ * every country except the given ones, edge to edge with their outlines.
+ * MapLibre tells holes from outer rings by winding, so the outer ring runs
+ * counterclockwise and every hole clockwise. Holes inside the cutouts
+ * (lakes) are dropped; the basemap's water draws those.
+ */
+export function worldWithHoles(cutouts: readonly (Polygon | MultiPolygon)[]): Feature<Polygon> {
+  const outer = [[-180, -85.06], [180, -85.06], [180, 85.06], [-180, 85.06], [-180, -85.06]]
+  const holes = cutouts.flatMap((g) => (g.type === "Polygon" ? [g.coordinates] : g.coordinates)).map(([ring]) =>
+    signedArea(ring) > 0 ? [...ring].reverse() : ring,
+  )
+  return { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [outer, ...holes] } }
+}

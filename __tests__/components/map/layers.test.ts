@@ -2,9 +2,10 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 import { describe, expect, it } from "vitest"
 import type { Polygon } from "geojson"
-import { placeDotsLayer, shadingBeforeId, statesFillLayer, POINT_ZOOM, type MapColors } from "@/components/map/layers"
+import { basemapOverlays, OVERLAY_PREFIX, placeDotsLayer, shadingBeforeId, statesFillLayer, POINT_ZOOM, type MapColors } from "@/components/map/layers"
+import type { LayerSpecification } from "@/components/map/engine"
 import { shadeStates, type StateCollection } from "@/components/map/useStateShading"
-import { boundsOf } from "@/lib/map/geo"
+import { boundsOf, worldWithHoles } from "@/lib/map/geo"
 import { mixColors } from "@/lib/design/tokens"
 import type { RegionCount } from "@/lib/types/locations"
 
@@ -126,5 +127,48 @@ describe("shadingBeforeId", () => {
     ]
     expect(shadingBeforeId(layers)).toBe("city")
     expect(shadingBeforeId([{ id: "land", type: "fill" }])).toBeUndefined()
+  })
+})
+
+describe("worldWithHoles", () => {
+  const ccw = (ring: number[][]) => {
+    let a = 0
+    for (let i = 0; i < ring.length - 1; i++) a += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1]
+    return a > 0
+  }
+
+  it("covers the world with a hole per cut-out polygon, wound opposite the outer ring", () => {
+    const usa = square(-124, 25, -67, 49)
+    const alaska = { type: "MultiPolygon" as const, coordinates: [square(-170, 52, -130, 71).coordinates, [[...square(-160, 55, -159, 56).coordinates[0]].reverse()]] }
+    const mask = worldWithHoles([usa, alaska])
+    const [outer, ...holes] = mask.geometry.coordinates
+    expect(ccw(outer)).toBe(true)
+    expect(holes).toHaveLength(3)
+    for (const hole of holes) expect(ccw(hole)).toBe(false)
+  })
+})
+
+describe("basemapOverlays", () => {
+  it("copies the basemap's water and border layers, renamed", () => {
+    const layers = [
+      { id: "background", type: "background" },
+      { id: "water", type: "fill", source: "openmaptiles", "source-layer": "water", paint: { "fill-color": "#abc" } },
+      { id: "road", type: "line", source: "openmaptiles", "source-layer": "transportation" },
+      { id: "boundary_2", type: "line", source: "openmaptiles", "source-layer": "boundary", minzoom: 2 },
+      { id: `${OVERLAY_PREFIX}water`, type: "fill", source: "openmaptiles", "source-layer": "water" },
+    ] as unknown as LayerSpecification[]
+    expect(basemapOverlays(layers)).toEqual([
+      { id: `${OVERLAY_PREFIX}water`, type: "fill", source: "openmaptiles", "source-layer": "water", paint: { "fill-color": "#abc" } },
+      { id: `${OVERLAY_PREFIX}boundary_2`, type: "line", source: "openmaptiles", "source-layer": "boundary", minzoom: 2 },
+    ])
+  })
+
+  it("aren't mistaken for basemap layers when placing the shading", () => {
+    const layers = [
+      { id: "water", type: "fill" },
+      { id: "city", type: "symbol" },
+      { id: `${OVERLAY_PREFIX}water`, type: "fill" },
+    ]
+    expect(shadingBeforeId(layers)).toBe("city")
   })
 })

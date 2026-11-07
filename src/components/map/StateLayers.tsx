@@ -1,12 +1,11 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo } from "react"
 import { Layer, Source, useMap, type MapLayerMouseEvent } from "./engine"
 import {
   LAYERS,
   POINT_ZOOM,
   SOURCES,
-  shadingBeforeId,
   statesFillLayer,
   statesHoverLayer,
   statesLineLayer,
@@ -17,37 +16,13 @@ import { Card } from "@/components/ui/card"
 import { formatCount } from "@/components/pokefindr/kinds"
 import { cn } from "@/lib/utils"
 
-/**
- * The basemap layer the shading goes under (see shadingBeforeId), re-read
- * whenever the style changes. Undefined until the style has layers.
- */
-export function useFirstLabelLayer(): string | undefined {
-  const { current: map } = useMap()
-  const [id, setId] = useState<string | undefined>()
-  useEffect(() => {
-    if (!map) return
-    // Read whenever the style changes, and right away. Waiting for
-    // `style.load` alone misses it when the style finished loading before
-    // this mounted (isStyleLoaded() stays false while tiles load), which left
-    // the shading on top of every road and label.
-    const read = () => {
-      const layers = map.getStyle()?.layers
-      if (layers?.length) setId(shadingBeforeId(layers))
-    }
-    read()
-    map.on("styledata", read)
-    return () => {
-      map.off("styledata", read)
-    }
-  }, [map])
-  return id
-}
-
 interface StateLayersProps {
   states: StateCollection
   max: number
   bounds: ReadonlyMap<string, LngLatBounds>
   colors: MapColors
+  /** The layer to draw under (useBasemapStack's shadingBeforeId). */
+  beforeId?: string
   /** Called with a state's code after clicking it zooms there. */
   onSelect?: (code: string) => void
 }
@@ -56,9 +31,8 @@ interface StateLayersProps {
  * The zoomed-out map: states shaded by how many locations they have, with a
  * hover outline. Clicking a state with locations zooms to it.
  */
-export function StateLayers({ states, max, bounds, colors, onSelect }: StateLayersProps) {
+export function StateLayers({ states, max, bounds, colors, beforeId, onSelect }: StateLayersProps) {
   const { current: map } = useMap()
-  const beforeId = useFirstLabelLayer()
 
   useEffect(() => {
     if (!map) return
