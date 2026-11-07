@@ -1,8 +1,6 @@
 "use client"
 
-import { publicConfig } from "@/config.public"
 import { MenuIcon, SearchIcon, XIcon } from "lucide-react"
-import axios, { CancelTokenSource } from "axios"
 import { useState, useEffect, useRef, useCallback } from "react"
 import type { Point } from "geojson"
 import type { LocationFeature, LocationFeatureCollection } from "@/lib/types/locations"
@@ -10,6 +8,8 @@ import { useSidebar } from "@/components/providers/SidebarContextProvider"
 import { APP_NAV_ID } from "@/components/pokefindr/AppRail"
 import { KindDot } from "@/components/pokefindr/KindDot"
 import { toKind } from "@/components/pokefindr/kinds"
+import { searchPlaces } from "@/lib/geocode/client"
+import { MIN_QUERY_LENGTH } from "@/lib/geocode/query"
 
 interface MapSearchBarProps {
   collection: LocationFeatureCollection
@@ -47,9 +47,8 @@ export function MapSearchBar({
   const [results, setResults] = useState<
     Array<LocationFeature & { distance: number }>
   >([])
-  const cancelRef = useRef<CancelTokenSource | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
   const { isSidebarOpen, toggleSidebar } = useSidebar()
-  const token = publicConfig.mapboxGeocodingToken
   const [isFocused, setIsFocused] = useState(false)
 
   const containerRef = useRef<HTMLDivElement>(null)
@@ -106,53 +105,39 @@ export function MapSearchBar({
   }, [onMouseMove, onMouseUp])
 
   const performSearch = async () => {
-    cancelRef.current?.cancel()
-      const source = axios.CancelToken.source()
-      cancelRef.current = source
+    abortRef.current?.abort()
+    if (query.trim().length < MIN_QUERY_LENGTH) return
+    const controller = new AbortController()
+    abortRef.current = controller
 
-      try {
-        const resp = await axios.get(
-          "https://api.mapbox.com/search/geocode/v6/forward",
-          {
-            params: {
-              q: query,
-              access_token: token,
-              autocomplete: true,
-              limit: 5,
-            },
-            cancelToken: source.token,
-          }
-        )
-
-        const geos = resp.data.features
-        if (!Array.isArray(geos) || geos.length === 0) {
-          setResults([])
-          return
-        }
-
-        const [lng, lat] = geos[0].geometry?.coordinates as [number, number]
-
-        const nearby = collection.features
-          .filter(
-            (feat): feat is LocationFeature & { geometry: Point } =>
-              !!feat.geometry &&
-              feat.geometry.type === "Point" &&
-              Array.isArray(feat.geometry.coordinates)
-          )
-          .map((feat) => ({
-            ...feat,
-            distance: getDistance([lng, lat], feat.geometry.coordinates as [number, number]),
-          }))
-          .filter((f) => f.distance <= radiusMeters)
-          .sort((a, b) => a.distance - b.distance)
-          .slice(0, 5)
-
-        setResults(nearby)
-      } catch (err) {
-        if (!axios.isCancel(err)) {
-          console.error("Geocode error", err)
-        }
+    try {
+      // Geocoded on the server (/api/geocode), so no provider key reaches the browser.
+      const [place] = await searchPlaces(query, { limit: 1, signal: controller.signal })
+      if (!place) {
+        setResults([])
+        return
       }
+      const { lng, lat } = place
+
+      const nearby = collection.features
+        .filter(
+          (feat): feat is LocationFeature & { geometry: Point } =>
+            !!feat.geometry &&
+            feat.geometry.type === "Point" &&
+            Array.isArray(feat.geometry.coordinates)
+        )
+        .map((feat) => ({
+          ...feat,
+          distance: getDistance([lng, lat], feat.geometry.coordinates as [number, number]),
+        }))
+        .filter((f) => f.distance <= radiusMeters)
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, 5)
+
+      setResults(nearby)
+    } catch (err) {
+      if (!controller.signal.aborted) console.error("Geocode error", err)
+    }
   }
 
   useEffect(() => {
@@ -168,7 +153,7 @@ export function MapSearchBar({
     return () => {
       clearTimeout(handler)
     }
-  }, [query, collection, radiusMeters, token])
+  }, [query, collection, radiusMeters])
 
   return (
     <div
