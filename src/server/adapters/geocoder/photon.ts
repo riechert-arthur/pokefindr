@@ -21,6 +21,7 @@ interface PhotonFeature {
 
 /** The 50 states, DC and Puerto Rico. Photon has no country filter, so a box narrows the search. */
 const US_BBOX = "-180,17,-64,72"
+const AREA_LAYERS = ["city", "district", "state"]
 
 /**
  * Photon (OpenStreetMap, by komoot). Built for type-ahead, which Nominatim's
@@ -37,6 +38,13 @@ export class PhotonGeocoder implements Geocoder {
     const country = countryOf(opts).toUpperCase()
     const params = new URLSearchParams({ q: query, lang: "en", limit: String(limit * 3) })
     if (country === "US") params.set("bbox", US_BBOX)
+    // Without a number it's a place name: only settlements and states, or
+    // "Denver" ranks museums, malls and apartment blocks named Denver above
+    // Denver, IA. With one ("98101", "1600 Pennsylvania"), everything.
+    if (!/\d/.test(query)) {
+      for (const layer of AREA_LAYERS) params.append("layer", layer)
+      params.set("osm_tag", "place")
+    }
     if (opts?.near) {
       params.set("lon", String(opts.near[0]))
       params.set("lat", String(opts.near[1]))

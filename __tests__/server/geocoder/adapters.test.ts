@@ -163,6 +163,22 @@ describe("PhotonGeocoder", () => {
     ])
   })
 
+  it("asks only for settlements and states when the query has no number", async () => {
+    const request = mockFetch({ features: [] })
+    await new PhotonGeocoder().search("Denver")
+    const { searchParams } = request().url
+    expect(searchParams.getAll("layer")).toEqual(["city", "district", "state"])
+    expect(searchParams.get("osm_tag")).toBe("place")
+  })
+
+  it("asks for everything when the query has a number", async () => {
+    const request = mockFetch({ features: [] })
+    await new PhotonGeocoder().search("1600 Pennsylvania")
+    const { searchParams } = request().url
+    expect(searchParams.has("layer")).toBe(false)
+    expect(searchParams.has("osm_tag")).toBe(false)
+  })
+
   it("uses a self-hosted instance", async () => {
     const request = mockFetch({ features: [] })
     await new PhotonGeocoder("https://photon.internal:2322").search("Denver")
