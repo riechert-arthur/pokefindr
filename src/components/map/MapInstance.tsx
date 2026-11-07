@@ -16,8 +16,7 @@ import {
 } from "./engine"
 import { useViewportLocations, type ViewportMap } from "./useViewportLocations"
 import { MapStatusPill } from "./MapStatusPill"
-import { UserLocationPin } from "./UserLocationPin"
-import { useUserLocationContext } from "@/components/providers/UserLocationContextProvider"
+import { LocateControl } from "./LocateControl"
 import { MapSearchBar } from "./MapSearchBar"
 import { type LocationFeature, type LocationFeatureProperties, type LocationKind } from "@/lib/types/locations"
 import { useLocations } from "./useLocations"
@@ -35,8 +34,8 @@ import { NO_SELECTION, selectionReducer, type Selection } from "./selection"
 import { StateLayers, StateLegend } from "./StateLayers"
 import { useStateShading } from "./useStateShading"
 import { cn } from "@/lib/utils"
-import { milesBetween, radiusCircle } from "@/lib/map/geo"
-import { DEFAULT_RADIUS, loadMapSearchParams, mapSearchParams, roundCamera, roundZoom, type MapSearchParams } from "@/lib/map/url-state"
+import { boundsOfRadius, milesBetween, radiusCircle } from "@/lib/map/geo"
+import { DEFAULT_RADIUS, loadMapSearchParams, mapSearchParams, nearMeParams, roundCamera, roundZoom, type MapSearchParams } from "@/lib/map/url-state"
 import { initialMapView, shownKinds, viewKey, type InitialMapView } from "@/lib/map/initial-view"
 import { INITIAL_LOAD_STATE, nextLoadState, type MapLoadState } from "./mapLoadState"
 
@@ -60,8 +59,6 @@ export interface MapInstanceProps {
 }
 
 const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
-  const userLocationContext = useUserLocationContext()
-  const { userLocation, userLocationError } = userLocationContext
   const mapRef = useRef<MapRef>(null)
   const [params, setParams] = useQueryStates(mapSearchParams)
   // The selected location (ring), its popup, and whose details panel is open (see selectionReducer).
@@ -90,14 +87,22 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const kindSet = useMemo(() => new Set(kinds), [kinds])
   const retailers = params.retailer
 
-  // The searched place and the state from the URL, checked the same way as on
-  // the server (coordinates in range, known state codes).
+  // The viewer's position, once they share it. It never goes into the URL.
+  const [me, setMe] = useState<{ lng: number; lat: number } | null>(null)
+  // Readable from the popstate handler, which is set up once.
+  const meRef = useRef(me)
+  meRef.current = me
+
+  // The search center and radius: the viewer (near=me), or the searched place
+  // from the URL, checked the same way as on the server (coordinates in
+  // range, known state codes).
+  const nearMe = params.near === "me"
   const currentViewKey = viewKey(params)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const urlView = useMemo(() => initialMapView(params), [currentViewKey])
-  const placeLng = urlView.place?.lng ?? null
-  const placeLat = urlView.place?.lat ?? null
-  const placeRadius = urlView.place?.radius ?? DEFAULT_RADIUS
+  const placeLng = nearMe ? (me?.lng ?? null) : (urlView.place?.lng ?? null)
+  const placeLat = nearMe ? (me?.lat ?? null) : (urlView.place?.lat ?? null)
+  const placeRadius = params.r ?? DEFAULT_RADIUS
   const place = useMemo(
     () => (placeLng !== null && placeLat !== null ? { lng: placeLng, lat: placeLat, radius: placeRadius } : null),
     [placeLng, placeLat, placeRadius],
@@ -129,16 +134,6 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const [loadState, setLoadState] = useState<MapLoadState>(INITIAL_LOAD_STATE)
   // Set when the viewer starts moving the map (not when the app flies it).
   const userMoving = useRef(false)
-
-  useEffect(() => {
-    if (userLocation && !userLocationError && mapRef.current) {
-      mapRef.current.flyTo({
-        center: [userLocation.longitude, userLocation.latitude],
-        zoom: 10,
-        essential: true,
-      })
-    }
-  }, [userLocation, userLocationError])
 
   // The details panel follows `location=` (a shared link, Back or Forward).
   // globalThis: `Map` here is the map component from ./engine.
@@ -172,9 +167,15 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
       if (key === lastViewKey.current) return
       // Remember it now: React's copy of the URL may not have caught up yet.
       lastViewKey.current = key
-      const { camera } = initialMapView(next)
       const map = mapRef.current
       if (!map) return
+      // near=me carries no coordinates; go back to the radius around the viewer we already found.
+      const found = meRef.current
+      if (next.near === "me" && found) {
+        map.fitBounds(boundsOfRadius(found.lng, found.lat, next.r ?? DEFAULT_RADIUS), { padding: 40, maxZoom: 13, duration: 1000 })
+        return
+      }
+      const { camera } = initialMapView(next)
       if ("bounds" in camera) {
         // An explicit `maxZoom: undefined` breaks the fit (NaN center); leave it out instead.
         map.fitBounds(camera.bounds, camera.maxZoom === undefined ? { padding: 40, duration: 1000 } : { padding: 40, maxZoom: camera.maxZoom, duration: 1000 })
@@ -184,6 +185,28 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     window.addEventListener("popstate", onPopState)
     return () => window.removeEventListener("popstate", onPopState)
   }, [])
+
+  /**
+   * The viewer shared their position: show the radius around them and put
+   * near=me (never coordinates) in the URL.
+   */
+  const handleLocate = useCallback(
+    (position: { lng: number; lat: number }) => {
+      setMe(position)
+      const r = params.r ?? DEFAULT_RADIUS
+      mapRef.current?.fitBounds(boundsOfRadius(position.lng, position.lat, r), { padding: 40, maxZoom: 13, duration: 1400 })
+      if (params.near !== "me") writeView(nearMeParams(r), { history: "push" })
+    },
+    [params.r, params.near, writeView],
+  )
+
+  /**
+   * Locating failed. A near=me link without a position is no view at all,
+   * so drop it; but a failed re-tap keeps the radius the viewer already has.
+   */
+  const handleLocateError = useCallback(() => {
+    if (params.near === "me" && !me) writeView({ near: null, r: null }, { history: "replace" })
+  }, [params.near, me, writeView])
 
   // The open details, readable from callbacks without re-creating them.
   const detailsRef = useRef(details)
@@ -336,8 +359,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         </Source>
         <LocationLayers collection={inView} selected={selected} colors={colors} onSelect={handleDotSelect} />
         <FullscreenControl position="bottom-right" />
+        <LocateControl onLocate={handleLocate} onError={handleLocateError} autoLocate={view.nearMe} />
         <NavigationControl position="bottom-right" showCompass={false} />
-        <UserLocationPin />
         <MapSearchBar selectedLocation={selected} collection={collection} onSelect={handleSearchSelect} />
         {selected && popup && (
           <LocationPopup

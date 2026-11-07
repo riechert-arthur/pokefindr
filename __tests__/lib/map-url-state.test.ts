@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 import path from "node:path"
 import { describe, expect, it } from "vitest"
-import { loadMapSearchParams, mapUrl } from "@/lib/map/url-state"
+import { loadMapSearchParams, mapUrl, nearMeParams } from "@/lib/map/url-state"
 import { initialMapView, shownKinds, viewKey } from "@/lib/map/initial-view"
 import { boundsOf, boundsOfRadius, US_BOUNDS } from "@/lib/map/geo"
 import { STATES } from "@/lib/map/states"
@@ -29,7 +29,7 @@ describe("map URL parameters", () => {
 
 describe("initialMapView", () => {
   it("opens on the US without parameters", () => {
-    expect(initialMapView(load(""))).toEqual({ camera: { bounds: US_BOUNDS }, place: null, state: null })
+    expect(initialMapView(load(""))).toEqual({ camera: { bounds: US_BOUNDS }, place: null, state: null, nearMe: false })
   })
 
   it("fits a place's radius", () => {
@@ -57,7 +57,7 @@ describe("initialMapView", () => {
   })
 
   it("never reads coordinates for near=me", () => {
-    expect(initialMapView(load("near=me&r=10&q=x&lat=47&lng=-122&z=9"))).toEqual({ camera: { bounds: US_BOUNDS }, place: null, state: null })
+    expect(initialMapView(load("near=me&r=10&q=x&lat=47&lng=-122&z=9"))).toEqual({ camera: { bounds: US_BOUNDS }, place: null, state: null, nearMe: true })
   })
 
   it("ignores coordinates out of range", () => {
@@ -90,5 +90,12 @@ describe("viewKey", () => {
     expect(viewKey(load("state=WA"))).not.toBe(viewKey(load("")))
     expect(viewKey(load("lat=47&lng=-122&z=9"))).not.toBe(viewKey(load("lat=47&lng=-122&z=10")))
     expect(viewKey(load("state=WA&location=x&types=shop&retailer=QFC"))).toBe(viewKey(load("state=WA")))
+  })
+})
+
+describe("nearMeParams", () => {
+  it("puts near=me and the radius in the URL and clears every coordinate", () => {
+    expect(nearMeParams(10)).toEqual({ near: "me", r: 10, q: null, lat: null, lng: null, z: null, state: null })
+    expect(mapUrl("/map?q=Seattle&lat=47.6&lng=-122.3&z=9", nearMeParams(25))).toBe("/map?r=25&near=me")
   })
 })

@@ -16,9 +16,13 @@ export {
   NavigationControl,
   Popup,
   Source,
+  useControl,
   useMap,
 } from "@vis.gl/react-maplibre"
 export type {
+  GeolocateControlInstance,
+  GeolocateErrorEvent,
+  GeolocateResultEvent,
   LayerProps,
   MapGeoJSONFeature,
   MapLayerMouseEvent,
