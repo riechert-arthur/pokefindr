@@ -268,7 +268,12 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const showLocation = (feat: LocationFeature) => {
     const map = mapRef.current
     const [lng, lat] = feat.geometry.coordinates
-    if (map && !map.getBounds().contains([lng, lat])) map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14), padding: pad(), duration: 1200 })
+    if (map && !map.getBounds().contains([lng, lat])) {
+      // `offset`, not `padding`: flyTo keeps padding on the map, and every
+      // later fitBounds would add it to its own.
+      const p = pad()
+      map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14), offset: [(p.left - p.right) / 2, (p.top - p.bottom) / 2], duration: 1200 })
+    }
     dispatch({ type: "showDetails", location: toSelected(feat) })
     void setParams({ location: feat.properties.id }, { history: "push" }).then((search) => {
       pushedDetails.current = search.toString()
