@@ -50,6 +50,18 @@ describe("SearchCommand", () => {
     expect(input()).toHaveAttribute("aria-expanded", "true")
   })
 
+  it("keeps the highlight when the same items update (counts arriving)", () => {
+    const { rerender } = render(<Harness />)
+    type("Den")
+    fireEvent.keyDown(input(), { key: "ArrowDown" })
+    expect(selected()).toContain("Denton, TX")
+    rerender(<Harness items={ITEMS.map((i) => ({ ...i, meta: `${i.meta} ` }))} />)
+    expect(selected()).toContain("Denton, TX")
+    // A new list (new ids) starts at the top again.
+    rerender(<Harness items={[{ ...ITEMS[0], id: "area-0-Boulder, CO", label: "Boulder, CO" }, ...ITEMS.slice(1)]} />)
+    expect(selected()).toContain("Boulder, CO")
+  })
+
   it("stays closed below two characters", () => {
     render(<Harness />)
     type("D")

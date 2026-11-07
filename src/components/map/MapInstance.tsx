@@ -176,10 +176,10 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   }, [params.location, knownLocations])
 
   // A new view (a pick, Back or Forward) puts its label in the search box.
-  useEffect(() => {
-    setQuery(searchLabel(params))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentViewKey])
+  // Keyed on the label, so a pan (a camera-only URL write) keeps what the
+  // viewer typed.
+  const viewLabel = searchLabel(params)
+  useEffect(() => setQuery(viewLabel), [viewLabel])
 
   // Back and Forward: when the URL's view (place, state, camera) changes, move
   // the map to it. The key of the view the map shows changes only on load, on
@@ -273,7 +273,12 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const showLocation = (feat: LocationFeature) => {
     const map = mapRef.current
     const [lng, lat] = feat.geometry.coordinates
-    if (map && !map.getBounds().contains([lng, lat])) map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14), padding: pad(), duration: 1200 })
+    if (map && !map.getBounds().contains([lng, lat])) {
+      // `offset`, not `padding`: flyTo keeps padding on the map, and every
+      // later fitBounds would add it to its own.
+      const p = pad()
+      map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14), offset: [(p.left - p.right) / 2, (p.top - p.bottom) / 2], duration: 1200 })
+    }
     dispatch({ type: "showDetails", location: toSelected(feat) })
     void setParams({ location: feat.properties.id }, { history: "push" }).then((search) => {
       pushedDetails.current = search.toString()
@@ -458,6 +463,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
               onClear={handleSearchClear}
               placeholder="Search city or address"
               kinds={kinds}
+              retailers={retailers ?? undefined}
+              radius={placeRadius}
               near={searchNear}
               locations
               leading={

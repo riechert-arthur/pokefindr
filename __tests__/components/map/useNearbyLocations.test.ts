@@ -32,6 +32,24 @@ describe("useNearbyLocations", () => {
     expect(result.current.results?.total).toBe(99)
   })
 
+  it("keeps the old results for a new radius, but not for a new place", async () => {
+    const answers: ((r: Response) => void)[] = []
+    vi.stubGlobal("fetch", vi.fn(() => new Promise<Response>((resolve) => answers.push(resolve))))
+    const kinds = ["vending"] as const
+    const { result, rerender } = renderHook(({ lng, r }) => useNearbyLocations({ lng, lat: 47.6, radius: r }, kinds, null), {
+      initialProps: { lng: -122.33, r: 10 },
+    })
+    await act(async () => answers[0](new Response(JSON.stringify(body(41)))))
+    await waitFor(() => expect(result.current.results?.total).toBe(41))
+    // A wider circle around the same place: the list stays while it loads.
+    rerender({ lng: -122.33, r: 25 })
+    expect(result.current.status).toBe("loading")
+    expect(result.current.results?.total).toBe(41)
+    // Another place: nothing of Seattle's under Portland's name.
+    rerender({ lng: -122.68, r: 25 })
+    expect(result.current.results).toBeNull()
+  })
+
   it("is idle without a place, and retries after an error", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {})
     const fetchMock = vi.fn(async () => new Response("{}", { status: 500 }))

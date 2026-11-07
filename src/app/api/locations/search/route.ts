@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
     q: params.get("q") ?? "",
     types: params.get("types") ?? undefined,
     near: params.get("near") ?? undefined,
+    retailer: params.get("retailer") ?? undefined,
     limit: params.get("limit") ?? undefined,
   })
   if (!parsed.success) {
@@ -23,7 +24,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: `Invalid query. ${message}` }, { status: 400 })
   }
   try {
-    return NextResponse.json(await searchLocations(parsed.data), {
+    const { retailer, ...query } = parsed.data
+    return NextResponse.json(await searchLocations({ ...query, retailers: retailer }), {
       headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
     })
   } catch (err) {
