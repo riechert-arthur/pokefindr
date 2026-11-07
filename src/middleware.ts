@@ -22,6 +22,7 @@ export const config = {
     '/api/user-settings',
     '/api/user-settings/:path*',
     '/api/my-reviews/:path*',
+    '/api/locations/:id/reports',
   ],
 }
 
