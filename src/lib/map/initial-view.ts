@@ -1,6 +1,7 @@
 import { boundsOfRadius, US_BOUNDS, type LngLatBounds } from "./geo"
 import { STATES } from "./states"
 import { DEFAULT_RADIUS, type MapSearchParams } from "./url-state"
+import { LOCATION_KINDS, type LocationKind } from "@/lib/types/locations"
 
 /** Where the map starts, as MapLibre's initialViewState takes it. */
 export type InitialCamera =
@@ -58,4 +59,23 @@ export function initialMapView(params: MapSearchParams, location: InitialLocatio
   else camera = { bounds: US_BOUNDS }
 
   return { camera, place, state, nearMe: params.near === "me" }
+}
+
+/**
+ * The kinds to show. A missing, empty or all-unknown `types` (the parser
+ * drops kinds it doesn't know) means every kind, so a bad link never shows
+ * an empty map.
+ */
+export function shownKinds(types: readonly LocationKind[] | null): readonly LocationKind[] {
+  return types?.length ? types : LOCATION_KINDS
+}
+
+/**
+ * The parameters that place the camera (place, state, near=me, a moved
+ * camera), as one string. When Back or Forward changes it, the map moves to
+ * the URL's view; when only `location`, `types` or `retailer` change, it stays.
+ */
+export function viewKey(params: MapSearchParams): string {
+  const { q, lat, lng, r, z, state, near } = params
+  return JSON.stringify([q, lat, lng, r, z, state, near])
 }
