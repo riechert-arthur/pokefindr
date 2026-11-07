@@ -582,6 +582,9 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
                 onBack={closeDetails}
                 me={me}
                 from={place && !nearMe && urlView.place ? { label: urlView.place.label, lng: place.lng, lat: place.lat } : null}
+                kinds={kinds}
+                retailers={retailers}
+                onOpen={showLocation}
               />
             ) : !place && !stateFocus ? (
               <UsSheet
