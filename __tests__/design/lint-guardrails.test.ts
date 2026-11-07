@@ -82,3 +82,30 @@ describe("design-system lint guardrails", () => {
     expect(await colorErrors(`export const color = "#ffffff"`, "src/app/(visitor)/(content)/blog/[slug]/opengraph-image.tsx")).toEqual([])
   })
 })
+
+describe("map library imports", () => {
+  /** The no-restricted-imports messages for `code` linted as if it lived at `file`. */
+  async function importErrors(code: string, file: string) {
+    const [result] = await eslint.lintText(code, { filePath: path.join(ROOT, file) })
+    expect(result.fatalErrorCount, `${file} parses`).toBe(0)
+    return result.messages.filter((m) => m.ruleId === "no-restricted-imports").map((m) => m.message)
+  }
+
+  it.each([
+    [`import maplibregl from "maplibre-gl"`],
+    [`import "maplibre-gl/dist/maplibre-gl.css"`],
+    [`import { Map } from "@vis.gl/react-maplibre"`],
+    [`import Map from "react-map-gl"`],
+    [`import { Map } from "react-map-gl/maplibre"`],
+    [`import mapboxgl from "mapbox-gl"`],
+  ])("rejects %s outside engine.ts", async (code) => {
+    const errors = await importErrors(code, "src/components/map/Example.tsx")
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toContain("@/components/map/engine")
+  })
+
+  it("allows engine.ts, and imports through it", async () => {
+    expect(await importErrors(`import { Map } from "@vis.gl/react-maplibre"`, "src/components/map/engine.ts")).toEqual([])
+    expect(await importErrors(`import { Map } from "./engine"`, "src/components/map/Example.tsx")).toEqual([])
+  })
+})

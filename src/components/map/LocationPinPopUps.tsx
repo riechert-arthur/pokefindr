@@ -29,7 +29,7 @@ export const LocationPopup: React.FC<LocationPopupProps> = ({
   onMouseLeave,
 }) => (
   <Popup
-    className="shadow-md rounded-xl z-10"
+    className="z-10"
     longitude={longitude}
     latitude={latitude}
     anchor="top"

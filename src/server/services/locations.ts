@@ -76,8 +76,11 @@ export interface BboxQuery {
 }
 
 /**
- * Active locations inside `bbox`, for the map above zoom 6. The `&&` test
- * against the envelope uses the GiST index on `geog`.
+ * Active locations inside `bbox`, for the map above zoom 6. The test is
+ * planar: `geog::geometry && envelope` keeps exactly the points between the
+ * box's meridians and parallels, using the GiST index on `geog::geometry`.
+ * (On geography, `&&` compares boxes on the sphere, which bow out: it
+ * returned points ~10 km past a city-sized box's sides.)
  */
 export async function getLocationsInBbox(
   { bbox, types, limit = BBOX_LIMIT }: BboxQuery,
@@ -88,7 +91,7 @@ export async function getLocationsInBbox(
   const kinds = sql.join(types.map((t) => sql`${t}`), sql`, `)
   return queryFeatures(
     db,
-    sql`l.geog && ST_MakeEnvelope(${west}, ${south}, ${east}, ${north}, 4326)::geography
+    sql`l.geog::geometry && ST_MakeEnvelope(${west}, ${south}, ${east}, ${north}, 4326)
       and l.kind in (${kinds})`,
     limit,
   )
