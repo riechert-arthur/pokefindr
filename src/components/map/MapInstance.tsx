@@ -1,7 +1,7 @@
 "use client"
 
 import type { FC } from "react"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react"
 import { Map, FullscreenControl, NavigationControl, MAP_STYLES, type MapRef, type ViewStateChangeEvent } from "./engine"
 import { UserLocationPin } from "./UserLocationPin"
 import { useUserLocationContext } from "@/components/providers/UserLocationContextProvider"
@@ -18,6 +18,7 @@ import { MapStatus } from "./MapStatus"
 import { MAP_FAILURE_MESSAGES } from "./MapErrorBoundary"
 import { LAYERS, POINT_ZOOM, readMapColors } from "./layers"
 import { LocationLayers } from "./LocationLayers"
+import { NO_SELECTION, selectionReducer, type Selection } from "./selection"
 import { StateLayers, StateLegend } from "./StateLayers"
 import { useStateShading } from "./useStateShading"
 import { cn } from "@/lib/utils"
@@ -40,9 +41,11 @@ const MapInstance: FC = () => {
   const userLocationContext = useUserLocationContext()
   const { userLocation, userLocationError } = userLocationContext
   const mapRef = useRef<MapRef>(null)
-  // The location with the popup and ring, and the one whose details panel is open.
-  const [selected, setSelected] = useState<SelectedLocation | null>(null)
-  const [details, setDetails] = useState<SelectedLocation | null>(null)
+  // The selected location (ring), its popup, and whose details panel is open (see selectionReducer).
+  const [{ selected, popup, details }, dispatch] = useReducer(
+    selectionReducer<SelectedLocation>,
+    NO_SELECTION as Selection<SelectedLocation>,
+  )
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const { session } = useSessionContext()
   // MapInstance is client-only (MapLoader uses ssr: false), so this is right on first render.
@@ -68,14 +71,14 @@ const MapInstance: FC = () => {
   }, [userLocation, userLocationError])
 
   /** A dot was clicked: popup and ring, without moving the map. */
-  const handleDotSelect = useCallback((feat: LocationFeature) => setSelected(toSelected(feat)), [])
+  const handleDotSelect = useCallback((feat: LocationFeature) => dispatch({ type: "select", location: toSelected(feat) }), [])
 
   /** A search result was picked: fly to it, then popup and ring. */
   const handleSearchSelect = (feat: LocationFeature) => {
     const [lng, lat] = feat.geometry.coordinates
     const map = mapRef.current
     map?.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14), duration: 1200 })
-    setSelected(toSelected(feat))
+    dispatch({ type: "select", location: toSelected(feat) })
   }
 
   return (
@@ -107,7 +110,7 @@ const MapInstance: FC = () => {
           if (isSidebarOpen) toggleSidebar()
           // A click off the dots closes the popup, as MapLibre popups do by default.
           const hit = e.target.getLayer(LAYERS.placeDots) && e.target.queryRenderedFeatures(e.point, { layers: [LAYERS.placeDots] }).length
-          if (!hit) setSelected(null)
+          if (!hit) dispatch({ type: "closePopup" })
         }}
       >
         {states && <StateLayers states={states} max={max} bounds={bounds} colors={colors} />}
@@ -116,14 +119,14 @@ const MapInstance: FC = () => {
         <NavigationControl position="bottom-right" showCompass={false} />
         <UserLocationPin />
         <MapSearchBar selectedLocation={selected} collection={collection} onSelect={handleSearchSelect} />
-        {selected && (
+        {selected && popup && (
           <LocationPopup
             {...selected}
-            onClose={() => setSelected(null)}
-            onDetails={() => setDetails(selected)}
+            onClose={() => dispatch({ type: "closePopup" })}
+            onDetails={() => dispatch({ type: "openDetails" })}
           />
         )}
-        <LocationInfoPanel info={details} onClose={() => setDetails(null)} />
+        <LocationInfoPanel info={details} onClose={() => dispatch({ type: "closeDetails" })} />
         {states && zoomedOut && (
           <StateLegend
             max={max}
