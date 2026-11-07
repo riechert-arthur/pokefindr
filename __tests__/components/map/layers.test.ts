@@ -16,6 +16,8 @@ const colors: MapColors = {
   "map-line": "hsl(220, 11%, 79%)",
   "map-choro-hi": "hsl(0, 0%, 0%)",
   "map-radius": "hsl(221, 83%, 53%)",
+  "map-unsupported": "hsl(60, 6%, 90%)",
+  "map-unsupported-line": "hsl(60, 4%, 82%)",
 }
 
 /** The parts of a style layer these tests read (LayerProps also covers custom layers, which have none). */

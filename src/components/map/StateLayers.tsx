@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils"
  * under the labels. Undefined until the style loads (the layers then go on
  * top) or if the style has no labels.
  */
-function useFirstLabelLayer(): string | undefined {
+export function useFirstLabelLayer(): string | undefined {
   const { current: map } = useMap()
   const [id, setId] = useState<string | undefined>()
   useEffect(() => {

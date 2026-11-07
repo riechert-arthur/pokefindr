@@ -173,6 +173,14 @@
 .maplibregl-map .maplibregl-popup-anchor-right .maplibregl-popup-tip {
   border-left-color: hsl(var(--card));
 }
+/* The "Not on PokeFindr yet" tooltip over unsupported countries. */
+.maplibregl-map .country-tip {
+  pointer-events: none;
+}
+.maplibregl-map .country-tip .maplibregl-popup-content {
+  padding: 8px 10px;
+  font-size: 12px;
+}
 .maplibregl-map .maplibregl-popup-close-button {
   font-size: 18px;
   padding: 2px 8px;

@@ -5,6 +5,7 @@
 import type { ExpressionSpecification, LayerProps } from "./engine"
 import { mixColors, readTokens } from "@/lib/design/tokens"
 import { LOCATION_KINDS } from "@/lib/types/locations"
+import { SUPPORTED_COUNTRY_NUMERIC } from "@/lib/map/countries"
 
 /**
  * Below this zoom the map shades states by count; at and above it, it draws
@@ -14,6 +15,7 @@ import { LOCATION_KINDS } from "@/lib/types/locations"
 export const POINT_ZOOM = 6
 
 export const SOURCES = {
+  world: "world",
   radius: "radius",
   places: "places",
   selected: "selected",
@@ -21,6 +23,9 @@ export const SOURCES = {
 } as const
 
 export const LAYERS = {
+  worldFill: "world-fill",
+  worldHover: "world-hover",
+  worldLine: "world-line",
   radiusFill: "radius-fill",
   radiusLine: "radius-line",
   placeDots: "place-dots",
@@ -32,7 +37,7 @@ export const LAYERS = {
 
 const TOKENS = [
   "kind-vending", "kind-shop", "kind-event", "map-dot-ring", "foreground",
-  "map-land", "map-line", "map-choro-hi", "map-radius",
+  "map-land", "map-line", "map-choro-hi", "map-radius", "map-unsupported", "map-unsupported-line",
 ] as const
 
 export type MapColors = Record<(typeof TOKENS)[number], string>
@@ -146,6 +151,46 @@ export function statesLineLayer(c: MapColors): LayerProps {
     paint: {
       "line-color": c["map-line"],
       "line-width": ["interpolate", ["linear"], ["zoom"], 3, 0.6, 8, 1.4],
+    },
+  }
+}
+
+/** Countries PokeFindr doesn't cover yet: every outline except the supported ones. */
+const UNSUPPORTED_FILTER = [
+  "!",
+  ["in", ["get", "iso"], ["literal", SUPPORTED_COUNTRY_NUMERIC]],
+] as unknown as ExpressionSpecification
+
+/**
+ * Countries PokeFindr doesn't cover, drawn grey at every zoom, with a darker
+ * fill on the one under the pointer. The supported countries aren't drawn,
+ * so the basemap and state shading show through.
+ */
+export function worldLayers(c: MapColors): { fill: LayerProps; hover: LayerProps; line: LayerProps } {
+  return {
+    fill: {
+      id: LAYERS.worldFill,
+      type: "fill",
+      source: SOURCES.world,
+      filter: UNSUPPORTED_FILTER,
+      paint: { "fill-color": c["map-unsupported"] },
+    },
+    hover: {
+      id: LAYERS.worldHover,
+      type: "fill",
+      source: SOURCES.world,
+      filter: UNSUPPORTED_FILTER,
+      paint: {
+        "fill-color": c["map-unsupported-line"],
+        "fill-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 0.9, 0],
+      },
+    },
+    line: {
+      id: LAYERS.worldLine,
+      type: "line",
+      source: SOURCES.world,
+      filter: UNSUPPORTED_FILTER,
+      paint: { "line-color": c["map-unsupported-line"], "line-width": 0.8 },
     },
   }
 }

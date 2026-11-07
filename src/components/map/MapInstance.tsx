@@ -31,6 +31,7 @@ import { MAP_FAILURE_MESSAGES } from "./MapErrorBoundary"
 import { LAYERS, POINT_ZOOM, SOURCES, radiusLayers, readMapColors } from "./layers"
 import { LocationLayers } from "./LocationLayers"
 import { StateLayers, StateLegend } from "./StateLayers"
+import { CountryLayers } from "./CountryLayers"
 import { useStateShading } from "./useStateShading"
 import { cn } from "@/lib/utils"
 import { boundsOfRadius, milesBetween, radiusCircle } from "@/lib/map/geo"
@@ -213,7 +214,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         initialViewState={initialViewState}
         minZoom={1.2}
         renderWorldCopies={false}
-        attributionControl={{ compact: true, customAttribution: "State outlines: US Census" }}
+        attributionControl={{ compact: true, customAttribution: "Outlines: Natural Earth, US Census" }}
         style={{
           width: "100%",
           height: "100%",
@@ -245,6 +246,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
           if (!hit) setSelected(null)
         }}
       >
+        <CountryLayers colors={colors} />
         {states && (
           <StateLayers states={states} max={max} bounds={bounds} colors={colors} onSelect={handleStateSelect} />
         )}
