@@ -73,7 +73,7 @@ export function CountryLayers({ colors, beforeId, waterIds }: CountryLayersProps
   useEffect(() => {
     if (!map) return
     const water = new Set(waterKey ? waterKey.split(",") : [])
-    const queried = [LAYERS.supportedHit, ...water, LAYERS.worldHit, LAYERS.worldFill]
+    const queried = [LAYERS.placeDots, LAYERS.selectedRing, LAYERS.supportedHit, ...water, LAYERS.worldHit, LAYERS.worldFill]
     const hitAt = (point: { x: number; y: number }): CountryHit => {
       const layers = queried.filter((id) => map.getLayer(id) !== undefined)
       if (!layers.length) return { kind: "none" }
