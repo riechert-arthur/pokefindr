@@ -5,19 +5,24 @@ import { citiesQuerySchema } from "@/lib/locations/search"
 export const dynamic = "force-dynamic"
 
 /**
- * GET /api/locations/cities?state=WA&types=vending
+ * GET /api/locations/cities?state=WA&types=vending&retailer=QFC
  *   The state's 30 cities with the most locations (most first, each at the
  *   middle of its locations), plus `counts` per kind and the `total`.
  */
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams
-  const parsed = citiesQuerySchema.safeParse({ state: params.get("state") ?? "", types: params.get("types") ?? undefined })
+  const parsed = citiesQuerySchema.safeParse({
+    state: params.get("state") ?? "",
+    types: params.get("types") ?? undefined,
+    retailer: params.get("retailer") ?? undefined,
+  })
   if (!parsed.success) {
     const message = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")
     return NextResponse.json({ error: `Invalid query. ${message}` }, { status: 400 })
   }
   try {
-    return NextResponse.json(await getTopCities(parsed.data.state, parsed.data.types), {
+    const { state, types, retailer } = parsed.data
+    return NextResponse.json(await getTopCities(state, types, undefined, undefined, retailer), {
       // Changes only with imports and contributions; the region counts view refreshes nightly.
       headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=3600" },
     })
