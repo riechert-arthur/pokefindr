@@ -111,6 +111,7 @@ describe("MapTilerGeocoder", () => {
         },
         { place_type: ["postal_code"], text: "98101", place_name: "98101, Seattle, Washington, United States", center: [-122.33, 47.61], context: [{ id: "region.2", text: "Washington" }] },
         { place_type: ["region"], text: "Washington", place_name: "Washington, United States", center: [-120.7, 47.4] },
+        { place_type: ["postal_code"], text: "10001", place_name: "10001, New York, New York, United States", center: [-74, 40.75], context: [{ id: "region.3", text: "New York" }] },
       ],
     })
     const results = await new MapTilerGeocoder("key").search("Seattle")
@@ -119,6 +120,8 @@ describe("MapTilerGeocoder", () => {
       { label: "Seattle, WA", kind: "city", state: "WA" },
       { label: "98101, Seattle, WA", kind: "postcode", state: "WA" },
       { label: "Washington", kind: "state", state: "WA" },
+      // A city named like its state keeps its name.
+      { label: "10001, New York, NY", kind: "postcode", state: "NY" },
     ])
   })
 })
