@@ -1,16 +1,9 @@
-import { countLabel, formatCount } from "@/components/pokefindr/kinds"
+import { placesLabel } from "@/components/pokefindr/kinds"
 import type { LocationKind } from "@/lib/types/locations"
 import { cn } from "@/lib/utils"
 import type { ViewportStatus } from "./useViewportLocations"
 
-/**
- * "12 vending machines" when one kind is shown, "12 places" otherwise.
- * `more` marks a capped count: "2,000+ places".
- */
-export function placesLabel(n: number, kinds: readonly LocationKind[], more = false): string {
-  const label = kinds.length === 1 ? countLabel(kinds[0], n) : `${formatCount(n)} place${n === 1 ? "" : "s"}`
-  return more ? label.replace(formatCount(n), `${formatCount(n)}+`) : label
-}
+export { placesLabel }
 
 /** What the pill says, as plain text: also what screen readers hear once the view settles. */
 export function statusText({ zoomedOut, total, inView, status, truncated, kinds }: Omit<MapStatusPillProps, "className">): string | null {
