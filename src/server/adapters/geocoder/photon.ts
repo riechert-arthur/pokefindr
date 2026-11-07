@@ -46,7 +46,14 @@ export class PhotonGeocoder implements Geocoder {
     // named like the query come first.
     const named = places.filter((f) => namedLike(f.properties.name, query))
     if (named.length >= limit) return clean(named.map(toResult), limit)
-    const rest = await this.request(query, limit, opts, false)
+    let rest: PhotonFeature[]
+    try {
+      rest = await this.request(query, limit, opts, false)
+    } catch (err) {
+      // The extra request is a bonus: keep the places already found.
+      if (opts?.signal?.aborted || places.length === 0) throw err
+      rest = []
+    }
     return clean([...named, ...rest, ...places].map(toResult), limit)
   }
 
