@@ -117,6 +117,25 @@ describe("useSearch", () => {
     expect(calls.some((u) => u.pathname === "/api/locations/aggregates")).toBe(false)
   })
 
+  it("keeps the areas when the locations lookup fails, and skips it for a long query", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {})
+    const calls = mockApi({
+      "/api/geocode": () => ({ results: [DENVER] }),
+      "/api/locations/search": () => new Response("{}", { status: 500 }),
+      "/api/locations/counts": () => ({ counts: [50] }),
+    })
+    const { result, rerender } = renderHook(({ q }) => useSearch(q, { locations: true }), { initialProps: { q: "Denver" } })
+    await settle()
+    expect(result.current.status).toBe("ready")
+    expect(result.current.areas.map((a) => a.label)).toEqual(["Denver, CO"])
+    expect(result.current.locations).toEqual([])
+    const long = "1600 Pennsylvania Avenue Northwest, Washington, District of Columbia 20500, United States of America, Earth"
+    rerender({ q: long })
+    await settle()
+    expect(result.current.status).toBe("ready")
+    expect(calls.filter((u) => u.pathname === "/api/locations/search").map((u) => u.searchParams.get("q"))).toEqual(["Denver"])
+  })
+
   it("sends only the last query when typing fast", async () => {
     const calls = mockApi({ "/api/geocode": (u) => ({ results: [{ ...DENVER, label: u.searchParams.get("q") }] }), "/api/locations/counts": () => ({ counts: [1] }) })
     const { result, rerender } = renderHook(({ q }) => useSearch(q), { initialProps: { q: "De" } })
