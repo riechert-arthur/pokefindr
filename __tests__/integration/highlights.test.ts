@@ -37,6 +37,17 @@ describe("getHotspots", () => {
     expect(hotspots[0].lng).toBeCloseTo(-122.67, 2)
   })
 
+  it("names a hotspot as the state sheet does, however its rows spell the city", async () => {
+    await getDb()
+      .insert(locations)
+      .values([
+        ...machines("SEATTLE", "WA", -122.33, 47.62, 3),
+        ...machines("Seattle", "WA", -122.33, 47.62, 1).map((m) => ({ ...m, machineId: "s-cased" })),
+        ...machines("seattle\u00a0", "WA", -122.33, 47.62, 1).map((m) => ({ ...m, machineId: "s-nbsp" })),
+      ])
+    expect((await getHotspots(getDb(), 3)).map((h) => [h.city, h.count])).toEqual([["Seattle", 5]])
+  })
+
   it("counts only US machines around a border city", async () => {
     await getDb()
       .insert(locations)

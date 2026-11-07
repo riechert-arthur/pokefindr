@@ -196,8 +196,19 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   // A new view (a pick, Back or Forward) puts its label in the search box.
   // Keyed on the label, so a pan (a camera-only URL write) keeps what the
   // viewer typed.
+  // A pan that drops `state=` changes the label too, but the viewer may be
+  // typing: then keep their text.
   const viewLabel = searchLabel(params)
-  useEffect(() => setQuery(viewLabel), [viewLabel])
+  const shownLabel = useRef(viewLabel)
+  const leftStateByPan = useRef(false)
+  useEffect(() => {
+    const keepTyped = leftStateByPan.current
+    // Read now: the updater runs later, after the ref has moved on.
+    const previous = shownLabel.current
+    leftStateByPan.current = false
+    shownLabel.current = viewLabel
+    setQuery((q) => (keepTyped && q !== previous ? q : viewLabel))
+  }, [viewLabel])
 
   // Back and Forward: when the URL's view (place, state, camera) changes, move
   // the map to it. The key of the view the map shows changes only on load, on
@@ -423,6 +434,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
       if (overlaps(seen, STATES[stateFocus].bounds)) return
     }
     // Otherwise the camera is the view, so a copied link opens where the viewer is looking.
+    if (stateFocus) leftStateByPan.current = true
     writeView(
       { ...(stateFocus ? { state: null } : {}), lat: roundCamera(lat), lng: roundCamera(lng), z: roundZoom(z) },
       { limitUrlUpdates: debounce(CAMERA_URL_DEBOUNCE_MS) },
