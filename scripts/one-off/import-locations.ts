@@ -512,16 +512,23 @@ async function main() {
     return
   }
 
-  const sql = migrationClient()
-  const { db } = createMigrator(sql)
+  const client = migrationClient()
+  const { db } = createMigrator(client)
   try {
     const run = (trx: Parameters<typeof importLocations>[0]) => importLocations(trx, file)
     const report = apply ? await db.transaction().execute(run) : await inRolledBackTransaction(db, run)
     for (const line of summarize(report)) console.log(line)
     if (reportFile) writeFileSync(reportFile, JSON.stringify({ apply, ...report }, null, 2) + "\n")
+    if (apply) {
+      // The zoomed-out map's per-state counts (migration 0003). The same SQL as
+      // the refresh-region-counts job, run here because the import runs outside
+      // the app. After the commit, so the refresh sees the new rows.
+      await sql`refresh materialized view concurrently location_region_counts`.execute(db)
+      console.log("Refreshed location_region_counts.")
+    }
     console.log(apply ? "Done." : "Dry run: nothing written. Re-run with --apply to write.")
   } finally {
-    await sql.end({ timeout: 5 })
+    await client.end({ timeout: 5 })
   }
 }
 

@@ -273,6 +273,7 @@ checks never replay it.
 - `locations.updated_at` is set by a `before update` trigger
   (`locations_set_updated_at`, migration 0001), so every writer bumps it, not
   just the ORM and the import.
+- After an `--apply` commits, it refreshes `location_region_counts` (below).
 
 Nothing else writes `locations` on a schedule. The old weekly GitHub job
 (`weekly-update.yml`) and its scripts were removed in #82: its last step,
@@ -290,3 +291,21 @@ npm run db:import-locations -- --apply
 
 `--file <geojson>` imports another file of the same shape; `--report <json>`
 saves the counts and verification.
+
+## Region counts
+
+`location_region_counts` (migration 0003) is a materialized view with one row
+per country, region (the `state` column; `''` when it's empty) and kind: the
+number of active, positioned locations. The zoomed-out map shades states from
+it through `GET /api/locations/aggregates`, so that request never scans
+`locations`.
+
+It changes only when refreshed: by the location import after `--apply`, and
+by the `refresh-region-counts` job nightly (`vercel.json`). The refresh runs
+`CONCURRENTLY` (the view has a unique index for that), so reads see the old
+counts until the new ones are ready. Anything else that bulk-writes
+`locations`, such as the ETL, should run the job afterwards:
+
+```bash
+npm run job -- refresh-region-counts
+```
