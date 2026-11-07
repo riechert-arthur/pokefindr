@@ -1,6 +1,12 @@
-import React from "react"
+import type { FC } from "react"
+import { ExternalLinkIcon } from "lucide-react"
 import { Popup } from "./engine"
+import { Button } from "@/components/ui/button"
+import { KINDS, toKind } from "@/components/pokefindr/kinds"
+import type { LocationKind } from "@/lib/types/locations"
+import { cn } from "@/lib/utils"
 
+/** The selected location, as the popup and the details panel show it. */
 export interface LocationPopupProps {
   longitude: number
   latitude: number
@@ -11,12 +17,17 @@ export interface LocationPopupProps {
   machineID: string
   /** Database id of the location. */
   id: string
+  kind?: LocationKind
   onClose: () => void
-  onMouseEnter?: () => void
-  onMouseLeave?: () => void
+  /** Opens the details panel. */
+  onDetails?: () => void
 }
 
-export const LocationPopup: React.FC<LocationPopupProps> = ({
+/** "Vending machine", from the plural label. */
+const kindName = (kind: LocationKind) => KINDS[kind].label.replace(/s$/, "")
+
+/** The popup over a selected location, as in the redesign prototype. */
+export const LocationPopup: FC<LocationPopupProps> = ({
   longitude,
   latitude,
   retailer,
@@ -24,45 +35,50 @@ export const LocationPopup: React.FC<LocationPopupProps> = ({
   city,
   state,
   machineID,
+  kind: rawKind,
   onClose,
-  onMouseEnter,
-  onMouseLeave,
-}) => (
-  <Popup
-    className="z-10"
-    longitude={longitude}
-    latitude={latitude}
-    anchor="top"
-    onClose={onClose}
-    closeButton={false}
-  >
-    <div
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+  onDetails,
+}) => {
+  const kind = toKind(rawKind)
+  const directions = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    `${retailer} ${address} ${city} ${state}`,
+  )}`
+  return (
+    <Popup
+      longitude={longitude}
+      latitude={latitude}
+      offset={14}
+      maxWidth="280px"
+      focusAfterOpen={false}
+      closeOnClick={false}
+      onClose={onClose}
     >
-      <h3 className="text-lg font-semibold">{retailer}</h3>
-      <p className="text-muted-foreground">{address}</p>
-      <p className="text-muted-foreground">
-        {city}, {state}
-      </p>
-      <button
-        className="mt-2 bg-primary text-primary-foreground px-4 py-2 rounded"
-        onClick={() => alert(`Details for ${machineID}`)}
-      >
-        View Details
-      </button>
-      <a
-        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-          `${address}, ${city}, ${state}`
-        )}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-2 block underline text-primary"
-      >
-        Open in Google Maps
-      </a>
-    </div>
-  </Popup>
-)
+      <div className="font-sans">
+        <div className={cn("mb-1 inline-flex items-center gap-1.5 text-caption font-semibold", KINDS[kind].text)}>
+          <span className={cn("size-2 rounded-full", KINDS[kind].bg)} aria-hidden />
+          {kindName(kind)}
+        </div>
+        <h4 className="text-subheading text-foreground">{retailer}</h4>
+        <p className="mt-0.5 text-body text-muted-foreground">{address}</p>
+        <p className="mt-0.5 text-body text-muted-foreground">
+          {city}, {state}
+        </p>
+        {machineID && <div className="mt-1.5 font-mono text-caption text-muted-foreground">Machine {machineID}</div>}
+        <div className="mt-3 flex gap-1.5">
+          {onDetails && (
+            <Button size="sm" onClick={onDetails}>
+              View details
+            </Button>
+          )}
+          <Button size="sm" variant="outline" asChild>
+            <a href={directions} target="_blank" rel="noopener noreferrer">
+              Directions <ExternalLinkIcon className="size-3.5" aria-hidden />
+            </a>
+          </Button>
+        </div>
+      </div>
+    </Popup>
+  )
+}
 
 export default LocationPopup

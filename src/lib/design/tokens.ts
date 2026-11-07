@@ -68,3 +68,33 @@ export function readTokens<T extends ColorToken>(
   }
   return colors
 }
+
+/** "hsl(h, s%, l%)" (as readTokens returns) to [r, g, b] in 0–255, or undefined. */
+function hslToRgb(color: string): [number, number, number] | undefined {
+  const m = /^hsl\(\s*([\d.]+),\s*([\d.]+)%,\s*([\d.]+)%\s*\)$/.exec(color)
+  if (!m) return undefined
+  const h = Number(m[1]) / 360
+  const s = Number(m[2]) / 100
+  const l = Number(m[3]) / 100
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s
+  const p = 2 * l - q
+  const channel = (t: number) => {
+    const u = t < 0 ? t + 1 : t > 1 ? t - 1 : t
+    const v = u < 1 / 6 ? p + (q - p) * 6 * u : u < 1 / 2 ? q : u < 2 / 3 ? p + (q - p) * (2 / 3 - u) * 6 : p
+    return Math.round(v * 255)
+  }
+  return [channel(h + 1 / 3), channel(h), channel(h - 1 / 3)]
+}
+
+/**
+ * A color `t` of the way from `a` to `b` (0 is `a`, 1 is `b`), mixed in sRGB,
+ * for map paint that needs an in-between token color (the state shading's
+ * lightest step). Takes readTokens values; returns `a` if either can't be read.
+ */
+export function mixColors(a: string, b: string, t: number): string {
+  const from = hslToRgb(a)
+  const to = hslToRgb(b)
+  if (!from || !to) return a
+  const [r, g, bl] = from.map((v, i) => Math.round(v + (to[i] - v) * t))
+  return `rgb(${r}, ${g}, ${bl})`
+}
