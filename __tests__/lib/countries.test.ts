@@ -18,10 +18,22 @@ describe("supported countries", () => {
     for (const c of SUPPORTED_COUNTRIES) expect(c.alpha2).toMatch(/^[A-Z]{2}$/)
   })
 
-  it("are left out of every grey layer", () => {
-    const layers = worldLayers({} as MapColors) as unknown as Record<string, { filter: unknown }>
-    for (const layer of Object.values(layers)) {
-      expect(layer.filter).toEqual(["!", ["in", ["get", "iso"], ["literal", ["840"]]]])
+  it("are left out of the hover and hit layers, and cut out of the grey", () => {
+    const layers = worldLayers({} as MapColors) as unknown as Record<string, { filter?: unknown; source: string }>
+    for (const key of ["hit", "hover"]) {
+      expect(layers[key].filter).toEqual(["!", ["in", ["get", "iso"], ["literal", ["840"]]]])
+    }
+    // The grey itself is the world minus the supported outlines (worldWithHoles), unfiltered.
+    expect(layers.fill.filter).toBeUndefined()
+    expect(layers.fill.source).toBe("unsupported")
+  })
+
+  it("each have a detailed outline file", () => {
+    for (const c of SUPPORTED_COUNTRIES) {
+      const file = path.join(__dirname, "../../public", c.outline)
+      const fc = JSON.parse(readFileSync(file, "utf8")) as { features: { geometry: { type: string } }[] }
+      expect(fc.features.length, c.outline).toBeGreaterThan(0)
+      expect(["Polygon", "MultiPolygon"]).toContain(fc.features[0].geometry.type)
     }
   })
 
