@@ -7,6 +7,8 @@ import type { LocationKind } from "@/lib/types/locations"
 
 interface MapPanelProps {
   search: ReactNode
+  /** Beside the search box: the Filters button. */
+  filter?: ReactNode
   kinds: readonly LocationKind[]
   /** Each kind's US total, for the chips; null until loaded. */
   kindTotals: Partial<Record<LocationKind, number>> | null
@@ -23,7 +25,7 @@ interface MapPanelProps {
  * a 360px column down the left; on phones it sits at the bottom, at most
  * 55% of the height, and lifts the map's bottom controls above it.
  */
-export function MapPanel({ search, kinds, kindTotals, onKindsChange, sheet, sheetLabel }: MapPanelProps) {
+export function MapPanel({ search, filter, kinds, kindTotals, onKindsChange, sheet, sheetLabel }: MapPanelProps) {
   const ref = useRef<HTMLDivElement>(null)
 
   // Phones: the bottom-right controls sit above the panel (CSS reads --map-panel-h).
@@ -50,7 +52,10 @@ export function MapPanel({ search, kinds, kindTotals, onKindsChange, sheet, shee
       ref={ref}
       className="pointer-events-none absolute inset-x-2 bottom-2 z-10 flex max-h-[55%] flex-col gap-2 sm:inset-x-auto sm:bottom-3 sm:left-3 sm:top-3 sm:max-h-none sm:w-[360px]"
     >
-      <div className="pointer-events-auto flex-none">{search}</div>
+      <div className="pointer-events-auto flex flex-none items-start gap-2">
+        <div className="min-w-0 flex-1">{search}</div>
+        {filter}
+      </div>
       <div
         role="group"
         aria-label="What to show on the map"

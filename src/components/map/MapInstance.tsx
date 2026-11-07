@@ -39,6 +39,7 @@ import { useStateShading } from "./useStateShading"
 import { cameraPadding } from "./camera"
 import { MapPanel } from "./MapPanel"
 import { LocationDetails } from "./LocationDetails"
+import { RetailerFilter } from "./RetailerFilter"
 import { ResultsSheet } from "./ResultsSheet"
 import { useNearbyLocations } from "./useNearbyLocations"
 import { StateSheet } from "./StateSheet"
@@ -137,7 +138,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
 
   // Every location, for the search box only; the map draws what's in view.
   const collection = useLocations()
-  const { states, max, total, bounds, kindTotals } = useStateShading(kindSet)
+  const { states, max, total, bounds, kindTotals } = useStateShading(kindSet, retailers)
   // The results list for the place (or the viewer), closest first.
   const nearby = useNearbyLocations(place, kinds, retailers)
   // A state's busiest cities, while the view is a state.
@@ -351,6 +352,11 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     if (!place) return
     writeView({ r }, { history: "replace" })
     mapRef.current?.fitBounds(boundsOfRadius(place.lng, place.lat, r), { padding: pad(true), maxZoom: 13, duration: 1000 })
+  }
+
+  /** The Filters popover: which vending retailers to show, all of them when none are picked. */
+  const handleRetailersChange = (next: string[]) => {
+    void setParams({ retailer: next.length ? next : null }, { history: "replace" })
   }
 
   /** The type chips: which kinds the map and lists show, all of them when every chip is on. */
@@ -567,6 +573,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
               }
             />
           }
+          filter={<RetailerFilter selected={retailers ?? []} onChange={handleRetailersChange} vendingShown={kindSet.has("vending")} />}
           kinds={kinds}
           kindTotals={kindTotals}
           onKindsChange={handleKindsChange}

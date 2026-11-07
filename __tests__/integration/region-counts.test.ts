@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import { sql } from "drizzle-orm"
 import { getDb } from "@/server/db/client"
 import { locations } from "@/server/db/schema"
-import { getRegionCounts, refreshRegionCounts } from "@/server/services/region-counts"
+import { getRegionCounts, getTopRetailers, refreshRegionCounts } from "@/server/services/region-counts"
 import { runJob } from "@/server/lib/jobs/run"
 import postgres from "postgres"
 import { testDatabaseUrl } from "./testDatabase"
@@ -33,6 +33,27 @@ describe("region counts", () => {
       { country: "US", region: "AZ", kind: "vending", count: 1 },
       { country: "US", region: "WA", kind: "shop", count: 1 },
       { country: "US", region: "WA", kind: "vending", count: 2 },
+    ])
+  })
+
+  it("filter vending machines by retailer (other kinds unfiltered), and rank retailers", async () => {
+    const db = getDb()
+    await db.insert(locations).values([
+      { machineId: "S1", retailer: "Safeway", state: "WA", geog: { lng: -122.3, lat: 47.6 } },
+      { machineId: "S2", retailer: "Safeway", state: "OR", geog: { lng: -122.6, lat: 45.5 } },
+      { machineId: "Q1", retailer: "QFC", state: "WA", geog: { lng: -122.4, lat: 47.7 } },
+      { name: "Shop", kind: "shop", state: "WA", geog: { lng: -122.3, lat: 47.5 } },
+      { machineId: "OFF", retailer: "Safeway", state: "WA", geog: { lng: -122.3, lat: 47.6 }, isActive: false },
+      { machineId: "CA", retailer: "Save-On", state: "BC", countryCode: "CA", geog: { lng: -123.1, lat: 49.3 } },
+    ])
+    expect(await getRegionCounts(db, ["Safeway"])).toEqual([
+      { country: "US", region: "OR", kind: "vending", count: 1 },
+      { country: "US", region: "WA", kind: "shop", count: 1 },
+      { country: "US", region: "WA", kind: "vending", count: 1 },
+    ])
+    expect(await getTopRetailers(12, db)).toEqual([
+      { retailer: "Safeway", count: 2 },
+      { retailer: "QFC", count: 1 },
     ])
   })
 
