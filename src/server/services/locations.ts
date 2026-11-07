@@ -78,6 +78,21 @@ export async function getActiveLocationsGeoJSON(
   return queryFeatures(db)
 }
 
+/**
+ * A city as typed, with runs of whitespace (tabs, NBSPs from a paste) as one
+ * space and none at the ends; group on `lower()` of it. (\s alone misses
+ * NBSP under C ctype.)
+ */
+export const cityName = (column: SQL) => sql`trim(regexp_replace(coalesce(${column}, ''), '[\\s\u00a0]+', ' ', 'g'))`
+
+/**
+ * One spelling per city however it was typed, in an aggregate: title case if
+ * any row has it ("Seattle" over "SEATTLE" and "seattle"), then not all caps
+ * ("King of Prussia" over "KING OF PRUSSIA"), then not all lowercase.
+ */
+export const preferredSpelling = (name: SQL) =>
+  sql`(array_agg(${name} order by ${name} <> initcap(${name}), ${name} = upper(${name}), ${name} = lower(${name}), ${name}))[1]`
+
 /** Miles to meters, for PostGIS distances on geography. */
 export const METERS_PER_MILE = 1609.344
 
@@ -227,15 +242,10 @@ export async function getTopCities(
     where l.is_active and l.geog is not null and l.country_code = 'US' and l.state = ${state} and l.kind in (${kindsIn(types)})
       ${retailerIn(retailers)}
   `
-  // The city as typed, with runs of whitespace (tabs, NBSPs from a paste) as
-  // one space and none at the ends. (\s alone misses NBSP under C ctype.)
-  const name = sql`trim(regexp_replace(coalesce(m.city, ''), '[\\s\u00a0]+', ' ', 'g'))`
+  const name = cityName(sql`m.city`)
   const [cities, counts] = await Promise.all([
     db.execute<StateCities["cities"][number]>(sql`
-      -- One name per city however it was typed: title case if any row has it
-      -- ("Seattle" over "SEATTLE" and "seattle"), then not all caps
-      -- ("King of Prussia" over "KING OF PRUSSIA"), then not all lowercase.
-      select (array_agg(${name} order by ${name} <> initcap(${name}), ${name} = upper(${name}), ${name} = lower(${name}), ${name}))[1] as city,
+      select ${preferredSpelling(name)} as city,
         count(*)::int as count,
         round(avg(ST_X(m.geog::geometry))::numeric, 4)::float8 as lng,
         round(avg(ST_Y(m.geog::geometry))::numeric, 4)::float8 as lat
