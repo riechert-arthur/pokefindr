@@ -1,7 +1,7 @@
 "use client"
 
 import type { FC } from "react"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react"
 import { debounce, useQueryStates } from "nuqs"
 import type { FeatureCollection, Point } from "geojson"
 import {
@@ -19,7 +19,7 @@ import { MapStatusPill } from "./MapStatusPill"
 import { UserLocationPin } from "./UserLocationPin"
 import { useUserLocationContext } from "@/components/providers/UserLocationContextProvider"
 import { MapSearchBar } from "./MapSearchBar"
-import { LOCATION_KINDS, type LocationFeature, type LocationFeatureProperties, type LocationKind } from "@/lib/types/locations"
+import { type LocationFeature, type LocationFeatureProperties, type LocationKind } from "@/lib/types/locations"
 import { useLocations } from "./useLocations"
 import { LocationPopup, type LocationPopupProps } from "./LocationPinPopUps"
 import { useSidebar } from "../providers/SidebarContextProvider"
@@ -31,12 +31,14 @@ import { MapStatus } from "./MapStatus"
 import { MAP_FAILURE_MESSAGES } from "./MapErrorBoundary"
 import { LAYERS, POINT_ZOOM, SOURCES, radiusLayers, readMapColors } from "./layers"
 import { LocationLayers } from "./LocationLayers"
+import { NO_SELECTION, selectionReducer, type Selection } from "./selection"
 import { StateLayers, StateLegend } from "./StateLayers"
 import { useStateShading } from "./useStateShading"
 import { cn } from "@/lib/utils"
 import { milesBetween, radiusCircle } from "@/lib/map/geo"
-import { DEFAULT_RADIUS, mapSearchParams, roundCamera, roundZoom } from "@/lib/map/url-state"
-import type { InitialMapView } from "@/lib/map/initial-view"
+import { DEFAULT_RADIUS, loadMapSearchParams, mapSearchParams, roundCamera, roundZoom, type MapSearchParams } from "@/lib/map/url-state"
+import { initialMapView, shownKinds, viewKey, type InitialMapView } from "@/lib/map/initial-view"
+import { INITIAL_LOAD_STATE, nextLoadState, type MapLoadState } from "./mapLoadState"
 
 type SelectedLocation = Omit<LocationPopupProps, "onClose" | "onDetails">
 
@@ -62,9 +64,13 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const { userLocation, userLocationError } = userLocationContext
   const mapRef = useRef<MapRef>(null)
   const [params, setParams] = useQueryStates(mapSearchParams)
-  // The location with the popup and ring, and the one whose details panel is open.
-  const [selected, setSelected] = useState<SelectedLocation | null>(() => (location ? toSelected(location) : null))
-  const [details, setDetails] = useState<SelectedLocation | null>(() => (location ? toSelected(location) : null))
+  // The selected location (ring), its popup, and whose details panel is open (see selectionReducer).
+  // A shared location= link opens with its details.
+  const [{ selected, popup, details }, dispatch] = useReducer(
+    selectionReducer<SelectedLocation>,
+    location ? toSelected(location) : null,
+    (initial): Selection<SelectedLocation> => (initial ? { selected: initial, popup: false, details: initial } : NO_SELECTION),
+  )
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const { session } = useSessionContext()
   // MapInstance is client-only (MapLoader uses ssr: false), so this is right on first render.
@@ -77,17 +83,21 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   // What to show, from the URL: every kind and retailer unless it names some.
   const typesKey = params.types?.join(",")
   const kinds = useMemo<readonly LocationKind[]>(
-    () => params.types ?? LOCATION_KINDS,
+    () => shownKinds(params.types),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [typesKey],
   )
   const kindSet = useMemo(() => new Set(kinds), [kinds])
   const retailers = params.retailer
 
-  // A searched place and its radius, from the URL.
-  const placeLng = params.q && params.near === null ? params.lng : null
-  const placeLat = params.q && params.near === null ? params.lat : null
-  const placeRadius = params.r ?? DEFAULT_RADIUS
+  // The searched place and the state from the URL, checked the same way as on
+  // the server (coordinates in range, known state codes).
+  const currentViewKey = viewKey(params)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const urlView = useMemo(() => initialMapView(params), [currentViewKey])
+  const placeLng = urlView.place?.lng ?? null
+  const placeLat = urlView.place?.lat ?? null
+  const placeRadius = urlView.place?.radius ?? DEFAULT_RADIUS
   const place = useMemo(
     () => (placeLng !== null && placeLat !== null ? { lng: placeLng, lat: placeLat, radius: placeRadius } : null),
     [placeLng, placeLat, placeRadius],
@@ -115,8 +125,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   }, [viewport.features, retailers, place])
 
   const [zoomedOut, setZoomedOut] = useState(true)
-  // "loading" until the style and first tiles are in; "failed" if that never happens.
-  const [loadState, setLoadState] = useState<"loading" | "loaded" | "failed">("loading")
+  // Loading until MapLibre's load event; failed if the map can't start (see nextLoadState).
+  const [loadState, setLoadState] = useState<MapLoadState>(INITIAL_LOAD_STATE)
   // Set when the viewer starts moving the map (not when the app flies it).
   const userMoving = useRef(false)
 
@@ -130,45 +140,90 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     }
   }, [userLocation, userLocationError])
 
-  // Back and forward: the details panel follows `location=`.
+  // The details panel follows `location=` (a shared link, Back or Forward).
+  // globalThis: `Map` here is the map component from ./engine.
+  const knownLocations = useMemo(() => new globalThis.Map(collection.features.map((f) => [f.properties.id, f])), [collection])
   useEffect(() => {
-    if (!params.location) setDetails(null)
-    else if (selected?.id === params.location) setDetails(selected)
-    // Only when the URL changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.location])
+    if (!params.location) {
+      dispatch({ type: "closeDetails" })
+      return
+    }
+    const feature = knownLocations.get(params.location)
+    if (feature) dispatch({ type: "showDetails", location: toSelected(feature) })
+  }, [params.location, knownLocations])
+
+  // Back and Forward: when the URL's view (place, state, camera) changes, move
+  // the map to it. The key of the view the map shows changes only on load, on
+  // our own URL writes (writeView) and here, never from React's copy of the
+  // URL, which can lag behind history navigation.
+  const lastViewKey = useRef(currentViewKey)
+  const writeView = useCallback(
+    (update: Partial<MapSearchParams>, options: Parameters<typeof setParams>[1]) => {
+      lastViewKey.current = viewKey({ ...loadMapSearchParams(new URLSearchParams(window.location.search)), ...update })
+      void setParams(update, options)
+    },
+    [setParams],
+  )
+  useEffect(() => {
+    const onPopState = () => {
+      const next = loadMapSearchParams(new URLSearchParams(window.location.search))
+      const key = viewKey(next)
+      if (key === lastViewKey.current) return
+      // Remember it now: React's copy of the URL may not have caught up yet.
+      lastViewKey.current = key
+      const { camera } = initialMapView(next)
+      const map = mapRef.current
+      if (!map) return
+      if ("bounds" in camera) {
+        // An explicit `maxZoom: undefined` breaks the fit (NaN center); leave it out instead.
+        map.fitBounds(camera.bounds, camera.maxZoom === undefined ? { padding: 40, duration: 1000 } : { padding: 40, maxZoom: camera.maxZoom, duration: 1000 })
+      }
+      else map.flyTo({ center: [camera.longitude, camera.latitude], zoom: camera.zoom, duration: 1000 })
+    }
+    window.addEventListener("popstate", onPopState)
+    return () => window.removeEventListener("popstate", onPopState)
+  }, [])
 
   /** A dot was clicked: popup and ring, without moving the map. */
-  const handleDotSelect = useCallback((feat: LocationFeature) => setSelected(toSelected(feat)), [])
+  const handleDotSelect = useCallback((feat: LocationFeature) => dispatch({ type: "select", location: toSelected(feat) }), [])
 
   /** A search result was picked: fly to it, then popup and ring. */
   const handleSearchSelect = (feat: LocationFeature) => {
     const [lng, lat] = feat.geometry.coordinates
     const map = mapRef.current
     map?.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14), duration: 1200 })
-    setSelected(toSelected(feat))
+    dispatch({ type: "select", location: toSelected(feat) })
   }
 
-  /** Details are a new view: a new history entry, so Back closes them. */
-  const openDetails = (info: SelectedLocation) => {
-    setDetails(info)
-    void setParams({ location: info.id }, { history: "push" })
+  /**
+   * Details are a new view: a new history entry, so Back closes them.
+   * Closing details opened here steps back to that entry instead of adding
+   * another one; closing a shared link's details just drops `location`.
+   */
+  const pushedDetails = useRef(false)
+  const openDetails = () => {
+    if (!selected) return
+    dispatch({ type: "openDetails" })
+    pushedDetails.current = true
+    void setParams({ location: selected.id }, { history: "push" })
   }
 
   const closeDetails = () => {
-    setDetails(null)
-    void setParams({ location: null })
+    dispatch({ type: "closeDetails" })
+    if (pushedDetails.current) {
+      pushedDetails.current = false
+      window.history.back()
+    } else {
+      void setParams({ location: null })
+    }
   }
 
   /** A state was clicked (StateLayers zooms to it): a new view, so a new history entry. */
   const handleStateSelect = useCallback(
     (code: string) => {
-      void setParams(
-        { state: code, q: null, lat: null, lng: null, r: null, z: null, near: null },
-        { history: "push" },
-      )
+      writeView({ state: code, q: null, lat: null, lng: null, r: null, z: null, near: null }, { history: "push" })
     },
-    [setParams],
+    [writeView],
   )
 
   /**
@@ -178,10 +233,13 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const handleMoveEnd = (e: ViewStateChangeEvent) => {
     if (!userMoving.current) return
     userMoving.current = false
-    if (place || params.state || params.near) return
+    // A place's radius (or near=me) still frames the results, so it stays.
+    if (place || params.near) return
+    // Panning away from a state makes the camera the view, so a copied link
+    // opens where the viewer is looking.
     const { longitude, latitude, zoom } = e.viewState
-    void setParams(
-      { lat: roundCamera(latitude), lng: roundCamera(longitude), z: roundZoom(zoom) },
+    writeView(
+      { state: null, lat: roundCamera(latitude), lng: roundCamera(longitude), z: roundZoom(zoom) },
       { limitUrlUpdates: debounce(CAMERA_URL_DEBOUNCE_MS) },
     )
   }
@@ -202,6 +260,11 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         ref={mapRef}
         initialViewState={initialViewState}
         minZoom={1.2}
+        // Flat and north-up, as in the prototype (no compass). A tilted view
+        // reaches toward the horizon and asks the API for far too big a box.
+        maxPitch={0}
+        dragRotate={false}
+        touchPitch={false}
         renderWorldCopies={false}
         attributionControl={{ compact: true, customAttribution: "State outlines: US Census" }}
         style={{
@@ -212,7 +275,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         }}
         mapStyle={isDark ? MAP_STYLES.dark : MAP_STYLES.light}
         onLoad={(e) => {
-          setLoadState("loaded")
+          setLoadState((state) => nextLoadState(state, { type: "load" }))
           setMap(e.target)
           setZoomedOut(e.target.getZoom() < POINT_ZOOM)
         }}
@@ -224,15 +287,14 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         onMoveEnd={handleMoveEnd}
         onError={(e) => {
           console.error("[map]", e.error)
-          // Errors after load (a missing tile, say) don't stop the map; one before
-          // load means the style or its sources didn't arrive.
-          setLoadState((current) => (current === "loading" ? "failed" : current))
+          const { sourceId, tile } = e as { sourceId?: string; tile?: unknown }
+          setLoadState((state) => nextLoadState(state, { type: "error", error: e.error, sourceId, tile }))
         }}
         onClick={(e) => {
           if (isSidebarOpen) toggleSidebar()
           // A click off the dots closes the popup, as MapLibre popups do by default.
           const hit = e.target.getLayer(LAYERS.placeDots) && e.target.queryRenderedFeatures(e.point, { layers: [LAYERS.placeDots] }).length
-          if (!hit) setSelected(null)
+          if (!hit) dispatch({ type: "closePopup" })
         }}
       >
         {states && (
@@ -247,11 +309,11 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         <NavigationControl position="bottom-right" showCompass={false} />
         <UserLocationPin />
         <MapSearchBar selectedLocation={selected} collection={collection} onSelect={handleSearchSelect} />
-        {selected && (
+        {selected && popup && (
           <LocationPopup
             {...selected}
-            onClose={() => setSelected(null)}
-            onDetails={() => openDetails(selected)}
+            onClose={() => dispatch({ type: "closePopup" })}
+            onDetails={openDetails}
           />
         )}
         <LocationInfoPanel info={details} onClose={closeDetails} />
@@ -275,9 +337,9 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
           </div>
         )}
       </Map>
-      {loadState !== "loaded" && (
-        <MapStatus kind={loadState === "failed" ? "error" : "loading"} className="absolute inset-0 z-10">
-          {loadState === "failed" ? MAP_FAILURE_MESSAGES.library : "Loading the map…"}
+      {loadState.status !== "loaded" && (
+        <MapStatus kind={loadState.status === "failed" ? "error" : "loading"} className="absolute inset-0 z-10">
+          {loadState.status === "failed" ? MAP_FAILURE_MESSAGES[loadState.failure] : "Loading the map…"}
         </MapStatus>
       )}
     </>

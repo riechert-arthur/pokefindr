@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useRef } from "react"
 import type { FeatureCollection, Point } from "geojson"
 import { Layer, Source, useMap, type MapLayerMouseEvent } from "./engine"
 import { LAYERS, SOURCES, placeDotsLayer, selectedRingLayer, type MapColors } from "./layers"
@@ -23,16 +23,19 @@ interface LocationLayersProps {
 export function LocationLayers({ collection, selected, colors, onSelect }: LocationLayersProps) {
   const { current: map } = useMap()
 
+  // The clicked feature's geometry is rounded to its tile's grid (tens of
+  // metres at zoom 6, a whole dot's width once zoomed in), so select the
+  // original feature by id instead.
+  const byId = useMemo(() => new Map(collection.features.map((f) => [f.properties.id, f])), [collection])
+  const byIdRef = useRef(byId)
+  byIdRef.current = byId
+
   useEffect(() => {
     if (!map) return
     const onClick = (e: MapLayerMouseEvent) => {
-      const f = e.features?.[0]
-      if (!f || f.geometry.type !== "Point") return
-      onSelect({
-        type: "Feature",
-        geometry: { type: "Point", coordinates: f.geometry.coordinates },
-        properties: f.properties as LocationFeatureProperties,
-      })
+      const id = (e.features?.[0]?.properties as LocationFeatureProperties | undefined)?.id
+      const feature = id === undefined ? undefined : byIdRef.current.get(id)
+      if (feature) onSelect(feature)
     }
     const pointer = () => (map.getCanvas().style.cursor = "pointer")
     const reset = () => (map.getCanvas().style.cursor = "")

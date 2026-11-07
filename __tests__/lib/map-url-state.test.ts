@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 import { describe, expect, it } from "vitest"
 import { loadMapSearchParams, mapUrl } from "@/lib/map/url-state"
-import { initialMapView } from "@/lib/map/initial-view"
+import { initialMapView, shownKinds, viewKey } from "@/lib/map/initial-view"
 import { boundsOf, boundsOfRadius, US_BOUNDS } from "@/lib/map/geo"
 import { STATES } from "@/lib/map/states"
 import type { StateCollection } from "@/components/map/useStateShading"
@@ -73,5 +73,22 @@ describe("STATES", () => {
       outlines.features.filter((f) => f.properties.region).map((f) => [f.properties.region, { name: f.properties.name, bounds: boundsOf(f.geometry) }]),
     )
     expect(STATES).toEqual(fromFile)
+  })
+})
+
+describe("shownKinds", () => {
+  it("shows every kind for a missing, empty or all-unknown types", () => {
+    expect(shownKinds(load("").types)).toEqual(["vending", "shop", "event"])
+    expect(shownKinds(load("types=").types)).toEqual(["vending", "shop", "event"])
+    expect(shownKinds(load("types=bogus").types)).toEqual(["vending", "shop", "event"])
+    expect(shownKinds(load("types=shop,bogus").types)).toEqual(["shop"])
+  })
+})
+
+describe("viewKey", () => {
+  it("changes with the view, not with location, types or retailer", () => {
+    expect(viewKey(load("state=WA"))).not.toBe(viewKey(load("")))
+    expect(viewKey(load("lat=47&lng=-122&z=9"))).not.toBe(viewKey(load("lat=47&lng=-122&z=10")))
+    expect(viewKey(load("state=WA&location=x&types=shop&retailer=QFC"))).toBe(viewKey(load("state=WA")))
   })
 })

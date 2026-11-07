@@ -63,6 +63,9 @@ describe("getLocationsInBbox", () => {
         { machineId: "SEA2", retailer: "Fred Meyer", state: "WA", geog: { lng: -122.36, lat: 47.66 } },
         { name: "Card shop", kind: "shop", state: "WA", geog: { lng: -122.3, lat: 47.6 } },
         { machineId: "TAC1", retailer: "Safeway", state: "WA", geog: { lng: -122.44, lat: 47.25 } },
+        // Just past the box's west and east edges, where a spherical box test bows out.
+        { machineId: "WEST", retailer: "Bainbridge", state: "WA", geog: { lng: -122.5, lat: 47.6 } },
+        { machineId: "EAST", retailer: "Bellevue", state: "WA", geog: { lng: -122.17, lat: 47.6 } },
         { machineId: "SEAOFF", retailer: "Closed", state: "WA", geog: { lng: -122.33, lat: 47.62 }, isActive: false },
       ])
   }
