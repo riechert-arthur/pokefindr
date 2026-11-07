@@ -43,10 +43,19 @@ AccordionTrigger.displayName = AccordionPrimitive.Trigger.displayName
 const AccordionContent = React.forwardRef<
   React.ElementRef<typeof AccordionPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Content>
->(({ className, children, ...props }, ref) => (
+>(({ className, children, forceMount, ...props }, ref) => (
   <AccordionPrimitive.Content
     ref={ref}
-    className="overflow-hidden text-sm data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
+    forceMount={forceMount}
+    className={cn(
+      "overflow-hidden text-sm",
+      // Mounted while closed (text in the HTML): hide it, since Radix doesn't.
+      // No height animation then: Radix can't measure content that's always
+      // mounted, so it would jump open after a blank pause.
+      forceMount
+        ? "data-[state=closed]:hidden"
+        : "data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
+    )}
     {...props}
   >
     <div className={cn("pb-4 pt-0", className)}>{children}</div>

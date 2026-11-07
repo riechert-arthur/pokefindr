@@ -52,8 +52,11 @@ const AffiliateBanner: React.FC = () => {
           aria-label="Close ad"
           className="
             absolute
-            top-1
-            left-2
+            top-0.5
+            left-1
+            grid
+            size-6
+            place-items-center
             text-muted-foreground
             hover:text-foreground
             text-2xl
