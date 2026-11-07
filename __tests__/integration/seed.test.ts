@@ -40,11 +40,13 @@ describe("seedLocations", () => {
 })
 
 describe("seedSampleHighlights", () => {
-  it("adds the sample events once, upcoming and labelled as samples", async () => {
+  it("replaces the sample events with upcoming ones, labelled as samples, and leaves real ones alone", async () => {
+    await seedSampleHighlights(sql, new Date("2026-01-01T15:00:00Z"))
+    await sql`insert into highlights (kind, title, starts_at, geog, is_sample) values ('event', 'Real show', '2026-01-10T18:00:00Z', st_setsrid(st_makepoint(0, 0), 4326)::geography, false)`
     const now = new Date("2026-11-07T15:00:00Z")
     expect(await seedSampleHighlights(sql, now)).toBe(SAMPLE_EVENTS.length)
-    expect(await seedSampleHighlights(sql, now)).toBe(0)
-    const rows = await sql<{ title: string; starts_at: Date; is_sample: boolean }[]>`select title, starts_at, is_sample from highlights order by starts_at`
+    expect((await sql`select title from highlights where not is_sample`).map((r) => r.title)).toEqual(["Real show"])
+    const rows = await sql<{ title: string; starts_at: Date; is_sample: boolean }[]>`select title, starts_at, is_sample from highlights where is_sample order by starts_at`
     expect(rows.map((r) => r.title)).toEqual(["Card show", "League challenge", "Restock weekend"])
     expect(rows.every((r) => r.is_sample && r.starts_at > now)).toBe(true)
   })

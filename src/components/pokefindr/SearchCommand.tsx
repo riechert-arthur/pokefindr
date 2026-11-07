@@ -80,14 +80,17 @@ export function SearchCommand({
   const [focused, setFocused] = useState(false)
   // Escape or a pick closes the list until the next keystroke.
   const [dismissed, setDismissed] = useState(false)
-  // The highlighted item, by id: the first one whenever the results change.
+  // The highlighted item, by id: the first one whenever the list changes
+  // (new ids), but not when the same items update (counts arriving).
   const [selected, setSelected] = useState("")
   // Enter (or Search) before the results arrived: pick the first when they do.
   const [pending, setPending] = useState(false)
 
   const searchable = query.trim().length >= minLength
   const firstId = items[0]?.id ?? ""
-  useEffect(() => setSelected(firstId), [firstId, items])
+  const idsKey = items.map((i) => i.id).join("\n")
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => setSelected(firstId), [idsKey])
 
   const pick = (id: string) => {
     setPending(false)

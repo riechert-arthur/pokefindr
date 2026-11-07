@@ -99,6 +99,24 @@ describe("useSearch", () => {
     expect(calls.some((u) => u.pathname === "/api/locations/search")).toBe(false)
   })
 
+  it("filters by the map's retailers and counts with the radius a pick opens", async () => {
+    const calls = mockApi({
+      "/api/geocode": () => ({ results: [DENVER, COLORADO] }),
+      "/api/locations/search": () => ({ type: "FeatureCollection", features: [] }),
+      "/api/locations/counts": () => ({ counts: [4] }),
+      "/api/locations/aggregates": () => ({ counts: [{ country: "US", region: "CO", kind: "vending", count: 60 }] }),
+    })
+    const { result } = renderHook(() => useSearch("Denver", { locations: true, retailers: ["King Soopers"], radius: 25 }))
+    await settle()
+    const counts = calls.find((u) => u.pathname === "/api/locations/counts")!
+    expect(counts.searchParams.get("retailer")).toBe("King Soopers")
+    expect(counts.searchParams.get("r")).toBe("25")
+    expect(calls.find((u) => u.pathname === "/api/locations/search")!.searchParams.get("retailer")).toBe("King Soopers")
+    // The region counts aren't by retailer: a filtered state goes uncounted.
+    expect(result.current.areas.map((a) => a.count)).toEqual([4, null])
+    expect(calls.some((u) => u.pathname === "/api/locations/aggregates")).toBe(false)
+  })
+
   it("sends only the last query when typing fast", async () => {
     const calls = mockApi({ "/api/geocode": (u) => ({ results: [{ ...DENVER, label: u.searchParams.get("q") }] }), "/api/locations/counts": () => ({ counts: [1] }) })
     const { result, rerender } = renderHook(({ q }) => useSearch(q), { initialProps: { q: "De" } })
