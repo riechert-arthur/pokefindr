@@ -17,6 +17,7 @@ import { useSessionContext } from "../providers/SessionProvider"
 import { useIsDark } from "@/lib/design/useThemeKey"
 import { MapStatus } from "./MapStatus"
 import { MAP_FAILURE_MESSAGES } from "./MapErrorBoundary"
+import { INITIAL_LOAD_STATE, nextLoadState, type MapLoadState } from "./mapLoadState"
 
 interface ViewState {
   longitude: number
@@ -43,8 +44,8 @@ const MapInstance: FC = () => {
   // MapInstance is client-only (MapLoader uses ssr: false), so this is right on first render.
   const isDark = useIsDark()
   const collection = useLocations()
-  // "loading" until the style and first tiles are in; "failed" if that never happens.
-  const [loadState, setLoadState] = useState<"loading" | "loaded" | "failed">("loading")
+  // Loading until MapLibre's load event; failed if the map can't start (see nextLoadState).
+  const [loadState, setLoadState] = useState<MapLoadState>(INITIAL_LOAD_STATE)
 
   useEffect(() => {
     if (userLocation && !userLocationError && mapRef.current) {
@@ -83,12 +84,11 @@ const MapInstance: FC = () => {
           position: "relative",
         }}
         mapStyle={isDark ? MAP_STYLES.dark : MAP_STYLES.light}
-        onLoad={() => setLoadState("loaded")}
+        onLoad={() => setLoadState((state) => nextLoadState(state, { type: "load" }))}
         onError={(e) => {
           console.error("[map]", e.error)
-          // Errors after load (a missing tile, say) don't stop the map; one before
-          // load means the style or its sources didn't arrive.
-          setLoadState((current) => (current === "loading" ? "failed" : current))
+          const { sourceId, tile } = e as { sourceId?: string; tile?: unknown }
+          setLoadState((state) => nextLoadState(state, { type: "error", error: e.error, sourceId, tile }))
         }}
         onClick={() => {
           if(isSidebarOpen) {
@@ -112,9 +112,9 @@ const MapInstance: FC = () => {
           </div>
         )}
       </Map>
-      {loadState !== "loaded" && (
-        <MapStatus kind={loadState === "failed" ? "error" : "loading"} className="absolute inset-0 z-10">
-          {loadState === "failed" ? MAP_FAILURE_MESSAGES.library : "Loading the map…"}
+      {loadState.status !== "loaded" && (
+        <MapStatus kind={loadState.status === "failed" ? "error" : "loading"} className="absolute inset-0 z-10">
+          {loadState.status === "failed" ? MAP_FAILURE_MESSAGES[loadState.failure] : "Loading the map…"}
         </MapStatus>
       )}
     </>
