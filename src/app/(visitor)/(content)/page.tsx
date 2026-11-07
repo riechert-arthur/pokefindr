@@ -1,4 +1,5 @@
 import Head from "next/head"
+import { PHASE_PRODUCTION_BUILD } from "next/constants"
 import { FAQLoader } from "@/components/wrappers/FAQLoader"
 import { Hero, type HeroStats } from "@/components/landing/Hero"
 import { getRegionCounts } from "@/server/services/region-counts"
@@ -29,7 +30,12 @@ export const metadata = {
   }
 }
 
-/** Live counts for the hero, from the region counts view; the hero goes without them if the database is down. */
+/**
+ * Live counts for the hero, from the region counts view. A build (or dev)
+ * without a database renders the hero without them. A failure while
+ * revalidating in production throws instead, so Next keeps serving the last
+ * good page rather than caching one without stats for an hour.
+ */
 async function heroStats(): Promise<HeroStats | null> {
   try {
     const counts = await getRegionCounts()
@@ -39,7 +45,8 @@ async function heroStats(): Promise<HeroStats | null> {
       states: new Set(vending.filter((c) => c.region && c.count > 0).map((c) => c.region)).size,
     }
   } catch (err) {
-    console.error("[landing] couldn't load the counts", err)
+    if (process.env.NODE_ENV === "production" && process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD) throw err
+    console.error("[landing] couldn't load the counts; building the page without them", err)
     return null
   }
 }

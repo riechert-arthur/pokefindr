@@ -219,8 +219,8 @@ export function SearchCommand({
           }}
           className="w-[var(--radix-popover-trigger-width)] rounded-lg p-1"
         >
-          {/* At most 20rem, and never past the space the popover has (less the footer). */}
-          <CommandList className="max-h-[min(20rem,calc(var(--radix-popover-content-available-height)-3.5rem))]">
+          {/* At most 20rem, and never past the space the popover has (less the footer, shown from sm up). */}
+          <CommandList className="max-h-[min(20rem,calc(var(--radix-popover-content-available-height)-0.5rem))] sm:max-h-[min(20rem,calc(var(--radix-popover-content-available-height)-3.5rem))]">
             <CommandPrimitive.Empty className="px-2.5 py-3.5 text-body text-muted-foreground">
               {status === "error" ? (
                 "Search isn't working right now. Try again in a moment."
