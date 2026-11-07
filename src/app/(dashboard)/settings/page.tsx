@@ -6,6 +6,7 @@ import { MenuIcon } from "lucide-react"
 import { ThemeToggle } from "@/components/pokefindr/ThemeToggle"
 import axios from 'axios'
 import { useSidebar } from '@/components/providers/SidebarContextProvider'
+import { APP_NAV_ID } from '@/components/pokefindr/AppRail'
 import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { LoadSpinner } from '@/components/wrappers/LoadSpinner'
 import { useSessionContext } from '@/components/providers/SessionProvider'
@@ -70,10 +71,10 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className={`${isSidebarOpen ? 'ml-16' : ''} md:ml-16`}>
+    <div className={isSidebarOpen ? 'max-sm:ml-16' : undefined}>
       <header className="absolute inset-x-0 top-0 z-10 flex h-16 border-b border-border">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <button onClick={toggleSidebar} className="md:hidden mr-2 p-1 rounded" aria-label="Toggle menu">
+          <button onClick={toggleSidebar} className="sm:hidden mr-2 p-1 rounded" aria-label="Open navigation" aria-controls={APP_NAV_ID} aria-expanded={isSidebarOpen}>
             <MenuIcon className="size-6 text-muted-foreground hover:text-primary/80" />
           </button>
           <div />
