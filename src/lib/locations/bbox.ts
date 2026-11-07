@@ -11,7 +11,11 @@ export type Bbox = [west: number, south: number, east: number, north: number]
  */
 export const MAX_BBOX_AREA = 1500
 
-const coordinate = (min: number, max: number) => z.coerce.number().finite().min(min).max(max)
+/** A plain decimal number: no empty values (which would coerce to 0), hex or exponents. */
+const DECIMAL = /^-?\d+(\.\d+)?$/
+
+const coordinate = (min: number, max: number) =>
+  z.string().regex(DECIMAL, "must be a decimal number").transform(Number).pipe(z.number().min(min).max(max))
 
 const bboxSchema = z
   .string()

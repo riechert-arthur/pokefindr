@@ -182,6 +182,9 @@
 .maplibregl-map .maplibregl-ctrl-group {
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
+}
+/* maplibre-gl.css sets its ring on :not(:empty); match it so ours wins. */
+.maplibregl-map .maplibregl-ctrl-group:not(:empty) {
   box-shadow: var(--shadow-md);
 }
 .maplibregl-map .maplibregl-ctrl-group button + button {
@@ -258,6 +261,28 @@
 .maplibregl-map .maplibregl-ctrl[data-located] button.maplibregl-ctrl-geolocate .maplibregl-ctrl-icon {
   background-color: hsl(var(--me));
 }
+/* data-locating: set by LocateControl while it waits for a position. */
+.maplibregl-map .maplibregl-ctrl[data-locating] button.maplibregl-ctrl-geolocate .maplibregl-ctrl-icon {
+  animation: maplibregl-spin 2s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .maplibregl-map .maplibregl-ctrl[data-locating] button.maplibregl-ctrl-geolocate .maplibregl-ctrl-icon {
+    animation: none;
+    opacity: 0.5;
+  }
+}
+/* maplibre-gl.css (loaded later) gives the disabled icon its own image; drop it. */
 .maplibregl-map .maplibregl-ctrl button.maplibregl-ctrl-geolocate:disabled .maplibregl-ctrl-icon {
+  background-image: none;
   background-color: hsl(var(--muted-foreground));
+}
+/* Forced colors repaint backgrounds, which would hide the masked icon. */
+@media (forced-colors: active) {
+  .maplibregl-map .maplibregl-ctrl button.maplibregl-ctrl-geolocate .maplibregl-ctrl-icon {
+    forced-color-adjust: none;
+    background-color: ButtonText;
+  }
+  .maplibregl-map .maplibregl-ctrl button.maplibregl-ctrl-geolocate:disabled .maplibregl-ctrl-icon {
+    background-color: GrayText;
+  }
 }

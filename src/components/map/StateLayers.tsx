@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils"
  * The basemap layer the shading goes under (see shadingBeforeId), re-read
  * whenever the style changes. Undefined until the style has layers.
  */
-function useFirstLabelLayer(): string | undefined {
+export function useFirstLabelLayer(): string | undefined {
   const { current: map } = useMap()
   const [id, setId] = useState<string | undefined>()
   useEffect(() => {
