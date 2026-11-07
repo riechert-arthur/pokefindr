@@ -229,8 +229,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
       const { camera } = initialMapView(next)
       if ("bounds" in camera) {
         // An explicit `maxZoom: undefined` breaks the fit (NaN center); leave it out instead.
-        // A place or a state opens its list in the panel.
-        const padding = pad((next.lat != null && next.lng != null) || !!next.state)
+        // Every view has a list in the panel: a place's results, a state's cities, the US highlights.
+        const padding = pad(true)
         map.fitBounds(camera.bounds, camera.maxZoom === undefined ? { padding, duration: 1000 } : { padding, maxZoom: camera.maxZoom, duration: 1000 })
       }
       else map.flyTo({ center: [camera.longitude, camera.latitude], zoom: camera.zoom, duration: 1000 })
@@ -364,7 +364,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     if (!params.q && !params.state && !params.near) return
     dispatch({ type: "closeDetails" })
     writeView({ q: null, lat: null, lng: null, r: null, z: null, state: null, near: null, location: null }, { history: "push" })
-    mapRef.current?.fitBounds(US_BOUNDS, { padding: pad(), duration: 1400 })
+    mapRef.current?.fitBounds(US_BOUNDS, { padding: pad(true), duration: 1400 })
   }
 
   /** Details are a new view: a new history entry, so Back closes them. */
@@ -437,8 +437,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
           // An explicit `maxZoom: undefined` overrides MapLibre's default and breaks the fit.
           fitBoundsOptions:
             camera.maxZoom === undefined
-              ? { padding: cameraPadding(undefined, { sheet: !!place || !!stateFocus }) }
-              : { padding: cameraPadding(undefined, { sheet: !!place || !!stateFocus }), maxZoom: camera.maxZoom },
+              ? { padding: cameraPadding(undefined, { sheet: true }) }
+              : { padding: cameraPadding(undefined, { sheet: true }), maxZoom: camera.maxZoom },
         }
       : camera
 
