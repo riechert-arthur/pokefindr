@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { getDb } from "@/server/db/client"
 import { locations } from "@/server/db/schema"
-import { getActiveLocationsGeoJSON, getLocationFeature, getLocationsInBbox } from "@/server/services/locations"
+import { countLocationsNear, getActiveLocationsGeoJSON, getLocationFeature, getLocationsInBbox, searchLocations } from "@/server/services/locations"
 import type { Bbox } from "@/lib/locations/bbox"
 
 describe("getActiveLocationsGeoJSON", () => {
@@ -111,5 +111,77 @@ describe("getLocationFeature", () => {
     expect(await getLocationFeature(off.id)).toBeNull()
     expect(await getLocationFeature("00000000-0000-0000-0000-000000000000")).toBeNull()
     expect(await getLocationFeature("not-a-uuid")).toBeNull()
+  })
+})
+
+describe("countLocationsNear", () => {
+  // Downtown Seattle; Tacoma is ~25 mi south.
+  const seattle = [-122.335, 47.608] as const
+  const tacoma = [-122.444, 47.253] as const
+
+  it("counts active locations of the given kinds within the radius of each point", async () => {
+    await getDb()
+      .insert(locations)
+      .values([
+        { machineId: "S1", retailer: "QFC", geog: { lng: -122.33, lat: 47.61 } },
+        { machineId: "S2", retailer: "Safeway", geog: { lng: -122.3, lat: 47.66 } }, // ~4.5 mi
+        { name: "Card shop", kind: "shop", geog: { lng: -122.34, lat: 47.6 } },
+        { machineId: "SOFF", retailer: "Closed", geog: { lng: -122.33, lat: 47.61 }, isActive: false },
+        { machineId: "T1", retailer: "Fred Meyer", geog: { lng: -122.44, lat: 47.25 } },
+      ])
+    expect(await countLocationsNear([seattle, tacoma, [0, 0]], 10, ["vending", "shop", "event"])).toEqual([3, 1, 0])
+    expect(await countLocationsNear([seattle], 10, ["vending"])).toEqual([2])
+    expect(await countLocationsNear([seattle], 5, ["vending"])).toEqual([2])
+    // Tacoma is ~25.1 mi away: outside 25, inside 50.
+    expect(await countLocationsNear([seattle], 25, ["vending"])).toEqual([2])
+    expect(await countLocationsNear([seattle], 50, ["vending"])).toEqual([3])
+    expect(await countLocationsNear([seattle], 10, [])).toEqual([0])
+    expect(await countLocationsNear([], 10, ["vending"])).toEqual([])
+    // A retailer filter narrows vending machines only, as the map's `retailer=` does.
+    expect(await countLocationsNear([seattle], 10, ["vending", "shop"], ["QFC"])).toEqual([2])
+    expect(await countLocationsNear([seattle], 10, ["vending"], ["Safeway", "QFC"])).toEqual([2])
+  })
+})
+
+describe("searchLocations", () => {
+  async function seed() {
+    await getDb()
+      .insert(locations)
+      .values([
+        { machineId: "K1", retailer: "King Soopers", address: "1155 E 9th Ave", city: "Denver", state: "CO", geog: { lng: -104.97, lat: 39.73 } },
+        { machineId: "K2", retailer: "King Soopers", address: "3050 E 3rd Ave", city: "Denver", state: "CO", geog: { lng: -104.95, lat: 39.72 } },
+        { machineId: "K3", retailer: "Kroger", address: "1592 S Loop 288", city: "Denton", state: "TX", geog: { lng: -97.1, lat: 33.2 } },
+        { machineId: "K4", retailer: "Kroger", address: "100% Main St", city: "Dallas", state: "TX", geog: { lng: -96.8, lat: 32.8 } },
+        { name: "Den of Cards", kind: "shop", address: "1 Pearl St", city: "Boulder", state: "CO", geog: { lng: -105.27, lat: 40.01 } },
+        { machineId: "KOFF", retailer: "King Soopers", city: "Denver", geog: { lng: -104.97, lat: 39.73 }, isActive: false },
+      ])
+  }
+  const names = (fc: { features: { properties: { retailer: string; city: string } }[] }) => fc.features.map((f) => `${f.properties.retailer} ${f.properties.city}`)
+
+  it("matches the retailer or name, address and city, case-insensitively", async () => {
+    await seed()
+    const all = ["vending", "shop", "event"] as const
+    expect(names(await searchLocations({ q: "king", types: all }))).toEqual(["King Soopers Denver", "King Soopers Denver"])
+    expect(names(await searchLocations({ q: "den", types: all })).sort()).toEqual(
+      ["Den of Cards Boulder", "King Soopers Denver", "King Soopers Denver", "Kroger Denton"].sort(),
+    )
+    expect(names(await searchLocations({ q: "loop 288", types: all }))).toEqual(["Kroger Denton"])
+    expect(names(await searchLocations({ q: "k3", types: all }))).toEqual(["Kroger Denton"])
+  })
+
+  it("filters by kind, ranks by distance from `near`, and limits", async () => {
+    await seed()
+    expect(names(await searchLocations({ q: "den", types: ["shop"] }))).toEqual(["Den of Cards Boulder"])
+    expect(names(await searchLocations({ q: "kroger", types: ["vending"], near: [-96.8, 32.8] }))).toEqual(["Kroger Dallas", "Kroger Denton"])
+    expect(names(await searchLocations({ q: "kroger", types: ["vending"], near: [-97.1, 33.2], limit: 1 }))).toEqual(["Kroger Denton"])
+    expect(names(await searchLocations({ q: "den", types: ["vending", "shop"], retailers: ["Kroger"] })).sort()).toEqual(["Den of Cards Boulder", "Kroger Denton"])
+  })
+
+  it("treats % and _ as plain characters", async () => {
+    await seed()
+    expect(names(await searchLocations({ q: "100%", types: ["vending"] }))).toEqual(["Kroger Dallas"])
+    // Only the address with a literal %, not every location.
+    expect(names(await searchLocations({ q: "%", types: ["vending"] }))).toEqual(["Kroger Dallas"])
+    expect(names(await searchLocations({ q: "_", types: ["vending"] }))).toEqual([])
   })
 })

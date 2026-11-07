@@ -17,7 +17,10 @@ import {
 import { useViewportLocations, type ViewportMap } from "./useViewportLocations"
 import { MapStatusPill } from "./MapStatusPill"
 import { LocateControl } from "./LocateControl"
-import { MapSearchBar } from "./MapSearchBar"
+import { MenuIcon } from "lucide-react"
+import { PlaceSearch, type PlacePick } from "@/components/search/PlaceSearch"
+import { APP_NAV_ID } from "@/components/pokefindr/AppRail"
+import { Button } from "@/components/ui/button"
 import { type LocationFeature, type LocationFeatureProperties, type LocationKind } from "@/lib/types/locations"
 import { useLocations } from "./useLocations"
 import { LocationPopup, type LocationPopupProps } from "./LocationPinPopUps"
@@ -35,8 +38,9 @@ import { StateLegend } from "./StateLayers"
 import { MapShading } from "./MapShading"
 import { useStateShading } from "./useStateShading"
 import { cn } from "@/lib/utils"
-import { boundsOfRadius, milesBetween, radiusCircle } from "@/lib/map/geo"
-import { DEFAULT_RADIUS, loadMapSearchParams, mapSearchParams, nearMeParams, roundCamera, roundZoom, type MapSearchParams } from "@/lib/map/url-state"
+import { boundsOfRadius, milesBetween, radiusCircle, US_BOUNDS } from "@/lib/map/geo"
+import { STATES } from "@/lib/map/states"
+import { DEFAULT_RADIUS, loadMapSearchParams, mapSearchParams, nearMeParams, roundCamera, roundPlace, roundZoom, type MapSearchParams } from "@/lib/map/url-state"
 import { initialMapView, shownKinds, viewKey, type InitialMapView } from "@/lib/map/initial-view"
 import { INITIAL_LOAD_STATE, nextLoadState, type MapLoadState } from "./mapLoadState"
 
@@ -47,6 +51,10 @@ const toSelected = (feat: LocationFeature): SelectedLocation => {
   const { id, retailer, address, city, state, machineID, kind } = feat.properties
   return { longitude, latitude, id, retailer, address, city, state, machineID, kind }
 }
+
+/** What the search box shows for the URL's view: the place, the state, or "Your location". */
+const searchLabel = (params: MapSearchParams): string =>
+  params.near === "me" ? "Your location" : params.q ? params.q : params.state && Object.hasOwn(STATES, params.state) ? STATES[params.state].name : ""
 
 /** How long the map must be still before its camera goes into the URL. */
 const CAMERA_URL_DEBOUNCE_MS = 500
@@ -130,6 +138,11 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     }
   }, [viewport.features, retailers, place])
 
+  // The search box's text: the view's label, until the viewer types.
+  const [query, setQuery] = useState(() => searchLabel(params))
+  // Where search ranks nearby results first: the map's center once zoomed in, to ~10 km.
+  const [searchNear, setSearchNear] = useState<[number, number] | undefined>()
+
   const [zoomedOut, setZoomedOut] = useState(true)
   // Loading until MapLibre's load event; failed if the map can't start (see nextLoadState).
   const [loadState, setLoadState] = useState<MapLoadState>(INITIAL_LOAD_STATE)
@@ -148,6 +161,23 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     const feature = knownLocations.get(params.location)
     if (feature) dispatch({ type: "showDetails", location: toSelected(feature) })
   }, [params.location, knownLocations])
+
+  // A new view (a pick, Back or Forward) puts its label in the search box.
+  // Keyed on the label, so a pan (a camera-only URL write) keeps what the
+  // viewer typed.
+  // A pan that drops `state=` changes the label too, but the viewer may be
+  // typing: then keep their text.
+  const viewLabel = searchLabel(params)
+  const shownLabel = useRef(viewLabel)
+  const leftStateByPan = useRef(false)
+  useEffect(() => {
+    const keepTyped = leftStateByPan.current
+    // Read now: the updater runs later, after the ref has moved on.
+    const previous = shownLabel.current
+    leftStateByPan.current = false
+    shownLabel.current = viewLabel
+    setQuery((q) => (keepTyped && q !== previous ? q : viewLabel))
+  }, [viewLabel])
 
   // Back and Forward: when the URL's view (place, state, camera) changes, move
   // the map to it. The key of the view the map shows changes only on load, on
@@ -234,12 +264,45 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   /** A dot was clicked: popup and ring, without moving the map. */
   const handleDotSelect = select
 
-  /** A search result was picked: fly to it, then popup and ring. */
-  const handleSearchSelect = (feat: LocationFeature) => {
-    const [lng, lat] = feat.geometry.coordinates
+  /**
+   * A search result was picked, as in the prototype's choosePlace: an area
+   * becomes the place (radius) or the state in the URL, a new history entry,
+   * and the map flies there; a location opens its details.
+   */
+  const handleSearchPick = (pick: PlacePick) => {
     const map = mapRef.current
-    map?.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14), duration: 1200 })
-    select(feat)
+    if (pick.type === "location") {
+      const feat = pick.feature
+      const [lng, lat] = feat.geometry.coordinates
+      map?.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14), duration: 1200 })
+      dispatch({ type: "showDetails", location: toSelected(feat) })
+      void setParams({ location: feat.properties.id }, { history: "push" }).then((search) => {
+        pushedDetails.current = search.toString()
+      })
+      return
+    }
+    const { area } = pick
+    if (area.kind === "state" && area.state && Object.hasOwn(STATES, area.state)) {
+      handleStateSelect(area.state)
+      map?.fitBounds(STATES[area.state].bounds, { padding: 40, maxZoom: 7.5, duration: 1400 })
+      return
+    }
+    dispatch({ type: "closeDetails" })
+    const r = params.r ?? DEFAULT_RADIUS
+    writeView(
+      { q: area.label, lng: roundPlace(area.lng), lat: roundPlace(area.lat), r, state: null, z: null, near: null, location: null },
+      { history: "push" },
+    )
+    map?.fitBounds(boundsOfRadius(area.lng, area.lat, r), { padding: 40, maxZoom: 13, duration: 1400 })
+  }
+
+  /** The search box's ✕: back to the whole US, as a new view. */
+  const handleSearchClear = () => {
+    setQuery("")
+    if (!params.q && !params.state && !params.near) return
+    dispatch({ type: "closeDetails" })
+    writeView({ q: null, lat: null, lng: null, r: null, z: null, state: null, near: null, location: null }, { history: "push" })
+    mapRef.current?.fitBounds(US_BOUNDS, { padding: 40, duration: 1400 })
   }
 
   /** Details are a new view: a new history entry, so Back closes them. */
@@ -278,6 +341,9 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
    * history doesn't fill with pans), unless a place or state names the view.
    */
   const handleMoveEnd = (e: ViewStateChangeEvent) => {
+    const { longitude: lng, latitude: lat, zoom: z } = e.viewState
+    const near: [number, number] | undefined = z >= POINT_ZOOM ? [Math.round(lng * 10) / 10, Math.round(lat * 10) / 10] : undefined
+    setSearchNear((prev) => (prev?.[0] === near?.[0] && prev?.[1] === near?.[1] ? prev : near))
     if (!userMoving.current) return
     userMoving.current = false
     // A place's radius (or near=me) still frames the results, so it stays.
@@ -285,6 +351,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     // Panning away from a state makes the camera the view, so a copied link
     // opens where the viewer is looking.
     const { longitude, latitude, zoom } = e.viewState
+    if (params.state) leftStateByPan.current = true
     writeView(
       { state: null, lat: roundCamera(latitude), lng: roundCamera(longitude), z: roundZoom(zoom) },
       { limitUrlUpdates: debounce(CAMERA_URL_DEBOUNCE_MS) },
@@ -360,7 +427,36 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         <FullscreenControl position="bottom-right" />
         <LocateControl onLocate={handleLocate} onError={handleLocateError} autoLocate={view.nearMe} />
         <NavigationControl position="bottom-right" showCompass={false} />
-        <MapSearchBar selectedLocation={selected} collection={collection} onSelect={handleSearchSelect} />
+        {/* The left panel, as in the prototype: search first. */}
+        <div className="pointer-events-none absolute inset-x-2 top-2 z-10 flex flex-col gap-2 sm:inset-x-auto sm:left-3 sm:top-3 sm:w-[360px]">
+          <PlaceSearch
+            className="pointer-events-auto"
+            query={query}
+            onQueryChange={setQuery}
+            onPick={handleSearchPick}
+            onClear={handleSearchClear}
+            placeholder="Search city or address"
+            kinds={kinds}
+            retailers={retailers ?? undefined}
+            radius={placeRadius}
+            near={searchNear}
+            locations
+            leading={
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={toggleSidebar}
+                className="-ml-1.5 size-8 shrink-0 sm:hidden"
+                aria-label="Open navigation"
+                aria-controls={APP_NAV_ID}
+                aria-expanded={isSidebarOpen}
+              >
+                <MenuIcon className="size-5" aria-hidden />
+              </Button>
+            }
+          />
+        </div>
         {selected && popup && (
           <LocationPopup
             {...selected}

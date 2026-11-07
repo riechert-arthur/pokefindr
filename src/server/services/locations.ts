@@ -18,12 +18,14 @@ async function queryFeatures(
   db: Database,
   where: SQL = sql`true`,
   limit?: number,
+  // Unqualified columns, so it applies to both CTEs below.
+  orderBy: SQL = sql`"machineID", id`,
 ): Promise<LocationFeatureCollection> {
   const rows = await db.execute<{ fc: LocationFeatureCollection }>(sql`
     with matched as (
       select l.* from ${locations} l
       where l.is_active and l.geog is not null and ${where}
-      order by l."machineID", l.id
+      order by ${orderBy}
       ${limit === undefined ? sql`` : sql`limit ${limit + 1}`}
     ),
     page as (
@@ -48,7 +50,7 @@ async function queryFeatures(
               'kind', p.kind
             )
           )
-          order by p."machineID", p.id
+          order by ${orderBy}
         )
         from page p
       ), '[]'::json),
@@ -66,6 +68,81 @@ export async function getActiveLocationsGeoJSON(
   db: Database = getDb(),
 ): Promise<LocationFeatureCollection> {
   return queryFeatures(db)
+}
+
+/** Miles to meters, for PostGIS distances on geography. */
+export const METERS_PER_MILE = 1609.344
+
+const kindsIn = (types: readonly LocationKind[]) => sql.join(types.map((t) => sql`${t}`), sql`, `)
+/** Vending machines of these retailers only (other kinds aren't filtered), as the map's `retailer=` does. Empty means all. */
+const retailerIn = (retailers: readonly string[]) =>
+  retailers.length ? sql`and (l.kind <> 'vending' or coalesce(l.retailer, l.name) in (${sql.join(retailers.map((r) => sql`${r}`), sql`, `)}))` : sql``
+const pointOf = ([lng, lat]: readonly [number, number]) => sql`ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography`
+
+/**
+ * How many active locations of `types` lie within `radiusMiles` of each
+ * point, in the same order: the counts beside each area in the search list.
+ * One query; the GiST index on `geog` answers each ST_DWithin.
+ */
+export async function countLocationsNear(
+  points: readonly (readonly [number, number])[],
+  radiusMiles: number,
+  types: readonly LocationKind[],
+  retailers: readonly string[] = [],
+  db: Database = getDb(),
+): Promise<number[]> {
+  if (points.length === 0) return []
+  if (types.length === 0) return points.map(() => 0)
+  const values = sql.join(points.map(([lng, lat], i) => sql`(${i}::int, ${lng}::float8, ${lat}::float8)`), sql`, `)
+  const rows = await db.execute<{ i: number; n: number }>(sql`
+    select p.i, count(l.id)::int as n
+    from (values ${values}) as p(i, lng, lat)
+    left join ${locations} l
+      on l.is_active and l.kind in (${kindsIn(types)})
+      and ST_DWithin(l.geog, ST_SetSRID(ST_MakePoint(p.lng, p.lat), 4326)::geography, ${radiusMiles * METERS_PER_MILE})
+      ${retailerIn(retailers)}
+    group by p.i
+  `)
+  const counts = points.map(() => 0)
+  for (const { i, n } of rows) counts[i] = n
+  return counts
+}
+
+export interface LocationSearch {
+  /** Matched against the retailer or name, address and city; a machine id must match exactly. */
+  q: string
+  types: readonly LocationKind[]
+  /** [lng, lat]: closest first. Without it, by retailer. */
+  near?: readonly [number, number]
+  /** Vending retailers to keep, as in the map's URL; empty means all. */
+  retailers?: readonly string[]
+  limit?: number
+}
+
+/** `%` and `_` are wildcards in LIKE; a search for them means the characters. */
+const likeEscape = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`)
+
+/** Active locations whose retailer, name, address or city contains `q`: the search list's Locations group. */
+export async function searchLocations(
+  { q, types, near, retailers = [], limit = 5 }: LocationSearch,
+  db: Database = getDb(),
+): Promise<LocationFeatureCollection> {
+  const term = q.trim()
+  if (types.length === 0 || term === "") return { type: "FeatureCollection", features: [] }
+  const like = `%${likeEscape(term)}%`
+  const fc = await queryFeatures(
+    db,
+    sql`l.kind in (${kindsIn(types)}) and (
+      coalesce(l.retailer, l.name, '') ilike ${like}
+      or l.address ilike ${like}
+      or l.city ilike ${like}
+      or l."machineID" = ${term.toUpperCase()}
+    ) ${retailerIn(retailers)}`,
+    limit,
+    near ? sql`ST_Distance(geog, ${pointOf(near)}), id` : sql`coalesce(retailer, name), city, id`,
+  )
+  delete fc.truncated
+  return fc
 }
 
 export interface BboxQuery {
@@ -88,11 +165,10 @@ export async function getLocationsInBbox(
 ): Promise<LocationFeatureCollection> {
   if (types.length === 0) return { type: "FeatureCollection", features: [], truncated: false }
   const [west, south, east, north] = bbox
-  const kinds = sql.join(types.map((t) => sql`${t}`), sql`, `)
   return queryFeatures(
     db,
     sql`l.geog::geometry && ST_MakeEnvelope(${west}, ${south}, ${east}, ${north}, 4326)
-      and l.kind in (${kinds})`,
+      and l.kind in (${kindsIn(types)})`,
     limit,
   )
 }

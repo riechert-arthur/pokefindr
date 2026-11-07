@@ -14,7 +14,7 @@ export const MAX_BBOX_AREA = 1500
 /** A plain decimal number: no empty values (which would coerce to 0), hex or exponents. */
 const DECIMAL = /^-?\d+(\.\d+)?$/
 
-const coordinate = (min: number, max: number) =>
+export const coordinate = (min: number, max: number) =>
   z.string().regex(DECIMAL, "must be a decimal number").transform(Number).pipe(z.number().min(min).max(max))
 
 const bboxSchema = z
@@ -30,6 +30,15 @@ const typesSchema = z
   .transform((s) => (s === "" ? [] : [...new Set(s.split(","))]))
   .pipe(z.array(z.enum(LOCATION_KINDS)))
 
+/** `types=vending,shop`: every kind when absent, none when empty. */
+export const kindsParam = typesSchema.optional().transform((t): LocationKind[] => t ?? [...LOCATION_KINDS])
+
+/** `lng,lat` as plain decimals in range. */
+export const pointParam = z
+  .string()
+  .transform((s) => s.split(","))
+  .pipe(z.tuple([coordinate(-180, 180), coordinate(-90, 90)]))
+
 /**
  * Query parameters for GET /api/locations?bbox=…&types=…
  * - `bbox`: west,south,east,north in degrees.
@@ -37,7 +46,7 @@ const typesSchema = z
  */
 export const bboxQuerySchema = z.object({
   bbox: bboxSchema,
-  types: typesSchema.optional().transform((t): LocationKind[] => t ?? [...LOCATION_KINDS]),
+  types: kindsParam,
 })
 
 export type BboxQueryParams = z.infer<typeof bboxQuerySchema>

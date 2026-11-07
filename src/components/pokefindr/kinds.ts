@@ -63,3 +63,15 @@ export const formatCount = (n: number) => n.toLocaleString("en-US")
 export function countLabel(kind: LocationKind, n: number): string {
   return `${formatCount(n)} ${n === 1 ? KINDS[kind].one : KINDS[kind].many}`
 }
+
+/**
+ * "12 vending machines" when one kind is shown, "12 places" otherwise.
+ * `more` marks a capped count: "2,000+ places".
+ */
+export function placesLabel(n: number, kinds: readonly LocationKind[], more = false): string {
+  const label = kinds.length === 1 ? countLabel(kinds[0], n) : `${formatCount(n)} place${n === 1 ? "" : "s"}`
+  return more ? label.replace(formatCount(n), `${formatCount(n)}+`) : label
+}
+
+/** "Vending machine": one of a kind, capitalized, for labels. */
+export const kindName = (kind: LocationKind) => KINDS[kind].one.charAt(0).toUpperCase() + KINDS[kind].one.slice(1)
