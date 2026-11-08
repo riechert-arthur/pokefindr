@@ -59,7 +59,7 @@ async function getJson<T>(url: string, signal: AbortSignal): Promise<T> {
  * `retailers` (the map's filter), plus each state's bounds for zooming to
  * it. `states` is null until both have loaded; if either fails, the map just
  * goes without shading. A new retailer filter keeps the old counts until
- * the new ones arrive.
+ * the new ones arrive, and drops them if those fail.
  */
 export function useStateShading(kinds: ReadonlySet<LocationKind>, retailers: readonly string[] | null = null) {
   const [outlines, setOutlines] = useState<StateCollection | null>(null)
@@ -82,7 +82,10 @@ export function useStateShading(kinds: ReadonlySet<LocationKind>, retailers: rea
     getJson<{ counts: RegionCount[] }>(url, controller.signal)
       .then((agg) => setCounts(agg.counts))
       .catch((err: unknown) => {
-        if (!controller.signal.aborted) console.error("[map] couldn't load state shading", err)
+        if (controller.signal.aborted) return
+        console.error("[map] couldn't load state shading", err)
+        // Counts for another filter would contradict the dots: go without.
+        setCounts(null)
       })
     return () => controller.abort()
   }, [retailer])
