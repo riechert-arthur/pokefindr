@@ -27,6 +27,8 @@ export const MAX_PLACES = 10
 /** Most stops a route orders. */
 export const MAX_STOPS = 9
 export const MAX_RADIUS_MILES = 50
+/** Events are few and people travel for them: a wider circle. */
+export const MAX_EVENT_RADIUS_MILES = 250
 
 export interface ToolContext {
   db: Database
@@ -74,7 +76,8 @@ const STATE_NAMES = new Map(Object.entries(STATES).map(([code, s]) => [s.name.to
 export async function resolveWhere(text: string, ctx: ToolContext): Promise<Where> {
   const q = text.trim()
   if (!q) throw new ToolInputError("Say where: a US city, a state, or 'me'.")
-  if (ME.test(q)) {
+  // "ME" in capitals is Maine's code; "me" (any other case) is the viewer.
+  if (ME.test(q) && q !== "ME") {
     if (!ctx.viewer) throw new ToolInputError("The viewer hasn't shared a location. Ask for a city, or ask them to use the map's location button.")
     return { kind: "point", lng: ctx.viewer.lng, lat: ctx.viewer.lat, label: "you" }
   }
@@ -299,9 +302,11 @@ export const planRoute = tool({
 
 export const listEvents = tool({
   name: "list_events",
-  description: "List upcoming events (card shows, league nights, restocks), soonest or nearest first, optionally near a US city, in a state, or near 'me'.",
+  description:
+    "List upcoming events (card shows, league nights, restocks): soonest first anywhere or in a state, or nearest first within a radius of a US city or 'me'. The total counts the events in that area only.",
   input: z.object({
     near: z.string().max(120).optional().describe("A US city with its state, a state name or code (the whole state), or 'me'; omit for the soonest anywhere"),
+    radius_miles: z.number().min(1).max(MAX_EVENT_RADIUS_MILES).optional().describe(`Around a city or 'me': 1–${MAX_EVENT_RADIUS_MILES}, default 100`),
     limit: z.number().int().min(1).max(MAX_PLACES).optional().describe("Default 5, at most 10"),
   }),
   async run(input, ctx) {
@@ -320,12 +325,16 @@ export const listEvents = tool({
       ...(e.isSample ? { sample: true as const } : {}),
     }))
     if (where?.kind === "state") events = events.filter((e) => e.state === where.code)
+    const radiusMiles = input.radius_miles ?? 100
     if (where?.kind === "point")
-      events = events.map((e) => ({ ...e, miles: round1(milesBetween(where.lng, where.lat, e.lng, e.lat)) })).sort((a, b) => a.miles! - b.miles!)
+      events = events
+        .map((e) => ({ ...e, miles: round1(milesBetween(where.lng, where.lat, e.lng, e.lat)) }))
+        .filter((e) => e.miles! <= radiusMiles)
+        .sort((a, b) => a.miles! - b.miles!)
     const shown = events.slice(0, limit)
     return {
       data: {
-        ...(where ? { area: where.label, ...notesFor(where, false) } : {}),
+        ...(where ? { area: where.label, ...(where.kind === "point" ? { radius_miles: radiusMiles } : {}), ...notesFor(where, input.radius_miles !== undefined) } : {}),
         total: events.length,
         events: shown.map((e) => ({
           id: e.id,
@@ -338,7 +347,7 @@ export const listEvents = tool({
           ...(e.sample ? { sample_data: true } : {}),
         })),
       },
-      card: { type: "events", title: where ? `Events ${where.kind === "state" ? "in" : "nearest"} ${where.label}` : "Upcoming events", events: shown },
+      card: { type: "events", title: !where ? "Upcoming events" : where.kind === "state" ? `Events in ${where.label}` : `Events within ${radiusMiles} mi of ${where.label}`, events: shown },
     }
   },
 })
