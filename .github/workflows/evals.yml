@@ -69,8 +69,16 @@ jobs:
       - name: Check for eval credentials
         id: key
         run: |
-          if [ -n "$ANTHROPIC_FEDERATION_RULE_ID" ] || [ -n "$ANTHROPIC_API_KEY" ]; then echo "present=true" >> "$GITHUB_OUTPUT"
-          else echo "::notice::Neither ANTHROPIC_EVAL_FEDERATION_RULE_ID nor ANTHROPIC_EVAL_KEY is set; skipping the assistant eval."; fi
+          # Federation needs this job's GitHub OIDC token, which fork and Dependabot PRs don't get.
+          if [ -n "$ANTHROPIC_FEDERATION_RULE_ID" ] && [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          elif [ -n "$ANTHROPIC_API_KEY" ]; then
+            # Use the key instead: unset the federation settings, which would otherwise win.
+            { echo "ANTHROPIC_FEDERATION_RULE_ID="; echo "ANTHROPIC_ORGANIZATION_ID="; } >> "$GITHUB_ENV"
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::No eval credentials here (federation needs an OIDC token; ANTHROPIC_EVAL_KEY isn't set); skipping the assistant eval."
+          fi
       - if: steps.key.outputs.present == 'true'
         uses: actions/checkout@v4
       - name: Start PostGIS

@@ -50,7 +50,14 @@ export function setClaudeForTests(s: ClaudeStreamer | null) {
 /** The Claude client the assistant uses, or null when no key is configured. */
 export function getClaude(): ClaudeStreamer | null {
   if (streamerForTests) return streamerForTests
-  const client = getAnthropic()
+  let client: Anthropic | null
+  try {
+    client = getAnthropic()
+  } catch (err) {
+    // A misconfiguration (federation with no identity here): the assistant says it's unavailable, and the log says why.
+    console.error("[assistant] couldn't set up the Claude client", err)
+    return null
+  }
   return client && claudeStreamer(client)
 }
 
