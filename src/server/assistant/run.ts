@@ -19,6 +19,8 @@ import type { AssistantEvent, AssistantTurn, AssistantUsage } from "@/lib/types/
 export const MAX_ROUNDS = 6
 /** Output cap per model call. Answers are short; this leaves room for thinking. */
 export const MAX_TOKENS = 8000
+/** A fast output rate, for charging an aborted call by how long it ran (thinking included). */
+export const OUTPUT_TOKENS_PER_SECOND = 150
 
 /** What the turn needs from the Claude client: a streamed message. Tests pass a fake. */
 export interface ClaudeStreamer {
@@ -167,6 +169,7 @@ export async function runAssistantTurn({ claude, model, effort, history, tools, 
   for (let round = 0; round < MAX_ROUNDS; round++) {
     // Where this round's text starts, so a declined round's partial can be dropped from the memory.
     const roundStart = text.length
+    const roundStartedAt = Date.now()
     const stream = claude.stream(
       {
         model,
@@ -192,13 +195,16 @@ export async function runAssistantTurn({ claude, model, effort, history, tools, 
       message = await stream.finalMessage()
     } catch (err) {
       // An aborted or failed call is still billed for what it got through: count it. The
-      // stream reports output tokens only at its end, so estimate them: from the text that
-      // came (about 3 characters a token; thinking isn't visible), or the whole output cap
-      // when the turn timed out, since the model may have been thinking the whole time.
+      // stream reports output tokens only at its end, and thinking isn't visible, so estimate
+      // generously: the larger of the text that came (about 3 characters a token) and the
+      // time the call ran at a fast generation rate, up to the cap (all of it on a timeout).
+      // Stopping while the model thinks is then charged for the thinking too.
       const partial = stream.currentMessage
       if (partial?.usage) {
         const timedOut = signal?.aborted && (signal.reason as Error | undefined)?.name === "TimeoutError"
-        const estimate = timedOut ? MAX_TOKENS : Math.ceil((text.length - roundStart) / 3)
+        const byText = Math.ceil((text.length - roundStart) / 3)
+        const byTime = Math.ceil(((Date.now() - roundStartedAt) / 1000) * OUTPUT_TOKENS_PER_SECOND)
+        const estimate = timedOut ? MAX_TOKENS : Math.min(MAX_TOKENS, Math.max(byText, byTime))
         addUsage(usage, { ...partial, usage: { ...partial.usage, iterations: null, output_tokens: Math.max(partial.usage.output_tokens, estimate) } })
       }
       throw err

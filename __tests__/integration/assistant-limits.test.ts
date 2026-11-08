@@ -97,6 +97,23 @@ describe("assistant limits", () => {
     expect(row).toMatchObject({ inputTokens: 500, outputTokens: 40, costMicros: 500 * 4 + 40 * 20 })
   })
 
+  it("charges a call stopped while the model was thinking for the time it ran", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {})
+    const { OUTPUT_TOKENS_PER_SECOND, emptyUsage, runAssistantTurn } = await import("@/server/assistant/run")
+    const usage = emptyUsage()
+    const claude = fakeClaude([{ failAfter: { text: "", error: new Error("aborted"), usage: { input_tokens: 500, output_tokens: 1 } } }]).claude
+    const realNow = Date.now
+    let calls = 0
+    // The call "runs" 50 seconds before it's stopped.
+    vi.spyOn(Date, "now").mockImplementation(() => realNow() + (calls++ > 0 ? 50_000 : 0))
+    await expect(
+      runAssistantTurn({ claude, model: "claude-opus-5-5", effort: "medium", history: [{ role: "user", content: "hi" }], tools: { db: getDb(), geocoder: new FakeGeocoder(), viewer: null, now: new Date() }, emit: () => {}, usage }),
+    ).rejects.toThrow("aborted")
+    // About 50 s of it (the clock moves a little during the test).
+    expect(usage.outputTokens).toBeGreaterThanOrEqual(50 * OUTPUT_TOKENS_PER_SECOND)
+    expect(usage.outputTokens).toBeLessThan(51 * OUTPUT_TOKENS_PER_SECOND)
+  })
+
   it("charges the whole output cap for a call cut off by the turn timeout", async () => {
     const { MAX_TOKENS, emptyUsage, runAssistantTurn } = await import("@/server/assistant/run")
     const usage = emptyUsage()
