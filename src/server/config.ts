@@ -63,6 +63,13 @@ const serverSchema = z.object({
   GEOCODER_USER_AGENT: blankAsUnset(z.string().min(1).optional()),
   /** A self-hosted instance instead of the provider's public one (photon, nominatim). */
   GEOCODER_BASE_URL: blankAsUnset(z.string().url().optional()),
+
+  /** Claude API key for the assistant (/api/assistant). Unset, the assistant says it's unavailable. */
+  ANTHROPIC_API_KEY: blankAsUnset(z.string().min(1).optional()),
+  /** The assistant's model. */
+  ASSISTANT_MODEL: blankAsUnset(z.string().min(1).default("claude-opus-5-5")),
+  /** How hard the model thinks: more is slower and costs more. */
+  ASSISTANT_EFFORT: blankAsUnset(z.enum(["low", "medium", "high", "xhigh", "max"]).default("medium")),
 }).transform((env) => ({
   ...env,
   GEOCODER_PROVIDER: env.GEOCODER_PROVIDER ?? (env.NODE_ENV === "production" ? "photon" : "fake"),
