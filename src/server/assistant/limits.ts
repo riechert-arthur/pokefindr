@@ -44,22 +44,42 @@ export async function startTurn(
 ): Promise<{ ok: true; spentToday: number } | { ok: false; refusal: Refusal }> {
   if (!perMinute.take(userId)) return { ok: false, refusal: { kind: "limited", message: "You're sending messages quickly. Wait a minute and try again.", retryAfter: 60 } }
   if (openTurns.has(userId)) return { ok: false, refusal: { kind: "limited", message: "Wait for the current answer to finish.", retryAfter: 5 } }
-  const day = utcDay(now)
-  const [[mine], [all]] = await Promise.all([
-    db.select().from(assistantUsage).where(and(eq(assistantUsage.userId, userId), eq(assistantUsage.day, day))),
-    db.select({ cost: sql<number>`coalesce(sum(${assistantUsage.costMicros}), 0)::bigint` }).from(assistantUsage).where(eq(assistantUsage.day, day)),
-  ])
-  const tomorrow = secondsToNextDay(now)
-  if ((mine?.messages ?? 0) >= MESSAGES_PER_DAY) return { ok: false, refusal: { kind: "limited", message: `You've reached today's limit of ${MESSAGES_PER_DAY} messages. It resets at midnight UTC.`, retryAfter: tomorrow } }
-  if ((mine?.inputTokens ?? 0) + (mine?.outputTokens ?? 0) >= TOKENS_PER_DAY) return { ok: false, refusal: { kind: "limited", message: "You've used today's assistant allowance. It resets at midnight UTC.", retryAfter: tomorrow } }
-  const spent = Number(all.cost)
-  if (spent >= dailyBudgetMicros) return { ok: false, refusal: { kind: "paused", message: "The assistant is paused for today. The map and search still work." } }
-  await db
-    .insert(assistantUsage)
-    .values({ userId, day, messages: 1 })
-    .onConflictDoUpdate({ target: [assistantUsage.userId, assistantUsage.day], set: { messages: sql`${assistantUsage.messages} + 1` } })
+  // Claimed before the first await, so requests sent at once can't all get past this.
   openTurns.add(userId)
-  return { ok: true, spentToday: spent }
+  try {
+    const day = utcDay(now)
+    const [[mine], [all]] = await Promise.all([
+      db.select().from(assistantUsage).where(and(eq(assistantUsage.userId, userId), eq(assistantUsage.day, day))),
+      db.select({ cost: sql<number>`coalesce(sum(${assistantUsage.costMicros}), 0)::bigint` }).from(assistantUsage).where(eq(assistantUsage.day, day)),
+    ])
+    const tomorrow = secondsToNextDay(now)
+    const overMessages = { ok: false as const, refusal: { kind: "limited" as const, message: `You've reached today's limit of ${MESSAGES_PER_DAY} messages. It resets at midnight UTC.`, retryAfter: tomorrow } }
+    if ((mine?.messages ?? 0) >= MESSAGES_PER_DAY) return release(userId, overMessages)
+    if ((mine?.inputTokens ?? 0) + (mine?.outputTokens ?? 0) >= TOKENS_PER_DAY)
+      return release(userId, { ok: false, refusal: { kind: "limited", message: "You've used today's assistant allowance. It resets at midnight UTC.", retryAfter: tomorrow } })
+    const spent = Number(all.cost)
+    if (spent >= dailyBudgetMicros) return release(userId, { ok: false, refusal: { kind: "paused", message: "The assistant is paused for today. The map and search still work." } })
+    // Counted only while under the cap, in one statement, so other instances can't push past it either.
+    const counted = await db
+      .insert(assistantUsage)
+      .values({ userId, day, messages: 1 })
+      .onConflictDoUpdate({
+        target: [assistantUsage.userId, assistantUsage.day],
+        set: { messages: sql`${assistantUsage.messages} + 1` },
+        setWhere: sql`${assistantUsage.messages} < ${MESSAGES_PER_DAY}`,
+      })
+      .returning({ messages: assistantUsage.messages })
+    if (counted.length === 0) return release(userId, overMessages)
+    return { ok: true, spentToday: spent }
+  } catch (err) {
+    openTurns.delete(userId)
+    throw err
+  }
+}
+
+function release<T>(userId: string, result: T): T {
+  openTurns.delete(userId)
+  return result
 }
 
 /** Records what a turn used and marks it finished. Safe to call once per started turn. */

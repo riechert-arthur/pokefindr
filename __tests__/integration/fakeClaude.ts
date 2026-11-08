@@ -1,7 +1,11 @@
 import type { BetaMessage, BetaMessageStreamParams } from "@anthropic-ai/sdk/resources/beta/messages/messages"
 import type { ClaudeStreamer } from "@/server/assistant/run"
 
-export type Step = { text?: string; tools?: { name: string; input: unknown }[]; stop?: BetaMessage["stop_reason"]; message?: Partial<BetaMessage> } | Error
+export type Step =
+  | { text?: string; tools?: { name: string; input: unknown }[]; stop?: BetaMessage["stop_reason"]; message?: Partial<BetaMessage> }
+  | Error
+  /** A call that fails after streaming some text, with what it had used by then. */
+  | { failAfter: { text: string; error: Error; usage: { input_tokens: number; output_tokens: number } } }
 
 /** A Claude client that answers each call with the next scripted step, and records what it was sent. */
 export function fakeClaude(steps: Step[]) {
@@ -16,8 +20,16 @@ export function fakeClaude(steps: Step[]) {
           listeners.push(listener)
           return this
         },
+        get currentMessage() {
+          if ("failAfter" in step) return { model: "claude-opus-5-5", content: [], usage: { cache_read_input_tokens: 0, cache_creation_input_tokens: 0, ...step.failAfter.usage } } as unknown as BetaMessage
+          return undefined
+        },
         async finalMessage() {
           if (step instanceof Error) throw step
+          if ("failAfter" in step) {
+            listeners.forEach((l) => l(step.failAfter.text))
+            throw step.failAfter.error
+          }
           if (step.message) return { id: "msg_raw", type: "message", role: "assistant", stop_sequence: null, ...step.message } as BetaMessage
           if (step.text) for (const piece of step.text.match(/.{1,6}/gs) ?? []) listeners.forEach((l) => l(piece))
           const content = [

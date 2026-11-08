@@ -25,7 +25,12 @@ export interface ClaudeStreamer {
   stream(
     params: BetaMessageStreamParams,
     options: { signal?: AbortSignal },
-  ): { on(event: "text", listener: (delta: string) => void): unknown; finalMessage(): Promise<BetaMessage> }
+  ): {
+    on(event: "text", listener: (delta: string) => void): unknown
+    finalMessage(): Promise<BetaMessage>
+    /** What has arrived so far, usage included: what an aborted call still cost. */
+    readonly currentMessage?: BetaMessage
+  }
 }
 
 export const claudeStreamer = (client: Anthropic): ClaudeStreamer => ({
@@ -180,7 +185,15 @@ export async function runAssistantTurn({ claude, model, effort, history, tools, 
       text += delta
       emit({ type: "text", text: delta })
     })
-    const message = await stream.finalMessage()
+    let message: BetaMessage
+    try {
+      message = await stream.finalMessage()
+    } catch (err) {
+      // An aborted or failed call is still billed for what it got through: count it.
+      const partial = stream.currentMessage
+      if (partial?.usage) addUsage(usage, partial)
+      throw err
+    }
     addUsage(usage, message)
     served = message.model
     const content = usableContent(message.content)

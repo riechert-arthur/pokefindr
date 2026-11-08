@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { NextRequest } from "next/server"
 import { eq } from "drizzle-orm"
 import { getDb } from "@/server/db/client"
@@ -29,6 +29,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   setClaudeForTests(null)
+  vi.restoreAllMocks()
   delete process.env.ASSISTANT_ENABLED
   delete process.env.ASSISTANT_DAILY_BUDGET_USD
   resetServerConfigForTests()
@@ -67,6 +68,30 @@ describe("assistant limits", () => {
     process.env.ASSISTANT_ENABLED = "false"
     resetServerConfigForTests()
     expect((await post()).status).toBe(503)
+  })
+
+  it("lets only one of several requests sent at once through", async () => {
+    const results = await Promise.all(Array.from({ length: 5 }, () => startTurn({ userId: OTHER, now: new Date(), dailyBudgetMicros: 1e9 }, getDb())))
+    expect(results.filter((r) => r.ok)).toHaveLength(1)
+    const [row] = await getDb().select().from(assistantUsage).where(eq(assistantUsage.userId, OTHER))
+    expect(row.messages).toBe(1)
+  })
+
+  it("never counts past the daily message cap, even when the read was stale", async () => {
+    await getDb().insert(assistantUsage).values({ userId: OTHER, day: today(), messages: MESSAGES_PER_DAY - 1 })
+    expect(await startTurn({ userId: OTHER, now: new Date(), dailyBudgetMicros: 1e9 }, getDb())).toMatchObject({ ok: true })
+    resetLimitsForTests()
+    expect(await startTurn({ userId: OTHER, now: new Date(), dailyBudgetMicros: 1e9 }, getDb())).toMatchObject({ ok: false })
+    const [row] = await getDb().select().from(assistantUsage).where(eq(assistantUsage.userId, OTHER))
+    expect(row.messages).toBe(MESSAGES_PER_DAY)
+  })
+
+  it("counts what an aborted call used", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {})
+    setClaudeForTests(fakeClaude([{ failAfter: { text: "Partial", error: new Error("aborted"), usage: { input_tokens: 500, output_tokens: 40 } } }]).claude)
+    await (await post()).text()
+    const [row] = await getDb().select().from(assistantUsage).where(eq(assistantUsage.userId, ME))
+    expect(row).toMatchObject({ inputTokens: 500, outputTokens: 40, costMicros: 500 * 4 + 40 * 20 })
   })
 
   it("limits messages a minute, and one open turn at a time", async () => {
