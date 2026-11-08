@@ -68,7 +68,7 @@ export default function SettingsPage() {
   }
 
   if (isLoading) {
-    return <LoadSpinner text="Loading profile.." />
+    return <LoadSpinner text="Loading profile.." fullScreen={false} />
   }
 
   return (
@@ -101,7 +101,7 @@ export default function SettingsPage() {
               </p>
 
               {loading ? (
-                <LoadSpinner text="Loading settings..." /> 
+                <LoadSpinner text="Loading settings..." fullScreen={false} /> 
               ) : (
                 <dl className="mt-6 divide-y divide-border border-t border-border text-sm/6">
                   {(['fullName','email','username'] as const).map((field) => {

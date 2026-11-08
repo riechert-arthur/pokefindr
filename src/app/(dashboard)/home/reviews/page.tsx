@@ -97,7 +97,7 @@ export default function ReviewsPage() {
   })
 
   if (isLoading && !session) {
-    return <LoadSpinner text="Loading profile.." />
+    return <LoadSpinner text="Loading profile.." fullScreen={false} />
   }
 
   return (
@@ -124,7 +124,7 @@ export default function ReviewsPage() {
           <div className="pt-8 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {loading ? (
               <div className="text-sm text-muted-foreground">
-                <LoadSpinner text="Loading your reviews…"/>
+                <LoadSpinner text="Loading your reviews…" fullScreen={false} />
               </div>
             ) : reviews.length === 0 ? (
               <p className="text-sm text-muted-foreground">You haven’t written any reviews yet.</p>
