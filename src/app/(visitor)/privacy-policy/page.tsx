@@ -129,11 +129,12 @@ const PrivacyPolicyPage: FC = () => {
         When you use the assistant on your dashboard, we send your messages,
         the conversation so far and, if you share it, your approximate location
         (rounded to about 1 km) to Anthropic, which runs the AI model that
-        writes the answers. We keep the text of your questions and the answers
-        for 30 days to find problems and abuse, then delete it. You can delete
-        it sooner by clearing your assistant history. We keep a record of each
-        conversation turn without its text (when it happened, which searches
-        it ran and what it cost) for up to a year.
+        writes the answers. We keep the text of your questions, the answers and
+        what the assistant searched for (such as a city or address) for 30
+        days to find problems and abuse, then delete it. You can delete it
+        sooner by clearing your assistant history. We keep a record of each
+        conversation turn without any of that text (when it happened, which
+        kinds of search it ran and what it cost) for up to a year.
       </p>
       <p className="mb-4">
         <strong>Automatically Collected Information:</strong>
