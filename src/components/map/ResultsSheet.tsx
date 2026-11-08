@@ -1,8 +1,7 @@
 "use client"
 
-import { KindDot } from "@/components/pokefindr/KindDot"
 import { EmptyState } from "@/components/pokefindr/EmptyState"
-import { KIND_ORDER, countLabel, formatCount, placesLabel, toKind } from "@/components/pokefindr/kinds"
+import { KIND_ORDER, countLabel, formatCount, placesLabel } from "@/components/pokefindr/kinds"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -10,6 +9,7 @@ import { RADII } from "@/lib/map/url-state"
 import type { LocationFeature, LocationKind, NearbyLocations } from "@/lib/types/locations"
 import { cn } from "@/lib/utils"
 import type { NearbyState } from "./useNearbyLocations"
+import { LocationRow } from "./LocationRow"
 
 type Radius = (typeof RADII)[number]
 
@@ -32,8 +32,6 @@ export function breakdown(counts: NearbyLocations["counts"], kinds: readonly Loc
     .join(" · ")
 }
 
-/** A row's second line: the street address and city, or the city and state. */
-const where = ({ address, city, state }: LocationFeature["properties"]) => (address ? [address, city] : [city, state]).filter(Boolean).join(", ")
 
 /**
  * The results for a place, as in the prototype's side sheet: how many are
@@ -111,27 +109,11 @@ export function ResultsSheet({ label, radius, onRadiusChange, kinds, nearby, sel
           </EmptyState>
         ) : (
           <ul aria-label={`Places near ${near}, closest first`}>
-            {results.features.map((f) => {
-              const p = f.properties
-              const kind = toKind(p.kind)
-              return (
-                <li key={p.id}>
-                  <button
-                    type="button"
-                    onClick={() => onOpen(f)}
-                    aria-current={selectedId === p.id ? "true" : undefined}
-                    className="flex w-full items-start gap-2.5 rounded-lg p-2.5 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=true]:bg-muted"
-                  >
-                    <KindDot kind={kind} className="mt-px" />
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-body font-semibold text-foreground">{p.retailer}</span>
-                      <span className="block truncate text-body text-muted-foreground">{where(p)}</span>
-                    </span>
-                    <span className="whitespace-nowrap pt-0.5 text-caption tabular-nums text-muted-foreground">{p.distance.toFixed(1)} mi</span>
-                  </button>
-                </li>
-              )
-            })}
+            {results.features.map((f) => (
+              <li key={f.properties.id}>
+                <LocationRow feature={f} distance={f.properties.distance} selected={selectedId === f.properties.id} onOpen={onOpen} />
+              </li>
+            ))}
             {results.truncated && (
               <li className="px-2.5 py-3 text-caption text-muted-foreground">
                 Showing the closest {formatCount(results.features.length)} of {formatCount(results.total)}.

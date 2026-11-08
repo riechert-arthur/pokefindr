@@ -333,9 +333,10 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
 
   /**
    * Opens a location's details from a list (search or results), as a new
-   * history entry, and brings it into view.
+   * history entry, and brings it into view. `replace` (Also nearby) swaps the
+   * open details in place, so Back still returns to the list they came from.
    */
-  const showLocation = (feat: LocationFeature) => {
+  const showLocation = (feat: LocationFeature, { replace = false } = {}) => {
     const map = mapRef.current
     const [lng, lat] = feat.geometry.coordinates
     if (map) {
@@ -351,9 +352,12 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         map.flyTo({ center: [lng, lat], zoom: Math.max(map.getZoom(), 14), offset: [(p.left - p.right) / 2, (p.top - p.bottom) / 2], duration: 1200 })
       }
     }
+    const swap = replace && detailsRef.current !== null
+    // Closing steps back only if the entry being replaced was one we pushed.
+    const wasPushed = pushedDetails.current !== null && pushedDetails.current === new URLSearchParams(window.location.search).toString()
     dispatch({ type: "showDetails", location: toSelected(feat) })
-    void setParams({ location: feat.properties.id }, { history: "push" }).then((search) => {
-      pushedDetails.current = search.toString()
+    void setParams({ location: feat.properties.id }, { history: swap ? "replace" : "push" }).then((search) => {
+      if (!swap || wasPushed) pushedDetails.current = search.toString()
     })
   }
 
@@ -593,6 +597,9 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
                 onBack={closeDetails}
                 me={me}
                 from={place && !nearMe && urlView.place ? { label: urlView.place.label, lng: place.lng, lat: place.lat } : null}
+                kinds={kinds}
+                retailers={retailers}
+                onOpen={(f) => showLocation(f, { replace: true })}
               />
             ) : !place && !stateFocus ? (
               <UsSheet
