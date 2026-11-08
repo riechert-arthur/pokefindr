@@ -13,6 +13,7 @@ import { milesBetween } from "@/lib/map/geo"
 import { LOCATION_KINDS, type LocationFeature, type LocationKind } from "@/lib/types/locations"
 import type { AssistantCard, AssistantEvent, AssistantPlace } from "@/lib/types/assistant"
 import type { PlaceBudget } from "./limits"
+import { USER_WRITTEN_NOTE, plainUserText } from "./untrusted"
 
 /**
  * The assistant's tools, shared by the in-app assistant (/api/assistant) and
@@ -135,11 +136,12 @@ function placeOf(f: LocationFeature, samples: Set<string>, miles?: number): Assi
   const [lng, lat] = f.geometry.coordinates
   return {
     id: p.id,
-    name: p.retailer || "Unnamed place",
+    // Shops and events come from submissions (R4), so every text field is someone's typing.
+    name: plainUserText(p.retailer, 100) || "Unnamed place",
     kind: p.kind ?? "vending",
-    address: p.address,
-    city: p.city,
-    state: p.state,
+    address: plainUserText(p.address, 160),
+    city: plainUserText(p.city, 60),
+    state: plainUserText(p.state, 4),
     lng,
     lat,
     ...(miles === undefined ? {} : { miles: round1(miles) }),
@@ -239,11 +241,11 @@ export const areaStats = tool({
         radius_miles: where.kind === "state" ? null : radiusMiles,
         total: stats.total,
         by_type: byType,
-        top_retailers: stats.topRetailers.map((r) => ({ retailer: r.retailer, machines: r.count })),
-        top_cities: stats.topCities.map((c) => ({ city: c.city, state: c.state, locations: c.count })),
+        top_retailers: stats.topRetailers.map((r) => ({ retailer: plainUserText(r.retailer, 100), machines: r.count })),
+        top_cities: stats.topCities.map((c) => ({ city: plainUserText(c.city, 60), state: plainUserText(c.state, 4), locations: c.count })),
         ...notesFor(where, input.radius_miles !== undefined),
       },
-      card: { type: "stats", title, total: stats.total, byKind: stats.byKind, topRetailers: stats.topRetailers },
+      card: { type: "stats", title, total: stats.total, byKind: stats.byKind, topRetailers: stats.topRetailers.map((r) => ({ ...r, retailer: plainUserText(r.retailer, 100) })) },
     }
   },
 })
@@ -338,11 +340,11 @@ export const listEvents = tool({
     // Few events exist; fetch the upcoming ones and narrow here.
     let events: AssistantEvent[] = (await getUpcomingEvents(ctx.db, ctx.now, 200)).map((e) => ({
       id: e.id,
-      title: e.title,
+      title: plainUserText(e.title, 100),
       startsAt: e.startsAt,
       endsAt: e.endsAt,
-      city: e.city,
-      state: e.state,
+      city: plainUserText(e.city, 60),
+      state: plainUserText(e.state, 4),
       lng: e.lng,
       lat: e.lat,
       ...(e.isSample ? { sample: true as const } : {}),
@@ -391,7 +393,10 @@ export const getPlace = tool({
       data: {
         ...brief(place),
         reviews: { count: reviews.count, average: round1(reviews.average) },
-        recent_reviews: reviews.reviews.slice(0, 3).map((r) => ({ rating: r.rating, text: r.text.slice(0, REVIEW_CHARS), date: r.createdAt.slice(0, 10) })),
+        recent_reviews: {
+          note: USER_WRITTEN_NOTE,
+          items: reviews.reviews.slice(0, 3).map((r) => ({ rating: r.rating, date: r.createdAt.slice(0, 10), untrusted_text: plainUserText(r.text, REVIEW_CHARS) })),
+        },
       },
       card: { type: "places", title: place.name, places: [place], total: 1, near: null },
     }
