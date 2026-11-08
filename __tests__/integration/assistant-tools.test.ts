@@ -42,6 +42,15 @@ describe("find_places", () => {
     expect(r.card).toMatchObject({ type: "places", title: "4 within 10 mi of Seattle, WA", near: { label: "Seattle, WA", radiusMiles: 10 } })
   })
 
+  it("says when a name or code was read as a whole state, and lists its places by city, without a city last", async () => {
+    await getDb().insert(locations).values({ machineId: "NC", retailer: "Safeway", city: null, state: "WA", geog: { lng: -122.3, lat: 47.5 } })
+    const r = await runTool("find_places", { near: "WA", radius_miles: 5, limit: 2 }, ctx())
+    if (!r.ok) throw new Error(r.error)
+    expect((r.data.places as { city: string }[]).map((p) => p.city)).toEqual(["Seattle", "Seattle"])
+    expect(r.data.note).toContain("so the radius was ignored")
+    expect(r.data.note).toContain("not the closest")
+  })
+
   it("lists a state's places, filters by a typed retailer, and caps the list", async () => {
     const wa = await runTool("find_places", { near: "washington", retailer: "safe" }, ctx())
     expect(wa.ok && wa.data).toMatchObject({ area: "Washington", retailers: ["Safeway"], total: 2 })
@@ -64,6 +73,7 @@ describe("area_stats", () => {
   it("counts by kind, top retailers and top cities, without listing places", async () => {
     const r = await runTool("area_stats", { area: "WA" }, ctx())
     expect(r.ok && r.data).toEqual({
+      note: expect.stringContaining('"WA" was read as the whole state of Washington.'),
       area: "Washington",
       radius_miles: null,
       total: 5,

@@ -19,7 +19,7 @@ const inArea = (area: Area, types: readonly LocationKind[], retailers: readonly 
   }
   ${retailerIn(retailers)}`
 
-/** A state's locations of `types`, by city then name, with how many there are in all. */
+/** A state's locations of `types`, by city then name (places without a city last), with how many there are in all. */
 export async function getLocationsInState(
   { state, types, retailers = [], limit }: { state: string; types: readonly LocationKind[]; retailers?: readonly string[]; limit: number },
   db: Database = getDb(),
@@ -27,7 +27,7 @@ export async function getLocationsInState(
   if (types.length === 0) return { features: [], total: 0 }
   const where = sql`l.country_code = 'US' and l.state = ${state} and l.kind in (${kindsIn(types)}) ${retailerIn(retailers)}`
   const [fc, [{ n }]] = await Promise.all([
-    queryFeatures(db, where, limit, sql`lower(coalesce(city, '')), coalesce(retailer, name), id`),
+    queryFeatures(db, where, limit, sql`(coalesce(city, '') = ''), lower(coalesce(city, '')), coalesce(retailer, name), id`),
     db.execute<{ n: number }>(sql`select count(*)::int as n from ${locations} l where l.is_active and l.geog is not null and ${where}`),
   ])
   return { features: fc.features, total: n }
