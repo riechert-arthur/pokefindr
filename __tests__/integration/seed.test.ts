@@ -1,7 +1,10 @@
 import { afterAll, describe, expect, it } from "vitest"
 import postgres from "postgres"
 import { readSeedLocations, seedLocations } from "../../scripts/db/seedLocations"
-import { SAMPLE_EVENTS, seedSampleHighlights } from "../../scripts/db/seedHighlights"
+import { SAMPLE_EVENTS, SAMPLE_SOURCE, seedSampleHighlights } from "../../scripts/db/seedHighlights"
+import { getDb } from "@/server/db/client"
+import { getLocationsNear } from "@/server/services/locations"
+import { getUpcomingEvents } from "@/server/services/highlights"
 import { testDatabaseUrl } from "./testDatabase"
 
 const sql = postgres(testDatabaseUrl(), { max: 1, onnotice: () => {} })
@@ -49,5 +52,31 @@ describe("seedSampleHighlights", () => {
     const rows = await sql<{ title: string; starts_at: Date; is_sample: boolean }[]>`select title, starts_at, is_sample from highlights where is_sample order by starts_at`
     expect(rows.map((r) => r.title)).toEqual(["Card show", "League challenge", "Restock weekend"])
     expect(rows.every((r) => r.is_sample && r.starts_at > now)).toBe(true)
+  })
+
+  it("puts each sample event at an event location, so searching its city finds it", async () => {
+    const now = new Date("2026-11-07T15:00:00Z")
+    await seedSampleHighlights(sql, now)
+    const near = await getLocationsNear({ center: [-96.8, 32.78], radiusMiles: 10, types: ["event"] }, getDb())
+    expect(near.total).toBe(1)
+    expect(near.features[0].properties).toMatchObject({ retailer: "League challenge (sample)", city: "Dallas", state: "TX", kind: "event" })
+    const events = await getUpcomingEvents(getDb(), now)
+    expect(events.map((e) => [e.title, e.city, e.state, e.lng, e.lat, e.isSample])).toEqual([
+      ["Card show", "Denver", "CO", -104.99, 39.74, true],
+      ["League challenge", "Dallas", "TX", -96.8, 32.78, true],
+      ["Restock weekend", "Sacramento", "CA", -121.49, 38.58, true],
+    ])
+  })
+
+  it("keeps the sample places on re-seeding and hides one that's no longer a sample", async () => {
+    await seedSampleHighlights(sql)
+    const ids = async () => (await sql`select id from locations where source = ${SAMPLE_SOURCE} and is_active order by name`).map((r) => r.id)
+    const before = await ids()
+    await sql`insert into locations (kind, name, source, geog) values ('event', 'Old show (sample)', ${SAMPLE_SOURCE}, st_setsrid(st_makepoint(0, 0), 4326)::geography)`
+    await seedSampleHighlights(sql)
+    expect(await ids()).toEqual(before)
+    expect(before).toHaveLength(SAMPLE_EVENTS.length)
+    const [old] = await sql`select is_active from locations where name = 'Old show (sample)'`
+    expect(old.is_active).toBe(false)
   })
 })
