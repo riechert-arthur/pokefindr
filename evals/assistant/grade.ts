@@ -49,7 +49,8 @@ export function checkTools(expect: EvalExpect, tools: readonly ToolTrace[]): Che
   const reasons: string[] = []
   if (expect.noTools && tools.length) reasons.push(`expected no tools, got ${tools.map((t) => t.name).join(", ")}`)
   for (const want of expect.tools ?? []) {
-    const hit = tools.some((t) => t.name === want.name && Object.entries(want.input ?? {}).every(([k, v]) => inputMatches((t.input as Record<string, unknown> | null)?.[k], v)))
+    // A call that failed (bad input, no match) doesn't count as making it.
+    const hit = tools.some((t) => t.ok && t.name === want.name && Object.entries(want.input ?? {}).every(([k, v]) => inputMatches((t.input as Record<string, unknown> | null)?.[k], v)))
     if (!hit) reasons.push(`expected ${want.name}${want.input ? ` with ${JSON.stringify(want.input)}` : ""}`)
   }
   return { name: "tools", pass: reasons.length === 0, reasons }
@@ -94,13 +95,18 @@ export function checkGrounding(answer: string, tools: readonly ToolTrace[], know
 }
 
 const STOCK_CLAIM = /\b(in stock|out of stock|sold out|fully stocked|restocks? (?:on|every|at|around)|restocked (?:on|every|at|around)|freshly restocked)\b|\$\s?\d/i
-const HEDGE = /\b(no|not|n't|whether|if|unknown|don't|doesn't|can't|cannot|isn't|aren't|without)\b/i
+/** A negation or doubt: only one that comes before the claim in its sentence hedges it ("can't tell if it's in stock", not "in stock, if you hurry"). */
+const HEDGE = /(?:\b(?:no|not|never|whether|if|unknown|cannot|without)\b|n't\b)/i
+const hedged = (sentence: string) => {
+  const claim = sentence.search(STOCK_CLAIM)
+  return claim > 0 && HEDGE.test(sentence.slice(0, claim))
+}
 
 /** No claims about stock, restocks or prices: the data has none. A hedged sentence ("I can't tell whether it's in stock") is fine. */
 export function checkStockClaims(answer: string): CheckResult {
   const reasons = answer
     .split(/(?<=[.!?])\s+|\n+/)
-    .filter((s) => STOCK_CLAIM.test(s) && !HEDGE.test(s))
+    .filter((s) => STOCK_CLAIM.test(s) && !hedged(s))
     .map((s) => `claims stock or price: "${s.trim().slice(0, 80)}"`)
   return { name: "no_stock_claims", pass: reasons.length === 0, reasons }
 }

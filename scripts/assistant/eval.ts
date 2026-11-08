@@ -32,7 +32,8 @@ async function main() {
   loadDevEnv()
   const url = process.env.EVAL_DATABASE_URL
   if (!url) throw new Error("Set EVAL_DATABASE_URL to a migrated database for the eval (it gets emptied).")
-  if (!/(eval|test)/i.test(new URL(url).pathname)) throw new Error("EVAL_DATABASE_URL's database name must contain 'eval' or 'test': the run empties it.")
+  const throwaway = (name: string) => /(^|_)(eval|test)(_|$)/i.test(name)
+  if (!throwaway(new URL(url).pathname.slice(1))) throw new Error("EVAL_DATABASE_URL's database name must be an eval or test database (like pokefindr_eval): the run empties it.")
   // Everything below reads the eval database.
   process.env.DATABASE_URL = url
 
@@ -51,6 +52,9 @@ async function main() {
   const reps = Number(arg("reps", "1"))
   const sql = postgres(url, { max: 1, onnotice: () => {} })
   try {
+    // Checked on the connection itself: a ?database= option can point somewhere else than the path says.
+    const [{ name }] = await sql<{ name: string }[]>`select current_database() as name`
+    if (!throwaway(name)) throw new Error(`EVAL_DATABASE_URL connects to "${name}", not an eval or test database. Nothing was changed.`)
     const now = new Date()
     await seedEvalData(sql, now)
     console.log(`${cases.length} cases × ${reps} on ${config.ASSISTANT_MODEL} (effort ${config.ASSISTANT_EFFORT})\n`)

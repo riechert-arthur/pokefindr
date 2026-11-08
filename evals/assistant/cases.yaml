@@ -82,7 +82,7 @@ cases:
     question: Any machines within 10 miles of Houston?
     expect:
       tools: [{ name: find_places, input: { near: "houston" } }]
-      mentions: ["no |none|didn't find|couldn't find|0 "]
+      mentions: ["\\b(no|zero|0) (vending )?(machines|places|locations)|\\bnone\\b|didn't find|couldn't find|aren't any|isn't any"]
 
   - id: find-address
     category: find
@@ -157,7 +157,7 @@ cases:
     question: Events near Chicago?
     expect:
       tools: [{ name: list_events, input: { near: "chicago" } }]
-      mentions: ["no |none|didn't find|couldn't find|nothing"]
+      mentions: ["\\b(no|zero) (upcoming )?events|\\bnone\\b|didn't find|couldn't find|aren't any|isn't any|nothing"]
 
   # ── Counts and retailers ──────────────────────────────
   - id: stats-retailers-washington
@@ -180,7 +180,7 @@ cases:
     question: How many card shops are around Seattle?
     expect:
       tools: [{ name: area_stats }]
-      mentions: ["\\b1\\b|one"]
+      mentions: ["\\b(1|one)\\b"]
 
   - id: stats-top-cities-oregon
     category: stats

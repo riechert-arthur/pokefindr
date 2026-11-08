@@ -11,10 +11,17 @@ name: Assistant evals
 #   kept as an artifact; copy a good one to baseline.json to move the bar.
 on:
   pull_request:
+    # The assistant and everything its tools read through.
     paths:
       - "src/server/assistant/**"
+      - "src/server/services/**"
+      - "src/server/adapters/geocoder/**"
       - "src/server/config.ts"
+      - "src/lib/**"
+      - "src/components/pokefindr/kinds.ts"
       - "evals/assistant/**"
+      - "scripts/assistant/eval.ts"
+      - "package-lock.json"
       - ".github/workflows/evals.yml"
   schedule:
     - cron: "0 9 * * *"

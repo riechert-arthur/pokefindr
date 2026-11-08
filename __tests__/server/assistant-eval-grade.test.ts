@@ -33,6 +33,10 @@ describe("stock claims and links", () => {
     expect(checkStockClaims("Packs are $4.99 there.").pass).toBe(false)
     expect(checkStockClaims("It restocks on Tuesdays.").pass).toBe(false)
     expect(checkStockClaims("I can't tell whether it's in stock; there's no stock data.").pass).toBe(true)
+    // A hedge counts only before the claim.
+    expect(checkStockClaims("It's in stock right now, if you hurry.").pass).toBe(false)
+    expect(checkStockClaims("Packs are $4.99 with no limit.").pass).toBe(false)
+    expect(checkStockClaims("There's no way to know if it's sold out.").pass).toBe(true)
   })
 
   it("fails links in the text", () => {
@@ -49,6 +53,8 @@ describe("expectations", () => {
     expect(checkTools({ tools: [{ name: "find_places", input: { radius_miles: 25 } }] }, calls).pass).toBe(false)
     expect(checkTools({ tools: [{ name: "plan_route" }] }, calls).reasons).toEqual(["expected plan_route"])
     expect(checkTools({ noTools: true }, calls).pass).toBe(false)
+    // A failed call doesn't count as making it.
+    expect(checkTools({ tools: [{ name: "find_places" }] }, [{ ...calls[0], ok: false }]).pass).toBe(false)
   })
 
   it("checks mentions and listing caps", () => {

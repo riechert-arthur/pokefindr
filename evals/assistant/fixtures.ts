@@ -63,8 +63,12 @@ export const FIXTURE_EVENTS = [
   { title: "Trade night", city: "Denver", state: "CO", lng: -104.9901, lat: 39.7401, inDays: 7, sample: true },
 ]
 
-/** Every name, address and title in the data: what the grounding check looks for in answers. */
-export const FIXTURE_NAMES = [...new Set([...FIXTURE_PLACES.flatMap((p) => [p.name, p.address]), ...FIXTURE_EVENTS.map((e) => e.title)])]
+/**
+ * Every place name and address in the data: what the grounding check looks
+ * for in answers. Event titles are left out: "league cup" or "prerelease
+ * night" are ordinary words an answer can use without naming an event.
+ */
+export const FIXTURE_NAMES = [...new Set(FIXTURE_PLACES.flatMap((p) => [p.name, p.address]))]
 
 const EVAL_USER = "00000000-0000-4000-8000-00000000e7a1"
 

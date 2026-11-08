@@ -269,9 +269,16 @@ export async function runEval(o: RunOptions): Promise<EvalReport> {
 }
 
 /** Whether a run is good enough to merge against a baseline: grounding at 100%, and the pass rate within 5 points. */
+/** More of the attempts than this failing to run (API errors, timeouts, a tool that threw) fails the run. */
+export const MAX_ERROR_SHARE = 0.1
+
 export function gate(report: EvalReport, baseline: { passRate: number } | null): string[] {
   const problems: string[] = []
   if (report.summary.graded === 0) problems.push("no case was graded")
+  // Cases that never produced an answer aren't graded, so a broken tool could otherwise leave only the easy ones.
+  const failed = report.errors.filter((e) => e.kind !== "judge").length
+  const attempts = failed + report.rows.length
+  if (attempts && failed / attempts > MAX_ERROR_SHARE) problems.push(`${failed} of ${attempts} attempts didn't run (more than ${MAX_ERROR_SHARE * 100}%)`)
   if (report.summary.groundingRate < 1) problems.push(`grounding is ${(report.summary.groundingRate * 100).toFixed(1)}%, not 100%`)
   if (baseline && report.summary.passRate < baseline.passRate - 0.05)
     problems.push(`pass rate ${(report.summary.passRate * 100).toFixed(1)}% is more than 5 points below the baseline's ${(baseline.passRate * 100).toFixed(1)}%`)
