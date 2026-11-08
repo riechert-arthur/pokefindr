@@ -92,37 +92,46 @@ export function RetailerFilter({ selected, onChange, vendingShown }: RetailerFil
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" sideOffset={6} aria-label="Filters" className="w-[280px] rounded-xl p-3">
-        <div>
-          <h3 className="mb-2 text-body font-semibold">Vending machines · retailer</h3>
-          {!vendingShown ? (
-            <p className="px-1 py-0.5 text-caption text-muted-foreground">Turn on vending machines to filter by retailer.</p>
-          ) : failed ? (
-            <p className="px-1 py-0.5 text-caption text-muted-foreground">Couldn&apos;t load retailers. Try again in a moment.</p>
-          ) : !list ? (
-            <p className="px-1 py-0.5 text-caption text-muted-foreground">Loading retailers…</p>
-          ) : (
-            <div className="max-h-72 overflow-y-auto">
-              {shown.map(({ retailer, count }) => {
-                const id = `retailer-${retailer.replace(/\W+/g, "-")}`
-                return (
-                  <label key={retailer} htmlFor={id} className="flex cursor-pointer items-center gap-2.5 rounded-md px-1 py-1.5 text-body hover:bg-muted">
-                    <Checkbox id={id} checked={selected.includes(retailer)} onCheckedChange={(on) => toggle(retailer, on === true)} />
-                    <span className="min-w-0 flex-1 truncate">{retailer}</span>
-                    {count >= 0 && <span className="text-caption tabular-nums text-muted-foreground">{formatCount(count)}</span>}
-                  </label>
-                )
-              })}
-            </div>
-          )}
-        </div>
-        <div className="mt-2 border-t border-border pt-2">
-          <h3 className="mb-1 text-body font-semibold">Card shops</h3>
-          <p className="px-1 py-0.5 text-caption text-muted-foreground">Open now, sells singles, hosts events. These filters arrive with real shop data.</p>
-        </div>
-        <div className="mt-2 border-t border-border pt-2">
-          <h3 className="mb-1 text-body font-semibold">Events</h3>
-          <p className="px-1 py-0.5 text-caption text-muted-foreground">This week, this month, event type. Coming once events are real.</p>
+      {/* Fits the screen (phones): the sections scroll, Clear and Done stay. */}
+      <PopoverContent
+        align="end"
+        sideOffset={6}
+        collisionPadding={8}
+        aria-label="Filters"
+        className="flex max-h-[var(--radix-popover-content-available-height)] w-[280px] flex-col rounded-xl p-3"
+      >
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div>
+            <h3 className="mb-2 text-body font-semibold">Vending machines · retailer</h3>
+            {!vendingShown ? (
+              <p className="px-1 py-0.5 text-caption text-muted-foreground">Turn on vending machines to filter by retailer.</p>
+            ) : failed ? (
+              <p className="px-1 py-0.5 text-caption text-muted-foreground">Couldn&apos;t load retailers. Try again in a moment.</p>
+            ) : !list ? (
+              <p className="px-1 py-0.5 text-caption text-muted-foreground">Loading retailers…</p>
+            ) : (
+              <div>
+                {shown.map(({ retailer, count }) => {
+                  const id = `retailer-${retailer.replace(/\W+/g, "-")}`
+                  return (
+                    <label key={retailer} htmlFor={id} className="flex cursor-pointer items-center gap-2.5 rounded-md px-1 py-1.5 text-body hover:bg-muted">
+                      <Checkbox id={id} checked={selected.includes(retailer)} onCheckedChange={(on) => toggle(retailer, on === true)} />
+                      <span className="min-w-0 flex-1 truncate">{retailer}</span>
+                      {count >= 0 && <span className="text-caption tabular-nums text-muted-foreground">{formatCount(count)}</span>}
+                    </label>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+          <div className="mt-2 border-t border-border pt-2">
+            <h3 className="mb-1 text-body font-semibold">Card shops</h3>
+            <p className="px-1 py-0.5 text-caption text-muted-foreground">Open now, sells singles, hosts events. These filters arrive with real shop data.</p>
+          </div>
+          <div className="mt-2 border-t border-border pt-2">
+            <h3 className="mb-1 text-body font-semibold">Events</h3>
+            <p className="px-1 py-0.5 text-caption text-muted-foreground">This week, this month, event type. Coming once events are real.</p>
+          </div>
         </div>
         <div className={cn("mt-2 flex justify-between border-t border-border pt-2.5")}>
           <Button type="button" variant="ghost" size="sm" onClick={() => onChange([])} disabled={!n}>
