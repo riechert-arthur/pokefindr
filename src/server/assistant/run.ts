@@ -156,6 +156,8 @@ export async function runAssistantTurn({ claude, model, effort, history, tools, 
     emit({ type: "done", stop, memory: memoryOf(text, cards), usage, model: served })
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
+    // Where this round's text starts, so a declined round's partial can be dropped from the memory.
+    const roundStart = text.length
     const stream = claude.stream(
       {
         model,
@@ -184,8 +186,10 @@ export async function runAssistantTurn({ claude, model, effort, history, tools, 
     if (message.stop_reason === "refusal") {
       const sorry = "I can't help with that one. Ask me about finding Pokémon cards, card shops or events."
       const piece = (text.trim() ? "\n\n" : "") + sorry
-      text += piece
       emit({ type: "text", text: piece })
+      // The declined partial was shown as it streamed, but it isn't an answer: it stays out of the memory.
+      text = text.slice(0, roundStart).trimEnd()
+      text += (text ? "\n\n" : "") + sorry
       return finish("refusal")
     }
     const uses = content.filter((b): b is BetaToolUseBlock => b.type === "tool_use")
