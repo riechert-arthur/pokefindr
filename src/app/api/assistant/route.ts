@@ -127,7 +127,8 @@ export async function POST(request: NextRequest) {
           emit,
           signal,
           usage,
-          onTool: (call) => toolCalls.push(call),
+          // The log keeps what was asked, not the places that came back.
+          onTool: ({ name, input, ok, error }) => toolCalls.push({ name, input, ok, ...(error ? { error } : {}) }),
         })
       } catch (err) {
         if (request.signal.aborted) outcome = "stopped"

@@ -1,0 +1,90 @@
+name: Assistant evals
+
+# The assistant eval (#208, evals/assistant). It calls the Claude API, so it
+# costs money and needs the ANTHROPIC_EVAL_KEY secret: a separate key with a
+# spend limit (#209). Without the secret, the jobs skip.
+#
+# - PRs that touch the prompt, tools, model settings or the eval: the smoke
+#   set, once. Fails if grounding drops below 100% or the pass rate falls
+#   more than 5 points below evals/assistant/baseline.json.
+# - Nightly: every case, twice, with the helpfulness judge. Its report is
+#   kept as an artifact; copy a good one to baseline.json to move the bar.
+on:
+  pull_request:
+    paths:
+      - "src/server/assistant/**"
+      - "src/server/config.ts"
+      - "evals/assistant/**"
+      - ".github/workflows/evals.yml"
+  schedule:
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+    inputs:
+      cases:
+        description: "smoke, all, or case ids"
+        default: smoke
+
+concurrency:
+  group: evals-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  eval:
+    name: Assistant eval
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_EVAL_KEY }}
+      EVAL_DATABASE_URL: postgres://pokefindr:pokefindr@localhost:5433/pokefindr_eval
+      # The app's config needs these to load; the eval doesn't use them.
+      APP_URL: http://localhost:3000
+      JWT_SECRET: eval-only-secret
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:9
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: unused
+      SUPABASE_SERVICE_ROLE_KEY: unused
+    steps:
+      - name: Check for the eval key
+        id: key
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "::notice::ANTHROPIC_EVAL_KEY isn't set; skipping the assistant eval."; fi
+      - if: steps.key.outputs.present == 'true'
+        uses: actions/checkout@v4
+      - name: Start PostGIS
+        if: steps.key.outputs.present == 'true'
+        run: |
+          docker run -d --name postgis -e POSTGRES_USER=pokefindr -e POSTGRES_PASSWORD=pokefindr -e POSTGRES_DB=pokefindr_eval -p 5433:5432 \
+            --health-cmd "pg_isready -h 127.0.0.1 -U pokefindr -d pokefindr_eval" --health-interval 2s --health-timeout 3s --health-retries 30 \
+            postgis/postgis:16-3.4
+          for _ in $(seq 60); do [ "$(docker inspect -f '{{.State.Health.Status}}' postgis)" = healthy ] && exit 0; sleep 2; done
+          docker logs postgis; exit 1
+      - if: steps.key.outputs.present == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - if: steps.key.outputs.present == 'true'
+        run: npm ci --no-audit --no-fund
+      - name: Migrate the eval database
+        if: steps.key.outputs.present == 'true'
+        run: npm run db:migrate
+        env:
+          DATABASE_URL: ${{ env.EVAL_DATABASE_URL }}
+      - name: Run the eval
+        if: steps.key.outputs.present == 'true'
+        run: |
+          baseline=""
+          [ -f evals/assistant/baseline.json ] && baseline="--baseline evals/assistant/baseline.json"
+          if [ "${{ github.event_name }}" = schedule ]; then
+            npm run eval:assistant -- --cases all --reps 2 --judge --max-cost-usd 8 $baseline
+          else
+            npm run eval:assistant -- --cases "${{ inputs.cases || 'smoke' }}" --max-cost-usd 2 $baseline
+          fi
+      - if: always() && steps.key.outputs.present == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: assistant-eval-${{ github.run_id }}
+          path: evals/assistant/results/
+          retention-days: 30
