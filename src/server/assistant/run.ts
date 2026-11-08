@@ -11,6 +11,7 @@ import type {
 import { getAnthropic } from "@/server/container"
 import { ASSISTANT_TOOLS, inputJsonSchema, runTool, type ToolContext } from "./tools"
 import { SYSTEM_PROMPT, turnContext } from "./prompt"
+import { costMicros } from "./pricing"
 import type { AssistantCard } from "@/lib/types/assistant"
 import type { AssistantEvent, AssistantTurn, AssistantUsage } from "@/lib/types/assistant-stream"
 
@@ -18,13 +19,20 @@ import type { AssistantEvent, AssistantTurn, AssistantUsage } from "@/lib/types/
 export const MAX_ROUNDS = 6
 /** Output cap per model call. Answers are short; this leaves room for thinking. */
 export const MAX_TOKENS = 8000
+/** A fast output rate, for charging an aborted call by how long it ran (thinking included). */
+export const OUTPUT_TOKENS_PER_SECOND = 150
 
 /** What the turn needs from the Claude client: a streamed message. Tests pass a fake. */
 export interface ClaudeStreamer {
   stream(
     params: BetaMessageStreamParams,
     options: { signal?: AbortSignal },
-  ): { on(event: "text", listener: (delta: string) => void): unknown; finalMessage(): Promise<BetaMessage> }
+  ): {
+    on(event: "text", listener: (delta: string) => void): unknown
+    finalMessage(): Promise<BetaMessage>
+    /** What has arrived so far, usage included: what an aborted call still cost. */
+    readonly currentMessage?: BetaMessage
+  }
 }
 
 export const claudeStreamer = (client: Anthropic): ClaudeStreamer => ({
@@ -80,6 +88,8 @@ export function memoryOf(text: string, cards: readonly AssistantCard[]): string 
   return [text.trim(), ...lines].filter(Boolean).join("\n") || "(No answer.)"
 }
 
+export const emptyUsage = (): AssistantUsage => ({ inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, costMicros: 0 })
+
 /** Block types that aren't sent back from before a mid-answer fallback (the API's rule). */
 const BEFORE_FALLBACK_DROPPED = new Set(["thinking", "redacted_thinking", "tool_use", "server_tool_use"])
 
@@ -112,16 +122,16 @@ export function usageAttempts(m: BetaMessage): { model: string; inputTokens: num
   }))
 }
 
-const addUsage = (sum: AssistantUsage, m: BetaMessage): AssistantUsage =>
-  usageAttempts(m).reduce(
-    (u, a) => ({
-      inputTokens: u.inputTokens + a.inputTokens,
-      outputTokens: u.outputTokens + a.outputTokens,
-      cacheReadTokens: u.cacheReadTokens + a.cacheReadTokens,
-      cacheWriteTokens: u.cacheWriteTokens + a.cacheWriteTokens,
-    }),
-    sum,
-  )
+/** Adds one model call's usage to `sum` (in place): every attempt, each priced by the model that ran it. */
+function addUsage(sum: AssistantUsage, m: BetaMessage) {
+  for (const a of usageAttempts(m)) {
+    sum.inputTokens += a.inputTokens
+    sum.outputTokens += a.outputTokens
+    sum.cacheReadTokens += a.cacheReadTokens
+    sum.cacheWriteTokens += a.cacheWriteTokens
+    sum.costMicros += costMicros(a.model, a)
+  }
+}
 
 export interface TurnOptions {
   claude: ClaudeStreamer
@@ -132,6 +142,8 @@ export interface TurnOptions {
   tools: ToolContext
   emit: (event: AssistantEvent) => void
   signal?: AbortSignal
+  /** Filled in as each model call finishes, so a turn that fails partway still counts what it used. */
+  usage?: AssistantUsage
 }
 
 /**
@@ -140,7 +152,7 @@ export interface TurnOptions {
  * they come. Ends with a `done` event carrying the memory and the usage.
  * API errors throw; the route turns them into an `error` event.
  */
-export async function runAssistantTurn({ claude, model, effort, history, tools, emit, signal }: TurnOptions): Promise<void> {
+export async function runAssistantTurn({ claude, model, effort, history, tools, emit, signal, usage = emptyUsage() }: TurnOptions): Promise<void> {
   const messages: BetaMessageParam[] = [
     ...history.map((t): BetaMessageParam => ({ role: t.role, content: t.content })),
     // Per-request facts as an operator message after the newest user message, so the cached prefix stays put.
@@ -149,15 +161,15 @@ export async function runAssistantTurn({ claude, model, effort, history, tools, 
   const cards: AssistantCard[] = []
   let text = ""
   let served = model
-  let usage: AssistantUsage = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 }
 
   const finish = (stop: Extract<AssistantEvent, { type: "done" }>["stop"]) =>
     // The model that answered: a refusal fallback can differ from the one asked for.
-    emit({ type: "done", stop, memory: memoryOf(text, cards), usage, model: served })
+    emit({ type: "done", stop, memory: memoryOf(text, cards), usage: { ...usage }, model: served })
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
     // Where this round's text starts, so a declined round's partial can be dropped from the memory.
     const roundStart = text.length
+    const roundStartedAt = Date.now()
     const stream = claude.stream(
       {
         model,
@@ -178,8 +190,26 @@ export async function runAssistantTurn({ claude, model, effort, history, tools, 
       text += delta
       emit({ type: "text", text: delta })
     })
-    const message = await stream.finalMessage()
-    usage = addUsage(usage, message)
+    let message: BetaMessage
+    try {
+      message = await stream.finalMessage()
+    } catch (err) {
+      // An aborted or failed call is still billed for what it got through: count it. The
+      // stream reports output tokens only at its end, and thinking isn't visible, so estimate
+      // generously: the larger of the text that came (about 3 characters a token) and the
+      // time the call ran at a fast generation rate, up to the cap (all of it on a timeout).
+      // Stopping while the model thinks is then charged for the thinking too.
+      const partial = stream.currentMessage
+      if (partial?.usage) {
+        const timedOut = signal?.aborted && (signal.reason as Error | undefined)?.name === "TimeoutError"
+        const byText = Math.ceil((text.length - roundStart) / 3)
+        const byTime = Math.ceil(((Date.now() - roundStartedAt) / 1000) * OUTPUT_TOKENS_PER_SECOND)
+        const estimate = timedOut ? MAX_TOKENS : Math.min(MAX_TOKENS, Math.max(byText, byTime))
+        addUsage(usage, { ...partial, usage: { ...partial.usage, iterations: null, output_tokens: Math.max(partial.usage.output_tokens, estimate) } })
+      }
+      throw err
+    }
+    addUsage(usage, message)
     served = message.model
     const content = usableContent(message.content)
 

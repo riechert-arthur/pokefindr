@@ -12,6 +12,7 @@ import { STATES } from "@/lib/map/states"
 import { milesBetween } from "@/lib/map/geo"
 import { LOCATION_KINDS, type LocationFeature, type LocationKind } from "@/lib/types/locations"
 import type { AssistantCard, AssistantEvent, AssistantPlace } from "@/lib/types/assistant"
+import type { PlaceBudget } from "./limits"
 
 /**
  * The assistant's tools, shared by the in-app assistant (/api/assistant) and
@@ -37,6 +38,8 @@ export interface ToolContext {
   viewer: { lng: number; lat: number } | null
   now: Date
   signal?: AbortSignal
+  /** The viewer's places left today (#211); none means no cap (the MCP server sets its own). */
+  places?: PlaceBudget
 }
 
 export interface ToolOutput {
@@ -102,6 +105,26 @@ const notesFor = (w: Where, radiusGiven: boolean, ...more: (string | false | und
 }
 
 const areaOf = (w: Where, radiusMiles: number): Area => (w.kind === "state" ? { state: w.code } : { center: [w.lng, w.lat], radiusMiles })
+
+/**
+ * Keeps the places the viewer may still see today: ones already shown are
+ * free, each new one uses up the budget. Throws when none are left, so the
+ * answer points to the map instead.
+ */
+export function allowPlaces<T extends { id: string }>(places: readonly T[], ctx: ToolContext): T[] {
+  const budget = ctx.places
+  if (!budget || places.length === 0) return [...places]
+  const kept = places.filter((p) => {
+    if (budget.seen.has(p.id)) return true
+    if (budget.left <= 0) return false
+    budget.left--
+    budget.seen.add(p.id)
+    budget.added.push(p.id)
+    return true
+  })
+  if (kept.length === 0) throw new ToolInputError("The viewer has seen today's limit of places from the assistant. Tell them the map shows every place, and the limit resets at midnight UTC.")
+  return kept
+}
 
 // ── Shapes ─────────────────────────────────────────────
 
@@ -175,7 +198,7 @@ export const findPlaces = tool({
             miles: r.features.map((f) => f.properties.distance),
           }))
     const samples = await sampleIds(features.map((f) => f.properties.id), ctx.db)
-    const places = features.map((f, i) => placeOf(f, samples, miles?.[i]))
+    const places = allowPlaces(features.map((f, i) => placeOf(f, samples, miles?.[i])), ctx)
     const title = where.kind === "state" ? `${total.toLocaleString("en-US")} in ${where.label}` : `${total.toLocaleString("en-US")} within ${radiusMiles} mi of ${where.label}`
     return {
       data: {
@@ -284,7 +307,7 @@ export const planRoute = tool({
       start = w
     }
     const samples = await sampleIds(found.map((f) => f.properties.id), ctx.db)
-    const { order, legs, total } = nearestFirst(found.map((f) => placeOf(f, samples)), start)
+    const { order, legs, total } = nearestFirst(allowPlaces(found.map((f) => placeOf(f, samples)), ctx), start)
     const mapsUrl = directionsUrl(start ?? order[0], order)
     return {
       data: {
@@ -363,7 +386,7 @@ export const getPlace = tool({
     const f = await getLocationFeature(input.id, ctx.db)
     if (!f) throw new ToolInputError(`No place has id "${input.id}".`)
     const [samples, reviews] = await Promise.all([sampleIds([f.properties.id], ctx.db), getPanelReviews(f.properties.id, null, ctx.db)])
-    const place = placeOf(f, samples)
+    const [place] = allowPlaces([placeOf(f, samples)], ctx)
     return {
       data: {
         ...brief(place),
