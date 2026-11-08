@@ -3,6 +3,7 @@
  *
  *   npm run assistant:feedback              last 7 days
  *   npm run assistant:feedback -- --days 30
+ *   npm run assistant:feedback -- --export <turnId>   an eval case skeleton for cases.yaml
  *
  * Prints the thumbs-up and vote rates per day, model and prompt version,
  * then the thumbs-down answers with their question, answer (while the text
@@ -21,6 +22,15 @@ async function main() {
   if (!Number.isFinite(days) || days <= 0) throw new Error("--days takes a positive number")
   const since = new Date(Date.now() - days * 86_400_000)
   const { feedbackStats, downvotedTurns } = await import("@/server/assistant/feedback")
+
+  const exportId = process.argv[process.argv.indexOf("--export") + 1]
+  if (process.argv.includes("--export")) {
+    const { caseFromFeedback } = await import("../../evals/assistant/fromFeedback")
+    const turn = (await downvotedTurns(new Date(0), undefined, 10_000)).find((t) => t.turnId === exportId)
+    if (!turn) throw new Error(`No thumbs-down turn ${exportId}`)
+    console.log(caseFromFeedback(turn))
+    return
+  }
 
   const stats = await feedbackStats(since)
   console.log(`Feedback since ${since.toISOString().slice(0, 10)}\n`)

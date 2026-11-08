@@ -140,8 +140,8 @@ export interface TurnOptions {
   signal?: AbortSignal
   /** Filled in as each model call finishes, so a turn that fails partway still counts what it used. */
   usage?: AssistantUsage
-  /** Told about each tool call as it finishes (for the turn log). */
-  onTool?: (call: { name: string; input: unknown; ok: boolean; error?: string }) => void
+  /** Told about each tool call as it finishes (the turn log, the evals' grounding check). */
+  onTool?: (call: { name: string; input: unknown; ok: boolean; error?: string; data?: Record<string, unknown> }) => void
 }
 
 /**
@@ -229,7 +229,7 @@ export async function runAssistantTurn({ claude, model, effort, history, tools, 
       uses.map(async (use): Promise<BetaToolResultBlockParam> => {
         emit({ type: "status", text: STATUS[use.name] ?? "Working…" })
         const r = await runTool(use.name, use.input, tools)
-        onTool?.({ name: use.name, input: use.input, ok: r.ok, ...(r.ok ? {} : { error: r.error }) })
+        onTool?.({ name: use.name, input: use.input, ok: r.ok, ...(r.ok ? { data: r.data } : { error: r.error }) })
         if (!r.ok) return { type: "tool_result", tool_use_id: use.id, is_error: true, content: r.error }
         if (r.card) {
           cards.push(r.card)

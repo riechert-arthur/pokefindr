@@ -45,3 +45,6 @@ env/
 # drizzle-kit introspection output (npm run db:pull)
 /drizzle-introspect/
 storybook-static
+
+# Assistant eval reports (npm run eval:assistant)
+/evals/assistant/results/
