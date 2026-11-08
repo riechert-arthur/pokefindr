@@ -56,6 +56,17 @@ describe("Dashboard", () => {
     expect(screen.queryByRole("region", { name: "Near you" })).toBeNull()
   })
 
+  it("leaves focus alone when the viewer moved on while locating", async () => {
+    let answer!: PositionCallback
+    vi.stubGlobal("navigator", { ...navigator, geolocation: { getCurrentPosition: vi.fn((ok: PositionCallback) => (answer = ok)) } })
+    render(<Dashboard assistant={() => <textarea aria-label="composer" />} />)
+    fireEvent.click(screen.getByRole("button", { name: "Use my location" }))
+    screen.getByRole("textbox", { name: "composer" }).focus()
+    await act(async () => answer({ coords: { longitude: -122.3, latitude: 47.6 } } as GeolocationPosition))
+    expect(await screen.findByText("42")).toBeInTheDocument()
+    expect(screen.getByRole("textbox", { name: "composer" })).toHaveFocus()
+  })
+
   it("gives up locating when the browser never answers", async () => {
     vi.useFakeTimers()
     vi.stubGlobal("navigator", { ...navigator, geolocation: { getCurrentPosition: vi.fn() } })

@@ -38,6 +38,10 @@ export function NearYouTile({ near, onLocate }: { near: NearState; onLocate: () 
   // keep keyboard focus on what replaced it.
   useEffect(() => {
     if (!asked.current) return
+    // Only when focus was lost with the button (it's disabled while locating):
+    // never pull it away from somewhere the viewer has moved on to, like the composer.
+    const lost = !document.activeElement || document.activeElement === document.body || document.activeElement === button.current
+    if (!lost) return
     if (near.status === "ready") openLink.current?.focus()
     if (near.status === "denied") button.current?.focus()
   }, [near.status])

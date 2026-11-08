@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react"
 import { toast } from "sonner"
+import { LOCATE_GIVE_UP_MS } from "@/lib/map/locate"
 import { useControl, type GeolocateControlInstance, type GeolocateErrorEvent, type GeolocateResultEvent } from "./engine"
 
 /** Wording from the redesign prototype. */
@@ -17,12 +18,8 @@ export const LOCATION_UNAVAILABLE = {
 
 const PERMISSION_DENIED = 1
 
-/**
- * How long to wait for an answer before giving up. Firefox calls neither
- * callback when the viewer dismisses the permission prompt, and the
- * geolocation timeout only starts once permission is granted.
- */
-export const LOCATE_GIVE_UP_MS = 15_000
+/** How long to wait for an answer before giving up (see src/lib/map/locate.ts). */
+export { LOCATE_GIVE_UP_MS }
 
 /** How many times (100 ms apart) a near=me link tries to start locating before giving up. */
 export const AUTO_LOCATE_TRIES = 20
