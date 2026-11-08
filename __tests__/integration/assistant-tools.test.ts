@@ -64,6 +64,8 @@ describe("find_places", () => {
     expect(await runTool("find_places", { near: "Atlantis" }, ctx())).toMatchObject({ ok: false, error: expect.stringContaining("No US place") })
     expect(await runTool("find_places", { near: "Seattle", retailer: "Nope" }, ctx())).toMatchObject({ ok: false, error: expect.stringContaining("retailer") })
     expect(await runTool("find_places", { near: "me" }, ctx())).toMatchObject({ ok: false, error: expect.stringContaining("shared a location") })
+    // "ME" in capitals is Maine.
+    expect(await runTool("area_stats", { area: "ME" }, ctx())).toMatchObject({ ok: true, data: { area: "Maine" } })
     const near = await runTool("find_places", { near: "near me", radius_miles: 2 }, ctx({ lng: -122.34, lat: 47.61 }))
     expect(near.ok && near.data).toMatchObject({ area: "you", total: 3 })
   })
@@ -121,8 +123,10 @@ describe("list_events and get_place", () => {
         { kind: "event", title: "Over", startsAt: new Date("2026-11-01T18:00:00Z"), geog: { lng: -122.33, lat: 47.6 }, city: "Seattle", state: "WA" },
       ])
     const r = await runTool("list_events", { near: "Seattle, WA" }, ctx())
-    expect(r.ok && (r.data.events as { title: string }[]).map((e) => e.title)).toEqual(["League night", "Card show"])
-    expect(r.ok && r.data.events).toMatchObject([{ sample_data: true }, {}])
+    // Within 100 mi by default: Denver's show isn't counted near Seattle.
+    expect(r.ok && r.data).toMatchObject({ radius_miles: 100, total: 1, events: [{ title: "League night", sample_data: true }] })
+    const wide = await runTool("list_events", { near: "Seattle, WA", radius_miles: 250 }, ctx())
+    expect(wide.ok && wide.data.total).toBe(1)
     const co = await runTool("list_events", { near: "Colorado" }, ctx())
     expect(co.ok && co.data.total).toBe(1)
   })
