@@ -49,6 +49,8 @@ export function ReviewsSection({ kind, reviews, username, placeName }: ReviewsSe
   // The review waiting for the delete confirmation.
   const [deleting, setDeleting] = useState<Review | null>(null)
   const textRef = useRef<HTMLTextAreaElement>(null)
+  // The Delete button that opened the confirmation: focus returns to it.
+  const deleteButton = useRef<HTMLButtonElement | null>(null)
 
   const reset = () => {
     setEditing(null)
@@ -131,7 +133,12 @@ export function ReviewsSection({ kind, reviews, username, placeName }: ReviewsSe
                   <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-caption" onClick={() => startEdit(r)} disabled={busy}>
                     Edit
                   </Button>
-                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-caption" onClick={() => setDeleting(r)} disabled={busy}>
+                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-caption" onClick={(e) => {
+                      deleteButton.current = e.currentTarget
+                      setDeleting(r)
+                    }}
+                    disabled={busy}
+                  >
                     Delete
                   </Button>
                 </div>
@@ -179,7 +186,17 @@ export function ReviewsSection({ kind, reviews, username, placeName }: ReviewsSe
         </p>
       )}
       <Dialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
-        <DialogContent>
+        <DialogContent
+          onCloseAutoFocus={(e) => {
+            // There's no DialogTrigger: back to the Delete button, or to the
+            // form once the review is gone.
+            e.preventDefault()
+            const button = deleteButton.current
+            deleteButton.current = null
+            if (button?.isConnected) button.focus()
+            else textRef.current?.focus()
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Delete this review?</DialogTitle>
             <DialogDescription>
