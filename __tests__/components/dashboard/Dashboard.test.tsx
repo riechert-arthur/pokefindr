@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { Dashboard, SUGGESTIONS } from "@/components/dashboard/Dashboard"
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/home", useRouter: () => ({ push: vi.fn() }) }))
@@ -42,6 +42,8 @@ describe("Dashboard", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Use my location" }))
     expect(await screen.findByText("42")).toBeInTheDocument()
+    // Focus follows to what replaced the button.
+    await waitFor(() => expect(screen.getByRole("link", { name: "Open on map" })).toHaveFocus())
     expect(screen.getByRole("link", { name: "Open on map" })).toHaveAttribute("href", "/map?r=10&near=me")
     expect(seen.at(-1)?.viewer).toEqual({ lng: -122.34, lat: 47.61 })
     expect(screen.getByRole("button", { name: "What's closest to me?" })).toBeInTheDocument()
@@ -52,5 +54,26 @@ describe("Dashboard", () => {
     fireEvent.click(screen.getByRole("button", { name: "start" }))
     expect(screen.queryByRole("heading", { level: 1 })).toBeNull()
     expect(screen.queryByRole("region", { name: "Near you" })).toBeNull()
+  })
+
+  it("gives up locating when the browser never answers", async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal("navigator", { ...navigator, geolocation: { getCurrentPosition: vi.fn() } })
+    render(<Dashboard assistant={() => null} />)
+    fireEvent.click(screen.getByRole("button", { name: "Use my location" }))
+    expect(screen.getByRole("button", { name: "Locating…" })).toBeDisabled()
+    act(() => vi.advanceTimersByTime(15_000))
+    expect(screen.getByText(/Location is off/)).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Use my location" })).toBeEnabled()
+    vi.useRealTimers()
+  })
+
+  it("says when the reviews or events couldn't load, and still links to the reviews page", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {})
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => (url === "/api/locations/aggregates" ? json(ROUTES[url]) : new Response("", { status: 500 }))))
+    render(<Dashboard assistant={() => null} />)
+    expect(await screen.findByText(/Couldn.t load your reviews/)).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Manage your reviews" })).toHaveAttribute("href", "/home/reviews")
+    expect(await screen.findByText(/Couldn.t load events/)).toBeInTheDocument()
   })
 })

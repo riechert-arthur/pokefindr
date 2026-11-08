@@ -11,6 +11,7 @@ import { formatCount } from "@/components/pokefindr/kinds"
 import { useSidebar } from "@/components/providers/SidebarContextProvider"
 import { useSessionContext } from "@/components/providers/SessionProvider"
 import { DEFAULT_RADIUS } from "@/lib/map/url-state"
+import { LOCATE_GIVE_UP_MS } from "@/components/map/LocateControl"
 import type { Highlights, UpcomingEvent } from "@/lib/types/highlights"
 import type { RegionCount } from "@/lib/types/locations"
 import { EventsTile, NearYouTile, ReviewsTile, SubmissionsTile, type MyReview, type NearState } from "./DashboardTiles"
@@ -54,8 +55,8 @@ export function Dashboard({ assistant }: DashboardProps) {
   const { session } = useSessionContext()
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const [vending, setVending] = useState<number | null>(null)
-  const [reviews, setReviews] = useState<MyReview[] | null>(null)
-  const [events, setEvents] = useState<UpcomingEvent[] | null>(null)
+  const [reviews, setReviews] = useState<MyReview[] | "error" | null>(null)
+  const [events, setEvents] = useState<UpcomingEvent[] | "error" | null>(null)
   const [near, setNear] = useState<NearState>({ status: "idle" })
   const [viewer, setViewer] = useState<{ lng: number; lat: number } | null>(null)
   const [suggestion, setSuggestion] = useState<string | null>(null)
@@ -73,13 +74,13 @@ export function Dashboard({ assistant }: DashboardProps) {
       .then((r) => setReviews(r.reviews))
       .catch((err) => {
         quiet(err)
-        if (!ctl.signal.aborted) setReviews([])
+        if (!ctl.signal.aborted) setReviews("error")
       })
     getJson<Highlights>("/api/highlights", ctl.signal)
       .then((h) => setEvents(h.events))
       .catch((err) => {
         quiet(err)
-        if (!ctl.signal.aborted) setEvents([])
+        if (!ctl.signal.aborted) setEvents("error")
       })
     return () => ctl.abort()
   }, [])
@@ -87,8 +88,18 @@ export function Dashboard({ assistant }: DashboardProps) {
   const locate = useCallback(() => {
     if (!navigator.geolocation) return setNear({ status: "denied" })
     setNear({ status: "locating" })
+    // Firefox calls neither callback when the prompt is dismissed, and the timeout below
+    // only starts once permission is given, so give up on our own (as the map does).
+    let settled = false
+    const giveUp = setTimeout(() => {
+      if (!settled) setNear({ status: "denied" })
+      settled = true
+    }, LOCATE_GIVE_UP_MS)
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
+        if (settled) return
+        settled = true
+        clearTimeout(giveUp)
         const at = { lng: round2(pos.coords.longitude), lat: round2(pos.coords.latitude) }
         setViewer(at)
         try {
@@ -98,7 +109,12 @@ export function Dashboard({ assistant }: DashboardProps) {
           setNear({ status: "ready", count: null })
         }
       },
-      () => setNear({ status: "denied" }),
+      () => {
+        if (settled) return
+        settled = true
+        clearTimeout(giveUp)
+        setNear({ status: "denied" })
+      },
       { timeout: 15_000, maximumAge: 300_000 },
     )
   }, [])
