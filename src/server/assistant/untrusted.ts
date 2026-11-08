@@ -11,10 +11,10 @@ const HIDDEN = /[\u0000-\u001f\u007f-\u009f\u200b\u200e\u200f\u202a-\u202e\u2060
 
 /**
  * Unicode tag characters (U+E0000–E007F) can spell out instructions a reader
- * can't see, so they go, except in a well-formed subdivision flag (England,
- * Scotland, Wales: a black flag, a few tag letters or digits, a cancel tag).
+ * can't see, so they go, except in the three subdivision flags in use: England,
+ * Scotland and Wales (only those, so text can't hide in made-up flags).
  */
-const TAGS = /(\u{1f3f4}[\u{e0030}-\u{e0039}\u{e0061}-\u{e007a}]{2,7}\u{e007f})|[\u{e0000}-\u{e007f}]+/gu
+const TAGS = /(\u{1f3f4}(?:\u{e0067}\u{e0062}\u{e0065}\u{e006e}\u{e0067}|\u{e0067}\u{e0062}\u{e0073}\u{e0063}\u{e0074}|\u{e0067}\u{e0062}\u{e0077}\u{e006c}\u{e0073})\u{e007f})|[\u{e0000}-\u{e007f}]+/gu
 const graphemes = new Intl.Segmenter("en", { granularity: "grapheme" })
 
 /**

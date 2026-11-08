@@ -20,6 +20,9 @@ describe("plainUserText", () => {
     expect(plainUserText(`Card Hall${hidden}`, 100)).toBe("Card Hall")
     const scotland = "\u{1f3f4}\u{e0067}\u{e0062}\u{e0073}\u{e0063}\u{e0074}\u{e007f}"
     expect(plainUserText(`Scot Cards ${scotland} Glasgow`, 100)).toBe(`Scot Cards ${scotland} Glasgow`)
+    // A made-up "flag" can't carry hidden text.
+    const fake = "\u{1f3f4}" + [..."ignore"].map((c) => String.fromCodePoint(0xe0000 + c.codePointAt(0)!)).join("") + "\u{e007f}"
+    expect(plainUserText(`Shop ${fake}`, 100)).toBe("Shop \u{1f3f4}")
     expect(plainUserText("Family 👨\u200d👩\u200d👧 Cards™ ½ off", 100)).toBe("Family 👨\u200d👩\u200d👧 Cards™ ½ off")
     expect(plainUserText("می\u200cخواهم", 100)).toBe("می\u200cخواهم")
   })
