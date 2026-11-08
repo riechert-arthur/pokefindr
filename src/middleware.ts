@@ -24,6 +24,7 @@ export const config = {
     '/api/my-reviews/:path*',
     '/api/locations/:id/reports',
     '/api/assistant',
+    '/api/assistant/:path*',
   ],
 }
 

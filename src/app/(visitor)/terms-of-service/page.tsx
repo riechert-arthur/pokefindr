@@ -4,7 +4,7 @@ const TermsOfServicePage: FC = () => {
   return (
     <div className="max-w-3xl mx-auto p-6 text-foreground">
       <h1 className="text-3xl font-bold mb-4">TERMS OF SERVICE</h1>
-      <p className="mb-4">Last updated December 7, 2024</p>
+      <p className="mb-4">Last updated November 8, 2026</p>
 
       <p className="mb-4">
         These Terms of Service (&quot;Terms&quot;) govern your use of the
@@ -137,7 +137,18 @@ const TermsOfServicePage: FC = () => {
         any changes, you agree to the updated Terms.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">10. CONTACT US</h2>
+      <h2 className="text-2xl font-semibold mt-8 mb-4">10. THE ASSISTANT</h2>
+      <p className="mb-4">
+        The assistant on your dashboard writes its answers with an AI model.
+        Answers can be wrong or out of date, so check a place on the map before
+        you go. The assistant has no stock, price or restock information.
+      </p>
+      <p className="mb-4">
+        The assistant has daily limits on how much you can ask and how many
+        places it shows you. Do not use it, or automate it, to copy PokeFindr&apos;s
+        location data in bulk.
+      </p>
+      <h2 className="text-2xl font-semibold mt-8 mb-4">11. CONTACT US</h2>
       <p className="mb-4">
         If you have any questions or concerns about these Terms, please contact
         us at{" "}

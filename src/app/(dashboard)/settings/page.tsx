@@ -10,6 +10,7 @@ import { APP_NAV_ID } from '@/components/pokefindr/AppRail'
 import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { LoadSpinner } from '@/components/wrappers/LoadSpinner'
 import { useSessionContext } from '@/components/providers/SessionProvider'
+import { ClearAssistantHistory } from '@/components/assistant/ClearAssistantHistory'
 
 interface Settings {
   fullName: string
@@ -161,6 +162,12 @@ export default function SettingsPage() {
               <h2 className="text-base/7 font-semibold text-foreground">Appearance</h2>
               <p className="mt-1 text-sm/6 text-muted-foreground">Light, dark, or follow your device.</p>
               <ThemeToggle className="mt-4" />
+            </section>
+
+            <section>
+              <h2 className="text-base/7 font-semibold text-foreground">Assistant</h2>
+              <p className="mt-1 text-sm/6 text-muted-foreground">We keep the text of your assistant conversations for 30 days. Clear it now if you like.</p>
+              <ClearAssistantHistory className="mt-4" />
             </section>
           </div>
         </main>

@@ -34,5 +34,7 @@ export type AssistantEvent =
       memory: string
       usage: AssistantUsage
       model: string
+      /** The turn's id in the log, for feedback on it. Set by /api/assistant. */
+      turnId?: string
     }
   | { type: "error"; message: string }

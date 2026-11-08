@@ -132,6 +132,8 @@ export interface TurnOptions {
   signal?: AbortSignal
   /** Filled in as each model call finishes, so a turn that fails partway still counts what it used. */
   usage?: AssistantUsage
+  /** Told about each tool call as it finishes (for the turn log). */
+  onTool?: (call: { name: string; input: unknown; ok: boolean; error?: string }) => void
 }
 
 /**
@@ -140,7 +142,7 @@ export interface TurnOptions {
  * they come. Ends with a `done` event carrying the memory and the usage.
  * API errors throw; the route turns them into an `error` event.
  */
-export async function runAssistantTurn({ claude, model, effort, history, tools, emit, signal, usage = emptyUsage() }: TurnOptions): Promise<void> {
+export async function runAssistantTurn({ claude, model, effort, history, tools, emit, signal, usage = emptyUsage(), onTool }: TurnOptions): Promise<void> {
   const messages: BetaMessageParam[] = [
     ...history.map((t): BetaMessageParam => ({ role: t.role, content: t.content })),
     // Per-request facts as an operator message after the newest user message, so the cached prefix stays put.
@@ -219,6 +221,7 @@ export async function runAssistantTurn({ claude, model, effort, history, tools, 
       uses.map(async (use): Promise<BetaToolResultBlockParam> => {
         emit({ type: "status", text: STATUS[use.name] ?? "Working…" })
         const r = await runTool(use.name, use.input, tools)
+        onTool?.({ name: use.name, input: use.input, ok: r.ok, ...(r.ok ? {} : { error: r.error }) })
         if (!r.ok) return { type: "tool_result", tool_use_id: use.id, is_error: true, content: r.error }
         if (r.card) {
           cards.push(r.card)
