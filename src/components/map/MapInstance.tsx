@@ -319,9 +319,11 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   /** Selecting another place closes the open details; the URL drops them too. */
   const select = useCallback(
     (feat: LocationFeature) => {
-      const open = detailsRef.current
       dispatch({ type: "select", location: toSelected(feat) })
-      if (open && open.id !== feat.properties.id) void setParams({ location: null })
+      // Another location's details are in the URL (open, or still loading):
+      // drop them, which also cancels a load that would replace this pick.
+      const named = new URLSearchParams(window.location.search).get("location")
+      if (named && named !== feat.properties.id) void setParams({ location: null })
     },
     [setParams],
   )
@@ -590,7 +592,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
                 key={details.id}
                 location={details}
                 backLabel={
-                  place ? (nearMe ? "Back to results near you" : `Back to ${urlView.place?.label ?? "results"}`) : stateFocus ? `Back to ${stateFocus}` : "Back"
+                  place ? (nearMe ? "Back to results near you" : `Back to ${urlView.place?.label ?? "results"}`) : stateFocus ? `Back to ${STATES[stateFocus].name}` : "Back"
                 }
                 onBack={closeDetails}
                 me={me}

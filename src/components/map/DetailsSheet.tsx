@@ -23,7 +23,7 @@ export interface DetailsLocation {
 
 interface DetailsSheetProps {
   location: DetailsLocation
-  /** "Back to Seattle, WA", "Back to WA", or "Back". */
+  /** "Back to Seattle, WA", "Back to Washington", or "Back". */
   backLabel: string
   onBack: () => void
   /** The viewer's position, once shared: "From you". */

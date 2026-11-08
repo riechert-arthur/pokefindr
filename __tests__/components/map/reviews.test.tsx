@@ -119,6 +119,7 @@ describe("ReviewsSection", () => {
     expect(dialog).toHaveTextContent("Your rating for QFC will be removed.")
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
     expect(reviews.remove).not.toHaveBeenCalled()
+    await waitFor(() => expect(screen.getByRole("button", { name: "Delete" })).toHaveFocus())
     fireEvent.click(screen.getByRole("button", { name: "Delete" }))
     fireEvent.click(screen.getAllByRole("button", { name: "Delete" }).at(-1)!)
     expect(reviews.remove).toHaveBeenCalledWith("m")
