@@ -49,6 +49,10 @@ export function ReportForm({ locationId, kind, signedIn, onClose }: ReportFormPr
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reason, ...(reason === "other" && comment.trim() ? { comment: comment.trim() } : {}) }),
       })
+      if (res.status === 401) {
+        toast.error("Couldn't send your report", { description: "Your session ended. Log in again and retry." })
+        return
+      }
       if (res.status === 429) {
         toast.error("Too many reports today", { description: "Thanks for helping. Try again tomorrow." })
         return

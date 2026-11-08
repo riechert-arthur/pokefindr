@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useRef, useState, type FormEvent } from "react"
 import Link from "next/link"
 import { StarRating } from "@/components/pokefindr/StarRating"
 import { KINDS, type LocationKind } from "@/components/pokefindr/kinds"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import { timeAgo } from "@/lib/format/time"
@@ -30,6 +31,8 @@ interface ReviewsSectionProps {
   reviews: ReviewsState
   /** The signed-in viewer's name; null signed out (the form becomes a log-in link). */
   username: string | null
+  /** The location's name, for the delete confirmation. */
+  placeName?: string
 }
 
 /**
@@ -37,12 +40,15 @@ interface ReviewsSectionProps {
  * age, then the form (stars and optional text). The viewer can edit or delete
  * their own; posting shows the review at once.
  */
-export function ReviewsSection({ kind, reviews, username }: ReviewsSectionProps) {
+export function ReviewsSection({ kind, reviews, username, placeName }: ReviewsSectionProps) {
   // The review being edited in the form, or null for a new one.
   const [editing, setEditing] = useState<Review | null>(null)
   const [rating, setRating] = useState(0)
   const [text, setText] = useState("")
   const [busy, setBusy] = useState(false)
+  // The review waiting for the delete confirmation.
+  const [deleting, setDeleting] = useState<Review | null>(null)
+  const textRef = useRef<HTMLTextAreaElement>(null)
 
   const reset = () => {
     setEditing(null)
@@ -65,12 +71,24 @@ export function ReviewsSection({ kind, reviews, username }: ReviewsSectionProps)
       setText(input.text)
     }
     setBusy(false)
+    // The submit button is disabled again, so keep focus in the form.
+    textRef.current?.focus()
   }
 
   const startEdit = (r: Review) => {
     setEditing(r)
     setRating(r.rating)
     setText(r.text)
+    // Move to the form so it's clear the review is open there.
+    textRef.current?.focus()
+  }
+
+  const confirmDelete = () => {
+    const r = deleting
+    setDeleting(null)
+    if (!r) return
+    if (editing?.id === r.id) reset()
+    void reviews.remove(r.id)
   }
 
   return (
@@ -113,7 +131,7 @@ export function ReviewsSection({ kind, reviews, username }: ReviewsSectionProps)
                   <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-caption" onClick={() => startEdit(r)} disabled={busy}>
                     Edit
                   </Button>
-                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-caption" onClick={() => void reviews.remove(r.id)} disabled={busy}>
+                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-caption" onClick={() => setDeleting(r)} disabled={busy}>
                     Delete
                   </Button>
                 </div>
@@ -130,6 +148,7 @@ export function ReviewsSection({ kind, reviews, username }: ReviewsSectionProps)
             <StarRating rating={rating} starSize={20} onChange={setRating} label="Your rating" />
           </div>
           <Textarea
+            ref={textRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
             rows={3}
@@ -159,6 +178,26 @@ export function ReviewsSection({ kind, reviews, username }: ReviewsSectionProps)
           to write a review.
         </p>
       )}
+      <Dialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete this review?</DialogTitle>
+            <DialogDescription>
+              Your rating{placeName ? ` for ${placeName}` : ""} will be removed. This can&apos;t be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button type="button" variant="destructive" onClick={confirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   )
 }
