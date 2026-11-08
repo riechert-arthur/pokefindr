@@ -93,7 +93,7 @@ describe("the assistant's turn log", () => {
     await getDb().insert(assistantUsage).values([{ userId: ME, day: "2026-11-08", messages: 1 }, { userId: ME, day: "2026-06-01", messages: 1 }])
     await getDb().insert(assistantPlaceViews).values([{ userId: ME, day: "2026-11-08", locationId: loc.id }, { userId: ME, day: "2026-11-01", locationId: loc.id }])
 
-    expect(await purgeAssistantData(now, getDb())).toEqual({ texts: 2, turns: 1, usageDays: 1, placeViews: 1 })
+    expect(await purgeAssistantData(now, getDb())).toEqual({ texts: 2, feedbackComments: 0, turns: 1, usageDays: 1, placeViews: 1 })
     expect((await getDb().select().from(assistantTurns)).map((t) => t.id).sort()).toEqual(["00000000-0000-4000-8000-0000000000a1", "00000000-0000-4000-8000-0000000000a2"])
     expect((await getDb().select().from(assistantTurnTexts)).map((t) => t.turnId)).toEqual(["00000000-0000-4000-8000-0000000000a1"])
 

@@ -35,6 +35,7 @@ import {
   pgEnum,
   pgMaterializedView,
   pgTable,
+  smallint,
   text,
   timestamp,
   uniqueIndex,
@@ -306,6 +307,8 @@ export const assistantTurns = pgTable(
     tools: jsonb("tools").$type<{ name: string; ok: boolean }[]>().notNull().default(sql`'[]'::jsonb`),
     /** Why it might need a look: refused, injection, place_cap, cost_outlier. */
     flags: text("flags").array().notNull(),
+    /** Which system prompt and tools answered (migration 0008). */
+    promptVersion: text("prompt_version"),
   },
   (t) => [
     index("assistant_turns_user_created_idx").on(t.userId, t.createdAt),
@@ -326,4 +329,27 @@ export const assistantTurnTexts = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("assistant_turn_texts_created_idx").on(t.createdAt)],
+)
+
+export const FEEDBACK_REASONS = ["wrong_place", "outdated", "misunderstood", "other"] as const
+export type FeedbackReason = (typeof FEEDBACK_REASONS)[number]
+
+/** A viewer's thumbs up (1) or down (-1) on an assistant answer (migration 0008). */
+export const assistantFeedback = pgTable(
+  "assistant_feedback",
+  {
+    turnId: uuid("turn_id").primaryKey().references(() => assistantTurns.id, { onDelete: "cascade" }),
+    userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+    vote: smallint("vote").notNull(),
+    reason: text("reason").$type<FeedbackReason>(),
+    /** Written by the viewer; cleared with the turn's text after 30 days. */
+    comment: text("comment"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("assistant_feedback_created_idx").on(t.createdAt),
+    check("assistant_feedback_vote_check", sql`${t.vote} in (-1, 1)`),
+    check("assistant_feedback_reason_check", sql`${t.reason} in ('wrong_place', 'outdated', 'misunderstood', 'other')`),
+  ],
 )

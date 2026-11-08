@@ -1,4 +1,5 @@
 import "server-only"
+import { createHash } from "node:crypto"
 import Anthropic from "@anthropic-ai/sdk"
 import type {
   BetaMessage,
@@ -64,6 +65,13 @@ const API_TOOLS: BetaTool[] = ASSISTANT_TOOLS.map((t) => ({
   // Inputs stream as they're written; runTool validates each one before it runs.
   eager_input_streaming: true,
 }))
+
+/**
+ * Which instructions answered: a short hash of the system prompt and the
+ * tool definitions, stored with each turn so feedback and evals can be
+ * compared across prompt changes.
+ */
+export const PROMPT_VERSION = createHash("sha256").update(SYSTEM_PROMPT).update(JSON.stringify(API_TOOLS)).digest("hex").slice(0, 10)
 
 const STATUS: Record<string, string> = {
   find_places: "Searching locations…",

@@ -18,6 +18,8 @@ export type ChatMessage =
       note: string | null
       /** What the next turn remembers of this one (the server's summary with place ids). */
       memory: string | null
+      /** The turn's id in the server's log, for feedback. */
+      turnId: string | null
       done: boolean
     }
 
@@ -86,7 +88,7 @@ export function useAssistant() {
     const history = historyOf([...messagesRef.current, user])
     const update = (fn: (m: Extract<ChatMessage, { role: "assistant" }>) => Partial<Extract<ChatMessage, { role: "assistant" }>>) =>
       setMessages((ms) => ms.map((m) => (m.id === answerId && m.role === "assistant" ? { ...m, ...fn(m) } : m)))
-    setMessages((ms) => [...ms, user, { id: answerId, role: "assistant", text: "", cards: [], status: "Thinking…", note: null, memory: null, done: false }])
+    setMessages((ms) => [...ms, user, { id: answerId, role: "assistant", text: "", cards: [], status: "Thinking…", note: null, memory: null, turnId: null, done: false }])
     const abort = new AbortController()
     ctl.current = abort
     setBusy(true)
@@ -117,6 +119,7 @@ export function useAssistant() {
           update(() => ({
             status: null,
             memory: event.memory,
+            turnId: event.turnId ?? null,
             done: true,
             note: event.stop === "max_tokens" ? "The answer was cut short. Ask for less at a time." : null,
           }))

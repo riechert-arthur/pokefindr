@@ -6,6 +6,7 @@ import { AgentMark } from "./AgentMark"
 import { AssistantCardView } from "./AssistantCards"
 import { AssistantText } from "./AssistantText"
 import { Composer } from "./Composer"
+import { FeedbackBar } from "./FeedbackBar"
 import { TypingPlaceholder } from "./TypingPlaceholder"
 import { useAssistant, type ChatMessage } from "./useAssistant"
 
@@ -33,6 +34,7 @@ function AnswerView({ m }: { m: Extract<ChatMessage, { role: "assistant" }> }) {
           <AssistantCardView key={i} card={c} />
         ))}
         {m.note && <p className="text-caption text-muted-foreground">{m.note}</p>}
+        {m.done && m.turnId && <FeedbackBar turnId={m.turnId} />}
       </div>
     </div>
   )
