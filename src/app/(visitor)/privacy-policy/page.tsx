@@ -134,7 +134,11 @@ const PrivacyPolicyPage: FC = () => {
         days to find problems and abuse, then delete it. You can delete it
         sooner by clearing your assistant history. We keep a record of each
         conversation turn without any of that text (when it happened, which
-        kinds of search it ran and what it cost) for up to a year.
+        kinds of search it ran and what it cost) for up to a year. If you rate an
+        answer, we keep your thumbs up or down and the reason you picked with
+        that record; a comment you write is kept 30 days, like the text, and
+        is deleted when you clear your history. We read the ratings and
+        comments to improve the assistant.
       </p>
       <p className="mb-4">
         <strong>Automatically Collected Information:</strong>
