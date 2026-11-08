@@ -42,6 +42,8 @@ export function useLocationReviews(locationId: string): ReviewsState {
   // The list as last rendered, to roll back from (a state updater may not have run yet).
   const current = useRef(reviews)
   current.current = reviews
+  // Reviews this hook posted: a list read before one was saved mustn't drop it.
+  const saved = useRef(new Set<string>())
   const [attempt, setAttempt] = useState(0)
   const reload = useCallback(() => setAttempt((n) => n + 1), [])
 
@@ -53,8 +55,10 @@ export function useLocationReviews(locationId: string): ReviewsState {
         if (!res.ok) throw new Error(`GET reviews failed (${res.status})`)
         const body = (await res.json()) as { reviews: Review[] }
         if (controller.signal.aborted) return
-        // Keep a review still being posted: the list may have been read before it saved.
-        setReviews((rs) => [...rs.filter((r) => r.id.startsWith("pending-")), ...body.reviews])
+        // Keep reviews being posted, or posted after this list was read.
+        const listed = new Set(body.reviews.map((r) => r.id))
+        const ours = (r: Review) => r.id.startsWith("pending-") || (saved.current.has(r.id) && !listed.has(r.id))
+        setReviews((rs) => [...rs.filter(ours), ...body.reviews])
         setStatus("ready")
       })
       .catch((err: unknown) => {
@@ -72,6 +76,7 @@ export function useLocationReviews(locationId: string): ReviewsState {
       try {
         const res = await send("/api/reviews", "POST", { locationId, ...input })
         const { id } = (await res.json()) as { id: string }
+        saved.current.add(id)
         // A reload during the post may already list it under its id.
         setReviews((rs) => rs.filter((r) => r.id !== id).map((r) => (r.id === temp.id ? { ...r, id } : r)))
         toast.success("Review posted", { description: "It shows at the top of the reviews." })
@@ -106,6 +111,7 @@ export function useLocationReviews(locationId: string): ReviewsState {
     setReviews((rs) => rs.filter((r) => r.id !== id))
     try {
       await send(`/api/reviews/${encodeURIComponent(id)}`, "DELETE")
+      saved.current.delete(id)
       return true
     } catch (err) {
       console.error("[map] couldn't delete the review", err)
