@@ -23,6 +23,9 @@ export type ChatMessage =
 
 const STOPPED = "Stopped."
 
+/** What a turn that ended without `done` remembers: what came, cards included, so follow-ups can still use its places. */
+const partialMemory = (m: { text: string; cards: AssistantCard[] }) => (m.text || m.cards.length ? memoryOf(m.text, m.cards) : null)
+
 /** The conversation as the API takes it: the viewer's words and each answer's memory, the last turns only. */
 function historyOf(messages: readonly ChatMessage[]): AssistantTurn[] {
   return clipHistory(
@@ -109,7 +112,7 @@ export function useAssistant() {
         if (event.type === "text") update((m) => ({ text: m.text + event.text, status: null }))
         else if (event.type === "status") update(() => ({ status: event.text }))
         else if (event.type === "card") update((m) => ({ cards: [...m.cards, event.card] }))
-        else if (event.type === "error") update(() => ({ status: null, note: event.message, done: true }))
+        else if (event.type === "error") update((m) => ({ status: null, note: event.message, done: true, memory: partialMemory(m) }))
         else if (event.type === "done")
           update(() => ({
             status: null,
@@ -118,14 +121,13 @@ export function useAssistant() {
             note: event.stop === "max_tokens" ? "The answer was cut short. Ask for less at a time." : null,
           }))
       }
-      update((m) => (m.done ? {} : { status: null, done: true, note: m.note ?? "The answer stopped early. Try again." }))
+      update((m) => (m.done ? {} : { status: null, done: true, note: m.note ?? "The answer stopped early. Try again.", memory: partialMemory(m) }))
     } catch (err) {
-      // Stopped: keep what came, cards included, so follow-ups can still use its places.
-      // (Stop after the answer finished changes nothing.)
-      if (abort.signal.aborted) update((m) => (m.done ? {} : { status: null, done: true, note: STOPPED, memory: (m.text || m.cards.length) ? memoryOf(m.text, m.cards) : null }))
+      // Stop after the answer finished changes nothing.
+      if (abort.signal.aborted) update((m) => (m.done ? {} : { status: null, done: true, note: STOPPED, memory: partialMemory(m) }))
       else {
         console.error("[assistant] request failed", err)
-        update(() => ({ status: null, done: true, note: "Couldn't reach the assistant. Check your connection and try again." }))
+        update((m) => (m.done ? {} : { status: null, done: true, note: "Couldn't reach the assistant. Check your connection and try again.", memory: partialMemory(m) }))
       }
     } finally {
       ctl.current = null

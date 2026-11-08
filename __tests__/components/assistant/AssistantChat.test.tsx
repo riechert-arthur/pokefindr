@@ -76,6 +76,17 @@ describe("AssistantChat", () => {
     expect(await screen.findByText("The assistant is busy right now.")).toBeInTheDocument()
   })
 
+  it("remembers the places of an answer that errored midway", async () => {
+    const next = vi.fn().mockResolvedValue(ndjson([{ type: "text", text: "Ok." }, done("Ok.")]))
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValueOnce(ndjson([{ type: "card", card: { type: "places", title: "1 near Seattle", total: 1, places: [place], near: null } }, { type: "error", message: "The assistant is busy right now." }])).mockImplementation(next))
+    const { ask } = setup()
+    ask("near Seattle")
+    await screen.findByText("The assistant is busy right now.")
+    ask("route through it")
+    await screen.findByText("Ok.")
+    expect(JSON.parse(next.mock.calls[0][1].body).messages[1].content).toContain("(id loc-1)")
+  })
+
   it("stops an answer and keeps what came", async () => {
     let enqueue!: (s: string) => void
     vi.stubGlobal(
