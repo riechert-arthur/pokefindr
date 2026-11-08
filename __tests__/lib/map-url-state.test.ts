@@ -11,9 +11,9 @@ const load = (query: string) => loadMapSearchParams(new URLSearchParams(query))
 
 describe("map URL parameters", () => {
   it("parses every parameter", () => {
-    expect(load("q=Seattle%2C+WA&lat=47.6062&lng=-122.3321&r=25&types=vending,shop&retailer=QFC,Safeway&location=abc&state=WA&z=11&near=me")).toEqual({
+    expect(load("q=Seattle%2C+WA&lat=47.6062&lng=-122.3321&r=25&types=vending,shop&retailer=QFC,Safeway&location=abc&state=WA&z=11&near=me&route=a,b")).toEqual({
       q: "Seattle, WA", lat: 47.6062, lng: -122.3321, r: 25, z: 11, state: "WA",
-      types: ["vending", "shop"], retailer: ["QFC", "Safeway"], location: "abc", near: "me",
+      types: ["vending", "shop"], retailer: ["QFC", "Safeway"], location: "abc", near: "me", route: ["a", "b"],
     })
   })
 

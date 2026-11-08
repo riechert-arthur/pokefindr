@@ -47,6 +47,7 @@ import { StateSheet } from "./StateSheet"
 import { useStateCities } from "./useStateCities"
 import { useHighlights } from "./useHighlights"
 import { HighlightMarkers } from "./HighlightMarkers"
+import { RouteOverlay } from "./RouteOverlay"
 import { UsSheet, type StateTotal } from "./UsSheet"
 import type { Hotspot, UpcomingEvent } from "@/lib/types/highlights"
 import { cn } from "@/lib/utils"
@@ -418,7 +419,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     setQuery("")
     if (!params.q && !params.state && !params.near) return
     dispatch({ type: "closeDetails" })
-    writeView({ q: null, lat: null, lng: null, r: null, z: null, state: null, near: null, location: null }, { history: "push" })
+    writeView({ q: null, lat: null, lng: null, r: null, z: null, state: null, near: null, location: null, route: null }, { history: "push" })
     mapRef.current?.fitBounds(US_BOUNDS, { padding: pad(true), duration: 1400 })
   }
 
@@ -555,6 +556,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         </Source>
         {highlights && zoomedOut && <HighlightMarkers highlights={highlights} kinds={kinds} onHotspot={openHotspot} onEvent={openEvent} />}
         <LocationLayers collection={inView} selected={selected} colors={colors} onSelect={handleDotSelect} />
+        {params.route && params.route.length >= 2 && <RouteOverlay ids={params.route} colors={colors} onClear={() => void setParams({ route: null })} />}
         <FullscreenControl position="bottom-right" />
         <LocateControl onLocate={handleLocate} onError={handleLocateError} autoLocate={view.nearMe} />
         <NavigationControl position="bottom-right" showCompass={false} />

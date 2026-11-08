@@ -2,6 +2,9 @@ import React from "react"
 import { describe, it, expect, afterEach, vi } from "vitest"
 import { render, fireEvent, screen } from "@testing-library/react"
 
+const nav = vi.hoisted(() => ({ pathname: "/map" }))
+vi.mock("next/navigation", () => ({ usePathname: () => nav.pathname }))
+
 async function renderBanner() {
   vi.resetModules()
 
@@ -27,6 +30,7 @@ async function renderBanner() {
 
 describe("AffiliateBanner Component", () => {
   afterEach(() => {
+    nav.pathname = "/map"
     vi.resetAllMocks()
     // Restores NODE_ENV and the NEXT_PUBLIC_* stubs to their original values.
     vi.unstubAllEnvs()
@@ -64,5 +68,11 @@ describe("AffiliateBanner Component", () => {
     const { container: devContainer } = await renderBanner()
     const absentPixel = devContainer.querySelector('img[width="0"][height="0"]')
     expect(absentPixel).toBeNull()
+  })
+
+  it("never shows on the assistant (/home)", async () => {
+    nav.pathname = "/home"
+    await renderBanner()
+    expect(screen.queryByLabelText("Close ad")).toBeNull()
   })
 })

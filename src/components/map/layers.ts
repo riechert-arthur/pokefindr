@@ -22,6 +22,7 @@ export const SOURCES = {
   places: "places",
   selected: "selected",
   states: "states",
+  route: "route",
 } as const
 
 export const LAYERS = {
@@ -36,11 +37,12 @@ export const LAYERS = {
   statesFill: "states-fill",
   statesHover: "states-hover",
   statesLine: "states-line",
+  routeLine: "route-line",
 } as const
 
 const TOKENS = [
   "kind-vending", "kind-shop", "kind-event", "map-dot-ring", "foreground",
-  "map-land", "map-line", "map-choro-hi", "map-radius", "map-unsupported", "map-unsupported-line",
+  "map-land", "map-line", "map-choro-hi", "map-radius", "map-unsupported", "map-unsupported-line", "primary",
 ] as const
 
 export type MapColors = Record<(typeof TOKENS)[number], string>
@@ -85,6 +87,17 @@ export function radiusLayers(c: MapColors): { fill: LayerProps; line: LayerProps
       source: SOURCES.radius,
       paint: { "line-color": c["map-radius"], "line-width": 1.5, "line-dasharray": [3, 2] },
     },
+  }
+}
+
+/** An assistant route between its stops, as in the prototype: a dashed primary line. */
+export function routeLineLayer(c: MapColors): LayerProps {
+  return {
+    id: LAYERS.routeLine,
+    type: "line",
+    source: SOURCES.route,
+    layout: { "line-join": "round", "line-cap": "round" },
+    paint: { "line-color": c.primary, "line-width": 3, "line-opacity": 0.85, "line-dasharray": [2, 1.5] },
   }
 }
 

@@ -43,6 +43,8 @@ export const mapSearchParams = {
   location: parseAsString,
   /** "me": centered on the viewer's location, which stays out of the URL. */
   near: parseAsStringLiteral(["me"] as const),
+  /** Location ids of an assistant route, in visiting order: drawn as a line with numbered stops. */
+  route: parseAsArrayOf(parseAsString),
 }
 
 export type MapSearchParams = inferParserType<typeof mapSearchParams>
