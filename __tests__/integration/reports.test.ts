@@ -55,6 +55,22 @@ describe("location reports", () => {
     expect(results.at(-1)).toBe("rate_limited")
   })
 
+  it("holds the limit and the duplicate check when requests arrive at once", async () => {
+    const db = getDb()
+    const many = await db
+      .insert(locations)
+      .values(Array.from({ length: REPORTS_PER_DAY + 4 }, (_, i) => ({ machineId: `P${i}`, retailer: "QFC", geog: { lng: -121 + i * 0.01, lat: 47 } })))
+      .returning({ id: locations.id })
+    const now = new Date("2026-11-07T12:00:00Z")
+    const results = await Promise.all([
+      ...many.map(({ id }) => addLocationReport({ locationId: id, userId: alice, reason: "empty" }, db, now)),
+      ...Array.from({ length: 4 }, () => addLocationReport({ locationId: store, userId: bob, reason: "gone" }, db, now)),
+    ])
+    expect(results.slice(0, many.length).filter((r) => r === "added")).toHaveLength(REPORTS_PER_DAY)
+    expect(results.slice(many.length).filter((r) => r === "added")).toHaveLength(1)
+    expect(await db.select().from(statusReports)).toHaveLength(REPORTS_PER_DAY + 1)
+  })
+
   it("lists recent reports for admins, newest first, with the location and a count per location", async () => {
     await addLocationReport({ locationId: store, userId: alice, reason: "gone" }, getDb(), new Date("2026-11-06T12:00:00Z"))
     await addLocationReport({ locationId: store, userId: bob, reason: "other", comment: "Moved inside" }, getDb(), new Date("2026-11-07T09:00:00Z"))

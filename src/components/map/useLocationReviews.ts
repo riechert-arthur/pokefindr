@@ -25,10 +25,24 @@ export interface ReviewsState {
   remove: (id: string) => Promise<boolean>
 }
 
+/** The session ran out: the toast asks the viewer to log in again. */
+export class SignedOutError extends Error {}
+
 async function send(url: string, method: string, body?: unknown): Promise<Response> {
   const res = await fetch(url, { method, headers: body ? { "Content-Type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined })
+  if (res.status === 401) throw new SignedOutError(`${method} ${url}: signed out`)
   if (!res.ok) throw new Error(`${method} ${url} failed (${res.status})`)
   return res
+}
+
+/** "Check your connection", or "Log in again" when the session ran out. */
+function failed(title: string, err: unknown) {
+  if (err instanceof SignedOutError) {
+    toast.error(title, { description: "Your session ended. Log in again and retry." })
+  } else {
+    console.error(`[map] ${title}`, err)
+    toast.error(title, { description: "Check your connection and try again." })
+  }
 }
 
 /**
@@ -53,7 +67,8 @@ export function useLocationReviews(locationId: string): ReviewsState {
         if (!res.ok) throw new Error(`GET reviews failed (${res.status})`)
         const body = (await res.json()) as { reviews: Review[] }
         if (controller.signal.aborted) return
-        setReviews(body.reviews)
+        // Keep a review still being posted: the list may have been read before it saved.
+        setReviews((rs) => [...rs.filter((r) => r.id.startsWith("pending-")), ...body.reviews])
         setStatus("ready")
       })
       .catch((err: unknown) => {
@@ -71,12 +86,13 @@ export function useLocationReviews(locationId: string): ReviewsState {
       try {
         const res = await send("/api/reviews", "POST", { locationId, ...input })
         const { id } = (await res.json()) as { id: string }
-        setReviews((rs) => rs.map((r) => (r.id === temp.id ? { ...r, id } : r)))
+        // A reload during the post may already list it under its id.
+        setReviews((rs) => rs.filter((r) => r.id !== id).map((r) => (r.id === temp.id ? { ...r, id } : r)))
+        toast.success("Review posted", { description: "It shows at the top of the reviews." })
         return true
       } catch (err) {
-        console.error("[map] couldn't post the review", err)
         setReviews((rs) => rs.filter((r) => r.id !== temp.id))
-        toast.error("Couldn't post your review", { description: "Check your connection and try again." })
+        failed("Couldn't post your review", err)
         return false
       }
     },
@@ -90,9 +106,8 @@ export function useLocationReviews(locationId: string): ReviewsState {
       await send(`/api/reviews/${encodeURIComponent(id)}`, "PATCH", input)
       return true
     } catch (err) {
-      console.error("[map] couldn't save the review", err)
       if (before) setReviews((rs) => rs.map((r) => (r.id === id ? before : r)))
-      toast.error("Couldn't save your changes", { description: "Check your connection and try again." })
+      failed("Couldn't save your changes", err)
       return false
     }
   }, [])
@@ -105,9 +120,8 @@ export function useLocationReviews(locationId: string): ReviewsState {
       await send(`/api/reviews/${encodeURIComponent(id)}`, "DELETE")
       return true
     } catch (err) {
-      console.error("[map] couldn't delete the review", err)
       if (removed) setReviews((rs) => [...rs.slice(0, index), removed, ...rs.slice(index)])
-      toast.error("Couldn't delete your review", { description: "Check your connection and try again." })
+      failed("Couldn't delete your review", err)
       return false
     }
   }, [])

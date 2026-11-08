@@ -35,6 +35,7 @@ describe("useLocationReviews", () => {
     expect(result.current.average).toBe(3)
     await act(async () => expect(await done).toBe(true))
     expect(result.current.reviews[0]).toMatchObject({ id: "r2", mine: true })
+    expect(toast.success).toHaveBeenCalledWith("Review posted", { description: "It shows at the top of the reviews." })
   })
 
   it("takes a review back, with a toast, when posting fails", async () => {
@@ -101,11 +102,27 @@ describe("ReviewsSection", () => {
     render(<ReviewsSection kind="vending" reviews={reviews} username="ash" />)
     expect(screen.getAllByRole("button", { name: "Edit" })).toHaveLength(1)
     fireEvent.click(screen.getByRole("button", { name: "Edit" }))
-    expect(screen.getByRole("textbox", { name: "Your review" })).toHaveValue("Mine")
+    const box = screen.getByRole("textbox", { name: "Your review" })
+    expect(box).toHaveValue("Mine")
+    expect(box).toHaveFocus()
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }))
     await waitFor(() => expect(reviews.edit).toHaveBeenCalledWith("m", { rating: 4, text: "Mine" }))
+    expect(box).toHaveFocus()
+  })
+
+  it("asks before deleting, and closes the edit when its review is deleted", async () => {
+    const reviews = state({ reviews: [{ ...REVIEW, id: "m", username: "ash", text: "Mine", mine: true }], count: 1 })
+    render(<ReviewsSection kind="vending" reviews={reviews} username="ash" placeName="QFC" />)
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }))
     fireEvent.click(screen.getByRole("button", { name: "Delete" }))
+    const dialog = screen.getByRole("dialog", { name: "Delete this review?" })
+    expect(dialog).toHaveTextContent("Your rating for QFC will be removed.")
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
+    expect(reviews.remove).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }))
+    fireEvent.click(screen.getAllByRole("button", { name: "Delete" }).at(-1)!)
     expect(reviews.remove).toHaveBeenCalledWith("m")
+    expect(screen.getByRole("button", { name: "Post review" })).toBeInTheDocument()
   })
 })
 

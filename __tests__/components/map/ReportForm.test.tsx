@@ -49,4 +49,14 @@ describe("ReportForm", () => {
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Too many reports today", expect.anything()))
     expect(onClose).not.toHaveBeenCalled()
   })
+
+  it("asks to log in again when the session has ended", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => json({ error: "Log in to continue" }, 401)))
+    render(<ReportForm locationId="a" kind="vending" signedIn onClose={vi.fn()} />)
+    fireEvent.click(screen.getByRole("radio", { name: "Empty for a long time" }))
+    fireEvent.click(screen.getByRole("button", { name: "Send report" }))
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith("Couldn't send your report", { description: "Your session ended. Log in again and retry." }),
+    )
+  })
 })

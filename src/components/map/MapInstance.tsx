@@ -3,6 +3,7 @@
 import type { FC } from "react"
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react"
 import { debounce, useQueryStates } from "nuqs"
+import { toast } from "sonner"
 import type { FeatureCollection, Point } from "geojson"
 import {
   Map,
@@ -197,6 +198,11 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
       return
     }
     if (detailsRef.current?.id === id) return
+    // Don't leave another location's details and ring up while this one loads.
+    if (detailsRef.current) {
+      dispatch({ type: "closeDetails" })
+      dispatch({ type: "closePopup" })
+    }
     const controller = new AbortController()
     fetch(`/api/locations/${encodeURIComponent(id)}`, { signal: controller.signal })
       .then(async (res) => {
@@ -211,7 +217,10 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         else void setParams({ location: null }, { history: "replace" })
       })
       .catch((err: unknown) => {
-        if (!controller.signal.aborted) console.error("[map] couldn't load the location", err)
+        if (controller.signal.aborted) return
+        console.error("[map] couldn't load the location", err)
+        toast.error("Couldn't load this place", { description: "Check your connection and try again." })
+        void setParams({ location: null }, { history: "replace" })
       })
     return () => controller.abort()
   }, [params.location, knownLocations, setParams])

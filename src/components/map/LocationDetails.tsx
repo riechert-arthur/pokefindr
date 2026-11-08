@@ -43,7 +43,7 @@ export function LocationDetails({ kinds, retailers, onOpen, ...props }: Location
       }
       top={reporting && <ReportForm locationId={props.location.id} kind={kind} signedIn={!!session} onClose={() => setReporting(false)} />}
     >
-      <ReviewsSection kind={kind} reviews={reviews} username={session?.username ?? null} />
+      <ReviewsSection kind={kind} reviews={reviews} username={session?.username ?? null} placeName={props.location.retailer} />
       <AlsoNearby rows={nearby} onOpen={onOpen} />
     </DetailsSheet>
   )
