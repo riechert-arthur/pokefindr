@@ -101,8 +101,12 @@ const HEDGE = /(?:\b(?:no|not|never|whether|if|unknown|cannot|without)\b|n't\b)/
 const CLAUSE = /[,;:]|\b(?:but|and|although|though|so)\b/i
 const STOCK_CLAIM_ALL = new RegExp(STOCK_CLAIM.source, "gi")
 
-/** A clause that's only another item of a list of claims ("…, out of stock, or sold out"): it shares the hedge before it. */
-const LIST_ITEM = new RegExp(`^\\s*(?:or|and)?\\s*(?:it'?s|it is|is|are)?\\s*(?:${STOCK_CLAIM.source})\\s*[.!?]?\\s*$`, "i")
+/**
+ * A clause that's only another item of a list of claims ("…, out of stock,
+ * or sold out"): it shares the hedge before it. Only a bare claim: a clause
+ * with its own subject and verb ("it's in stock") stands on its own.
+ */
+const LIST_ITEM = new RegExp(`^\\s*(?:or|and)?\\s*(?:${STOCK_CLAIM.source})\\s*[.!?]?\\s*$`, "i")
 
 /** Whether every stock or price claim in the sentence is hedged within its own clause (or is a list item after a hedged one). */
 const hedged = (sentence: string) => {
