@@ -11,8 +11,8 @@ afterEach(() => vi.unstubAllGlobals())
 
 describe("LocationDetails", () => {
   it("returns focus to Report a problem when the report form closes", () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ reviews: [] }))))
-    render(<LocationDetails location={LOCATION} backLabel="Back" onBack={vi.fn()} />)
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ reviews: [], features: [], counts: {}, total: 0 }))))
+    render(<LocationDetails location={LOCATION} backLabel="Back" onBack={vi.fn()} kinds={["vending"]} retailers={null} onOpen={vi.fn()} />)
     const report = screen.getByRole("button", { name: "Report a problem" })
     fireEvent.click(report)
     expect(report).toHaveAttribute("aria-expanded", "true")
