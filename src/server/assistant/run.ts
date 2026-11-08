@@ -11,6 +11,7 @@ import type {
 import { getAnthropic } from "@/server/container"
 import { ASSISTANT_TOOLS, inputJsonSchema, runTool, type ToolContext } from "./tools"
 import { SYSTEM_PROMPT, turnContext } from "./prompt"
+import { memoryOf } from "@/lib/assistant/memory"
 import { costMicros } from "./pricing"
 import type { AssistantCard } from "@/lib/types/assistant"
 import type { AssistantEvent, AssistantTurn, AssistantUsage } from "@/lib/types/assistant-stream"
@@ -72,21 +73,8 @@ const STATUS: Record<string, string> = {
   get_place: "Looking it up…",
 }
 
-/**
- * What the next turn remembers of this one: the answer, plus the places it
- * showed (ids included, so "plan a route through those" works). The page
- * sends it back as this turn's assistant message.
- */
-export function memoryOf(text: string, cards: readonly AssistantCard[]): string {
-  const lines = cards.flatMap((c) => {
-    if (c.type === "places") return [`[${c.title}: ${c.places.map((p) => `${p.name}, ${p.city} (id ${p.id})`).join("; ")}]`]
-    if (c.type === "route") return [`[Route: ${c.stops.map((p, i) => `${i + 1}. ${p.name} (id ${p.id})`).join("; ")}]`]
-    if (c.type === "events") return [`[${c.title}: ${c.events.map((e) => `${e.title}, ${e.city} ${e.startsAt.slice(0, 10)}`).join("; ")}]`]
-    return [`[${c.title}: ${c.total} places]`]
-  })
-  // Never empty: an empty assistant message would make the next request invalid.
-  return [text.trim(), ...lines].filter(Boolean).join("\n") || "(No answer.)"
-}
+// Shared with the page, which builds it when the viewer stops a turn.
+export { memoryOf } from "@/lib/assistant/memory"
 
 export const emptyUsage = (): AssistantUsage => ({ inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, costMicros: 0 })
 

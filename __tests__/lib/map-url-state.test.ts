@@ -11,9 +11,9 @@ const load = (query: string) => loadMapSearchParams(new URLSearchParams(query))
 
 describe("map URL parameters", () => {
   it("parses every parameter", () => {
-    expect(load("q=Seattle%2C+WA&lat=47.6062&lng=-122.3321&r=25&types=vending,shop&retailer=QFC,Safeway&location=abc&state=WA&z=11&near=me")).toEqual({
+    expect(load("q=Seattle%2C+WA&lat=47.6062&lng=-122.3321&r=25&types=vending,shop&retailer=QFC,Safeway&location=abc&state=WA&z=11&near=me&route=a,b")).toEqual({
       q: "Seattle, WA", lat: 47.6062, lng: -122.3321, r: 25, z: 11, state: "WA",
-      types: ["vending", "shop"], retailer: ["QFC", "Safeway"], location: "abc", near: "me",
+      types: ["vending", "shop"], retailer: ["QFC", "Safeway"], location: "abc", near: "me", route: ["a", "b"],
     })
   })
 
@@ -95,7 +95,7 @@ describe("viewKey", () => {
 
 describe("nearMeParams", () => {
   it("puts near=me and the radius in the URL and clears every coordinate", () => {
-    expect(nearMeParams(10)).toEqual({ near: "me", r: 10, q: null, lat: null, lng: null, z: null, state: null })
+    expect(nearMeParams(10)).toEqual({ near: "me", r: 10, q: null, lat: null, lng: null, z: null, state: null, route: null })
     expect(mapUrl("/map?q=Seattle&lat=47.6&lng=-122.3&z=9", nearMeParams(25))).toBe("/map?r=25&near=me")
   })
 })

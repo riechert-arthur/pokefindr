@@ -14,6 +14,7 @@ const colors: MapColors = {
   "kind-shop": "hsl(174, 82%, 32%)",
   "kind-event": "hsl(32, 95%, 44%)",
   "map-dot-ring": "hsl(0, 0%, 100%)",
+  primary: "hsl(240, 6%, 10%)",
   foreground: "hsl(0, 0%, 4%)",
   "map-land": "hsl(0, 0%, 100%)",
   "map-line": "hsl(220, 11%, 79%)",

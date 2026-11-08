@@ -16,7 +16,7 @@ import type { UpcomingEvent } from "@/lib/types/highlights"
 function Tile({ title, badge, children }: { title: string; badge?: ReactNode; children: ReactNode }) {
   return (
     <section aria-label={title} className="grid content-start gap-1.5 rounded-xl border border-border bg-card p-3">
-      <h3 className="flex items-center gap-2 text-body font-semibold text-foreground">
+      <h3 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-body font-semibold text-foreground">
         {title}
         {badge}
       </h3>

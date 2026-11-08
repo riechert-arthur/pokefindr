@@ -43,6 +43,8 @@ export const mapSearchParams = {
   location: parseAsString,
   /** "me": centered on the viewer's location, which stays out of the URL. */
   near: parseAsStringLiteral(["me"] as const),
+  /** Location ids of an assistant route, in visiting order: drawn as a line with numbered stops. */
+  route: parseAsArrayOf(parseAsString),
 }
 
 export type MapSearchParams = inferParserType<typeof mapSearchParams>
@@ -64,5 +66,5 @@ export const roundZoom = (v: number) => Math.round(v * 10) / 10
  * never reveals where they are.
  */
 export function nearMeParams(radius: (typeof RADII)[number]): Partial<MapSearchParams> {
-  return { near: "me", r: radius, q: null, lat: null, lng: null, z: null, state: null }
+  return { near: "me", r: radius, q: null, lat: null, lng: null, z: null, state: null, route: null }
 }

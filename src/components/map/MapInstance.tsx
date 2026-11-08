@@ -47,6 +47,7 @@ import { StateSheet } from "./StateSheet"
 import { useStateCities } from "./useStateCities"
 import { useHighlights } from "./useHighlights"
 import { HighlightMarkers } from "./HighlightMarkers"
+import { RouteOverlay } from "./RouteOverlay"
 import { UsSheet, type StateTotal } from "./UsSheet"
 import type { Hotspot, UpcomingEvent } from "@/lib/types/highlights"
 import { cn } from "@/lib/utils"
@@ -399,7 +400,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     dispatch({ type: "closeDetails" })
     const r = params.r ?? DEFAULT_RADIUS
     writeView(
-      { q: area.label, lng: roundPlace(area.lng), lat: roundPlace(area.lat), r, state: null, z: null, near: null, location: null },
+      // A new search replaces an assistant route, as the prototype's choosePlace does.
+      { q: area.label, lng: roundPlace(area.lng), lat: roundPlace(area.lat), r, state: null, z: null, near: null, location: null, route: null },
       { history: "push" },
     )
     map?.fitBounds(boundsOfRadius(area.lng, area.lat, r), { padding: pad(true), maxZoom: 13, duration: 1400 })
@@ -416,9 +418,9 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   /** The search box's ✕: back to the whole US, as a new view. */
   const handleSearchClear = () => {
     setQuery("")
-    if (!params.q && !params.state && !params.near) return
+    if (!params.q && !params.state && !params.near && !params.route) return
     dispatch({ type: "closeDetails" })
-    writeView({ q: null, lat: null, lng: null, r: null, z: null, state: null, near: null, location: null }, { history: "push" })
+    writeView({ q: null, lat: null, lng: null, r: null, z: null, state: null, near: null, location: null, route: null }, { history: "push" })
     mapRef.current?.fitBounds(US_BOUNDS, { padding: pad(true), duration: 1400 })
   }
 
@@ -448,7 +450,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     (code: string) => {
       // A new view: the details close with it.
       dispatch({ type: "closeDetails" })
-      writeView({ state: code, q: null, lat: null, lng: null, r: null, z: null, near: null, location: null }, { history: "push" })
+      writeView({ state: code, q: null, lat: null, lng: null, r: null, z: null, near: null, location: null, route: null }, { history: "push" })
     },
     [writeView],
   )
@@ -555,6 +557,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         </Source>
         {highlights && zoomedOut && <HighlightMarkers highlights={highlights} kinds={kinds} onHotspot={openHotspot} onEvent={openEvent} />}
         <LocationLayers collection={inView} selected={selected} colors={colors} onSelect={handleDotSelect} />
+        {params.route && params.route.length >= 2 && <RouteOverlay ids={params.route} colors={colors} onClear={() => void setParams({ route: null })} />}
         <FullscreenControl position="bottom-right" />
         <LocateControl onLocate={handleLocate} onError={handleLocateError} autoLocate={view.nearMe} />
         <NavigationControl position="bottom-right" showCompass={false} />

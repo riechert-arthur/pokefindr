@@ -1,12 +1,15 @@
 "use client"
 
 import React, { memo } from "react"
+import { usePathname } from "next/navigation"
 import { useAdContext } from "@/components/providers/AdContextProvider"
 import { publicConfig } from "@/config.public"
 
 const AffiliateBanner: React.FC = () => {
   const { showBanner, setShowBanner } = useAdContext()
-  if (!showBanner) return null
+  const pathname = usePathname()
+  // The prototype's rule: the assistant never shows ads (and it would cover the composer).
+  if (!showBanner || pathname === "/home") return null
 
   const isProd = process.env.NODE_ENV === "production"
   const {
