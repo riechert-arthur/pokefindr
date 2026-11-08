@@ -64,8 +64,28 @@ const serverSchema = z.object({
   /** A self-hosted instance instead of the provider's public one (photon, nominatim). */
   GEOCODER_BASE_URL: blankAsUnset(z.string().url().optional()),
 
-  /** Claude API key for the assistant (/api/assistant). Unset, the assistant says it's unavailable. */
+  /** Claude API key for the assistant (/api/assistant). Unset (and no federation below), the assistant says it's unavailable. */
   ANTHROPIC_API_KEY: blankAsUnset(z.string().min(1).optional()),
+
+  /**
+   * Workload identity federation (#226): with a rule and an organization, the
+   * assistant authenticates with short-lived tokens exchanged for this
+   * platform's OIDC identity (Vercel, or GitHub Actions for the evals)
+   * instead of ANTHROPIC_API_KEY. None of these are secrets.
+   */
+  ANTHROPIC_FEDERATION_RULE_ID: blankAsUnset(z.string().startsWith("fdrl_").optional()),
+  ANTHROPIC_ORGANIZATION_ID: blankAsUnset(z.string().min(1).optional()),
+  /** The rule's target service account, when the rule needs it named. */
+  ANTHROPIC_SERVICE_ACCOUNT_ID: blankAsUnset(z.string().startsWith("svac_").optional()),
+  /** The workspace to scope tokens to, when the rule covers more than one. */
+  ANTHROPIC_WORKSPACE_ID: blankAsUnset(z.string().min(1).optional()),
+  /** Where the identity token comes from. Unset: Vercel on Vercel, GitHub Actions in a workflow. */
+  ANTHROPIC_IDENTITY_SOURCE: blankAsUnset(z.enum(["vercel", "github-actions"]).optional()),
+  /** The audience asked for in a GitHub Actions identity token (the federation rule must accept it). */
+  ANTHROPIC_IDENTITY_AUDIENCE: blankAsUnset(z.string().min(1).optional()),
+  /** Set by GitHub Actions in jobs with `id-token: write`. */
+  ACTIONS_ID_TOKEN_REQUEST_URL: blankAsUnset(z.string().url().optional()),
+  ACTIONS_ID_TOKEN_REQUEST_TOKEN: blankAsUnset(z.string().min(1).optional()),
   /** The assistant's model. */
   ASSISTANT_MODEL: blankAsUnset(z.string().min(1).default("claude-opus-5-5")),
   /** How hard the model thinks: more is slower and costs more. */
@@ -80,6 +100,12 @@ const serverSchema = z.object({
 })).superRefine((env, ctx) => {
   if ((env.GEOCODER_PROVIDER === "mapbox" || env.GEOCODER_PROVIDER === "maptiler") && !env.GEOCODER_API_KEY)
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["GEOCODER_API_KEY"], message: `required when GEOCODER_PROVIDER is ${env.GEOCODER_PROVIDER}` })
+  if (Boolean(env.ANTHROPIC_FEDERATION_RULE_ID) !== Boolean(env.ANTHROPIC_ORGANIZATION_ID))
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: [env.ANTHROPIC_FEDERATION_RULE_ID ? "ANTHROPIC_ORGANIZATION_ID" : "ANTHROPIC_FEDERATION_RULE_ID"],
+      message: "workload identity federation needs both ANTHROPIC_FEDERATION_RULE_ID and ANTHROPIC_ORGANIZATION_ID",
+    })
   if (env.GEOCODER_PROVIDER === "nominatim" && !env.GEOCODER_USER_AGENT)
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["GEOCODER_USER_AGENT"], message: "required when GEOCODER_PROVIDER is nominatim" })
 })

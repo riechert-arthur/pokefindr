@@ -1,5 +1,7 @@
 import "server-only"
 import Anthropic from "@anthropic-ai/sdk"
+import { oidcFederationProvider } from "@anthropic-ai/sdk/lib/credentials/oidc-federation"
+import { identityTokenSource } from "@/server/adapters/claude/identity"
 import { getServerConfig, type ServerConfig } from "@/server/config"
 import type { Geocoder } from "@/server/ports/geocoder"
 import { FakeGeocoder } from "@/server/adapters/geocoder/fake"
@@ -37,12 +39,35 @@ export function getGeocoder(): Geocoder {
   return geocoder
 }
 
-/** The Claude API client for the assistant, or null when no key is configured. */
-export function getAnthropic(): Anthropic | null {
-  if (anthropic === undefined) {
-    const key = getServerConfig().ANTHROPIC_API_KEY
-    anthropic = key ? new Anthropic({ apiKey: key, maxRetries: 1, timeout: 60_000 }) : null
+const CLAUDE_OPTIONS = { maxRetries: 1, timeout: 60_000 } as const
+
+/**
+ * Builds the Claude API client from config: workload identity federation
+ * when a rule is configured (short-lived tokens, no stored secret, #226),
+ * else ANTHROPIC_API_KEY (local dev, tests), else null (the assistant says
+ * it's unavailable).
+ */
+export function makeAnthropic(config: ServerConfig): Anthropic | null {
+  if (config.ANTHROPIC_FEDERATION_RULE_ID && config.ANTHROPIC_ORGANIZATION_ID) {
+    const credentials = oidcFederationProvider({
+      identityTokenProvider: identityTokenSource(config),
+      federationRuleId: config.ANTHROPIC_FEDERATION_RULE_ID,
+      organizationId: config.ANTHROPIC_ORGANIZATION_ID,
+      serviceAccountId: config.ANTHROPIC_SERVICE_ACCOUNT_ID,
+      workspaceId: config.ANTHROPIC_WORKSPACE_ID,
+      baseURL: "https://api.anthropic.com",
+      fetch: (input, init) => fetch(input, init),
+    })
+    // The client caches the exchanged token and refreshes it before it expires.
+    return new Anthropic({ ...CLAUDE_OPTIONS, credentials, apiKey: null })
   }
+  if (config.ANTHROPIC_API_KEY) return new Anthropic({ ...CLAUDE_OPTIONS, apiKey: config.ANTHROPIC_API_KEY })
+  return null
+}
+
+/** The Claude API client for the assistant, or null when none is configured. */
+export function getAnthropic(): Anthropic | null {
+  if (anthropic === undefined) anthropic = makeAnthropic(getServerConfig())
   return anthropic
 }
 

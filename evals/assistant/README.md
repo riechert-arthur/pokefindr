@@ -42,4 +42,8 @@ than 5 points below `--baseline`.
 - Cover both directions: a case where a tool should run, and one where it shouldn't.
 
 CI (`.github/workflows/evals.yml`) runs the smoke set on PRs that touch the
-assistant and the full set nightly, when the `ANTHROPIC_EVAL_KEY` secret is set.
+assistant and the full set nightly. It needs credentials for the evals workspace:
+preferably workload identity federation (#226), the repository variables
+`ANTHROPIC_EVAL_FEDERATION_RULE_ID` and `ANTHROPIC_ORGANIZATION_ID` (plus
+`ANTHROPIC_EVAL_WORKSPACE_ID` if the rule covers several), with a federation rule
+for this repository's GitHub Actions tokens; or the `ANTHROPIC_EVAL_KEY` secret.
