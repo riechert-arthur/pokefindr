@@ -22,6 +22,7 @@
  *   replaced by typed queries in services.
  * - The legacy "Vending Machine Locations" table.
  */
+import type { ReportReason } from "@/lib/locations/reports"
 import {
   boolean,
   check,
@@ -217,11 +218,18 @@ export const statusReports = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     locationId: uuid("location_id").notNull().references(() => locations.id, { onDelete: "cascade" }),
     userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
-    status: locationStatus("status").notNull(),
+    status: locationStatus("status"),
+    /** Why the location is wrong ("Report a problem", migration 0005). */
+    reason: text("reason").$type<ReportReason>(),
     comment: text("comment"),
     createdAt: createdAt(),
   },
-  (t) => [index("status_reports_location_created_idx").on(t.locationId, t.createdAt)],
+  (t) => [
+    index("status_reports_location_created_idx").on(t.locationId, t.createdAt),
+    index("status_reports_user_created_idx").on(t.userId, t.createdAt),
+    check("status_reports_reason_check", sql`${t.reason} in ('gone', 'wrong_location', 'empty', 'other')`),
+    check("status_reports_status_or_reason_check", sql`${t.status} is not null or ${t.reason} is not null`),
+  ],
 )
 
 export const subscriptions = pgTable(

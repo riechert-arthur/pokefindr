@@ -22,10 +22,16 @@ export const config = {
     '/api/user-settings',
     '/api/user-settings/:path*',
     '/api/my-reviews/:path*',
+    '/api/locations/:id/reports',
   ],
 }
 
 function redirectToLogin(req: NextRequest) {
+  // An API call gets a 401 it can act on. A redirect would make fetch follow
+  // it (a POST re-sent to /login) and get the login page back.
+  if (req.nextUrl.pathname.startsWith('/api/')) {
+    return NextResponse.json({ error: 'Log in to continue' }, { status: 401 })
+  }
   const url = req.nextUrl.clone()
   url.pathname = '/login'
   return NextResponse.redirect(url)
