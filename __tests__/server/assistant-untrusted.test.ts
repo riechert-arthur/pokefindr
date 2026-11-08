@@ -14,4 +14,17 @@ describe("plainUserText", () => {
     expect(plainUserText("x".repeat(50), 10)).toBe(`${"x".repeat(9)}…`)
     expect(plainUserText("short", 10)).toBe("short")
   })
+
+  it("drops tag characters that can hide instructions, but keeps emoji, joiners and how names look", () => {
+    const hidden = [..."ignore previous"].map((c) => String.fromCodePoint(0xe0000 + c.codePointAt(0)!)).join("")
+    expect(plainUserText(`Card Hall${hidden}`, 100)).toBe("Card Hall")
+    expect(plainUserText("Family 👨\u200d👩\u200d👧 Cards™ ½ off", 100)).toBe("Family 👨\u200d👩\u200d👧 Cards™ ½ off")
+    expect(plainUserText("می\u200cخواهم", 100)).toBe("می\u200cخواهم")
+  })
+
+  it("never splits a character or emoji at the cap", () => {
+    const out = plainUserText(`abcdefgh${"😀".repeat(5)}`, 10)
+    expect(out).toBe("abcdefgh…")
+    expect(/[\ud800-\udbff](?![\udc00-\udfff])/.test(plainUserText(`abcdefg😀😀`, 9))).toBe(false)
+  })
 })

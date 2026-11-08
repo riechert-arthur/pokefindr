@@ -1,20 +1,34 @@
 import "server-only"
 
 /**
+ * Characters that change or hide what a reader sees without being text:
+ * C0/C1 controls (newlines become spaces below), zero-width space, LRM/RLM,
+ * bidi embeddings, overrides and isolates, word joiners and invisible
+ * operators, the BOM, Unicode tag characters (which can spell out hidden
+ * instructions) and the variation selector supplement. Zero-width joiners
+ * (U+200C, U+200D) stay: emoji sequences and many scripts need them.
+ */
+const HIDDEN = /[\u0000-\u001f\u007f-\u009f​‎‏‪-‮⁠-⁤⁦-⁩﻿\u{e0000}-\u{e007f}\u{e0100}-\u{e01ef}]/gu
+
+const graphemes = new Intl.Segmenter("en", { granularity: "grapheme" })
+
+/**
  * Text someone typed (a review, a shop's name) on its way into a tool
  * result. The model is told such text is information, never instructions;
  * this keeps it short and plain so it can't pass for anything else: no
- * control or invisible characters (zero-width, bidi overrides that reorder
- * what a reader sees), whitespace collapsed, and a length cap.
+ * control or invisible characters, whitespace collapsed, and a length cap
+ * that never splits a character or emoji. Otherwise the text is kept as
+ * written (NFC only), since it's also what the viewer sees on cards.
  */
 export function plainUserText(text: string, max: number): string {
-  const clean = text
-    .normalize("NFKC")
-    // C0/C1 controls (newlines become spaces below), zero-width and bidi formatting characters, the BOM.
-    .replace(/[\u0000-\u001f\u007f-\u009f​-‏‪-‮⁠-⁩﻿]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-  return clean.length > max ? `${clean.slice(0, max - 1).trimEnd()}…` : clean
+  const clean = text.normalize("NFC").replace(HIDDEN, " ").replace(/\s+/g, " ").trim()
+  if (clean.length <= max) return clean
+  let out = ""
+  for (const { segment } of graphemes.segment(clean)) {
+    if (out.length + segment.length > max - 1) break
+    out += segment
+  }
+  return `${out.trimEnd()}…`
 }
 
 /** How tool results label text people wrote, so the model reads it as data. */

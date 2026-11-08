@@ -9,7 +9,7 @@ import { Fragment, type ReactNode } from "react"
 export function AssistantText({ text }: { text: string }) {
   const blocks = toBlocks(text)
   return (
-    <div className="space-y-2 text-body text-foreground">
+    <div className="min-w-0 space-y-2 break-words text-body text-foreground [overflow-wrap:anywhere]">
       {blocks.map((b, i) =>
         b.type === "list" ? (
           <ul key={i} className="list-disc space-y-1 pl-5">

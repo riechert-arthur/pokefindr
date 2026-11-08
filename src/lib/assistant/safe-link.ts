@@ -5,7 +5,8 @@
  * fields the tools built pass through here.
  */
 export function safeHref(href: string | null | undefined): string | null {
-  if (!href) return null
+  // Browsers drop tabs and newlines inside URLs ("/\t/evil" opens //evil), so any whitespace or control character is refused.
+  if (!href || /[\u0000-\u0020\u007f-\u009f]/.test(href)) return null
   if (href.startsWith("/") && !href.startsWith("//") && !href.startsWith("/\\")) return href
   let url: URL
   try {

@@ -8,7 +8,7 @@ describe("safeHref", () => {
   })
 
   it("refuses scripts, other sites and protocol-relative paths", () => {
-    for (const href of ["javascript:alert(1)", "JAVASCRIPT:alert(1)", "data:text/html,hi", "https://evil.example/maps/dir/", "http://www.google.com/maps/dir/", "https://www.google.com.evil.example/maps/dir/", "//evil.example", "/\\evil.example", "https://www.google.com/search?q=x", "", null])
+    for (const href of ["javascript:alert(1)", "JAVASCRIPT:alert(1)", "data:text/html,hi", "https://evil.example/maps/dir/", "http://www.google.com/maps/dir/", "https://www.google.com.evil.example/maps/dir/", "//evil.example", "/\\evil.example", "/\t/evil.example", "/\n/evil.example", " /home", "https://www.google.com/search?q=x", "", null])
       expect(safeHref(href)).toBeNull()
   })
 })
