@@ -164,9 +164,10 @@ describe("POST /api/assistant", () => {
   })
 
   it("stops on a refusal, and after too many tool rounds", async () => {
-    setClaudeForTests(fakeClaude([{ stop: "refusal" }]).claude)
+    setClaudeForTests(fakeClaude([{ text: "Here is how to", stop: "refusal" }]).claude)
     const refused = await events(await post(ask("something else")))
-    expect(refused.at(-1)).toMatchObject({ type: "done", stop: "refusal", memory: expect.stringContaining("can't help") })
+    // The declined partial isn't remembered as an answer.
+    expect(refused.at(-1)).toMatchObject({ type: "done", stop: "refusal", memory: expect.stringMatching(/^I can't help/) })
 
     const loop = Array.from({ length: MAX_ROUNDS + 2 }, () => ({ tools: [{ name: "area_stats", input: { area: "WA" } }] }))
     const { claude, calls } = fakeClaude(loop)
