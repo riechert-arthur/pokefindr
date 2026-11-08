@@ -50,7 +50,8 @@ export async function POST(request: NextRequest) {
   if (!body.success) return NextResponse.json({ error: "Invalid request", issues: body.error.issues.map((i) => i.message) }, { status: 400 })
 
   const { ASSISTANT_MODEL, ASSISTANT_EFFORT } = getServerConfig()
-  const history = body.data.messages.slice(-MAX_TURNS)
+  // A blank answer (one that ran out of output) is skipped, not an error.
+  const history = body.data.messages.filter((m) => m.role === "user" || m.content.trim()).slice(-MAX_TURNS)
   // The API wants the first message to be the viewer's.
   while (history[0]?.role === "assistant") history.shift()
   const viewer = body.data.viewer ? { lng: round2(body.data.viewer.lng), lat: round2(body.data.viewer.lat) } : null

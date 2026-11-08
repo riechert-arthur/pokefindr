@@ -76,15 +76,52 @@ export function memoryOf(text: string, cards: readonly AssistantCard[]): string 
     if (c.type === "events") return [`[${c.title}: ${c.events.map((e) => `${e.title}, ${e.city} ${e.startsAt.slice(0, 10)}`).join("; ")}]`]
     return [`[${c.title}: ${c.total} places]`]
   })
-  return [text.trim(), ...lines].filter(Boolean).join("\n")
+  // Never empty: an empty assistant message would make the next request invalid.
+  return [text.trim(), ...lines].filter(Boolean).join("\n") || "(No answer.)"
 }
 
-const addUsage = (sum: AssistantUsage, m: BetaMessage): AssistantUsage => ({
-  inputTokens: sum.inputTokens + m.usage.input_tokens,
-  outputTokens: sum.outputTokens + m.usage.output_tokens,
-  cacheReadTokens: sum.cacheReadTokens + (m.usage.cache_read_input_tokens ?? 0),
-  cacheWriteTokens: sum.cacheWriteTokens + (m.usage.cache_creation_input_tokens ?? 0),
-})
+/** Block types that aren't sent back from before a mid-answer fallback (the API's rule). */
+const BEFORE_FALLBACK_DROPPED = new Set(["thinking", "redacted_thinking", "tool_use", "server_tool_use"])
+
+/**
+ * The part of a message that counts and goes back in the history. After a
+ * refusal fallback mid-answer, content before the last `fallback` block is
+ * the declined model's partial: its text stays, but its tool calls and
+ * thinking are dropped, so they're neither run nor sent back.
+ */
+export function usableContent(content: BetaMessage["content"]): BetaMessage["content"] {
+  const boundary = content.map((b) => b.type as string).lastIndexOf("fallback")
+  if (boundary < 0) return content
+  return content.filter((b, i) => i > boundary || (!BEFORE_FALLBACK_DROPPED.has(b.type) && (b.type as string) !== "fallback"))
+}
+
+/**
+ * Each attempt behind a message, with its model and tokens: with a refusal
+ * fallback, `usage.iterations` lists the declined attempt too (billed), while
+ * the top-level usage covers only the attempt that answered.
+ */
+export function usageAttempts(m: BetaMessage): { model: string; inputTokens: number; outputTokens: number; cacheReadTokens: number; cacheWriteTokens: number }[] {
+  const its = (m.usage.iterations ?? []).filter((x) => x.type === "message" || x.type === "fallback_message")
+  const rows = its.length ? its : [{ ...m.usage, model: m.model }]
+  return rows.map((x) => ({
+    model: ("model" in x && x.model) || m.model,
+    inputTokens: x.input_tokens,
+    outputTokens: x.output_tokens,
+    cacheReadTokens: x.cache_read_input_tokens ?? 0,
+    cacheWriteTokens: x.cache_creation_input_tokens ?? 0,
+  }))
+}
+
+const addUsage = (sum: AssistantUsage, m: BetaMessage): AssistantUsage =>
+  usageAttempts(m).reduce(
+    (u, a) => ({
+      inputTokens: u.inputTokens + a.inputTokens,
+      outputTokens: u.outputTokens + a.outputTokens,
+      cacheReadTokens: u.cacheReadTokens + a.cacheReadTokens,
+      cacheWriteTokens: u.cacheWriteTokens + a.cacheWriteTokens,
+    }),
+    sum,
+  )
 
 export interface TurnOptions {
   claude: ClaudeStreamer
@@ -111,10 +148,12 @@ export async function runAssistantTurn({ claude, model, effort, history, tools, 
   ]
   const cards: AssistantCard[] = []
   let text = ""
+  let served = model
   let usage: AssistantUsage = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 }
 
   const finish = (stop: Extract<AssistantEvent, { type: "done" }>["stop"]) =>
-    emit({ type: "done", stop, memory: memoryOf(text, cards), usage, model })
+    // The model that answered: a refusal fallback can differ from the one asked for.
+    emit({ type: "done", stop, memory: memoryOf(text, cards), usage, model: served })
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
     const stream = claude.stream(
@@ -139,6 +178,8 @@ export async function runAssistantTurn({ claude, model, effort, history, tools, 
     })
     const message = await stream.finalMessage()
     usage = addUsage(usage, message)
+    served = message.model
+    const content = usableContent(message.content)
 
     if (message.stop_reason === "refusal") {
       const sorry = "I can't help with that one. Ask me about finding Pokémon cards, card shops or events."
@@ -147,11 +188,11 @@ export async function runAssistantTurn({ claude, model, effort, history, tools, 
       emit({ type: "text", text: piece })
       return finish("refusal")
     }
-    const uses = message.content.filter((b): b is BetaToolUseBlock => b.type === "tool_use")
+    const uses = content.filter((b): b is BetaToolUseBlock => b.type === "tool_use")
     // A tool input cut off at max_tokens can still parse; never run it.
     if (uses.length === 0 || message.stop_reason === "max_tokens") return finish(message.stop_reason === "max_tokens" ? "max_tokens" : "end_turn")
 
-    messages.push({ role: "assistant", content: message.content })
+    messages.push({ role: "assistant", content })
     const results = await Promise.all(
       uses.map(async (use): Promise<BetaToolResultBlockParam> => {
         emit({ type: "status", text: STATUS[use.name] ?? "Working…" })

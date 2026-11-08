@@ -8,7 +8,7 @@ import { MAX_ROUNDS, setClaudeForTests, type ClaudeStreamer } from "@/server/ass
 import { POST } from "@/app/api/assistant/route"
 import type { AssistantEvent } from "@/lib/types/assistant-stream"
 
-type Step = { text?: string; tools?: { name: string; input: unknown }[]; stop?: BetaMessage["stop_reason"] } | Error
+type Step = { text?: string; tools?: { name: string; input: unknown }[]; stop?: BetaMessage["stop_reason"]; message?: Partial<BetaMessage> } | Error
 
 /** A Claude client that answers each call with the next scripted step, and records what it was sent. */
 function fakeClaude(steps: Step[]) {
@@ -25,6 +25,7 @@ function fakeClaude(steps: Step[]) {
         },
         async finalMessage() {
           if (step instanceof Error) throw step
+          if (step.message) return { id: "msg_raw", type: "message", role: "assistant", stop_sequence: null, ...step.message } as BetaMessage
           if (step.text) for (const piece of step.text.match(/.{1,6}/gs) ?? []) listeners.forEach((l) => l(piece))
           const content = [
             ...(step.text ? [{ type: "text" as const, text: step.text, citations: null }] : []),
@@ -106,6 +107,43 @@ describe("POST /api/assistant", () => {
     const result = (calls[1].messages[3].content as BetaToolResultBlockParam[])[0]
     expect(result.is_error).toBeUndefined()
     expect(JSON.parse(result.content as string)).toMatchObject({ area: "Seattle, WA", total: 2 })
+  })
+
+  it("after a mid-answer fallback, runs and sends back only what the answering model wrote, and counts both attempts", async () => {
+    const usage = (input: number, output: number) => ({ input_tokens: input, output_tokens: output, cache_read_input_tokens: 0, cache_creation_input_tokens: 0, cache_creation: null })
+    const { claude, calls } = fakeClaude([
+      {
+        message: {
+          model: "claude-opus-4-8",
+          stop_reason: "tool_use",
+          content: [
+            { type: "text", text: "Looking", citations: null },
+            { type: "tool_use", id: "toolu_declined", name: "area_stats", input: { area: "WA" } },
+            { type: "fallback", from: { model: "claude-opus-5-5" }, to: { model: "claude-opus-4-8" } },
+            { type: "tool_use", id: "toolu_kept", name: "find_places", input: { near: "Seattle, WA" } },
+          ] as unknown as BetaMessage["content"],
+          usage: { ...usage(100, 30), iterations: [{ type: "message", model: "claude-opus-5-5", ...usage(100, 10) }, { type: "fallback_message", model: "claude-opus-4-8", ...usage(100, 30) }] } as unknown as BetaMessage["usage"],
+        },
+      },
+      { text: "Safeway is closest." },
+    ])
+    setClaudeForTests(claude)
+    const out = await events(await post(ask("near Seattle")))
+    expect(out.filter((e) => e.type === "card").map((e) => (e as { card: { type: string } }).card.type)).toEqual(["places"])
+    const sentBack = calls[1].messages[2].content as { type: string; id?: string }[]
+    expect(sentBack.map((b) => b.id ?? b.type)).toEqual(["text", "toolu_kept"])
+    expect((calls[1].messages[3].content as BetaToolResultBlockParam[]).map((r) => r.tool_use_id)).toEqual(["toolu_kept"])
+    // Both attempts of the first call, plus the second call.
+    expect(out.at(-1)).toMatchObject({ type: "done", usage: { inputTokens: 300, outputTokens: 60 } })
+  })
+
+  it("skips a blank answer in the history instead of failing", async () => {
+    const { claude, calls } = fakeClaude([{ text: "Sure." }])
+    setClaudeForTests(claude)
+    const res = await post({ messages: [{ role: "user", content: "a" }, { role: "assistant", content: "  " }, { role: "user", content: "b" }] })
+    expect(res.status).toBe(200)
+    await events(res)
+    expect(calls[0].messages.filter((m) => m.role !== "system").map((m) => m.content)).toEqual(["a", "b"])
   })
 
   it("sends bad tool input back as an error Claude can fix", async () => {
