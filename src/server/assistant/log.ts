@@ -1,8 +1,8 @@
 import "server-only"
-import { eq, inArray, lt, sql } from "drizzle-orm"
+import { and, eq, inArray, isNotNull, lt, sql } from "drizzle-orm"
 import { z } from "zod"
 import { getDb, type Database } from "@/server/db/client"
-import { assistantPlaceViews, assistantTurnTexts, assistantTurns, assistantUsage, type AssistantOutcome } from "@/server/db/schema"
+import { assistantFeedback, assistantPlaceViews, assistantTurnTexts, assistantTurns, assistantUsage, type AssistantOutcome } from "@/server/db/schema"
 import { defineJob } from "@/server/lib/jobs/types"
 import type { AssistantUsage } from "@/lib/types/assistant-stream"
 
@@ -45,6 +45,8 @@ export interface TurnRecord {
   userId: string
   outcome: AssistantOutcome
   model: string | null
+  /** PROMPT_VERSION, for turns that ran. */
+  promptVersion?: string | null
   usage: AssistantUsage
   latencyMs: number | null
   tools: ToolCall[]
@@ -61,6 +63,7 @@ export async function recordTurn(t: TurnRecord, db: Database = getDb()): Promise
       userId: t.userId,
       outcome: t.outcome,
       model: t.model,
+      promptVersion: t.promptVersion ?? null,
       inputTokens: t.usage.inputTokens,
       outputTokens: t.usage.outputTokens,
       cacheReadTokens: t.usage.cacheReadTokens,
@@ -88,8 +91,9 @@ export async function recordTurn(t: TurnRecord, db: Database = getDb()): Promise
   )
 }
 
-/** Deletes the text of a user's turns ("clear my assistant history"); the rows stay, without text. */
+/** Deletes the text of a user's turns and feedback comments ("clear my assistant history"); the rows stay, without text. */
 export async function deleteHistory(userId: string, db: Database = getDb()): Promise<number> {
+  await db.update(assistantFeedback).set({ comment: null }).where(eq(assistantFeedback.userId, userId))
   const deleted = await db
     .delete(assistantTurnTexts)
     .where(inArray(assistantTurnTexts.turnId, db.select({ id: assistantTurns.id }).from(assistantTurns).where(eq(assistantTurns.userId, userId))))
@@ -103,11 +107,17 @@ const daysAgo = (now: Date, days: number) => new Date(now.getTime() - days * 86_
 export async function purgeAssistantData(now = new Date(), db: Database = getDb()) {
   // Text first: deleting a turn deletes its text too, which would hide it from the count.
   const texts = await db.delete(assistantTurnTexts).where(lt(assistantTurnTexts.createdAt, daysAgo(now, TEXT_DAYS))).returning({ id: assistantTurnTexts.turnId })
+  // Feedback comments are someone's words too: same 30 days.
+  const comments = await db
+    .update(assistantFeedback)
+    .set({ comment: null })
+    .where(and(lt(assistantFeedback.createdAt, daysAgo(now, TEXT_DAYS)), isNotNull(assistantFeedback.comment)))
+    .returning({ id: assistantFeedback.turnId })
   const turns = await db.delete(assistantTurns).where(lt(assistantTurns.createdAt, daysAgo(now, TURN_DAYS))).returning({ id: assistantTurns.id })
   // Daily usage stays 90 days for cost history; place views only matter today.
   const usage = await db.delete(assistantUsage).where(lt(assistantUsage.day, sql`${daysAgo(now, 90).toISOString().slice(0, 10)}::date`)).returning({ day: assistantUsage.day })
   const views = await db.delete(assistantPlaceViews).where(lt(assistantPlaceViews.day, sql`${daysAgo(now, 2).toISOString().slice(0, 10)}::date`)).returning({ day: assistantPlaceViews.day })
-  return { texts: texts.length, turns: turns.length, usageDays: usage.length, placeViews: views.length }
+  return { texts: texts.length, feedbackComments: comments.length, turns: turns.length, usageDays: usage.length, placeViews: views.length }
 }
 
 /** Runs daily (vercel.json). Safe to repeat. */

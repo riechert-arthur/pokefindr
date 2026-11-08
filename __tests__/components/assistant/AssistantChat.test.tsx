@@ -13,7 +13,7 @@ function ndjson(events: AssistantEvent[]) {
   return new Response(new ReadableStream({ start(c) { c.enqueue(enc.encode(text.slice(0, mid))); c.enqueue(enc.encode(text.slice(mid))); c.close() } }), { headers: { "Content-Type": "application/x-ndjson" } })
 }
 
-const done = (memory: string): AssistantEvent => ({ type: "done", stop: "end_turn", memory, usage: { inputTokens: 1, outputTokens: 1, cacheReadTokens: 0, cacheWriteTokens: 0, costMicros: 1 }, model: "claude-opus-5-5" })
+const done = (memory: string): AssistantEvent => ({ type: "done", stop: "end_turn", memory, usage: { inputTokens: 1, outputTokens: 1, cacheReadTokens: 0, cacheWriteTokens: 0, costMicros: 1 }, model: "claude-opus-5-5", turnId: "turn-1" })
 
 function setup(props: Partial<Parameters<typeof AssistantChat>[0]> = {}) {
   const onChattingChange = vi.fn()
@@ -42,6 +42,7 @@ describe("AssistantChat", () => {
     expect(screen.getByText("Safeway", { selector: "strong" })).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Safeway on the map" })).toHaveAttribute("href", "/map?location=loc-1")
     expect(onChattingChange).toHaveBeenLastCalledWith(true)
+    expect(screen.getByRole("group", { name: "Rate this answer" })).toBeInTheDocument()
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({ messages: [{ role: "user", content: "machines in Seattle?" }], viewer: { lng: -122.34, lat: 47.61 } })
 
     ask("route through them")

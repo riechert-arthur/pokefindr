@@ -4,7 +4,7 @@ import Anthropic from "@anthropic-ai/sdk"
 import { getGeocoder } from "@/server/container"
 import { getServerConfig } from "@/server/config"
 import { getDb } from "@/server/db/client"
-import { MAX_TURNS, emptyUsage, getClaude, runAssistantTurn } from "@/server/assistant/run"
+import { MAX_TURNS, PROMPT_VERSION, emptyUsage, getClaude, runAssistantTurn } from "@/server/assistant/run"
 import { endTurn, loadPlaceBudget, savePlaceViews, startTurn, warnOnSpend } from "@/server/assistant/limits"
 import { flagsFor, recordTurn, type ToolCall } from "@/server/assistant/log"
 import type { AssistantOutcome } from "@/server/db/schema"
@@ -145,6 +145,7 @@ export async function POST(request: NextRequest) {
               userId,
               outcome,
               model: model ?? ASSISTANT_MODEL,
+              promptVersion: PROMPT_VERSION,
               usage,
               latencyMs: Date.now() - now.getTime(),
               tools: toolCalls,

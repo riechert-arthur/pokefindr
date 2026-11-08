@@ -16,6 +16,7 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build --quiet",
     "job": "tsx --conditions=react-server scripts/run-job.ts",
+    "assistant:feedback": "tsx --conditions=react-server scripts/assistant/feedback.ts",
     "db:up": "docker compose up -d --wait db",
     "db:down": "docker compose down",
     "db:migrate": "tsx scripts/db/migrate.ts up",
