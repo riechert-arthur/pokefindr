@@ -161,6 +161,25 @@ describe("POST /api/assistant", () => {
     expect(out).toEqual([{ type: "error", message: "The assistant is busy right now. Try again in a minute." }])
   })
 
+  it("says it's unavailable, not a server error, when federation has no identity here", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {})
+    const { resetServerConfigForTests } = await import("@/server/config")
+    const { resetContainerForTests } = await import("@/server/container")
+    process.env.ANTHROPIC_FEDERATION_RULE_ID = "fdrl_test"
+    process.env.ANTHROPIC_ORGANIZATION_ID = "org-test"
+    resetServerConfigForTests()
+    resetContainerForTests()
+    try {
+      const res = await post(ask("hi"))
+      expect(res.status).toBe(503)
+    } finally {
+      delete process.env.ANTHROPIC_FEDERATION_RULE_ID
+      delete process.env.ANTHROPIC_ORGANIZATION_ID
+      resetServerConfigForTests()
+      resetContainerForTests()
+    }
+  })
+
   it("needs a session, a configured key and a valid body", async () => {
     expect((await post(ask("hi"), null)).status).toBe(401)
     expect((await post(ask("hi"))).status).toBe(503)

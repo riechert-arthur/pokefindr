@@ -88,6 +88,14 @@ describe("getServerConfig", () => {
     expect(() => getServerConfig()).toThrowError(/GEOCODER_USER_AGENT/)
   })
 
+  it("needs both the federation rule and the organization, or neither", () => {
+    vi.stubEnv("ANTHROPIC_FEDERATION_RULE_ID", "fdrl_abc")
+    expect(() => getServerConfig()).toThrowError(/ANTHROPIC_ORGANIZATION_ID/)
+    resetServerConfigForTests()
+    vi.stubEnv("ANTHROPIC_ORGANIZATION_ID", "org-uuid")
+    expect(getServerConfig()).toMatchObject({ ANTHROPIC_FEDERATION_RULE_ID: "fdrl_abc", ANTHROPIC_ORGANIZATION_ID: "org-uuid" })
+  })
+
   it("rejects an unknown GEOCODER_PROVIDER", () => {
     vi.stubEnv("GEOCODER_PROVIDER", "google")
     expect(() => getServerConfig()).toThrowError(/GEOCODER_PROVIDER/)

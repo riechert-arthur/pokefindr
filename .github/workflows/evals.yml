@@ -1,8 +1,11 @@
 name: Assistant evals
 
 # The assistant eval (#208, evals/assistant). It calls the Claude API, so it
-# costs money and needs the ANTHROPIC_EVAL_KEY secret: a separate key with a
-# spend limit (#209). Without the secret, the jobs skip.
+# costs money and needs credentials for the evals workspace (with a spend
+# limit, #209): workload identity federation (#226), with the repository
+# variables ANTHROPIC_EVAL_FEDERATION_RULE_ID and ANTHROPIC_ORGANIZATION_ID
+# (no secret: the job proves who it is with its GitHub OIDC token), or the
+# ANTHROPIC_EVAL_KEY secret. With neither, the jobs skip.
 #
 # - PRs that touch the prompt, tools, model settings or the eval: the smoke
 #   set, once. Fails if grounding drops below 100% or the pass rate falls
@@ -41,6 +44,8 @@ concurrency:
 
 permissions:
   contents: read
+  # The job's GitHub OIDC token, for workload identity federation.
+  id-token: write
 
 jobs:
   eval:
@@ -49,6 +54,10 @@ jobs:
     timeout-minutes: 30
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_EVAL_KEY }}
+      ANTHROPIC_FEDERATION_RULE_ID: ${{ vars.ANTHROPIC_EVAL_FEDERATION_RULE_ID }}
+      ANTHROPIC_ORGANIZATION_ID: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
+      ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_EVAL_WORKSPACE_ID }}
+      ANTHROPIC_IDENTITY_AUDIENCE: ${{ vars.ANTHROPIC_IDENTITY_AUDIENCE }}
       EVAL_DATABASE_URL: postgres://pokefindr:pokefindr@localhost:5433/pokefindr_eval
       # The app's config needs these to load; the eval doesn't use them.
       APP_URL: http://localhost:3000
@@ -57,10 +66,19 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: unused
       SUPABASE_SERVICE_ROLE_KEY: unused
     steps:
-      - name: Check for the eval key
+      - name: Check for eval credentials
         id: key
         run: |
-          if [ -n "$ANTHROPIC_API_KEY" ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "::notice::ANTHROPIC_EVAL_KEY isn't set; skipping the assistant eval."; fi
+          # Federation needs this job's GitHub OIDC token, which fork and Dependabot PRs don't get.
+          if [ -n "$ANTHROPIC_FEDERATION_RULE_ID" ] && [ -n "$ACTIONS_ID_TOKEN_REQUEST_URL" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          elif [ -n "$ANTHROPIC_API_KEY" ]; then
+            # Use the key instead: unset the federation settings, which would otherwise win.
+            { echo "ANTHROPIC_FEDERATION_RULE_ID="; echo "ANTHROPIC_ORGANIZATION_ID="; } >> "$GITHUB_ENV"
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::No eval credentials here (federation needs an OIDC token; ANTHROPIC_EVAL_KEY isn't set); skipping the assistant eval."
+          fi
       - if: steps.key.outputs.present == 'true'
         uses: actions/checkout@v4
       - name: Start PostGIS
