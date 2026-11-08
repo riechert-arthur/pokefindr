@@ -38,6 +38,19 @@ describe("useLocationReviews", () => {
     expect(toast.success).toHaveBeenCalledWith("Review posted", { description: "It shows at the top of the reviews." })
   })
 
+  it("keeps a review saved while an older read of the list was in flight", async () => {
+    let finishGet: (r: Response) => void = () => {}
+    mockFetch((url, init) =>
+      init?.method === "POST" ? json({ success: true, id: "r2" }) : new Promise<Response>((resolve) => (finishGet = resolve)),
+    )
+    const { result } = renderHook(() => useLocationReviews("loc"))
+    await act(async () => expect(await result.current.add({ rating: 5, text: "" }, "ash")).toBe(true))
+    // The list was read before the insert committed: it doesn't have r2.
+    await act(async () => finishGet(json({ reviews: [REVIEW] })))
+    await waitFor(() => expect(result.current.status).toBe("ready"))
+    expect(result.current.reviews.map((r) => r.id)).toEqual(["r2", "r1"])
+  })
+
   it("takes a review back, with a toast, when posting fails", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {})
     mockFetch((url, init) => (init?.method === "POST" ? json({}, 500) : json({ reviews: [] })))
