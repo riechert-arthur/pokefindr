@@ -1,53 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { NextRequest } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
-import type { BetaMessage, BetaMessageStreamParams, BetaToolResultBlockParam } from "@anthropic-ai/sdk/resources/beta/messages/messages"
+import type { BetaToolResultBlockParam } from "@anthropic-ai/sdk/resources/beta/messages/messages"
+import { fakeClaude } from "./fakeClaude"
 import { getDb } from "@/server/db/client"
-import { locations } from "@/server/db/schema"
-import { MAX_ROUNDS, setClaudeForTests, type ClaudeStreamer } from "@/server/assistant/run"
+import { locations, profiles } from "@/server/db/schema"
+import { resetLimitsForTests } from "@/server/assistant/limits"
+import { MAX_ROUNDS, setClaudeForTests } from "@/server/assistant/run"
 import { POST } from "@/app/api/assistant/route"
 import type { AssistantEvent } from "@/lib/types/assistant-stream"
 
-type Step = { text?: string; tools?: { name: string; input: unknown }[]; stop?: BetaMessage["stop_reason"] } | Error
+const USER = "00000000-0000-4000-8000-000000000001"
 
-/** A Claude client that answers each call with the next scripted step, and records what it was sent. */
-function fakeClaude(steps: Step[]) {
-  const calls: BetaMessageStreamParams[] = []
-  const claude: ClaudeStreamer = {
-    stream(params) {
-      calls.push(structuredClone(params))
-      const step = steps.shift() ?? { text: "(no more steps)" }
-      const listeners: ((d: string) => void)[] = []
-      return {
-        on(_event, listener) {
-          listeners.push(listener)
-          return this
-        },
-        async finalMessage() {
-          if (step instanceof Error) throw step
-          if (step.text) for (const piece of step.text.match(/.{1,6}/gs) ?? []) listeners.forEach((l) => l(piece))
-          const content = [
-            ...(step.text ? [{ type: "text" as const, text: step.text, citations: null }] : []),
-            ...(step.tools ?? []).map((t, i) => ({ type: "tool_use" as const, id: `toolu_${calls.length}_${i}`, name: t.name, input: t.input })),
-          ]
-          return {
-            id: `msg_${calls.length}`,
-            type: "message",
-            role: "assistant",
-            model: "claude-opus-5-5",
-            content,
-            stop_reason: step.stop ?? (step.tools?.length ? "tool_use" : "end_turn"),
-            stop_sequence: null,
-            usage: { input_tokens: 100, output_tokens: 20, cache_read_input_tokens: 50, cache_creation_input_tokens: 10 },
-          } as unknown as BetaMessage
-        },
-      }
-    },
-  }
-  return { claude, calls }
-}
-
-const post = (body: unknown, userId: string | null = "user-1") =>
+const post = (body: unknown, userId: string | null = USER) =>
   POST(new NextRequest("http://localhost/api/assistant", { method: "POST", body: JSON.stringify(body), headers: userId ? { "x-user-id": userId } : {} }))
 
 async function events(res: Response): Promise<AssistantEvent[]> {
@@ -60,6 +25,8 @@ const ask = (content: string) => ({ messages: [{ role: "user", content }] })
 let safeway: string
 
 beforeEach(async () => {
+  resetLimitsForTests()
+  await getDb().insert(profiles).values({ id: USER, username: "ash" })
   const [row] = await getDb()
     .insert(locations)
     .values([
@@ -92,7 +59,7 @@ describe("POST /api/assistant", () => {
     const text = out.filter((e) => e.type === "text").map((e) => (e as { text: string }).text).join("")
     expect(text).toBe("Let me look.\n\n**Safeway** on Pike St is closest.")
     const done = out.at(-1) as Extract<AssistantEvent, { type: "done" }>
-    expect(done).toMatchObject({ type: "done", stop: "end_turn", model: "claude-opus-5-5", usage: { inputTokens: 200, outputTokens: 40, cacheReadTokens: 100, cacheWriteTokens: 20 } })
+    expect(done).toMatchObject({ type: "done", stop: "end_turn", model: "claude-opus-5-5", usage: { inputTokens: 200, outputTokens: 40, cacheReadTokens: 100, cacheWriteTokens: 20, costMicros: 2 * (100 * 4 + 20 * 20 + 50 * 0.2 + 10 * 5) } })
     expect(done.memory).toContain(`Safeway, Seattle (id ${safeway})`)
 
     // What Claude was sent: a cached system prompt, the tools, the context after the question, then the tool result.

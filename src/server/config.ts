@@ -70,6 +70,10 @@ const serverSchema = z.object({
   ASSISTANT_MODEL: blankAsUnset(z.string().min(1).default("claude-opus-5-5")),
   /** How hard the model thinks: more is slower and costs more. */
   ASSISTANT_EFFORT: blankAsUnset(z.enum(["low", "medium", "high", "xhigh", "max"]).default("medium")),
+  /** The kill switch: "false" pauses the assistant everywhere, without a deploy of new code. */
+  ASSISTANT_ENABLED: blankAsUnset(z.enum(["true", "false"]).default("true")).transform((v) => v === "true"),
+  /** The most the assistant may spend a UTC day, over all users, in dollars. Past it, it pauses until midnight UTC. */
+  ASSISTANT_DAILY_BUDGET_USD: blankAsUnset(z.coerce.number().positive().default(10)),
 }).transform((env) => ({
   ...env,
   GEOCODER_PROVIDER: env.GEOCODER_PROVIDER ?? (env.NODE_ENV === "production" ? "photon" : "fake"),

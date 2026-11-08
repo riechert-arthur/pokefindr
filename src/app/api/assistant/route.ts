@@ -4,7 +4,8 @@ import Anthropic from "@anthropic-ai/sdk"
 import { getGeocoder } from "@/server/container"
 import { getServerConfig } from "@/server/config"
 import { getDb } from "@/server/db/client"
-import { MAX_TURNS, getClaude, runAssistantTurn } from "@/server/assistant/run"
+import { MAX_TURNS, emptyUsage, getClaude, runAssistantTurn } from "@/server/assistant/run"
+import { endTurn, loadPlaceBudget, savePlaceViews, startTurn, warnOnSpend } from "@/server/assistant/limits"
 import type { AssistantEvent } from "@/lib/types/assistant-stream"
 
 export const dynamic = "force-dynamic"
@@ -21,17 +22,22 @@ const bodySchema = z.object({
     )
     .min(1)
     .max(60)
-    .refine((m) => m[m.length - 1].role === "user", "the last message must be the viewer's"),
+    .refine((m) => m[m.length - 1].role === "user", "the last message must be the viewer's")
+    // Older turns are dropped anyway; this bounds what one request can make us parse.
+    .refine((m) => m.reduce((n, t) => n + t.content.length, 0) <= 60_000, "the conversation is too long"),
   /** The viewer's location, when they shared it. Rounded here to ~1 km before any tool or model sees it. */
   viewer: z.object({ lng: z.number().min(-180).max(180), lat: z.number().min(-90).max(90) }).nullish(),
 })
 
 const round2 = (n: number) => Math.round(n * 100) / 100
 
+/** A turn gives up after this long, inside the function's 60 s. */
+const TURN_TIMEOUT_MS = 55_000
+
 /** What the viewer sees when the API fails; the details go to the log. */
-function failureMessage(err: unknown): string {
+function failureMessage(err: unknown, timedOut: boolean): string {
   if (err instanceof Anthropic.RateLimitError || (err instanceof Anthropic.APIError && err.status === 529)) return "The assistant is busy right now. Try again in a minute."
-  if (err instanceof Anthropic.APIConnectionTimeoutError) return "The assistant took too long. Try again, or ask something narrower."
+  if (timedOut || err instanceof Anthropic.APIConnectionTimeoutError) return "The assistant took too long. Try again, or ask something narrower."
   return "Something went wrong with the assistant. Try again."
 }
 
@@ -39,22 +45,44 @@ function failureMessage(err: unknown): string {
  * POST /api/assistant  { messages, viewer? }
  *   One assistant turn for a signed-in viewer (middleware sets x-user-id),
  *   streamed as NDJSON AssistantEvents: text, status, cards, then done or
- *   error. 503 when no Claude key is configured.
+ *   error. 503 when no Claude key is configured, the kill switch is off or
+ *   today's spend ceiling is reached; 429 (with Retry-After) past the
+ *   viewer's limits.
  */
 export async function POST(request: NextRequest) {
   const userId = request.headers.get("x-user-id")
   if (!userId) return NextResponse.json({ error: "Log in to continue" }, { status: 401 })
+  const config = getServerConfig()
   const claude = getClaude()
-  if (!claude) return NextResponse.json({ error: "The assistant isn't available right now." }, { status: 503 })
+  if (!claude || !config.ASSISTANT_ENABLED) return NextResponse.json({ error: "The assistant isn't available right now.", paused: true }, { status: 503 })
   const body = bodySchema.safeParse(await request.json().catch(() => null))
   if (!body.success) return NextResponse.json({ error: "Invalid request", issues: body.error.issues.map((i) => i.message) }, { status: 400 })
 
-  const { ASSISTANT_MODEL, ASSISTANT_EFFORT } = getServerConfig()
+  const db = getDb()
+  const now = new Date()
+  const budgetMicros = Math.round(config.ASSISTANT_DAILY_BUDGET_USD * 1e6)
+  let started: Awaited<ReturnType<typeof startTurn>>
+  try {
+    started = await startTurn({ userId, now, dailyBudgetMicros: budgetMicros }, db)
+  } catch (err) {
+    console.error("[api/assistant] couldn't check the limits", err)
+    return NextResponse.json({ error: "Something went wrong with the assistant. Try again." }, { status: 500 })
+  }
+  if (!started.ok) {
+    const r = started.refusal
+    return r.kind === "paused"
+      ? NextResponse.json({ error: r.message, paused: true }, { status: 503 })
+      : NextResponse.json({ error: r.message }, { status: 429, headers: { "Retry-After": String(r.retryAfter) } })
+  }
+  warnOnSpend(started.spentToday, budgetMicros, now)
+  const { ASSISTANT_MODEL, ASSISTANT_EFFORT } = config
   const history = body.data.messages.slice(-MAX_TURNS)
   // The API wants the first message to be the viewer's.
   while (history[0]?.role === "assistant") history.shift()
   const viewer = body.data.viewer ? { lng: round2(body.data.viewer.lng), lat: round2(body.data.viewer.lat) } : null
 
+  const signal = AbortSignal.any([request.signal, AbortSignal.timeout(TURN_TIMEOUT_MS)])
+  const usage = emptyUsage()
   const encoder = new TextEncoder()
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -65,22 +93,28 @@ export async function POST(request: NextRequest) {
           // The viewer left; the request's signal stops the turn.
         }
       }
+      const places = await loadPlaceBudget(userId, now, db).catch(() => undefined)
       try {
         await runAssistantTurn({
           claude,
           model: ASSISTANT_MODEL,
           effort: ASSISTANT_EFFORT,
           history,
-          tools: { db: getDb(), geocoder: getGeocoder(), viewer, now: new Date(), signal: request.signal },
+          tools: { db, geocoder: getGeocoder(), viewer, now, signal, places },
           emit,
-          signal: request.signal,
+          signal,
+          usage,
         })
       } catch (err) {
         if (!request.signal.aborted) {
           console.error("[api/assistant] turn failed", err)
-          emit({ type: "error", message: failureMessage(err) })
+          emit({ type: "error", message: failureMessage(err, signal.aborted) })
         }
       } finally {
+        await Promise.all([
+          endTurn({ userId, now, usage }, db),
+          places ? savePlaceViews(userId, now, places, db) : undefined,
+        ]).catch((err) => console.error("[api/assistant] couldn't record usage", err))
         try {
           controller.close()
         } catch {

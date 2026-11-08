@@ -13,6 +13,8 @@ export interface AssistantUsage {
   outputTokens: number
   cacheReadTokens: number
   cacheWriteTokens: number
+  /** What they cost, in millionths of a dollar. */
+  costMicros: number
 }
 
 /**

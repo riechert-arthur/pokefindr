@@ -11,6 +11,7 @@ import type {
 import { getAnthropic } from "@/server/container"
 import { ASSISTANT_TOOLS, inputJsonSchema, runTool, type ToolContext } from "./tools"
 import { SYSTEM_PROMPT, turnContext } from "./prompt"
+import { costMicros } from "./pricing"
 import type { AssistantCard } from "@/lib/types/assistant"
 import type { AssistantEvent, AssistantTurn, AssistantUsage } from "@/lib/types/assistant-stream"
 
@@ -79,12 +80,22 @@ export function memoryOf(text: string, cards: readonly AssistantCard[]): string 
   return [text.trim(), ...lines].filter(Boolean).join("\n")
 }
 
-const addUsage = (sum: AssistantUsage, m: BetaMessage): AssistantUsage => ({
-  inputTokens: sum.inputTokens + m.usage.input_tokens,
-  outputTokens: sum.outputTokens + m.usage.output_tokens,
-  cacheReadTokens: sum.cacheReadTokens + (m.usage.cache_read_input_tokens ?? 0),
-  cacheWriteTokens: sum.cacheWriteTokens + (m.usage.cache_creation_input_tokens ?? 0),
-})
+export const emptyUsage = (): AssistantUsage => ({ inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0, costMicros: 0 })
+
+/** Adds one model call's usage to `sum` (in place), priced by the model that answered (a fallback can differ). */
+function addUsage(sum: AssistantUsage, m: BetaMessage) {
+  const t = {
+    inputTokens: m.usage.input_tokens,
+    outputTokens: m.usage.output_tokens,
+    cacheReadTokens: m.usage.cache_read_input_tokens ?? 0,
+    cacheWriteTokens: m.usage.cache_creation_input_tokens ?? 0,
+  }
+  sum.inputTokens += t.inputTokens
+  sum.outputTokens += t.outputTokens
+  sum.cacheReadTokens += t.cacheReadTokens
+  sum.cacheWriteTokens += t.cacheWriteTokens
+  sum.costMicros += costMicros(m.model, t)
+}
 
 export interface TurnOptions {
   claude: ClaudeStreamer
@@ -95,6 +106,8 @@ export interface TurnOptions {
   tools: ToolContext
   emit: (event: AssistantEvent) => void
   signal?: AbortSignal
+  /** Filled in as each model call finishes, so a turn that fails partway still counts what it used. */
+  usage?: AssistantUsage
 }
 
 /**
@@ -103,7 +116,7 @@ export interface TurnOptions {
  * they come. Ends with a `done` event carrying the memory and the usage.
  * API errors throw; the route turns them into an `error` event.
  */
-export async function runAssistantTurn({ claude, model, effort, history, tools, emit, signal }: TurnOptions): Promise<void> {
+export async function runAssistantTurn({ claude, model, effort, history, tools, emit, signal, usage = emptyUsage() }: TurnOptions): Promise<void> {
   const messages: BetaMessageParam[] = [
     ...history.map((t): BetaMessageParam => ({ role: t.role, content: t.content })),
     // Per-request facts as an operator message after the newest user message, so the cached prefix stays put.
@@ -111,10 +124,9 @@ export async function runAssistantTurn({ claude, model, effort, history, tools, 
   ]
   const cards: AssistantCard[] = []
   let text = ""
-  let usage: AssistantUsage = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 }
 
   const finish = (stop: Extract<AssistantEvent, { type: "done" }>["stop"]) =>
-    emit({ type: "done", stop, memory: memoryOf(text, cards), usage, model })
+    emit({ type: "done", stop, memory: memoryOf(text, cards), usage: { ...usage }, model })
 
   for (let round = 0; round < MAX_ROUNDS; round++) {
     const stream = claude.stream(
@@ -138,7 +150,7 @@ export async function runAssistantTurn({ claude, model, effort, history, tools, 
       emit({ type: "text", text: delta })
     })
     const message = await stream.finalMessage()
-    usage = addUsage(usage, message)
+    addUsage(usage, message)
 
     if (message.stop_reason === "refusal") {
       const sorry = "I can't help with that one. Ask me about finding Pokémon cards, card shops or events."

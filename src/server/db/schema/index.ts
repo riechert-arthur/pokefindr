@@ -26,6 +26,7 @@ import type { ReportReason } from "@/lib/locations/reports"
 import {
   boolean,
   check,
+  date,
   doublePrecision,
   index,
   integer,
@@ -255,3 +256,29 @@ export const trustRatings = pgTable("trust_ratings", {
   comment: text("comment"),
   createdAt: createdAt(),
 })
+
+/** The assistant's usage per user and UTC day (migration 0006), for its limits and spend caps. */
+export const assistantUsage = pgTable(
+  "assistant_usage",
+  {
+    userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+    day: date("day").notNull(),
+    messages: integer("messages").notNull().default(0),
+    inputTokens: integer("input_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    /** Millionths of a dollar. */
+    costMicros: integer("cost_micros").notNull().default(0),
+  },
+  (t) => [uniqueIndex("assistant_usage_user_day_key").on(t.userId, t.day), index("assistant_usage_day_idx").on(t.day)],
+)
+
+/** The distinct places the assistant showed each user each day (migration 0006). */
+export const assistantPlaceViews = pgTable(
+  "assistant_place_views",
+  {
+    userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+    day: date("day").notNull(),
+    locationId: uuid("location_id").notNull().references(() => locations.id, { onDelete: "cascade" }),
+  },
+  (t) => [uniqueIndex("assistant_place_views_user_day_location_key").on(t.userId, t.day, t.locationId)],
+)
