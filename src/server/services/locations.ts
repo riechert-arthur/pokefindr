@@ -36,7 +36,7 @@ const featureJson = (extra: SQL = sql``) => sql`
  * this stays fast as the table grows. With `limit`, it returns at most that
  * many and sets `truncated` when more matched.
  */
-async function queryFeatures(
+export async function queryFeatures(
   db: Database,
   where: SQL = sql`true`,
   limit?: number,
@@ -97,11 +97,11 @@ export const preferredSpelling = (name: SQL) =>
 /** Miles to meters, for PostGIS distances on geography. */
 export const METERS_PER_MILE = 1609.344
 
-const kindsIn = (types: readonly LocationKind[]) => sql.join(types.map((t) => sql`${t}`), sql`, `)
+export const kindsIn = (types: readonly LocationKind[]) => sql.join(types.map((t) => sql`${t}`), sql`, `)
 /** Vending machines of these retailers only (other kinds aren't filtered), as the map's `retailer=` does. Empty means all. */
-const retailerIn = (retailers: readonly string[]) =>
+export const retailerIn = (retailers: readonly string[]) =>
   retailers.length ? sql`and (l.kind <> 'vending' or coalesce(l.retailer, l.name) in (${sql.join(retailers.map((r) => sql`${r}`), sql`, `)}))` : sql``
-const pointOf = ([lng, lat]: readonly [number, number]) => sql`ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography`
+export const pointOf = ([lng, lat]: readonly [number, number]) => sql`ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography`
 
 /**
  * How many active locations of `types` lie within `radiusMiles` of each
@@ -144,7 +144,7 @@ export interface LocationSearch {
 }
 
 /** `%` and `_` are wildcards in LIKE; a search for them means the characters. */
-const likeEscape = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`)
+export const likeEscape = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`)
 
 /** Active locations whose retailer, name, address or city contains `q`: the search list's Locations group. */
 export async function searchLocations(
