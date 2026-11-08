@@ -302,8 +302,8 @@ export const assistantTurns = pgTable(
     /** Millionths of a dollar. */
     costMicros: integer("cost_micros").notNull().default(0),
     latencyMs: integer("latency_ms"),
-    /** The tools it ran: `{ name, input, ok, error? }[]`. */
-    tools: jsonb("tools").$type<{ name: string; input: unknown; ok: boolean; error?: string }[]>().notNull().default(sql`'[]'::jsonb`),
+    /** The tools it ran, names only: `{ name, ok }[]` (inputs are text, kept in assistant_turn_texts). */
+    tools: jsonb("tools").$type<{ name: string; ok: boolean }[]>().notNull().default(sql`'[]'::jsonb`),
     /** Why it might need a look: refused, injection, place_cap, cost_outlier. */
     flags: text("flags").array().notNull(),
   },
@@ -321,6 +321,8 @@ export const assistantTurnTexts = pgTable(
     turnId: uuid("turn_id").primaryKey().references(() => assistantTurns.id, { onDelete: "cascade" }),
     question: text("question").notNull(),
     answer: text("answer").notNull().default(""),
+    /** The tools' inputs and errors: `{ name, input, ok, error? }[]`. */
+    toolCalls: jsonb("tool_calls").$type<{ name: string; input: unknown; ok: boolean; error?: string }[]>().notNull().default(sql`'[]'::jsonb`),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("assistant_turn_texts_created_idx").on(t.createdAt)],

@@ -1,10 +1,11 @@
 /**
- * A log of assistant turns (#212): who asked, how it ended, the tools it
- * ran, tokens, cost, latency and review flags, one row per turn. The
- * question and answer text sit in their own table, deleted after 30 days
- * (the assistant-retention job) or when the user clears their history;
- * the turn rows are kept longer, without any text, for cost and abuse
- * tracking.
+ * A log of assistant turns (#212): who asked, how it ended, which tools it
+ * ran (names only), tokens, cost, latency and review flags, one row per
+ * turn. Everything the user typed or the model wrote (the question, the
+ * answer, the tools' inputs and errors) sits in assistant_turn_texts,
+ * deleted after 30 days (the assistant-retention job) or when the user
+ * clears their history; the turn rows are kept longer, without any text,
+ * for cost and abuse tracking.
  */
 import { sql, type Kysely } from "kysely"
 
@@ -40,6 +41,7 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     .addColumn("turn_id", "uuid", (c) => c.primaryKey())
     .addColumn("question", "text", (c) => c.notNull())
     .addColumn("answer", "text", (c) => c.notNull().defaultTo(""))
+    .addColumn("tool_calls", "jsonb", (c) => c.notNull().defaultTo(sql`'[]'::jsonb`))
     .addColumn("created_at", "timestamptz", (c) => c.notNull().defaultTo(sql`now()`))
     .addForeignKeyConstraint("assistant_turn_texts_turn_id_assistant_turns_id_fk", ["turn_id"], "assistant_turns", ["id"], (c) => c.onDelete("cascade"))
     .execute()

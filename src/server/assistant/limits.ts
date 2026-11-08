@@ -30,7 +30,13 @@ const openTurns = new Set<string>()
 
 export type Refusal =
   | { kind: "paused"; message: string }
-  | { kind: "limited"; message: string; retryAfter: number }
+  | {
+      kind: "limited"
+      message: string
+      retryAfter: number
+      /** Turned away by the in-memory checks (per minute, one open turn), before any database read: not worth a log row. */
+      quick?: true
+    }
 
 /**
  * Whether `userId` may start a turn now. Checks, cheapest first: the
@@ -42,8 +48,8 @@ export async function startTurn(
   { userId, now, dailyBudgetMicros }: { userId: string; now: Date; dailyBudgetMicros: number },
   db: Database,
 ): Promise<{ ok: true; spentToday: number } | { ok: false; refusal: Refusal }> {
-  if (!perMinute.take(userId)) return { ok: false, refusal: { kind: "limited", message: "You're sending messages quickly. Wait a minute and try again.", retryAfter: 60 } }
-  if (openTurns.has(userId)) return { ok: false, refusal: { kind: "limited", message: "Wait for the current answer to finish.", retryAfter: 5 } }
+  if (!perMinute.take(userId)) return { ok: false, refusal: { kind: "limited", message: "You're sending messages quickly. Wait a minute and try again.", retryAfter: 60, quick: true } }
+  if (openTurns.has(userId)) return { ok: false, refusal: { kind: "limited", message: "Wait for the current answer to finish.", retryAfter: 5, quick: true } }
   // Claimed before the first await, so requests sent at once can't all get past this.
   openTurns.add(userId)
   try {

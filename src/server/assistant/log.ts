@@ -49,7 +49,7 @@ export interface TurnRecord {
   latencyMs: number | null
   tools: ToolCall[]
   flags: string[]
-  /** Stored separately and deleted after TEXT_DAYS; null to store none (a refused request). */
+  /** Stored separately (with the tools' inputs and errors) and deleted after TEXT_DAYS; null to store none (a refused request). */
   text: { question: string; answer: string } | null
 }
 
@@ -67,10 +67,11 @@ export async function recordTurn(t: TurnRecord, db: Database = getDb()): Promise
       cacheWriteTokens: t.usage.cacheWriteTokens,
       costMicros: t.usage.costMicros,
       latencyMs: t.latencyMs,
-      tools: t.tools,
+      // Names only: inputs and errors are what someone typed, kept with the text below.
+      tools: t.tools.map(({ name, ok }) => ({ name, ok })),
       flags: t.flags,
     })
-    if (t.text) await tx.insert(assistantTurnTexts).values({ turnId: t.id, question: t.text.question, answer: t.text.answer })
+    if (t.text) await tx.insert(assistantTurnTexts).values({ turnId: t.id, question: t.text.question, answer: t.text.answer, toolCalls: t.tools })
   })
   console.info(
     JSON.stringify({

@@ -74,7 +74,9 @@ export async function POST(request: NextRequest) {
   if (!started.ok) {
     const r = started.refusal
     const outcome: AssistantOutcome = r.kind === "paused" ? "paused" : "limited"
-    await recordTurn(
+    // Quick in-memory refusals aren't logged, so a script hammering the endpoint can't grow the log.
+    if (!("quick" in r && r.quick))
+      await recordTurn(
       { id: crypto.randomUUID(), userId, outcome, model: null, usage: emptyUsage(), latencyMs: null, tools: [], flags: flagsFor({ question, outcome, tools: [], costMicros: 0 }), text: null },
       db,
     ).catch((err) => console.error("[api/assistant] couldn't log the turn", err))
