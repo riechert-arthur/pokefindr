@@ -282,3 +282,48 @@ export const assistantPlaceViews = pgTable(
   },
   (t) => [uniqueIndex("assistant_place_views_user_day_location_key").on(t.userId, t.day, t.locationId)],
 )
+
+export const ASSISTANT_OUTCOMES = ["answered", "refused", "tool_limit", "max_tokens", "error", "stopped", "limited", "paused"] as const
+export type AssistantOutcome = (typeof ASSISTANT_OUTCOMES)[number]
+
+/** One assistant turn, without its text (migration 0007): for cost, abuse review and feedback. */
+export const assistantTurns = pgTable(
+  "assistant_turns",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    outcome: text("outcome").$type<AssistantOutcome>().notNull(),
+    model: text("model"),
+    inputTokens: integer("input_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    cacheReadTokens: integer("cache_read_tokens").notNull().default(0),
+    cacheWriteTokens: integer("cache_write_tokens").notNull().default(0),
+    /** Millionths of a dollar. */
+    costMicros: integer("cost_micros").notNull().default(0),
+    latencyMs: integer("latency_ms"),
+    /** The tools it ran, names only: `{ name, ok }[]` (inputs are text, kept in assistant_turn_texts). */
+    tools: jsonb("tools").$type<{ name: string; ok: boolean }[]>().notNull().default(sql`'[]'::jsonb`),
+    /** Why it might need a look: refused, injection, place_cap, cost_outlier. */
+    flags: text("flags").array().notNull(),
+  },
+  (t) => [
+    index("assistant_turns_user_created_idx").on(t.userId, t.createdAt),
+    index("assistant_turns_created_idx").on(t.createdAt),
+    check("assistant_turns_outcome_check", sql`${t.outcome} in ('answered', 'refused', 'tool_limit', 'max_tokens', 'error', 'stopped', 'limited', 'paused')`),
+  ],
+)
+
+/** A turn's question and answer (migration 0007), deleted after 30 days or on request. */
+export const assistantTurnTexts = pgTable(
+  "assistant_turn_texts",
+  {
+    turnId: uuid("turn_id").primaryKey().references(() => assistantTurns.id, { onDelete: "cascade" }),
+    question: text("question").notNull(),
+    answer: text("answer").notNull().default(""),
+    /** The tools' inputs and errors: `{ name, input, ok, error? }[]`. */
+    toolCalls: jsonb("tool_calls").$type<{ name: string; input: unknown; ok: boolean; error?: string }[]>().notNull().default(sql`'[]'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("assistant_turn_texts_created_idx").on(t.createdAt)],
+)

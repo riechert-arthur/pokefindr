@@ -6,6 +6,8 @@ import { getServerConfig } from "@/server/config"
 import { getDb } from "@/server/db/client"
 import { MAX_TURNS, emptyUsage, getClaude, runAssistantTurn } from "@/server/assistant/run"
 import { endTurn, loadPlaceBudget, savePlaceViews, startTurn, warnOnSpend } from "@/server/assistant/limits"
+import { flagsFor, recordTurn, type ToolCall } from "@/server/assistant/log"
+import type { AssistantOutcome } from "@/server/db/schema"
 import type { AssistantEvent } from "@/lib/types/assistant-stream"
 
 export const dynamic = "force-dynamic"
@@ -68,8 +70,16 @@ export async function POST(request: NextRequest) {
     console.error("[api/assistant] couldn't check the limits", err)
     return NextResponse.json({ error: "Something went wrong with the assistant. Try again." }, { status: 500 })
   }
+  const question = body.data.messages[body.data.messages.length - 1].content
   if (!started.ok) {
     const r = started.refusal
+    const outcome: AssistantOutcome = r.kind === "paused" ? "paused" : "limited"
+    // Quick in-memory refusals aren't logged, so a script hammering the endpoint can't grow the log.
+    if (!("quick" in r && r.quick))
+      await recordTurn(
+      { id: crypto.randomUUID(), userId, outcome, model: null, usage: emptyUsage(), latencyMs: null, tools: [], flags: flagsFor({ question, outcome, tools: [], costMicros: 0 }), text: null },
+      db,
+    ).catch((err) => console.error("[api/assistant] couldn't log the turn", err))
     return r.kind === "paused"
       ? NextResponse.json({ error: r.message, paused: true }, { status: 503 })
       : NextResponse.json({ error: r.message }, { status: 429, headers: { "Retry-After": String(r.retryAfter) } })
@@ -84,10 +94,22 @@ export async function POST(request: NextRequest) {
 
   const signal = AbortSignal.any([request.signal, AbortSignal.timeout(TURN_TIMEOUT_MS)])
   const usage = emptyUsage()
+  const turnId = crypto.randomUUID()
+  const toolCalls: ToolCall[] = []
+  let answer = ""
+  let outcome: AssistantOutcome = "error"
+  let model: string | null = null
   const encoder = new TextEncoder()
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
-      const emit = (event: AssistantEvent) => {
+      const emit = (raw: AssistantEvent) => {
+        let event = raw
+        if (event.type === "text") answer += event.text
+        if (event.type === "done") {
+          outcome = ({ end_turn: "answered", refusal: "refused", tool_limit: "tool_limit", max_tokens: "max_tokens" } as const)[event.stop]
+          model = event.model
+          event = { ...event, turnId }
+        }
         try {
           controller.enqueue(encoder.encode(JSON.stringify(event) + "\n"))
         } catch {
@@ -105,9 +127,11 @@ export async function POST(request: NextRequest) {
           emit,
           signal,
           usage,
+          onTool: (call) => toolCalls.push(call),
         })
       } catch (err) {
-        if (!request.signal.aborted) {
+        if (request.signal.aborted) outcome = "stopped"
+        else {
           console.error("[api/assistant] turn failed", err)
           emit({ type: "error", message: failureMessage(err, signal.aborted) })
         }
@@ -115,6 +139,20 @@ export async function POST(request: NextRequest) {
         await Promise.all([
           endTurn({ userId, now, usage }, db),
           places ? savePlaceViews(userId, now, places, db) : undefined,
+          recordTurn(
+            {
+              id: turnId,
+              userId,
+              outcome,
+              model: model ?? ASSISTANT_MODEL,
+              usage,
+              latencyMs: Date.now() - now.getTime(),
+              tools: toolCalls,
+              flags: flagsFor({ question, outcome, tools: toolCalls, costMicros: usage.costMicros }),
+              text: { question, answer },
+            },
+            db,
+          ),
         ]).catch((err) => console.error("[api/assistant] couldn't record usage", err))
         try {
           controller.close()

@@ -4,7 +4,7 @@ const PrivacyPolicyPage: FC = () => {
   return (
     <div className="max-w-3xl mx-auto p-6 text-foreground">
       <h1 className="text-3xl font-bold mb-4">PRIVACY NOTICE</h1>
-      <p className="mb-4">Last updated December 7, 2024</p>
+      <p className="mb-4">Last updated November 8, 2026</p>
 
       <p className="mb-4">
         This privacy notice for <strong>PokeFindr</strong> (
@@ -124,6 +124,19 @@ const PrivacyPolicyPage: FC = () => {
         geolocation data. You can choose whether to grant this permission.
       </p>
       <p className="mb-4">
+        <strong>Assistant Conversations:</strong>
+        <br />
+        When you use the assistant on your dashboard, we send your messages,
+        the conversation so far and, if you share it, your approximate location
+        (rounded to about 1 km) to Anthropic, which runs the AI model that
+        writes the answers. We keep the text of your questions, the answers and
+        what the assistant searched for (such as a city or address) for 30
+        days to find problems and abuse, then delete it. You can delete it
+        sooner by clearing your assistant history. We keep a record of each
+        conversation turn without any of that text (when it happened, which
+        kinds of search it ran and what it cost) for up to a year.
+      </p>
+      <p className="mb-4">
         <strong>Automatically Collected Information:</strong>
         <br />
         We may automatically collect certain information when you visit our
@@ -163,8 +176,8 @@ const PrivacyPolicyPage: FC = () => {
       </h2>
       <p className="mb-4">
         We may share your personal information with service providers (hosting,
-        Vercel Analytics, Google AdSense, Mapbox, and in the future affiliate
-        partners) and legal authorities as required.
+        Vercel Analytics, Google AdSense, Mapbox, Anthropic for the assistant,
+        and in the future affiliate partners) and legal authorities as required.
       </p>
 
       <h2 className="text-2xl font-semibold mt-8 mb-4">
