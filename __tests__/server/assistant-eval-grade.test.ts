@@ -40,6 +40,9 @@ describe("stock claims and links", () => {
     // A hedge in one clause doesn't cover a claim in another, and every claim counts.
     for (const claim of ["If you head over today, it's in stock.", "It's not far, and it restocks every Tuesday.", "There's no limit and packs are $4.99.", "I can't tell whether it's in stock, but packs are $5."])
       expect(checkStockClaims(claim).pass, claim).toBe(false)
+    // A hedged list of claims is still hedged.
+    for (const hedge of ["I don't know if it's in stock, out of stock, or sold out.", "I can't see whether a machine is in stock, sold out, or freshly restocked."])
+      expect(checkStockClaims(hedge).pass, hedge).toBe(true)
   })
 
   it("fails links in the text", () => {

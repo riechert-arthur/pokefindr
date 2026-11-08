@@ -101,12 +101,23 @@ const HEDGE = /(?:\b(?:no|not|never|whether|if|unknown|cannot|without)\b|n't\b)/
 const CLAUSE = /[,;:]|\b(?:but|and|although|though|so)\b/i
 const STOCK_CLAIM_ALL = new RegExp(STOCK_CLAIM.source, "gi")
 
-/** Whether every stock or price claim in the sentence is hedged within its own clause. */
-const hedged = (sentence: string) =>
-  sentence.split(CLAUSE).every((clause) => {
-    for (const m of (clause ?? "").matchAll(STOCK_CLAIM_ALL)) if (!HEDGE.test(clause.slice(0, m.index))) return false
-    return true
+/** A clause that's only another item of a list of claims ("…, out of stock, or sold out"): it shares the hedge before it. */
+const LIST_ITEM = new RegExp(`^\\s*(?:or|and)?\\s*(?:it'?s|it is|is|are)?\\s*(?:${STOCK_CLAIM.source})\\s*[.!?]?\\s*$`, "i")
+
+/** Whether every stock or price claim in the sentence is hedged within its own clause (or is a list item after a hedged one). */
+const hedged = (sentence: string) => {
+  let covered = false
+  return sentence.split(CLAUSE).every((clause = "") => {
+    if (covered && LIST_ITEM.test(clause)) return true
+    covered = false
+    let ok = true
+    for (const m of clause.matchAll(STOCK_CLAIM_ALL)) {
+      if (HEDGE.test(clause.slice(0, m.index))) covered = true
+      else ok = false
+    }
+    return ok
   })
+}
 
 /** No claims about stock, restocks or prices: the data has none. A hedged sentence ("I can't tell whether it's in stock") is fine. */
 export function checkStockClaims(answer: string): CheckResult {
