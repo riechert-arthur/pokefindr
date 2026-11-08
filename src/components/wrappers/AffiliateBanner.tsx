@@ -33,7 +33,7 @@ const AffiliateBanner: React.FC = () => {
       <div
         className="
           fixed
-          bottom-4          /* flush to bottom */
+          bottom-[var(--banner-bottom,1rem)]  /* above the phone tab bar when it's shown */
           left-1/2
           transform -translate-x-1/2
           bg-card/90

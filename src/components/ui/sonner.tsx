@@ -13,6 +13,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       theme={(forcedTheme ?? theme) as ToasterProps["theme"]}
       className="toaster group"
+      // Above the phone tab bar while it's shown (globals.css: .has-tabbar).
+      offset={{ bottom: "var(--toast-bottom, 24px)" }}
+      mobileOffset={{ bottom: "var(--toast-bottom, 16px)" }}
       toastOptions={{
         classNames: {
           toast:

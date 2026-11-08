@@ -46,7 +46,7 @@ export const MapLoader: FC<MapLoaderProps> = ({ view = DEFAULT_VIEW, location = 
   const webgl = useSyncExternalStore(noSubscribe, hasWebGL, () => null)
 
   return (
-    <div className="relative h-screen">
+    <div className="relative h-full">
       {webgl === false ? (
         <MapStatus kind="error">{MAP_FAILURE_MESSAGES.webgl}</MapStatus>
       ) : (
