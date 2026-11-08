@@ -55,6 +55,8 @@ export function RetailerFilter({ selected, onChange, vendingShown }: RetailerFil
   useEffect(() => {
     if (!open || list) return
     let live = true
+    // Reopening after a failure tries again, with "Loading" meanwhile.
+    setFailed(false)
     loadRetailers().then(
       (r) => live && setList(r),
       (err: unknown) => {

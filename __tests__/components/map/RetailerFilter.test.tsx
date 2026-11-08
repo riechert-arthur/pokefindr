@@ -39,6 +39,20 @@ describe("RetailerFilter", () => {
     expect(onChange).toHaveBeenLastCalledWith([])
   })
 
+  it("tries again when reopened after the list failed to load", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {})
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 500 })))
+    render(<RetailerFilter selected={[]} onChange={vi.fn()} vendingShown />)
+    const button = screen.getByRole("button", { name: "Filters" })
+    fireEvent.click(button)
+    await waitFor(() => expect(screen.getByText(/Couldn.t load retailers/)).toBeInTheDocument())
+    fireEvent.click(screen.getByRole("button", { name: "Done" }))
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ retailers: RETAILERS }))))
+    fireEvent.click(button)
+    await waitFor(() => expect(screen.getByText("Safeway")).toBeInTheDocument())
+    expect(screen.queryByText(/Couldn.t load retailers/)).not.toBeInTheDocument()
+  })
+
   it("asks to turn on vending machines first", () => {
     render(<RetailerFilter selected={[]} onChange={vi.fn()} vendingShown={false} />)
     fireEvent.click(screen.getByRole("button", { name: "Filters" }))
