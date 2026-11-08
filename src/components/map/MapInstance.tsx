@@ -39,7 +39,7 @@ import { MapShading } from "./MapShading"
 import { useStateShading } from "./useStateShading"
 import { cameraPadding } from "./camera"
 import { MapPanel } from "./MapPanel"
-import { DetailsSheet } from "./DetailsSheet"
+import { LocationDetails } from "./LocationDetails"
 import { ResultsSheet } from "./ResultsSheet"
 import { useNearbyLocations } from "./useNearbyLocations"
 import { StateSheet } from "./StateSheet"
@@ -584,7 +584,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
           sheetLabel={details ? details.retailer : place ? "Results" : stateFocus ? STATES[stateFocus].name : "Across the US"}
           sheet={
             details ? (
-              <DetailsSheet
+              <LocationDetails
                 key={details.id}
                 location={details}
                 backLabel={

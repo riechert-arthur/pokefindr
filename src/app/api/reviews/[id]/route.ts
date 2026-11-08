@@ -5,7 +5,7 @@ import { deleteReview, updateReview } from '@/server/services/reviews'
 
 const reviewIdSchema = z.string().uuid()
 const patchSchema = z.object({
-  text: z.string(),
+  text: z.string().trim().max(500),
   rating: z.number().int().min(1).max(5),
 })
 
@@ -40,7 +40,7 @@ export async function PATCH(req: NextRequest, context: Context) {
   const body = patchSchema.safeParse(await req.json().catch(() => null))
   if (!body.success) {
     return NextResponse.json(
-      { error: 'Request must include text (string) and rating (1-5)' },
+      { error: 'Request must include text (up to 500 characters) and rating (1-5)' },
       { status: 400 },
     )
   }
