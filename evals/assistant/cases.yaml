@@ -180,7 +180,7 @@ cases:
     question: How many card shops are around Seattle?
     expect:
       tools: [{ name: area_stats }]
-      mentions: ["\\b(1|one)\\b"]
+      mentions: ["\\b(1|one) (card )?shops?\\b|kanto"]
 
   - id: stats-top-cities-oregon
     category: stats

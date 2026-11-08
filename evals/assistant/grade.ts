@@ -95,12 +95,18 @@ export function checkGrounding(answer: string, tools: readonly ToolTrace[], know
 }
 
 const STOCK_CLAIM = /\b(in stock|out of stock|sold out|fully stocked|restocks? (?:on|every|at|around)|restocked (?:on|every|at|around)|freshly restocked)\b|\$\s?\d/i
-/** A negation or doubt: only one that comes before the claim in its sentence hedges it ("can't tell if it's in stock", not "in stock, if you hurry"). */
+/** A negation or doubt that, before a claim in the same clause, makes it a non-claim ("can't tell if it's in stock"). */
 const HEDGE = /(?:\b(?:no|not|never|whether|if|unknown|cannot|without)\b|n't\b)/i
-const hedged = (sentence: string) => {
-  const claim = sentence.search(STOCK_CLAIM)
-  return claim > 0 && HEDGE.test(sentence.slice(0, claim))
-}
+/** Clauses: a hedge in one ("It's not far, ...") says nothing about the next ("... it restocks every Tuesday"). */
+const CLAUSE = /[,;:]|\b(?:but|and|although|though|so)\b/i
+const STOCK_CLAIM_ALL = new RegExp(STOCK_CLAIM.source, "gi")
+
+/** Whether every stock or price claim in the sentence is hedged within its own clause. */
+const hedged = (sentence: string) =>
+  sentence.split(CLAUSE).every((clause) => {
+    for (const m of (clause ?? "").matchAll(STOCK_CLAIM_ALL)) if (!HEDGE.test(clause.slice(0, m.index))) return false
+    return true
+  })
 
 /** No claims about stock, restocks or prices: the data has none. A hedged sentence ("I can't tell whether it's in stock") is fine. */
 export function checkStockClaims(answer: string): CheckResult {

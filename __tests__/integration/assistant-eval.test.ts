@@ -24,7 +24,10 @@ describe("the eval set", () => {
   it("has 'nothing found' and count patterns that the question alone can't satisfy", () => {
     const cases = loadCases("find-none-houston,events-none-chicago,stats-count-colorado,stats-shops-seattle")
     for (const c of cases) for (const p of c.expect.mentions ?? []) expect(new RegExp(p, "i").test(c.question), `${c.id}: /${p}/`).toBe(false)
-    expect(new RegExp(cases.find((c) => c.id === "stats-shops-seattle")!.expect.mentions![0], "i").test("There are none.")).toBe(false)
+    const shops = new RegExp(cases.find((c) => c.id === "stats-shops-seattle")!.expect.mentions![0], "i")
+    expect(shops.test("There are none.")).toBe(false)
+    expect(shops.test("No one has added a card shop around Seattle yet.")).toBe(false)
+    expect(shops.test("There's one card shop: Kanto Card Hall.")).toBe(true)
   })
 
   it("is well formed: unique ids, known tools, valid patterns, ids that resolve, a smoke set in every category", async () => {
