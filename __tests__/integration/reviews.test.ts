@@ -72,7 +72,7 @@ describe("reviews", () => {
   it("lists, updates and deletes only the user's own reviews", async () => {
     await addReview({ locationId: store, userId: alice, rating: 4, text: "Good" })
     const [mine] = await listUserReviews(alice)
-    expect(mine).toMatchObject({ rating: 4, comment: "Good", location: { name: "Frys" } })
+    expect(mine).toMatchObject({ rating: 4, comment: "Good", location: { id: store, name: "Frys" } })
     expect(await listUserReviews(bob)).toEqual([])
 
     expect(await updateReview(mine.id, bob, { rating: 1, text: "Hijacked" })).toBe(false)

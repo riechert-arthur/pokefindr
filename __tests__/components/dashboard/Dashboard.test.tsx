@@ -1,0 +1,56 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { Dashboard, SUGGESTIONS } from "@/components/dashboard/Dashboard"
+
+vi.mock("next/navigation", () => ({ usePathname: () => "/home", useRouter: () => ({ push: vi.fn() }) }))
+vi.mock("@/components/providers/SidebarContextProvider", () => ({ useSidebar: () => ({ isSidebarOpen: false, toggleSidebar: vi.fn() }) }))
+vi.mock("@/components/providers/SessionProvider", () => ({ useSessionContext: () => ({ session: { id: "u1", username: "ash" }, isLoading: false }) }))
+vi.mock("@/components/pokefindr/UserMenu", () => ({ UserMenu: () => null }))
+
+const json = (body: unknown) => new Response(JSON.stringify(body))
+const ROUTES: Record<string, unknown> = {
+  "/api/locations/aggregates": { counts: [{ country: "US", region: "WA", kind: "vending", count: 1200 }, { country: "US", region: "OR", kind: "vending", count: 257 }, { country: "US", region: "WA", kind: "shop", count: 3 }] },
+  "/api/my-reviews": { reviews: [{ id: "r1", rating: 4, comment: "Stocked Tuesday", location: { id: "loc-1", name: "Safeway", city: "Seattle", state: "WA" } }] },
+  "/api/highlights": { hotspots: [], events: [{ id: "e1", title: "Card show", startsAt: "2026-11-14T18:00:00Z", endsAt: null, city: "Denver", state: "CO", lng: -104.99, lat: 39.74, isSample: true }] },
+}
+
+beforeEach(() => {
+  vi.stubGlobal("fetch", vi.fn(async (url: string) => (url.startsWith("/api/locations/counts") ? json({ counts: [42] }) : json(ROUTES[url]))))
+})
+afterEach(() => vi.unstubAllGlobals())
+
+describe("Dashboard", () => {
+  it("greets with the machine count, and fills the tiles", async () => {
+    render(<Dashboard assistant={() => <div>composer</div>} />)
+    expect(screen.getByRole("heading", { level: 1, name: "What are you hunting for today?" })).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText(/Ask about any of 1,457 vending machines/)).toBeInTheDocument())
+    const review = await screen.findByRole("link", { name: /Safeway/ })
+    expect(review).toHaveAttribute("href", "/map?location=loc-1")
+    expect(screen.getByRole("link", { name: "Manage your reviews" })).toHaveAttribute("href", "/home/reviews")
+    expect(await screen.findByText("Card show")).toBeInTheDocument()
+    expect(screen.getByRole("region", { name: "Upcoming events" })).toHaveTextContent("Sample")
+    expect(screen.getByRole("region", { name: "Your submissions" })).toHaveTextContent("Coming soon")
+  })
+
+  it("passes a tapped suggestion to the assistant, and the shared location once given", async () => {
+    const seen: { suggestion: string | null; viewer: unknown }[] = []
+    const getCurrentPosition = vi.fn((ok: PositionCallback) => ok({ coords: { longitude: -122.33789, latitude: 47.61234 } } as GeolocationPosition))
+    vi.stubGlobal("navigator", { ...navigator, geolocation: { getCurrentPosition } })
+    render(<Dashboard assistant={(p) => (seen.push({ suggestion: p.suggestion, viewer: p.viewer }), <div>composer</div>)} />)
+    fireEvent.click(screen.getByRole("button", { name: SUGGESTIONS[1] }))
+    expect(seen.at(-1)?.suggestion).toBe(SUGGESTIONS[1])
+
+    fireEvent.click(screen.getByRole("button", { name: "Use my location" }))
+    expect(await screen.findByText("42")).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Open on map" })).toHaveAttribute("href", "/map?r=10&near=me")
+    expect(seen.at(-1)?.viewer).toEqual({ lng: -122.34, lat: 47.61 })
+    expect(screen.getByRole("button", { name: "What's closest to me?" })).toBeInTheDocument()
+  })
+
+  it("steps the greeting, suggestions and tiles aside while chatting", async () => {
+    render(<Dashboard assistant={(p) => <button onClick={() => p.onChattingChange(true)}>start</button>} />)
+    fireEvent.click(screen.getByRole("button", { name: "start" }))
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull()
+    expect(screen.queryByRole("region", { name: "Near you" })).toBeNull()
+  })
+})
