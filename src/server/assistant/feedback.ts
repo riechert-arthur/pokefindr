@@ -1,5 +1,5 @@
 import "server-only"
-import { and, eq, gte, sql } from "drizzle-orm"
+import { and, eq, gte, inArray, sql } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
 import { assistantFeedback, assistantTurnTexts, assistantTurns, type FeedbackReason } from "@/server/db/schema"
 
@@ -37,7 +37,7 @@ export interface FeedbackStatsRow {
   day: string
   model: string | null
   promptVersion: string | null
-  /** Turns that got an answer. */
+  /** Turns that ended with an answer (and so showed the feedback buttons). */
   answered: number
   up: number
   down: number
@@ -54,13 +54,14 @@ export async function feedbackStats(since: Date, db: Database = getDb()): Promis
       day: sql<string>`to_char(${assistantTurns.createdAt} at time zone 'UTC', 'YYYY-MM-DD')`,
       model: assistantTurns.model,
       promptVersion: assistantTurns.promptVersion,
-      answered: sql<number>`count(*) filter (where ${assistantTurns.outcome} <> 'limited' and ${assistantTurns.outcome} <> 'paused')::int`,
+      answered: sql<number>`count(*)::int`,
       up: sql<number>`count(${assistantFeedback.turnId}) filter (where ${assistantFeedback.vote} = 1)::int`,
       down: sql<number>`count(${assistantFeedback.turnId}) filter (where ${assistantFeedback.vote} = -1)::int`,
     })
     .from(assistantTurns)
     .leftJoin(assistantFeedback, eq(assistantFeedback.turnId, assistantTurns.id))
-    .where(gte(assistantTurns.createdAt, since))
+    // Only turns that showed the feedback buttons: ones that ended with an answer.
+    .where(and(gte(assistantTurns.createdAt, since), inArray(assistantTurns.outcome, ["answered", "refused", "tool_limit", "max_tokens"])))
     .groupBy(sql`1`, assistantTurns.model, assistantTurns.promptVersion)
     .orderBy(sql`1`, assistantTurns.model, assistantTurns.promptVersion)
   return rows
@@ -88,7 +89,8 @@ export async function downvotedTurns(since: Date, db: Database = getDb(), limit 
       comment: assistantFeedback.comment,
       question: assistantTurnTexts.question,
       answer: assistantTurnTexts.answer,
-      tools: assistantTurns.tools,
+      // The inputs and errors live with the text (gone after 30 days); names only after that.
+      tools: sql<unknown>`coalesce(${assistantTurnTexts.toolCalls}, ${assistantTurns.tools})`,
       model: assistantTurns.model,
       promptVersion: assistantTurns.promptVersion,
     })

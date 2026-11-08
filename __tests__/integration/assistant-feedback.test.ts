@@ -37,12 +37,19 @@ describe("assistant feedback", () => {
     expect((await vote({ turnId: T1, vote: "down", reason: "rude" })).status).toBe(400)
   })
 
+  it("counts only turns that showed the buttons", async () => {
+    await recordTurn({ id: "00000000-0000-4000-8000-0000000000b3", userId: ME, outcome: "error", model: "claude-opus-5-5", promptVersion: "abc123", usage, latencyMs: 1, tools: [], flags: [], text: null }, getDb())
+    await recordTurn({ id: "00000000-0000-4000-8000-0000000000b4", userId: ME, outcome: "limited", model: null, usage, latencyMs: null, tools: [], flags: [], text: null }, getDb())
+    const stats = await feedbackStats(new Date(Date.now() - 86_400_000), getDb())
+    expect(stats).toEqual([expect.objectContaining({ model: "claude-opus-5-5", answered: 2 })])
+  })
+
   it("reports rates per day, model and prompt, and lists thumbs-down answers with their text", async () => {
     await vote({ turnId: T1, vote: "down", reason: "outdated", comment: "Gone since June" })
     await vote({ turnId: T2, vote: "up" })
     const since = new Date(Date.now() - 86_400_000)
     expect(await feedbackStats(since, getDb())).toEqual([{ day: new Date().toISOString().slice(0, 10), model: "claude-opus-5-5", promptVersion: "abc123", answered: 2, up: 1, down: 1 }])
-    expect(await downvotedTurns(since, getDb())).toMatchObject([{ turnId: T1, reason: "outdated", comment: "Gone since June", question: "machines near Denver", answer: "Here you go.", promptVersion: "abc123" }])
+    expect(await downvotedTurns(since, getDb())).toMatchObject([{ turnId: T1, reason: "outdated", comment: "Gone since June", question: "machines near Denver", answer: "Here you go.", promptVersion: "abc123", tools: [{ name: "find_places", input: { near: "Denver" }, ok: true }] }])
   })
 
   it("clears comments with the history, and after 30 days", async () => {
