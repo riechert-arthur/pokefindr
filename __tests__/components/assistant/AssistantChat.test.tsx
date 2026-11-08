@@ -96,8 +96,16 @@ describe("AssistantChat", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "Stop" })).toBeInTheDocument())
     await act(async () => enqueue(JSON.stringify({ type: "text", text: "Partial answer" }) + "\n"))
     await screen.findByText("Partial answer")
+    await act(async () => enqueue(JSON.stringify({ type: "card", card: { type: "places", title: "1 near Seattle", total: 1, places: [place], near: null } }) + "\n"))
     fireEvent.click(screen.getByRole("button", { name: "Stop" }))
     expect(await screen.findByText("Stopped.")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Send" })).toBeInTheDocument()
+
+    // The stopped answer's places go back with the next question.
+    const next = vi.fn().mockResolvedValue(ndjson([{ type: "text", text: "Ok." }, done("Ok.")]))
+    vi.stubGlobal("fetch", next)
+    ask("route through that one")
+    await screen.findByText("Ok.")
+    expect(JSON.parse(next.mock.calls[0][1].body).messages[1].content).toContain("(id loc-1)")
   })
 })

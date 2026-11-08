@@ -95,7 +95,7 @@ describe("viewKey", () => {
 
 describe("nearMeParams", () => {
   it("puts near=me and the radius in the URL and clears every coordinate", () => {
-    expect(nearMeParams(10)).toEqual({ near: "me", r: 10, q: null, lat: null, lng: null, z: null, state: null })
+    expect(nearMeParams(10)).toEqual({ near: "me", r: 10, q: null, lat: null, lng: null, z: null, state: null, route: null })
     expect(mapUrl("/map?q=Seattle&lat=47.6&lng=-122.3&z=9", nearMeParams(25))).toBe("/map?r=25&near=me")
   })
 })

@@ -66,5 +66,5 @@ export const roundZoom = (v: number) => Math.round(v * 10) / 10
  * never reveals where they are.
  */
 export function nearMeParams(radius: (typeof RADII)[number]): Partial<MapSearchParams> {
-  return { near: "me", r: radius, q: null, lat: null, lng: null, z: null, state: null }
+  return { near: "me", r: radius, q: null, lat: null, lng: null, z: null, state: null, route: null }
 }

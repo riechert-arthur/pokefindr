@@ -30,16 +30,23 @@ export function RouteOverlay({ ids, colors, onClear }: RouteOverlayProps) {
     setStops(null)
     Promise.all(
       key.split(",").map((id) =>
-        fetch(`/api/locations/${encodeURIComponent(id)}`, { signal: ctl.signal }).then((r) => (r.ok ? (r.json() as Promise<LocationFeature>) : null)),
+        fetch(`/api/locations/${encodeURIComponent(id)}`, { signal: ctl.signal }).then((r) => {
+          // Only a 404 means the place is gone; anything else is a failure to retry later.
+          if (r.status === 404) return null
+          if (!r.ok) throw new Error(`GET /api/locations/${id} failed (${r.status})`)
+          return r.json() as Promise<LocationFeature>
+        }),
       ),
     )
       .then((found) => {
         const ok = found.filter((f): f is LocationFeature => f !== null)
         if (ok.length < 2) {
-          toast.error("Couldn't show the route", { description: "Some of its places aren't on the map anymore." })
+          toast.error("Couldn't show the route", { description: "Its places aren't on the map anymore." })
           onClear()
           return
         }
+        // Gone stops are skipped, so say so: the numbers no longer match the route card.
+        if (ok.length < found.length) toast("Some stops are gone", { description: "They aren't on the map anymore, so the route skips them." })
         setStops(ok)
       })
       .catch((err) => {

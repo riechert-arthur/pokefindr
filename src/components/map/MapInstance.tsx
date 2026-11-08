@@ -400,7 +400,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     dispatch({ type: "closeDetails" })
     const r = params.r ?? DEFAULT_RADIUS
     writeView(
-      { q: area.label, lng: roundPlace(area.lng), lat: roundPlace(area.lat), r, state: null, z: null, near: null, location: null },
+      // A new search replaces an assistant route, as the prototype's choosePlace does.
+      { q: area.label, lng: roundPlace(area.lng), lat: roundPlace(area.lat), r, state: null, z: null, near: null, location: null, route: null },
       { history: "push" },
     )
     map?.fitBounds(boundsOfRadius(area.lng, area.lat, r), { padding: pad(true), maxZoom: 13, duration: 1400 })
@@ -417,7 +418,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   /** The search box's ✕: back to the whole US, as a new view. */
   const handleSearchClear = () => {
     setQuery("")
-    if (!params.q && !params.state && !params.near) return
+    if (!params.q && !params.state && !params.near && !params.route) return
     dispatch({ type: "closeDetails" })
     writeView({ q: null, lat: null, lng: null, r: null, z: null, state: null, near: null, location: null, route: null }, { history: "push" })
     mapRef.current?.fitBounds(US_BOUNDS, { padding: pad(true), duration: 1400 })
@@ -449,7 +450,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     (code: string) => {
       // A new view: the details close with it.
       dispatch({ type: "closeDetails" })
-      writeView({ state: code, q: null, lat: null, lng: null, r: null, z: null, near: null, location: null }, { history: "push" })
+      writeView({ state: code, q: null, lat: null, lng: null, r: null, z: null, near: null, location: null, route: null }, { history: "push" })
     },
     [writeView],
   )

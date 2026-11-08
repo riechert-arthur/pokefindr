@@ -14,7 +14,6 @@ export const GHOST_PROMPTS = [
 
 export const STILL_PLACEHOLDER = "Ask about machines, shops or events…"
 
-const reducedMotion = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
 
 /**
  * The composer's typing placeholder: each example types out, holds, erases,
@@ -22,7 +21,11 @@ const reducedMotion = () => typeof window !== "undefined" && window.matchMedia?.
  * plain text that doesn't move. Decorative: the textarea has its own label.
  */
 export function TypingPlaceholder() {
-  const [still] = useState(reducedMotion)
+  // Read after mounting, so the server and the first client render agree.
+  const [still, setStill] = useState(false)
+  useEffect(() => {
+    setStill(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false)
+  }, [])
   const [state, setState] = useState({ i: 0, pos: 0, phase: "type" as "type" | "hold" | "erase" })
 
   useEffect(() => {

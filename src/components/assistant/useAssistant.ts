@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import type { AssistantCard } from "@/lib/types/assistant"
 import type { AssistantEvent, AssistantTurn } from "@/lib/types/assistant-stream"
+import { clipHistory, memoryOf } from "@/lib/assistant/memory"
 
 export type ChatMessage =
   | { id: number; role: "user"; text: string }
@@ -22,13 +23,15 @@ export type ChatMessage =
 
 const STOPPED = "Stopped."
 
-/** The conversation as the API takes it: the viewer's words and each answer's memory. */
+/** The conversation as the API takes it: the viewer's words and each answer's memory, the last turns only. */
 function historyOf(messages: readonly ChatMessage[]): AssistantTurn[] {
-  return messages.flatMap((m): AssistantTurn[] => {
-    if (m.role === "user") return [{ role: "user", content: m.text }]
-    const content = (m.memory ?? m.text).trim()
-    return content ? [{ role: "assistant", content }] : []
-  })
+  return clipHistory(
+    messages.flatMap((m): AssistantTurn[] => {
+      if (m.role === "user") return [{ role: "user", content: m.text }]
+      const content = (m.memory ?? m.text).trim()
+      return content ? [{ role: "assistant", content }] : []
+    }),
+  )
 }
 
 /** Reads an NDJSON body line by line. */
@@ -117,7 +120,9 @@ export function useAssistant() {
       }
       update((m) => (m.done ? {} : { status: null, done: true, note: m.note ?? "The answer stopped early. Try again." }))
     } catch (err) {
-      if (abort.signal.aborted) update((m) => ({ status: null, done: true, note: STOPPED, memory: m.text || null }))
+      // Stopped: keep what came, cards included, so follow-ups can still use its places.
+      // (Stop after the answer finished changes nothing.)
+      if (abort.signal.aborted) update((m) => (m.done ? {} : { status: null, done: true, note: STOPPED, memory: (m.text || m.cards.length) ? memoryOf(m.text, m.cards) : null }))
       else {
         console.error("[assistant] request failed", err)
         update(() => ({ status: null, done: true, note: "Couldn't reach the assistant. Check your connection and try again." }))
