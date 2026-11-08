@@ -53,7 +53,8 @@ export function useLocationReviews(locationId: string): ReviewsState {
         if (!res.ok) throw new Error(`GET reviews failed (${res.status})`)
         const body = (await res.json()) as { reviews: Review[] }
         if (controller.signal.aborted) return
-        setReviews(body.reviews)
+        // Keep a review still being posted: the list may have been read before it saved.
+        setReviews((rs) => [...rs.filter((r) => r.id.startsWith("pending-")), ...body.reviews])
         setStatus("ready")
       })
       .catch((err: unknown) => {
@@ -71,7 +72,9 @@ export function useLocationReviews(locationId: string): ReviewsState {
       try {
         const res = await send("/api/reviews", "POST", { locationId, ...input })
         const { id } = (await res.json()) as { id: string }
-        setReviews((rs) => rs.map((r) => (r.id === temp.id ? { ...r, id } : r)))
+        // A reload during the post may already list it under its id.
+        setReviews((rs) => rs.filter((r) => r.id !== id).map((r) => (r.id === temp.id ? { ...r, id } : r)))
+        toast.success("Review posted", { description: "It shows at the top of the reviews." })
         return true
       } catch (err) {
         console.error("[map] couldn't post the review", err)

@@ -15,7 +15,7 @@ export function LocationDetails(props: LocationDetailsProps) {
   const { session } = useSessionContext()
   return (
     <DetailsSheet {...props} summary={<ReviewSummary reviews={reviews} />}>
-      <ReviewsSection kind={toKind(props.location.kind)} reviews={reviews} username={session?.username ?? null} />
+      <ReviewsSection kind={toKind(props.location.kind)} reviews={reviews} username={session?.username ?? null} placeName={props.location.retailer} />
     </DetailsSheet>
   )
 }
