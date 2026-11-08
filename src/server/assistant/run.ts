@@ -191,9 +191,16 @@ export async function runAssistantTurn({ claude, model, effort, history, tools, 
     try {
       message = await stream.finalMessage()
     } catch (err) {
-      // An aborted or failed call is still billed for what it got through: count it.
+      // An aborted or failed call is still billed for what it got through: count it. The
+      // stream reports output tokens only at its end, so estimate them: from the text that
+      // came (about 3 characters a token; thinking isn't visible), or the whole output cap
+      // when the turn timed out, since the model may have been thinking the whole time.
       const partial = stream.currentMessage
-      if (partial?.usage) addUsage(usage, partial)
+      if (partial?.usage) {
+        const timedOut = signal?.aborted && (signal.reason as Error | undefined)?.name === "TimeoutError"
+        const estimate = timedOut ? MAX_TOKENS : Math.ceil((text.length - roundStart) / 3)
+        addUsage(usage, { ...partial, usage: { ...partial.usage, iterations: null, output_tokens: Math.max(partial.usage.output_tokens, estimate) } })
+      }
       throw err
     }
     addUsage(usage, message)

@@ -88,10 +88,24 @@ describe("assistant limits", () => {
 
   it("counts what an aborted call used", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {})
-    setClaudeForTests(fakeClaude([{ failAfter: { text: "Partial", error: new Error("aborted"), usage: { input_tokens: 500, output_tokens: 40 } } }]).claude)
+    // As the real stream reports it mid-answer: output tokens from message_start only.
+    const text = "x".repeat(120)
+    setClaudeForTests(fakeClaude([{ failAfter: { text, error: new Error("aborted"), usage: { input_tokens: 500, output_tokens: 1 } } }]).claude)
     await (await post()).text()
     const [row] = await getDb().select().from(assistantUsage).where(eq(assistantUsage.userId, ME))
+    // Output estimated from the 120 characters that came: 40 tokens.
     expect(row).toMatchObject({ inputTokens: 500, outputTokens: 40, costMicros: 500 * 4 + 40 * 20 })
+  })
+
+  it("charges the whole output cap for a call cut off by the turn timeout", async () => {
+    const { MAX_TOKENS, emptyUsage, runAssistantTurn } = await import("@/server/assistant/run")
+    const usage = emptyUsage()
+    const signal = AbortSignal.abort(new DOMException("timed out", "TimeoutError"))
+    const claude = fakeClaude([{ failAfter: { text: "", error: new Error("aborted"), usage: { input_tokens: 500, output_tokens: 1 } } }]).claude
+    await expect(
+      runAssistantTurn({ claude, model: "claude-opus-5-5", effort: "medium", history: [{ role: "user", content: "hi" }], tools: { db: getDb(), geocoder: new FakeGeocoder(), viewer: null, now: new Date() }, emit: () => {}, signal, usage }),
+    ).rejects.toThrow("aborted")
+    expect(usage.outputTokens).toBe(MAX_TOKENS)
   })
 
   it("limits messages a minute, and one open turn at a time", async () => {

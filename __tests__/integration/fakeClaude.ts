@@ -5,7 +5,7 @@ export type Step =
   | { text?: string; tools?: { name: string; input: unknown }[]; stop?: BetaMessage["stop_reason"]; message?: Partial<BetaMessage> }
   | Error
   /** A call that fails after streaming some text, with what it had used by then. */
-  | { failAfter: { text: string; error: Error; usage: { input_tokens: number; output_tokens: number } } }
+  | { failAfter: { text: string; error: Error; usage: { input_tokens: number; output_tokens: number }; signal?: AbortController } }
 
 /** A Claude client that answers each call with the next scripted step, and records what it was sent. */
 export function fakeClaude(steps: Step[]) {
