@@ -1,7 +1,7 @@
 import type { BetaMessage, BetaMessageStreamParams } from "@anthropic-ai/sdk/resources/beta/messages/messages"
 import type { ClaudeStreamer } from "@/server/assistant/run"
 
-export type Step = { text?: string; tools?: { name: string; input: unknown }[]; stop?: BetaMessage["stop_reason"] } | Error
+export type Step = { text?: string; tools?: { name: string; input: unknown }[]; stop?: BetaMessage["stop_reason"]; message?: Partial<BetaMessage> } | Error
 
 /** A Claude client that answers each call with the next scripted step, and records what it was sent. */
 export function fakeClaude(steps: Step[]) {
@@ -18,6 +18,7 @@ export function fakeClaude(steps: Step[]) {
         },
         async finalMessage() {
           if (step instanceof Error) throw step
+          if (step.message) return { id: "msg_raw", type: "message", role: "assistant", stop_sequence: null, ...step.message } as BetaMessage
           if (step.text) for (const piece of step.text.match(/.{1,6}/gs) ?? []) listeners.forEach((l) => l(piece))
           const content = [
             ...(step.text ? [{ type: "text" as const, text: step.text, citations: null }] : []),

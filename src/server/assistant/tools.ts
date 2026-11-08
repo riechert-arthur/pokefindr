@@ -68,7 +68,7 @@ const tool = <I extends z.ZodTypeAny>(t: AssistantTool<I>) => t
 
 type Where =
   | { kind: "point"; lng: number; lat: number; label: string }
-  | { kind: "state"; code: string; label: string }
+  | { kind: "state"; code: string; label: string; asked: string }
 
 const ME = /^(me|my location|near me|here|current location|around me)$/i
 const STATE_NAMES = new Map(Object.entries(STATES).map(([code, s]) => [s.name.toLowerCase(), code]))
@@ -82,11 +82,23 @@ export async function resolveWhere(text: string, ctx: ToolContext): Promise<Wher
     return { kind: "point", lng: ctx.viewer.lng, lat: ctx.viewer.lat, label: "you" }
   }
   const code = STATE_NAMES.get(q.toLowerCase()) ?? (q.length === 2 && STATES[q.toUpperCase()] ? q.toUpperCase() : null)
-  if (code) return { kind: "state", code, label: STATES[code].name }
+  if (code) return { kind: "state", code, label: STATES[code].name, asked: q }
   const [hit] = await ctx.geocoder.search(q, { limit: 1, signal: ctx.signal, near: ctx.viewer ? [ctx.viewer.lng, ctx.viewer.lat] : undefined })
   if (!hit) throw new ToolInputError(`No US place matches "${q}". Try a city with its state, like "Portland, OR".`)
-  if (hit.kind === "state" && hit.state && STATES[hit.state]) return { kind: "state", code: hit.state, label: STATES[hit.state].name }
+  if (hit.kind === "state" && hit.state && STATES[hit.state]) return { kind: "state", code: hit.state, label: STATES[hit.state].name, asked: q }
   return { kind: "point", lng: hit.lng, lat: hit.lat, label: hit.label }
+}
+
+/** How to read a whole-state answer: "LA" or "New York" means the state, so say so, in case a city was meant. */
+function stateNote(w: Extract<Where, { kind: "state" }>, radiusGiven: boolean): string {
+  const read = `"${w.asked}" was read as the whole state of ${w.label}${radiusGiven ? ", so the radius was ignored" : ""}.`
+  return `${read} If a city was meant, search it with its state, like "Los Angeles, CA" or "New York, NY".`
+}
+
+/** The state answer's notes, joined, or nothing for a point. */
+const notesFor = (w: Where, radiusGiven: boolean, ...more: (string | false | undefined)[]) => {
+  const notes = [w.kind === "state" ? stateNote(w, radiusGiven) : undefined, ...more].filter(Boolean)
+  return notes.length ? { note: notes.join(" ") } : {}
 }
 
 const areaOf = (w: Where, radiusMiles: number): Area => (w.kind === "state" ? { state: w.code } : { center: [w.lng, w.lat], radiusMiles })
@@ -155,9 +167,9 @@ const kindsOf = (v: readonly LocationKind[] | undefined): LocationKind[] => (v?.
 export const findPlaces = tool({
   name: "find_places",
   description:
-    "Search PokeFindr locations near a US city or address, in a state, or near the viewer ('me'). Returns the total and up to 10 places (closest first) with ids, names, addresses and straight-line miles. The page shows them to the viewer as a card.",
+    "Search PokeFindr locations near a US city or address, in a whole state, or near the viewer ('me'). Returns the total and up to 10 places with ids, names and addresses: near a place, the closest first with straight-line miles; in a state, a few by city (not by distance). A state name or two-letter code means the whole state; for a city that shares a state's name, add the state ('New York, NY'). The page shows the places to the viewer as a card.",
   input: z.object({
-    near: z.string().min(1).max(120).describe("A US city like 'Portland, OR', an address, a state name, or 'me'"),
+    near: z.string().min(1).max(120).describe("A US city with its state like 'Portland, OR', an address, a state name or code (the whole state), or 'me'"),
     radius_miles: z.number().min(1).max(MAX_RADIUS_MILES).optional().describe("1–50, default 10. Ignored for a state."),
     types: kindsInput,
     retailer: z.string().max(60).optional().describe("Vending retailer name, e.g. 'Safeway'. Only vending machines match."),
@@ -193,7 +205,11 @@ export const findPlaces = tool({
         total,
         showing: places.length,
         places: places.map(brief),
-        ...(total > places.length ? { note: "Only the closest are listed. The map shows the rest." } : {}),
+        ...notesFor(
+          where,
+          input.radius_miles !== undefined,
+          total > places.length && (where.kind === "state" ? "These are a few of the state's places by city, not the closest. The map shows the rest." : "Only the closest are listed. The map shows the rest."),
+        ),
       },
       card: { type: "places", title, places, total, near: where.kind === "point" ? { lng: where.lng, lat: where.lat, label: where.label, radiusMiles } : null },
     }
@@ -203,9 +219,9 @@ export const findPlaces = tool({
 export const areaStats = tool({
   name: "area_stats",
   description:
-    "Counts for an area: totals by kind, the top vending retailers and the top cities. Use for 'how many' or 'which retailer' questions. Returns counts only, never a list of places.",
+    "Counts for an area: totals by kind, the top vending retailers and the top cities. Use for 'how many' or 'which retailer' questions. Returns counts only, never a list of places. A state name or two-letter code means the whole state.",
   input: z.object({
-    area: z.string().min(1).max(120).describe("A US city, a state name, or 'me'"),
+    area: z.string().min(1).max(120).describe("A US city with its state, a state name or code (the whole state), or 'me'"),
     radius_miles: z.number().min(1).max(MAX_RADIUS_MILES).optional().describe("For a city or 'me': 1–50, default 15"),
   }),
   async run(input, ctx) {
@@ -222,6 +238,7 @@ export const areaStats = tool({
         by_type: byType,
         top_retailers: stats.topRetailers.map((r) => ({ retailer: r.retailer, machines: r.count })),
         top_cities: stats.topCities.map((c) => ({ city: c.city, state: c.state, locations: c.count })),
+        ...notesFor(where, input.radius_miles !== undefined),
       },
       card: { type: "stats", title, total: stats.total, byKind: stats.byKind, topRetailers: stats.topRetailers },
     }
@@ -307,7 +324,7 @@ export const listEvents = tool({
   name: "list_events",
   description: "List upcoming events (card shows, league nights, restocks), soonest or nearest first, optionally near a US city, in a state, or near 'me'.",
   input: z.object({
-    near: z.string().max(120).optional().describe("A US city, a state name, or 'me'; omit for the soonest anywhere"),
+    near: z.string().max(120).optional().describe("A US city with its state, a state name or code (the whole state), or 'me'; omit for the soonest anywhere"),
     limit: z.number().int().min(1).max(MAX_PLACES).optional().describe("Default 5, at most 10"),
   }),
   async run(input, ctx) {
@@ -331,7 +348,7 @@ export const listEvents = tool({
     const shown = events.slice(0, limit)
     return {
       data: {
-        ...(where ? { area: where.label } : {}),
+        ...(where ? { area: where.label, ...notesFor(where, false) } : {}),
         total: events.length,
         events: shown.map((e) => ({
           id: e.id,

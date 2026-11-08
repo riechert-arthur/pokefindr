@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { NextRequest } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
-import type { BetaToolResultBlockParam } from "@anthropic-ai/sdk/resources/beta/messages/messages"
+import type { BetaMessage, BetaToolResultBlockParam } from "@anthropic-ai/sdk/resources/beta/messages/messages"
 import { fakeClaude } from "./fakeClaude"
 import { getDb } from "@/server/db/client"
 import { locations, profiles } from "@/server/db/schema"
@@ -73,6 +73,44 @@ describe("POST /api/assistant", () => {
     const result = (calls[1].messages[3].content as BetaToolResultBlockParam[])[0]
     expect(result.is_error).toBeUndefined()
     expect(JSON.parse(result.content as string)).toMatchObject({ area: "Seattle, WA", total: 2 })
+  })
+
+  it("after a mid-answer fallback, runs and sends back only what the answering model wrote, and counts both attempts", async () => {
+    const usage = (input: number, output: number) => ({ input_tokens: input, output_tokens: output, cache_read_input_tokens: 0, cache_creation_input_tokens: 0, cache_creation: null })
+    const { claude, calls } = fakeClaude([
+      {
+        message: {
+          model: "claude-opus-4-8",
+          stop_reason: "tool_use",
+          content: [
+            { type: "text", text: "Looking", citations: null },
+            { type: "tool_use", id: "toolu_declined", name: "area_stats", input: { area: "WA" } },
+            { type: "fallback", from: { model: "claude-opus-5-5" }, to: { model: "claude-opus-4-8" } },
+            { type: "tool_use", id: "toolu_kept", name: "find_places", input: { near: "Seattle, WA" } },
+          ] as unknown as BetaMessage["content"],
+          usage: { ...usage(100, 30), iterations: [{ type: "message", model: "claude-opus-5-5", ...usage(100, 10) }, { type: "fallback_message", model: "claude-opus-4-8", ...usage(100, 30) }] } as unknown as BetaMessage["usage"],
+        },
+      },
+      { text: "Safeway is closest." },
+    ])
+    setClaudeForTests(claude)
+    const out = await events(await post(ask("near Seattle")))
+    expect(out.filter((e) => e.type === "card").map((e) => (e as { card: { type: string } }).card.type)).toEqual(["places"])
+    const sentBack = calls[1].messages[2].content as { type: string; id?: string }[]
+    expect(sentBack.map((b) => b.id ?? b.type)).toEqual(["text", "toolu_kept"])
+    expect((calls[1].messages[3].content as BetaToolResultBlockParam[]).map((r) => r.tool_use_id)).toEqual(["toolu_kept"])
+    // Both attempts of the first call, plus the second call.
+    // Each attempt priced by its own model: 600 (Opus 5.5) + 1,250 (Opus 4.8) + 860.
+    expect(out.at(-1)).toMatchObject({ type: "done", model: "claude-opus-5-5", usage: { inputTokens: 300, outputTokens: 60, costMicros: 2710 } })
+  })
+
+  it("skips a blank answer in the history instead of failing", async () => {
+    const { claude, calls } = fakeClaude([{ text: "Sure." }])
+    setClaudeForTests(claude)
+    const res = await post({ messages: [{ role: "user", content: "a" }, { role: "assistant", content: "  " }, { role: "user", content: "b" }] })
+    expect(res.status).toBe(200)
+    await events(res)
+    expect(calls[0].messages.filter((m) => m.role !== "system").map((m) => m.content)).toEqual(["a", "b"])
   })
 
   it("sends bad tool input back as an error Claude can fix", async () => {
