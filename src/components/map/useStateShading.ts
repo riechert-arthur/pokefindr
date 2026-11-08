@@ -55,29 +55,40 @@ async function getJson<T>(url: string, signal: AbortSignal): Promise<T> {
 }
 
 /**
- * The state outlines, shaded by the region counts for `kinds`, plus each
- * state's bounds for zooming to it. `states` is null until both have loaded;
- * if either fails, the map just goes without shading.
+ * The state outlines, shaded by the region counts for `kinds` and
+ * `retailers` (the map's filter), plus each state's bounds for zooming to
+ * it. `states` is null until both have loaded; if either fails, the map just
+ * goes without shading. A new retailer filter keeps the old counts until
+ * the new ones arrive, and drops them if those fail.
  */
-export function useStateShading(kinds: ReadonlySet<LocationKind>) {
+export function useStateShading(kinds: ReadonlySet<LocationKind>, retailers: readonly string[] | null = null) {
   const [outlines, setOutlines] = useState<StateCollection | null>(null)
   const [counts, setCounts] = useState<RegionCount[] | null>(null)
+  const retailer = retailers?.length ? retailers.join(",") : ""
 
   useEffect(() => {
     const controller = new AbortController()
-    Promise.all([
-      getJson<StateCollection>(STATES_URL, controller.signal),
-      getJson<{ counts: RegionCount[] }>("/api/locations/aggregates", controller.signal),
-    ])
-      .then(([geo, agg]) => {
-        setOutlines(geo)
-        setCounts(agg.counts)
-      })
+    getJson<StateCollection>(STATES_URL, controller.signal)
+      .then(setOutlines)
       .catch((err: unknown) => {
-        if (!controller.signal.aborted) console.error("[map] couldn't load state shading", err)
+        if (!controller.signal.aborted) console.error("[map] couldn't load the state outlines", err)
       })
     return () => controller.abort()
   }, [])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    const url = retailer ? `/api/locations/aggregates?${new URLSearchParams({ retailer })}` : "/api/locations/aggregates"
+    getJson<{ counts: RegionCount[] }>(url, controller.signal)
+      .then((agg) => setCounts(agg.counts))
+      .catch((err: unknown) => {
+        if (controller.signal.aborted) return
+        console.error("[map] couldn't load state shading", err)
+        // Counts for another filter would contradict the dots: go without.
+        setCounts(null)
+      })
+    return () => controller.abort()
+  }, [retailer])
 
   const bounds = useMemo(() => {
     const out = new Map<string, LngLatBounds>()
