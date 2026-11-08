@@ -120,8 +120,8 @@ export function Dashboard({ assistant }: DashboardProps) {
   }, [])
 
   return (
-    <div className={isSidebarOpen ? "max-sm:ml-16" : undefined}>
-      <div className="relative isolate flex h-dvh min-w-0 flex-col overflow-hidden">
+    <div className={isSidebarOpen ? "h-full max-sm:ml-16" : "h-full"}>
+      <div className="relative isolate flex h-full min-w-0 flex-col overflow-hidden">
         {/* The prototype's soft glow in the logo's colors. */}
         <div
           aria-hidden
