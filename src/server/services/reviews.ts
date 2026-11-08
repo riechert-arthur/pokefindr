@@ -89,9 +89,12 @@ export async function listUserReviews(userId: string, db: Database = getDb()) {
       rating: locationRatings.rating,
       text: locationRatings.text,
       createdAt: locationRatings.createdAt,
+      locationId: locations.id,
       name: locations.name,
       retailer: locations.retailer,
       description: locations.description,
+      city: locations.city,
+      state: locations.state,
     })
     .from(locationRatings)
     .innerJoin(locations, eq(locations.id, locationRatings.locationId))
@@ -103,7 +106,7 @@ export async function listUserReviews(userId: string, db: Database = getDb()) {
     comment: r.text,
     created: r.createdAt,
     // Imported machines have a retailer but no name.
-    location: { name: r.name ?? r.retailer, description: r.description },
+    location: { id: r.locationId, name: r.name ?? r.retailer, description: r.description, city: r.city, state: r.state },
   }))
 }
 
