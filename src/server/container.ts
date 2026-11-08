@@ -1,4 +1,5 @@
 import "server-only"
+import Anthropic from "@anthropic-ai/sdk"
 import { getServerConfig, type ServerConfig } from "@/server/config"
 import type { Geocoder } from "@/server/ports/geocoder"
 import { FakeGeocoder } from "@/server/adapters/geocoder/fake"
@@ -28,6 +29,7 @@ export function makeGeocoder(config: ServerConfig): Geocoder {
 }
 
 let geocoder: Geocoder | undefined
+let anthropic: Anthropic | null | undefined
 
 /** The configured geocoder, built once per server instance. */
 export function getGeocoder(): Geocoder {
@@ -35,7 +37,17 @@ export function getGeocoder(): Geocoder {
   return geocoder
 }
 
+/** The Claude API client for the assistant, or null when no key is configured. */
+export function getAnthropic(): Anthropic | null {
+  if (anthropic === undefined) {
+    const key = getServerConfig().ANTHROPIC_API_KEY
+    anthropic = key ? new Anthropic({ apiKey: key, maxRetries: 1, timeout: 60_000 }) : null
+  }
+  return anthropic
+}
+
 /** Test helper: forget the built adapters so the next call re-reads config. */
 export function resetContainerForTests() {
   geocoder = undefined
+  anthropic = undefined
 }
