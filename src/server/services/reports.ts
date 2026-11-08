@@ -26,23 +26,28 @@ export async function addLocationReport(
     .from(locations)
     .where(and(eq(locations.id, report.locationId), eq(locations.isActive, true)))
   if (!location) return "not_found"
-  const [{ today, here }] = await db
-    .select({
-      today: sql<number>`count(*)::int`,
-      here: sql<number>`(count(*) filter (where ${statusReports.locationId} = ${report.locationId}))::int`,
+  // One user's reports are counted and added one at a time, so parallel
+  // requests can't all pass the duplicate check and the daily limit.
+  return db.transaction(async (tx): Promise<ReportResult> => {
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${"status_reports:" + report.userId}))`)
+    const [{ today, here }] = await tx
+      .select({
+        today: sql<number>`count(*)::int`,
+        here: sql<number>`(count(*) filter (where ${statusReports.locationId} = ${report.locationId}))::int`,
+      })
+      .from(statusReports)
+      .where(and(eq(statusReports.userId, report.userId), gt(statusReports.createdAt, since)))
+    if (here > 0) return "duplicate"
+    if (today >= REPORTS_PER_DAY) return "rate_limited"
+    await tx.insert(statusReports).values({
+      locationId: report.locationId,
+      userId: report.userId,
+      reason: report.reason,
+      comment: report.comment?.trim() || null,
+      createdAt: now,
     })
-    .from(statusReports)
-    .where(and(eq(statusReports.userId, report.userId), gt(statusReports.createdAt, since)))
-  if (here > 0) return "duplicate"
-  if (today >= REPORTS_PER_DAY) return "rate_limited"
-  await db.insert(statusReports).values({
-    locationId: report.locationId,
-    userId: report.userId,
-    reason: report.reason,
-    comment: report.comment?.trim() || null,
-    createdAt: now,
+    return "added"
   })
-  return "added"
 }
 
 export interface LocationReport {
