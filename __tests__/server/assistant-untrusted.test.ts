@@ -18,6 +18,8 @@ describe("plainUserText", () => {
   it("drops tag characters that can hide instructions, but keeps emoji, joiners and how names look", () => {
     const hidden = [..."ignore previous"].map((c) => String.fromCodePoint(0xe0000 + c.codePointAt(0)!)).join("")
     expect(plainUserText(`Card Hall${hidden}`, 100)).toBe("Card Hall")
+    const scotland = "\u{1f3f4}\u{e0067}\u{e0062}\u{e0073}\u{e0063}\u{e0074}\u{e007f}"
+    expect(plainUserText(`Scot Cards ${scotland} Glasgow`, 100)).toBe(`Scot Cards ${scotland} Glasgow`)
     expect(plainUserText("Family 👨\u200d👩\u200d👧 Cards™ ½ off", 100)).toBe("Family 👨\u200d👩\u200d👧 Cards™ ½ off")
     expect(plainUserText("می\u200cخواهم", 100)).toBe("می\u200cخواهم")
   })

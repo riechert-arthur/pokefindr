@@ -4,12 +4,17 @@ import "server-only"
  * Characters that change or hide what a reader sees without being text:
  * C0/C1 controls (newlines become spaces below), zero-width space, LRM/RLM,
  * bidi embeddings, overrides and isolates, word joiners and invisible
- * operators, the BOM, Unicode tag characters (which can spell out hidden
- * instructions) and the variation selector supplement. Zero-width joiners
- * (U+200C, U+200D) stay: emoji sequences and many scripts need them.
+ * operators, the BOM and the variation selector supplement. Zero-width
+ * joiners (U+200C, U+200D) stay: emoji sequences and many scripts need them.
  */
-const HIDDEN = /[\u0000-\u001f\u007f-\u009f​‎‏‪-‮⁠-⁤⁦-⁩﻿\u{e0000}-\u{e007f}\u{e0100}-\u{e01ef}]/gu
+const HIDDEN = /[\u0000-\u001f\u007f-\u009f\u200b\u200e\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff\u{e0100}-\u{e01ef}]/gu
 
+/**
+ * Unicode tag characters (U+E0000–E007F) can spell out instructions a reader
+ * can't see, so they go, except in a well-formed subdivision flag (England,
+ * Scotland, Wales: a black flag, a few tag letters or digits, a cancel tag).
+ */
+const TAGS = /(\u{1f3f4}[\u{e0030}-\u{e0039}\u{e0061}-\u{e007a}]{2,7}\u{e007f})|[\u{e0000}-\u{e007f}]+/gu
 const graphemes = new Intl.Segmenter("en", { granularity: "grapheme" })
 
 /**
@@ -21,7 +26,12 @@ const graphemes = new Intl.Segmenter("en", { granularity: "grapheme" })
  * written (NFC only), since it's also what the viewer sees on cards.
  */
 export function plainUserText(text: string, max: number): string {
-  const clean = text.normalize("NFC").replace(HIDDEN, " ").replace(/\s+/g, " ").trim()
+  const clean = text
+    .normalize("NFC")
+    .replace(TAGS, (_run, flag?: string) => flag ?? " ")
+    .replace(HIDDEN, " ")
+    .replace(/\s+/g, " ")
+    .trim()
   if (clean.length <= max) return clean
   let out = ""
   for (const { segment } of graphemes.segment(clean)) {
