@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import { SponsoredSlot } from "@/components/pokefindr/SponsoredSlot"
 import { pickBanner, type SponsorPlacement } from "@/config/banners"
 import { cn } from "@/lib/utils"
+import { track } from "@/lib/analytics"
 
 /**
  * Sponsored slots (#136): one labeled, dismissible card per view, in the
@@ -79,12 +80,14 @@ export function SponsoredPlacement({ placement, className, listItem = false }: {
         href={banner.href}
         variant={strip ? "strip" : "compact"}
         onDismiss={() => {
+          track("sponsored_dismiss", { placement, banner: banner.id })
           // The dismiss button goes away with the card: move focus on instead of losing it to the page.
           const next = ref.current ? focusAfter(ref.current) : null
           hideAds()
           next?.focus()
           toast("Ads hidden", { description: "They stay hidden for the rest of this visit." })
         }}
+        onFollow={() => track("sponsored_click", { placement, banner: banner.id })}
         className={strip ? undefined : className}
       />
     </>

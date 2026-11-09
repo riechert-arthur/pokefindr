@@ -2,6 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { AddPlaceSheet, type Pin } from "@/components/map/AddPlaceSheet"
 
+const { track } = vi.hoisted(() => ({ track: vi.fn() }))
+vi.mock("@/lib/analytics", () => ({ track }))
+
 const PIN: Pin = { lng: -104.9876, lat: 39.7392 }
 const DUPE = { id: "d1", name: "Grant Street Games", source: "location", address: "1460 Grant St", city: "Denver", state: "CO", meters: 85 }
 
@@ -74,6 +77,8 @@ describe("AddPlaceSheet", () => {
     expect(screen.getByText("Singles")).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Send for review" }))
     await waitFor(() => expect(onSubmitted).toHaveBeenCalledWith({ id: "s1", name: "Mile High Cards" }))
+    // Counted with the kind only (#137).
+    expect(track).toHaveBeenCalledWith("add_place_submit", { kind: "shop", outcome: "sent" })
     expect(calls.find((c) => c.url === "/api/submissions")?.body).toEqual({
       submission: { kind: "shop", name: "Mile High Cards", lng: PIN.lng, lat: PIN.lat, address: "", city: "Denver", state: "", countryCode: "US", website: "https://milehighcards.example", hours: "", sells: ["singles"] },
       confirmDuplicate: false,
@@ -116,6 +121,26 @@ describe("AddPlaceSheet", () => {
     // 6 PM in Denver, wherever the person typing it is.
     expect(calls.find((c) => c.url === "/api/submissions")?.body).toMatchObject({ submission: { startsAt: "2026-11-21T01:00:00.000Z", state: "CO" } })
     expect(screen.getByLabelText("Starts")).toHaveAttribute("aria-invalid", "true")
+  })
+
+  it("counts a send that couldn't reach PokeFindr as an error", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url === "/api/submissions") throw new TypeError("Failed to fetch")
+        return new Response(JSON.stringify({ duplicates: [], results: [] }))
+      }),
+    )
+    track.mockClear()
+    setup({ pin: PIN, initialKind: "shop" })
+    await settle()
+    next()
+    type("Name", "Mile High Cards")
+    type(/City/, "Denver")
+    next()
+    fireEvent.click(screen.getByRole("button", { name: "Send for review" }))
+    expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't reach PokeFindr")
+    expect(track).toHaveBeenCalledWith("add_place_submit", { kind: "shop", outcome: "error" })
   })
 
   it("says when the daily limit is reached", async () => {

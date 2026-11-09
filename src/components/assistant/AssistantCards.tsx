@@ -8,6 +8,7 @@ import { KINDS, KIND_ORDER, formatCount } from "@/components/pokefindr/kinds"
 import { formatEventWhen } from "@/lib/highlights/format"
 import { DEFAULT_RADIUS, RADII, mapUrl, roundPlace } from "@/lib/map/url-state"
 import { safeHref } from "@/lib/assistant/safe-link"
+import { track } from "@/lib/analytics"
 import type { AssistantCard, AssistantPlace } from "@/lib/types/assistant"
 
 /** The prototype's `.acard`: a bordered card with a muted header and an optional footer of actions. */
@@ -41,7 +42,7 @@ function PlaceRow({ p }: { p: AssistantPlace }) {
       </span>
       {p.miles !== undefined && <span className={dist}>{miles(p.miles)}</span>}
       <Button asChild variant="ghost" size="sm">
-        <Link href={mapUrl("/map", { location: p.id })} aria-label={`${p.name} on the map`}>
+        <Link href={mapUrl("/map", { location: p.id })} aria-label={`${p.name} on the map`} onClick={() => track("details_open", { kind: p.kind, from: "assistant" })}>
           Map
         </Link>
       </Button>

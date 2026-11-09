@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react"
 import { MapIcon, MapPinIcon } from "lucide-react"
+import { track } from "@/lib/analytics"
 import { SearchCommand, type SearchCommandItem } from "@/components/pokefindr/SearchCommand"
 import { KindDot } from "@/components/pokefindr/KindDot"
 import { kindName, placesLabel, toKind } from "@/components/pokefindr/kinds"
@@ -73,10 +74,17 @@ export function PlaceSearch({ kinds = LOCATION_KINDS, retailers, radius = AREA_C
 
   const pick = (id: string) => {
     setTyped(null)
+    const from = props.variant === "hero" ? "landing" : "map"
     const area = results.areas.find((a, i) => areaId(i, a) === id)
-    if (area) return onPick({ type: "area", area })
+    if (area) {
+      track("search", { result: area.kind, from })
+      return onPick({ type: "area", area })
+    }
     const feature = results.locations.find((f) => `location-${f.properties.id}` === id)
-    if (feature) onPick({ type: "location", feature })
+    if (feature) {
+      track("search", { result: "location", from })
+      onPick({ type: "location", feature })
+    }
   }
 
   return (

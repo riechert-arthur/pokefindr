@@ -7,6 +7,7 @@ import { KindDot } from "@/components/pokefindr/KindDot"
 import { KINDS, kindName, toKind } from "@/components/pokefindr/kinds"
 import { Button } from "@/components/ui/button"
 import { milesBetween } from "@/lib/map/geo"
+import { track } from "@/lib/analytics"
 
 /** The location the panel is about: a map feature's properties and point. */
 export interface DetailsLocation {
@@ -107,7 +108,7 @@ export function DetailsSheet({ location, backLabel, onBack, me, from, summary, a
         {summary}
         <div className="flex flex-wrap gap-1.5 pt-1">
           <Button asChild size="sm">
-            <a href={directionsUrl(location)} target="_blank" rel="noopener noreferrer">
+            <a href={directionsUrl(location)} target="_blank" rel="noopener noreferrer" onClick={() => track("directions_click", { kind })}>
               Directions
               <ExternalLinkIcon aria-hidden />
             </a>

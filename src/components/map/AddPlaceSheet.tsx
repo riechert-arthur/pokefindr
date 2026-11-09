@@ -14,6 +14,7 @@ import { SHOP_SELLS, SHOP_SELLS_LABELS, type SubmissionKind } from "@/lib/submis
 import { submissionSchema, type DuplicateCandidate } from "@/lib/submissions/schemas"
 import { cn } from "@/lib/utils"
 import { STATE_ZONES, browserZone, formatInZone, zoneName, zonedToIso } from "@/lib/time/zones"
+import { track } from "@/lib/analytics"
 
 type InputProps = ComponentProps<typeof Input>
 
@@ -168,6 +169,7 @@ export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindC
         body: JSON.stringify({ submission: toSubmission(kind, pin, draft), confirmDuplicate: confirmed }),
       })
       const body = await res.json().catch(() => ({}))
+      track("add_place_submit", { kind, outcome: res.status === 201 ? "sent" : res.status === 409 ? "duplicate" : "error" })
       if (res.status === 201) return onSubmitted({ id: body.id, name: draft.name.trim() })
       if (res.status === 409) {
         setDuplicates(body.duplicates ?? [])
@@ -181,6 +183,7 @@ export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindC
       if (res.status === 401) return setErrors({ form: "Your session ended. Log in again to send this." })
       setErrors({ form: body.error ?? "Couldn't send it. Try again." })
     } catch {
+      track("add_place_submit", { kind, outcome: "error" })
       setErrors({ form: "Couldn't reach PokeFindr. Check your connection and try again." })
     } finally {
       setSending(false)

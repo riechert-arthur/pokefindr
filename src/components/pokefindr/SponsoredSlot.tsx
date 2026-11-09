@@ -13,6 +13,8 @@ interface SponsoredSlotProps {
   /** "compact": inside lists and panels (the whole card is the link). "strip": full-width between page sections, with a button. */
   variant?: "compact" | "strip"
   onDismiss?: () => void
+  /** Called when the sponsor's link is followed (for analytics). */
+  onFollow?: () => void
   className?: string
 }
 
@@ -22,7 +24,7 @@ interface SponsoredSlotProps {
  * when (one per view, never on the map or in forms) belongs to the ads work
  * (#136); this only renders it.
  */
-export function SponsoredSlot({ sponsor, title, body, cta, href, variant = "compact", onDismiss, className }: SponsoredSlotProps) {
+export function SponsoredSlot({ sponsor, title, body, cta, href, variant = "compact", onDismiss, onFollow, className }: SponsoredSlotProps) {
   const strip = variant === "strip"
   return (
     <aside
@@ -44,7 +46,7 @@ export function SponsoredSlot({ sponsor, title, body, cta, href, variant = "comp
         {strip ? (
           <span className="block font-semibold text-foreground">{title}</span>
         ) : (
-          <a href={href} target="_blank" rel="sponsored nofollow noopener" className="block font-semibold text-foreground after:absolute after:inset-0">
+          <a href={href} target="_blank" rel="sponsored nofollow noopener" onClick={onFollow} className="block font-semibold text-foreground after:absolute after:inset-0">
             {title}
           </a>
         )}
@@ -52,7 +54,7 @@ export function SponsoredSlot({ sponsor, title, body, cta, href, variant = "comp
         {!strip && <span className="mt-1 block font-semibold text-primary">{cta} →</span>}
       </span>
       {strip && (
-        <a href={href} target="_blank" rel="sponsored nofollow noopener" className={buttonVariants({ variant: "outline", size: "sm" })}>
+        <a href={href} target="_blank" rel="sponsored nofollow noopener" onClick={onFollow} className={buttonVariants({ variant: "outline", size: "sm" })}>
           {cta}
         </a>
       )}

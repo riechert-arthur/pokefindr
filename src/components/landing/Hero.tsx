@@ -1,9 +1,6 @@
-import Link from "next/link"
-import { ArrowRightIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { buttonVariants } from "@/components/ui/button"
 import { formatCount } from "@/components/pokefindr/kinds"
-import { HeroSearch } from "./HeroSearch"
+import { HeroSearch, ViewMapLink } from "./HeroSearch"
 
 export interface HeroStats {
   vending: number
@@ -34,9 +31,7 @@ export function Hero({ stats, background }: { stats: HeroStats | null; backgroun
         </p>
         <HeroSearch />
         <div className="mt-[26px] flex flex-wrap justify-center gap-2.5">
-          <Link href="/map" className={buttonVariants({ variant: "outline" })}>
-            View full map <ArrowRightIcon className="size-4" aria-hidden />
-          </Link>
+          <ViewMapLink />
         </div>
         {stats && (
           <dl className="mt-11 flex flex-wrap justify-center gap-9 text-body text-muted-foreground">

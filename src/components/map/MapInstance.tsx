@@ -60,6 +60,7 @@ import { STATES } from "@/lib/map/states"
 import { DEFAULT_RADIUS, RADII, loadMapSearchParams, mapSearchParams, nearMeParams, roundCamera, roundPlace, roundZoom, type MapSearchParams } from "@/lib/map/url-state"
 import { initialMapView, shownKinds, viewKey, type InitialMapView } from "@/lib/map/initial-view"
 import { INITIAL_LOAD_STATE, nextLoadState, type MapLoadState } from "./mapLoadState"
+import { track } from "@/lib/analytics"
 
 type SelectedLocation = Omit<LocationPopupProps, "onClose" | "onDetails">
 
@@ -344,7 +345,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
    * history entry, and brings it into view. `replace` (Also nearby) swaps the
    * open details in place, so Back still returns to the list they came from.
    */
-  const showLocation = (feat: LocationFeature, { replace = false } = {}) => {
+  const showLocation = (feat: LocationFeature, { replace = false, from = "list" as "list" | "search" | "nearby" } = {}) => {
+    track("details_open", { kind: feat.properties.kind ?? "vending", from })
     const map = mapRef.current
     const [lng, lat] = feat.geometry.coordinates
     if (map) {
@@ -372,17 +374,20 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   /** The results' radius toggle: the same place, a wider or narrower circle. */
   const handleRadiusChange = (r: (typeof RADII)[number]) => {
     if (!place) return
+    track("filter_change", { filter: "radius", value: String(r) })
     writeView({ r }, { history: "replace" })
     mapRef.current?.fitBounds(boundsOfRadius(place.lng, place.lat, r), { padding: pad(true), maxZoom: 13, duration: 1000 })
   }
 
   /** The Filters popover: which vending retailers to show, all of them when none are picked. */
   const handleRetailersChange = (next: string[]) => {
+    track("filter_change", { filter: "retailers", value: next.length ? [...next].sort().join(",") : "all" })
     void setParams({ retailer: next.length ? next : null }, { history: "replace" })
   }
 
   /** The type chips: which kinds the map and lists show, all of them when every chip is on. */
   const handleKindsChange = (next: LocationKind[]) => {
+    track("filter_change", { filter: "kinds", value: next.length === LOCATION_KINDS.length ? "all" : [...next].sort().join(",") })
     void setParams({ types: next.length === LOCATION_KINDS.length ? null : next }, { history: "replace" })
   }
 
@@ -394,7 +399,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const handleSearchPick = (pick: PlacePick) => {
     const map = mapRef.current
     if (pick.type === "location") {
-      showLocation(pick.feature)
+      showLocation(pick.feature, { from: "search" })
       return
     }
     const { area } = pick
@@ -494,6 +499,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   /** Details are a new view: a new history entry, so Back closes them. */
   const openDetails = () => {
     if (!selected) return
+    track("details_open", { kind: selected.kind ?? "vending", from: "map" })
     dispatch({ type: "openDetails" })
     void setParams({ location: selected.id }, { history: "push" }).then((search) => {
       pushedDetails.current = search.toString()
@@ -730,7 +736,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
                 from={place && !nearMe && urlView.place ? { label: urlView.place.label, lng: place.lng, lat: place.lat } : null}
                 kinds={kinds}
                 retailers={retailers}
-                onOpen={(f) => showLocation(f, { replace: true })}
+                onOpen={(f) => showLocation(f, { replace: true, from: "nearby" })}
               />
             ) : !place && !stateFocus ? (
               <UsSheet
@@ -761,7 +767,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
                 kinds={kinds}
                 nearby={nearby}
                 selectedId={selected?.id}
-                onOpen={showLocation}
+                onOpen={(f) => showLocation(f)}
               />
               )
             )
