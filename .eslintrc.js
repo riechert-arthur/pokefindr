@@ -104,6 +104,22 @@ const COLOR_RULES = [
 ]
 
 /**
+ * Copy people read comes from the catalog (messages/en.yml, docs/i18n.md):
+ * words in JSX text, in the attributes people read or hear, and in toasts.
+ * Text without words (" · ", "404", "&rarr;") and URL placeholders ("https://")
+ * are fine.
+ */
+const COPY_HINT = "Put user-facing copy in messages/en.yml (and the other catalogs) and read it with useTranslations (docs/i18n.md)."
+const WORDS = "/^(?!https?:\\x2F\\x2F$).*[A-Za-z]{2,}/s"
+const COPY_RULES = [
+  { selector: `JSXText[value=${WORDS}]`, message: COPY_HINT },
+  { selector: `JSXAttribute[name.name=/^(aria-label|aria-description|aria-roledescription|aria-valuetext|title|placeholder|alt|label)$/] > Literal[value=${WORDS}]`, message: COPY_HINT },
+  { selector: `JSXExpressionContainer > Literal[value=${WORDS}]`, message: COPY_HINT },
+  { selector: `CallExpression[callee.name="toast"] > Literal[value=${WORDS}]`, message: COPY_HINT },
+  { selector: `CallExpression[callee.object.name="toast"] > Literal[value=${WORDS}]`, message: COPY_HINT },
+]
+
+/**
  * Only src/components/map/engine.ts may import the map library (#46), nothing imports Supabase (PA-3),
  * and links and redirects keep the page's language (docs/i18n.md).
  */
@@ -146,6 +162,21 @@ module.exports = {
     },
     {
       files: ["src/**/*.{js,jsx,ts,tsx}"],
+      rules: { "no-restricted-syntax": ["error", ...ENV_RULES, ...COLOR_RULES] },
+    },
+    {
+      files: ["src/app/**/*.{jsx,tsx}", "src/components/**/*.{jsx,tsx}"],
+      rules: { "no-restricted-syntax": ["error", ...ENV_RULES, ...COLOR_RULES, ...COPY_RULES] },
+    },
+    {
+      // English only (docs/i18n.md): the admin pages, and the privacy policy
+      // and terms (shown in English with a note on other languages).
+      files: [
+        "src/app/[[]locale]/(admin)/**",
+        "src/components/admin/**",
+        "src/app/[[]locale]/(visitor)/privacy-policy/**",
+        "src/app/[[]locale]/(visitor)/terms-of-service/**",
+      ],
       rules: { "no-restricted-syntax": ["error", ...ENV_RULES, ...COLOR_RULES] },
     },
     {

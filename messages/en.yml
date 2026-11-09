@@ -591,6 +591,10 @@ dashboard:
   # /home/reviews: the reviews you've written, to edit or delete.
   reviews:
     loadingProfile: Loading profile..
+    # Under the edit form's fields.
+    validation:
+      rating: Select a rating
+      text: Please write a review
     loading: Loading your reviews…
     empty: You haven’t written any reviews yet.
     # The browser's confirm dialog before deleting a review.

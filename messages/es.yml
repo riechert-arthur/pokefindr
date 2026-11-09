@@ -460,6 +460,9 @@ dashboard:
       empty: Las ferias de cartas y las noches de liga aparecen aquí cuando se agregan.
   reviews:
     loadingProfile: Cargando perfil..
+    validation:
+      rating: Elige una calificación
+      text: Escribe una reseña
     loading: Cargando tus reseñas…
     empty: Todavía no has escrito ninguna reseña.
     deleteConfirm: ¿Eliminar esta reseña?

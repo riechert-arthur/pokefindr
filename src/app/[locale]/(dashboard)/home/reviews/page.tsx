@@ -1,7 +1,7 @@
 
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { MenuIcon } from "lucide-react"
 import axios from 'axios'
 import { useTranslations } from 'next-intl'
@@ -26,13 +26,23 @@ import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { useSidebar } from '@/components/providers/SidebarContextProvider'
 import { APP_NAV_ID } from '@/components/pokefindr/AppRail'
 import { RecentReviewsSection, Review } from '@/components/RecentReviewSection'
-import { reviewSchema, type ReviewFormValues } from '@/components/map/LocationInfoPanel'
+import { z } from 'zod/v3'
 import { StarRating } from '@/components/pokefindr/StarRating'
 import { useSessionContext } from '@/components/providers/SessionProvider'
 import { LoadSpinner } from '@/components/wrappers/LoadSpinner'
 
+type ReviewFormValues = { rating: number; text: string }
+
 export default function ReviewsPage() {
   const t = useTranslations('dashboard.reviews')
+  const reviewSchema = useMemo(
+    () =>
+      z.object({
+        rating: z.number().min(1, { message: t('validation.rating') }).max(5),
+        text: z.string().min(1, { message: t('validation.text') }),
+      }),
+    [t],
+  )
   const tDashboard = useTranslations('dashboard')
   const { isSidebarOpen } = useSidebar()
   const [reviews, setReviews] = useState<Review[]>([])

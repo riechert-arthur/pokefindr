@@ -56,10 +56,13 @@ export function Logo({ variant = "mark", size = 32, className, title = "PokeFind
   return (
     <span className={cn("inline-flex items-center gap-2 text-foreground", className)} role={title ? "img" : undefined} aria-label={title || undefined}>
       {mark}
+      {/* The wordmark is the brand name in every language. */}
+      {/* eslint-disable no-restricted-syntax */}
       <span aria-hidden className="font-sans font-medium" style={{ fontSize: size * 0.6, letterSpacing: "-0.03em" }}>
         Poke
         <b className="bg-gradient-to-br from-brand to-brand-2 bg-clip-text font-extrabold text-transparent">Findr</b>
       </span>
+      {/* eslint-enable no-restricted-syntax */}
     </span>
   )
 }
