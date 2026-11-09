@@ -5,12 +5,24 @@ const DAY_MS = 24 * 60 * 60 * 1000
 /** The longest an event may last, so a far-off end can't keep it listed (a restock weekend or a convention fits). */
 export const MAX_EVENT_DAYS = 14
 
-/** Optional text: trimmed, and empty becomes undefined. */
-const optionalText = (max: number) =>
+/**
+ * Control and invisible format characters (NUL, zero-width spaces, bidi
+ * overrides): Postgres refuses NUL in jsonb, and the rest can hide or
+ * disguise a name in the review queue and on the map.
+ */
+const HIDDEN = /[\p{Cc}\p{Cf}]/u
+
+/** Text people type: NFC-normalized and trimmed, without control or invisible characters. */
+const text = () =>
   z
     .string()
-    .trim()
-    .max(max, { message: `Use at most ${max} characters.` })
+    .transform((v) => v.normalize("NFC").trim())
+    .refine((v) => !HIDDEN.test(v), { message: "Remove the hidden or control characters." })
+
+/** Optional text: empty becomes undefined. */
+const optionalText = (max: number) =>
+  text()
+    .refine((v) => v.length <= max, { message: `Use at most ${max} characters.` })
     .optional()
     .transform((v) => v || undefined)
 
@@ -25,11 +37,15 @@ const webLink = z
 
 /** What every kind has: a name and where it is. */
 const place = {
-  name: z.string().trim().min(2, { message: "Enter a name." }).max(100, { message: "Use at most 100 characters." }),
+  name: text()
+    .refine((v) => v.length >= 2, { message: "Enter a name." })
+    .refine((v) => v.length <= 100, { message: "Use at most 100 characters." }),
   lng: z.number().min(-180).max(180),
   lat: z.number().min(-90).max(90),
   address: optionalText(200),
-  city: z.string().trim().min(1, { message: "Enter a city." }).max(80),
+  city: text()
+    .refine((v) => v.length >= 1, { message: "Enter a city." })
+    .refine((v) => v.length <= 80, { message: "Use at most 80 characters." }),
   /** Two-letter code in the US; the region's name elsewhere. */
   state: optionalText(80),
   countryCode: z.string().regex(/^[A-Z]{2}$/).default("US"),
