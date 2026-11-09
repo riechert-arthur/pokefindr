@@ -26,7 +26,6 @@ import { LoadingButton } from "@/components/wrappers/LoadingButton"
 import { registrationSchema } from "@/lib/schemas"
 import axios from "axios"
 import { useRouter } from "next/navigation"
-import { broadcastAuth } from "@/lib/auth/broadcast"
 
 export function RegistrationForm({
   className,
@@ -55,9 +54,7 @@ export function RegistrationForm({
         name: values.name,
       })
 
-      broadcastAuth("login")
-
-      router.refresh()
+      // Not signed in yet: that happens after the email is confirmed.
       router.push("/confirm")
     } catch (err: unknown) {
       handleSubmitError(err)

@@ -29,10 +29,19 @@ import axios from "axios"
 import { toast } from "sonner"
 import { broadcastAuth } from "@/lib/auth/broadcast"
 
+/** A message to show above the form: why the visitor landed on /login. */
+export type LoginNotice = "verified" | "link-expired"
+
+const NOTICES: Record<LoginNotice, { text: string; tone: "ok" | "warn" }> = {
+  verified: { text: "Your email is confirmed. Log in to get started.", tone: "ok" },
+  "link-expired": { text: "That link has expired or was already used. Log in and we'll send a new one.", tone: "warn" },
+}
+
 export function LoginForm({
   className,
+  notice = null,
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div"> & { notice?: LoginNotice | null }) {
   const router = useRouter()
 
   const form = useForm<z.infer<typeof loginSchema>>({
@@ -81,6 +90,17 @@ export function LoginForm({
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {notice && (
+            <p
+              role="status"
+              className={cn(
+                "mb-6 rounded-md border px-3 py-2 text-sm",
+                NOTICES[notice].tone === "ok" ? "border-success/40 bg-success/10 text-foreground" : "border-warning/40 bg-warning/10 text-foreground",
+              )}
+            >
+              {NOTICES[notice].text}
+            </p>
+          )}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
               <div className="grid gap-6">
@@ -133,6 +153,9 @@ export function LoginForm({
                         <div className="grid gap-3">
                           <div className="flex items-center">
                             <FormLabel>Password</FormLabel>
+                            <a href="/forgot-password" className="ml-auto text-sm underline-offset-4 hover:underline">
+                              Forgot your password?
+                            </a>
                           </div>
                           <FormControl>
                             <Input type="password" {...field} />
@@ -165,8 +188,8 @@ export function LoginForm({
         </CardContent>
       </Card>
       <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-        By clicking continue, you agree to our <a href="#">Terms of Service</a>{" "}
-        and <a href="#">Privacy Policy</a>.
+        By clicking continue, you agree to our <a href="/terms-of-service">Terms of Service</a>{" "}
+        and <a href="/privacy-policy">Privacy Policy</a>.
       </div>
     </div>
   )
