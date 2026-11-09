@@ -55,7 +55,7 @@ describe("submission-created", () => {
     expect(outbox.map((m) => m.to).sort()).toEqual([`${ADMIN}@example.test`, `${MOD}@example.test`].sort())
     expect(outbox[0]).toMatchObject({ subject: "New card shop to review: Mile High Cards" })
     expect(outbox[0].text).toContain("ash added a card shop: Mile High Cards, Denver, CO.")
-    expect(outbox[0].text).toContain("/admin/review")
+    expect(outbox[0].text).toContain("/admin")
   })
 
   it("sends again on the retry when the mailer failed", async () => {

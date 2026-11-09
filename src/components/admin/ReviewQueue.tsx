@@ -17,6 +17,7 @@ import { useSessionContext } from "@/components/providers/SessionProvider"
 import { REJECT_REASONS, REJECT_REASON_LABELS, SHOP_SELLS_LABELS, type RejectReason } from "@/lib/submissions/constants"
 import { canUndo, type ModerationItem } from "@/lib/submissions/moderation"
 import { cn } from "@/lib/utils"
+import { useRefreshSummary } from "@/components/admin/useRefreshSummary"
 
 type Load = { status: "loading" } | { status: "forbidden" } | { status: "error" } | { status: "ready"; queue: ModerationItem[]; decided: ModerationItem[] }
 
@@ -36,6 +37,7 @@ const flags = (item: ModerationItem) => item.checks.filter((c) => !c.ok).length
  * Decisions made here can be undone for an hour, from the Decided list.
  */
 export function ReviewQueue() {
+  const refreshSummary = useRefreshSummary()
   const [load, setLoad] = useState<Load>({ status: "loading" })
   const [tab, setTab] = useState<"queue" | "decided">("queue")
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -44,7 +46,7 @@ export function ReviewQueue() {
   const refresh = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/submissions")
-      if (res.status === 403 || res.status === 401) return setLoad({ status: "forbidden" })
+      if (res.status === 404 || res.status === 403 || res.status === 401) return setLoad({ status: "forbidden" })
       if (!res.ok) return setLoad({ status: "error" })
       const body = (await res.json()) as { queue: ModerationItem[]; decided: ModerationItem[] }
       setLoad({ status: "ready", ...body })
@@ -79,6 +81,7 @@ export function ReviewQueue() {
         setSelectedId(rest[0]?.id ?? null)
       }
       await refresh()
+      refreshSummary()
     } finally {
       setBusy(false)
     }
@@ -174,14 +177,11 @@ export function ReviewQueue() {
   )
 }
 
+/** The queue inside the admin shell, which gives it its title (#152). */
 function Shell({ count, children }: { count?: number; children: React.ReactNode }) {
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 p-4 sm:p-6">
-      <header>
-        <p className="text-overline uppercase text-muted-foreground">Moderation</p>
-        <h1 className="text-title">Review queue</h1>
-        {count !== undefined && <p className="text-body text-muted-foreground">{count ? `${count} waiting, oldest first.` : "All caught up."} Pending places never show on the public map.</p>}
-      </header>
+    <div className="flex w-full flex-col gap-4">
+      {count !== undefined && <p className="text-body text-muted-foreground">{count ? `${count} waiting, oldest first.` : "All caught up."} Pending places never show on the public map.</p>}
       {children}
     </div>
   )

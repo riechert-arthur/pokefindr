@@ -1,9 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod/v3"
 import { REJECT_REASONS } from "@/lib/submissions/constants"
-import { approveSubmission, isModerator, rejectSubmission, undoDecision, type DecisionResult } from "@/server/services/moderation"
+import { approveSubmission, rejectSubmission, undoDecision, type DecisionResult } from "@/server/services/moderation"
 import { REVIEWED_EMAIL_DELAY_SECONDS } from "@/server/services/submission-notifications"
 import { enqueueJob } from "@/server/lib/jobs/enqueue"
+import { requireStaff } from "@/server/admin/access"
 
 export const dynamic = "force-dynamic"
 
@@ -27,17 +28,17 @@ const ANSWERS: Record<Exclude<DecisionResult["status"], "done">, [number, string
  * POST /api/admin/submissions/<id>  { action: "approve" | "reject" | "undo", reason? }
  *   Approve puts the place on the map for everyone; reject needs a reason
  *   the submitter sees; undo puts a decision made in the last hour back in
- *   the queue. Moderators and admins only.
+ *   the queue. Moderators and admins only (404 for anyone else).
  */
 export async function POST(request: NextRequest, context: Context) {
-  const userId = request.headers.get("x-user-id")
-  if (!userId) return NextResponse.json({ error: "Log in to continue" }, { status: 401 })
+  const staff = await requireStaff(request, "moderator")
+  if (staff instanceof NextResponse) return staff
+  const { userId } = staff
   const id = idSchema.safeParse((await context.params).id)
   if (!id.success) return NextResponse.json({ error: "Submission not found" }, { status: 404 })
   const body = bodySchema.safeParse(await request.json().catch(() => null))
   if (!body.success) return NextResponse.json({ error: `action must be approve, reject (with a reason: ${REJECT_REASONS.join(", ")}) or undo` }, { status: 400 })
   try {
-    if (!(await isModerator(userId))) return NextResponse.json({ error: "Only moderators can review submissions" }, { status: 403 })
     const b = body.data
     const result =
       b.action === "approve" ? await approveSubmission(id.data, userId) : b.action === "reject" ? await rejectSubmission(id.data, userId, b.reason) : await undoDecision(id.data, userId)

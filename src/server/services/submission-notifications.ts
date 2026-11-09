@@ -90,7 +90,7 @@ export async function notifySubmissionCreated(submissionId: string, db: Database
     name: p.name ?? "A new place",
     place: [p.city, p.state].filter(Boolean).join(", "),
     submitter: row.submitter,
-    url: `${getServerConfig().APP_URL}/admin/review`,
+    url: `${getServerConfig().APP_URL}/admin`,
   })
   // Each moderator on their own: one bad address mustn't stop the rest. The
   // job fails afterwards if any failed, so the retry sends just those.

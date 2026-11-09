@@ -1,18 +1,20 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { isModerator, listDecided, listQueue } from "@/server/services/moderation"
+import { listDecided, listQueue } from "@/server/services/moderation"
+import { requireStaff } from "@/server/admin/access"
 
 export const dynamic = "force-dynamic"
 
 /**
  * GET /api/admin/submissions
  *   The review queue (pending, oldest first, with automatic checks) and what
- *   this moderator decided in the last day. Moderators and admins only.
+ *   this moderator decided in the last day. Moderators and admins only
+ *   (404 for anyone else).
  */
 export async function GET(request: NextRequest) {
-  const userId = request.headers.get("x-user-id")
-  if (!userId) return NextResponse.json({ error: "Log in to continue" }, { status: 401 })
   try {
-    if (!(await isModerator(userId))) return NextResponse.json({ error: "Only moderators can see the review queue" }, { status: 403 })
+    const staff = await requireStaff(request, "moderator")
+    if (staff instanceof NextResponse) return staff
+    const { userId } = staff
     const [queue, decided] = await Promise.all([listQueue(userId), listDecided(userId)])
     return NextResponse.json({ queue, decided })
   } catch (err) {
