@@ -41,7 +41,8 @@ that sends one answers as fast as one that doesn't.
 - **Log in** (`/login`): email and password, or Google or Discord. A new OAuth user picks a username
   on `/login/callback` first. Google or Discord can only make an account from an email they have
   confirmed (Discord allows unconfirmed ones), so nobody can sign up as an address's owner. An
-  unconfirmed one is dropped before the lookup, so the error doesn't say whether it has an account.
+  unconfirmed one is swapped for a placeholder before the lookup, so the error doesn't say whether it
+  has an account, and someone whose provider account is already linked still gets in.
   A wrong password and an unconfirmed email get the same login answer.
 - **Forgot password** (`/forgot-password`): emails a link (1 hour, single use) to `/reset-password`.
   A reset ends every other session and also confirms the email. Opening the link proves the
