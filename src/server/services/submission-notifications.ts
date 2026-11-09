@@ -15,6 +15,14 @@ export const REVIEWED_EMAIL_DELAY_SECONDS = UNDO_MS / 1000 + 5 * 60
 /** A claim this old with no `sent_at` is from a run that died mid-send; the next run may take it. Longer than any send can take. */
 export const STALE_CLAIM_MS = 10 * 60 * 1000
 
+/** Another run holds the claim on this email and hasn't marked it sent. */
+export class ClaimHeldError extends Error {
+  constructor(readonly key: string) {
+    super(`Another run is sending ${key}`)
+    this.name = "ClaimHeldError"
+  }
+}
+
 /**
  * Sends one email at most once for `key`: claims the key, sends, marks it
  * sent. If the send fails it gives the key back, so the job's retry sends
@@ -32,11 +40,20 @@ async function sendOnce(key: string, to: string, email: EmailContent, db: Databa
       setWhere: and(isNull(sentNotifications.sentAt), lt(sentNotifications.claimedAt, staleBefore)),
     })
     .returning({ key: sentNotifications.key })
-  if (!claimed.length) return false
+  if (!claimed.length) {
+    const [held] = await db.select({ sentAt: sentNotifications.sentAt }).from(sentNotifications).where(eq(sentNotifications.key, key))
+    if (held && !held.sentAt) {
+      // Another run claimed it and hasn't sent yet, or died mid-send. Fail, so the queue retries
+      // later: by then it's sent, or the claim is stale and this run takes it.
+      throw new ClaimHeldError(key)
+    }
+    return false
+  }
   try {
     await getMailer().send({ to, ...email })
   } catch (err) {
-    await db.delete(sentNotifications).where(and(eq(sentNotifications.key, key), isNull(sentNotifications.sentAt)))
+    // Only our own claim: a run that went stale must not give back the claim a newer run took.
+    await db.delete(sentNotifications).where(and(eq(sentNotifications.key, key), isNull(sentNotifications.sentAt), eq(sentNotifications.claimedAt, now)))
     throw err
   }
   await db.update(sentNotifications).set({ sentAt: new Date() }).where(eq(sentNotifications.key, key))

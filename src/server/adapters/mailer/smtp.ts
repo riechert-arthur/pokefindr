@@ -1,5 +1,6 @@
 import "server-only"
 import nodemailer, { type Transporter } from "nodemailer"
+import SMTPTransport from "nodemailer/lib/smtp-transport"
 import type { Mailer, MailMessage } from "@/server/ports/mailer"
 
 /** How long a connection, greeting or quiet socket may take before the send fails. */
@@ -16,7 +17,11 @@ export class SmtpMailer implements Mailer {
   constructor(url: string, private readonly from: string) {
     // Short timeouts, so a stuck server fails the send (and the job retries)
     // well inside a function's run, rather than after nodemailer's 10 minutes.
-    this.transport = nodemailer.createTransport({ url, connectionTimeout: SMTP_TIMEOUT_MS, greetingTimeout: SMTP_TIMEOUT_MS, socketTimeout: SMTP_TIMEOUT_MS })
+    // createTransport({ url, … }) would keep only what the URL says and drop
+    // the timeouts; SMTPTransport merges the URL into the options instead.
+    this.transport = nodemailer.createTransport(
+      new SMTPTransport({ url, connectionTimeout: SMTP_TIMEOUT_MS, greetingTimeout: SMTP_TIMEOUT_MS, socketTimeout: SMTP_TIMEOUT_MS }),
+    )
   }
 
   async send(msg: MailMessage): Promise<void> {

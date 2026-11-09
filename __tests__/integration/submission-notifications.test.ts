@@ -81,7 +81,9 @@ describe("submission-created", () => {
     // A run claimed both and died before sending.
     const claimedAt = new Date(Date.now() - 60_000)
     await getDb().insert(sentNotifications).values([MOD, ADMIN].map((m) => ({ key: `submission-created:${id}:${m}`, claimedAt })))
-    expect(await notifySubmissionCreated(id)).toEqual({ sent: 0 })
+    // A redelivery soon after fails, so the queue tries again later, rather than counting it done.
+    await expect(notifySubmissionCreated(id)).rejects.toThrow("2 of the moderator emails failed")
+    expect(outbox).toEqual([])
     await getDb().update(sentNotifications).set({ claimedAt: new Date(Date.now() - 11 * 60_000) })
     expect(await notifySubmissionCreated(id)).toEqual({ sent: 2 })
     expect(await notifySubmissionCreated(id)).toEqual({ sent: 0 })
