@@ -1,5 +1,7 @@
-import { beforeEach, describe, expect, it } from "vitest"
-import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client"
+import { beforeEach, describe, expect, it, vi } from "vitest"
+import { Client, InMemoryTransport, StreamableHTTPClientTransport } from "@modelcontextprotocol/client"
+import { FakeGeocoder } from "@/server/adapters/geocoder/fake"
+import { createReadOnlyServer } from "@/server/mcp/server"
 import { getDb } from "@/server/db/client"
 import { locations } from "@/server/db/schema"
 import { DELETE, GET, OPTIONS, POST } from "@/app/api/mcp/route"
@@ -122,6 +124,35 @@ describe("/api/mcp", () => {
     const other = await connect({ ip: "203.0.113.10" })
     expect((await other.callTool({ name: "find_places", arguments: { near: "Seattle, WA" } })).isError).toBeFalsy()
     await Promise.all([client.close(), other.close()])
+  })
+
+  it("counts each message in a batch against the rate limit", async () => {
+    const ping = (id: number) => ({ jsonrpc: "2.0", id, method: "ping" })
+    const batch = (n: number, ip: string) =>
+      POST(new Request(ENDPOINT, { method: "POST", headers: { "content-type": "application/json", accept: "application/json, text/event-stream", "x-forwarded-for": ip }, body: JSON.stringify(Array.from({ length: n }, (_, i) => ping(i))) }))
+    expect((await batch(MCP_REQUESTS_PER_MINUTE + 1, "198.51.100.3")).status).toBe(429)
+    expect((await batch(MCP_REQUESTS_PER_MINUTE, "198.51.100.4")).status).not.toBe(429)
+    expect((await batch(1, "198.51.100.4")).status).toBe(429)
+  })
+
+  it("answers a failure the model can't fix with a generic error, and logs the real one", async () => {
+    const broken = new FakeGeocoder()
+    broken.search = async () => {
+      throw new Error("connect ECONNREFUSED 10.0.0.5:5432 password authentication failed")
+    }
+    const server = createReadOnlyServer({ appUrl: APP_URL, ctx: () => ({ db: getDb(), geocoder: broken, viewer: null, now: new Date() }) })
+    const [a, b] = InMemoryTransport.createLinkedPair()
+    await server.connect(b)
+    const client = new Client({ name: "pokefindr-test", version: "1.0.0" })
+    await client.connect(a)
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {})
+    const r = await client.callTool({ name: "find_places", arguments: { near: "Seattle, WA" } })
+    expect(r.isError).toBe(true)
+    expect(textOf(r)).not.toContain("ECONNREFUSED")
+    expect(textOf(r)).toContain("Try again")
+    expect(logged).toHaveBeenCalledWith("[mcp] find_places failed", expect.any(Error))
+    logged.mockRestore()
+    await client.close()
   })
 
   it("answers CORS preflights, refuses session streams, and caps the body", async () => {
