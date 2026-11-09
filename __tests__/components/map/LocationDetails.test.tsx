@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react"
 import { LocationDetails } from "@/components/map/LocationDetails"
 
 vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }) }))
+vi.mock("@/components/ads/useAdPlacements", () => ({ usePlacementOn: () => true }))
 vi.mock("@/config/banners", () => ({ pickBanner: () => ({ id: "t", sponsor: "S", title: "A deal", cta: "Go", href: "https://partner.example", weight: 1 }) }))
 vi.mock("@/components/providers/SessionProvider", () => ({ useSessionContext: () => ({ session: { username: "ash" } }) }))
 

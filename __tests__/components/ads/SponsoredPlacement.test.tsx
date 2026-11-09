@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 const { banner } = vi.hoisted(() => ({
   banner: { current: { id: "t", sponsor: "TCGplayer", title: "Missed the restock?", body: "10% off.", cta: "See the deal", href: "https://partner.example/x", pixel: "https://pixel.example/p", weight: 1 } as Record<string, unknown> | null },
 }))
+vi.mock("@/components/ads/useAdPlacements", () => ({ usePlacementOn: () => true }))
 vi.mock("@/config/banners", () => ({ pickBanner: () => banner.current }))
 const { toast } = vi.hoisted(() => ({ toast: vi.fn() }))
 vi.mock("sonner", () => ({ toast }))

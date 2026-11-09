@@ -580,6 +580,18 @@ export const jobPauses = pgTable("job_pauses", {
   pausedAt: timestamp("paused_at", { withTimezone: true }).notNull().defaultNow(),
 })
 
+/** A sponsored placement switched on or off by an admin (#159). No row: on. */
+export const adPlacements = pgTable(
+  "ad_placements",
+  {
+    placement: text("placement").primaryKey(),
+    enabled: boolean("enabled").notNull(),
+    updatedBy: uuid("updated_by").references(() => profiles.id, { onDelete: "set null" }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [check("ad_placements_placement_check", sql`${t.placement} in ('results', 'details', 'landing')`)],
+)
+
 export const subscriptions = pgTable(
   "subscriptions",
   {

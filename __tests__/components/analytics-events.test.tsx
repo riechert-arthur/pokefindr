@@ -5,6 +5,7 @@ const { track } = vi.hoisted(() => ({ track: vi.fn() }))
 vi.mock("@/lib/analytics", () => ({ track }))
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }))
 vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { success: vi.fn() }) }))
+vi.mock("@/components/ads/useAdPlacements", () => ({ usePlacementOn: () => true }))
 vi.mock("@/config/banners", () => ({ pickBanner: () => ({ id: "tcg", sponsor: "S", title: "A deal", cta: "See the deal", href: "https://partner.example", weight: 1 }) }))
 
 import { HeroSearch, ViewMapLink } from "@/components/landing/HeroSearch"
