@@ -86,7 +86,16 @@ function registerReadTool(server: McpServer, t: AssistantTool, ctx: () => ToolCo
       inputSchema: fromJsonSchema(inputJsonSchema(t) as JsonSchemaType),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
-    async (args) => toolResult(await runTool(t.name, args, ctx()), appUrl),
+    async (args) => {
+      try {
+        return toolResult(await runTool(t.name, args, ctx()), appUrl)
+      } catch (err) {
+        // runTool throws only what the model can't fix (the database, the geocoder). The SDK would send
+        // err.message to the client as is, so log it here and answer something generic.
+        console.error(`[mcp] ${t.name} failed`, err)
+        return { isError: true, content: [{ type: "text", text: "PokeFindr couldn't answer that right now. Try again in a moment." }] }
+      }
+    },
   )
 }
 
