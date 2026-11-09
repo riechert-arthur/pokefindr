@@ -1,4 +1,4 @@
-import { z } from "zod"
+import { z } from "zod/v3"
 import { SHOP_SELLS } from "./constants"
 
 const DAY_MS = 24 * 60 * 60 * 1000

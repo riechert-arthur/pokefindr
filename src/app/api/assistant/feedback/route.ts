@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { z } from "zod"
+import { z } from "zod/v3"
 import { FEEDBACK_REASONS } from "@/server/db/schema"
 import { saveFeedback } from "@/server/assistant/feedback"
 import { tokenBucket } from "@/server/lib/rate-limit"

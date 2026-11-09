@@ -1,5 +1,5 @@
 import "server-only"
-import { z } from "zod"
+import { z } from "zod/v3"
 import { zodToJsonSchema } from "zod-to-json-schema"
 import type { Database } from "@/server/db/client"
 import type { Geocoder } from "@/server/ports/geocoder"

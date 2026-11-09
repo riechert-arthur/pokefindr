@@ -20,7 +20,7 @@ import {
   FormLabel,
 } from "@/components/ui/form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
+import { z } from "zod/v3"
 import { useForm } from "react-hook-form"
 import { handleSubmitError } from "@/lib/forms"
 import { LoadingButton } from "@/components/wrappers/LoadingButton"

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { z } from "zod"
+import { z } from "zod/v3"
 import Anthropic from "@anthropic-ai/sdk"
 import { getGeocoder } from "@/server/container"
 import { getServerConfig } from "@/server/config"

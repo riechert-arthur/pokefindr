@@ -1,5 +1,5 @@
 import "server-only"
-import { z } from "zod"
+import { z } from "zod/v3"
 
 /**
  * Server-side configuration. This is the only module that should read

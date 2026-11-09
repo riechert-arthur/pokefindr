@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { z } from "zod"
+import { z } from "zod/v3"
 import { SUBMISSION_KINDS } from "@/lib/submissions/constants"
 import { findDuplicates } from "@/server/services/submissions"
 

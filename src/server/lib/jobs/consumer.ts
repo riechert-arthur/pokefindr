@@ -1,6 +1,6 @@
 import "server-only"
 import type { MessageMetadata, RetryDirective } from "@vercel/queue"
-import { z } from "zod"
+import { z } from "zod/v3"
 import { getServerConfig } from "@/server/config"
 import { InvalidJobPayloadError, runJob, UnknownJobError } from "./run"
 import { verifyJobMessage } from "./signing"

@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { z } from "zod"
+import { z } from "zod/v3"
 import { VERIFIED_CALLBACK } from "@/lib/auth/paths"
 import { identityCookies, identityRequest, refuseCrossSite } from "@/server/auth/identity"
 import { createSessionCookie } from "@/server/auth/session"

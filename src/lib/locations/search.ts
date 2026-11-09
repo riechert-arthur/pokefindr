@@ -1,4 +1,4 @@
-import { z } from "zod"
+import { z } from "zod/v3"
 import { coordinate, kindsParam, pointParam } from "./bbox"
 import { RADII } from "@/lib/map/url-state"
 import { stateCode } from "@/lib/map/states"
