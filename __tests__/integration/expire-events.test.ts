@@ -4,6 +4,10 @@ import { eventDetails, highlights, locations } from "@/server/db/schema"
 import { expireEvents } from "@/server/services/expire-events"
 import { getUpcomingEvents } from "@/server/services/highlights"
 import { jobs } from "@/server/lib/jobs/registry"
+import { createSubmission, listMySubmissions } from "@/server/services/submissions"
+import { approveSubmission } from "@/server/services/moderation"
+import { insertProfiles } from "./testDatabase"
+import { randomUUID } from "node:crypto"
 import vercel from "../../vercel.json"
 
 const NOW = new Date("2026-11-10T07:05:00Z")
@@ -22,7 +26,7 @@ describe("expire-events", () => {
         { name: "A shop", kind: "shop", geog: { lng: -105, lat: 39.7 } },
       ])
       .returning()
-    const [ended, noEndOld, noEndNew, upcoming, shop] = rows
+    const [ended, noEndOld, noEndNew, upcoming] = rows
     await db.insert(eventDetails).values([
       { locationId: ended.id, startsAt: at("2026-11-08T17:00:00Z"), endsAt: at("2026-11-09T22:00:00Z") },
       { locationId: noEndOld.id, startsAt: at("2026-11-08T01:00:00Z") },
@@ -47,10 +51,24 @@ describe("expire-events", () => {
       ["Card show soon", true],
       ["Old card show", false],
     ])
-    expect(shop.isActive).toBe(true)
     // Running it again changes nothing.
     expect(await expireEvents(db, NOW)).toEqual({ locations: 0, highlights: 0 })
     expect((await getUpcomingEvents(db, NOW, 10)).map((e) => e.title).sort()).toEqual(["Card show soon", "Next week", "No end, started last night"])
+  })
+
+  it("shows the submitter their approved event as off the map once it's over", async () => {
+    const db = getDb()
+    const ash = randomUUID()
+    await insertProfiles(db, { id: ash, username: "ash" })
+    const r = await createSubmission({
+      userId: ash,
+      input: { kind: "event", name: "League night", lng: -105, lat: 39.7, city: "Denver", state: "CO", countryCode: "US", startsAt: "2026-11-08T01:00:00Z" },
+    })
+    if (r.status !== "created") throw new Error(r.status)
+    await approveSubmission(r.id, ash, db, new Date("2026-11-07T12:00:00Z"))
+    expect((await listMySubmissions(ash))[0]).toMatchObject({ status: "approved", locationActive: true })
+    await expireEvents(db, NOW)
+    expect((await listMySubmissions(ash))[0]).toMatchObject({ status: "approved", locationActive: false })
   })
 
   it("runs daily from Vercel Cron", () => {
