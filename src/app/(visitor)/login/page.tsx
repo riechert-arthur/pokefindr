@@ -1,16 +1,13 @@
-import { LoginForm } from "@/components/forms/LoginForm"
-import { Logo } from "@/components/brand/Logo"
-import Link from "next/link"
+import { AuthPage } from "@/components/forms/AuthPage"
+import { LoginForm, type LoginNotice } from "@/components/forms/LoginForm"
 
-export default function LoginPage() {
+/** A confirmation link lands here with ?verified=1, or with ?error= when it was bad or expired. */
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ verified?: string; error?: string }> }) {
+  const { verified, error } = await searchParams
+  const notice: LoginNotice | null = error ? "link-expired" : verified ? "verified" : null
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
-      <div className="z-1000 flex w-full max-w-sm flex-col gap-6">
-        <Link href="/" className="flex items-center gap-2 self-center font-medium">
-          <Logo variant="full" size={28} />
-        </Link>
-        <LoginForm />
-      </div>
-    </div>
+    <AuthPage>
+      <LoginForm notice={notice} />
+    </AuthPage>
   )
 }

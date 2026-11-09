@@ -2,7 +2,12 @@ import "server-only"
 import { createHmac } from "node:crypto"
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
+import { eq } from "drizzle-orm"
+import { after } from "next/server"
+import { getMailer } from "@/server/container"
 import { getDb } from "@/server/db/client"
+import { resetPassword, verifyEmail } from "@/server/email/templates"
+import type { EmailContent } from "@/server/email/templates"
 import { accounts, authRateLimits, sessions, users, verifications } from "@/server/db/schema"
 import { getServerConfig, type ServerConfig } from "@/server/config"
 
@@ -18,6 +23,41 @@ export function identitySecret(config: Pick<ServerConfig, "BETTER_AUTH_SECRET" |
   return config.BETTER_AUTH_SECRET ?? createHmac("sha256", config.JWT_SECRET).update("pokefindr:better-auth").digest("base64url")
 }
 
+/**
+ * Sends an account email. A failure is logged, not thrown: it mustn't undo
+ * the sign-up or reset that asked for it, and logging in again sends a new
+ * confirmation link.
+ */
+async function sendAccountEmail(to: string, email: EmailContent): Promise<void> {
+  try {
+    await getMailer().send({ to, ...email })
+  } catch (err) {
+    console.error(`[auth] couldn't send "${email.subject}"`, err)
+  }
+}
+
+const pending = new Set<Promise<unknown>>()
+
+/**
+ * Better Auth's background tasks (its emails): they finish after the
+ * response, so a request that sends an email answers as fast as one that
+ * doesn't, and the timing can't tell whether an address has an account.
+ */
+function runInBackground(task: Promise<unknown>) {
+  const tracked = task.catch((err) => console.error("[auth] background task failed", err)).finally(() => pending.delete(tracked))
+  pending.add(tracked)
+  try {
+    after(tracked)
+  } catch {
+    // Outside a request (tests, scripts): it still runs.
+  }
+}
+
+/** Test helper: wait for the emails requests so far have started sending. */
+export async function settleBackgroundForTests() {
+  await Promise.all(pending)
+}
+
 function makeAuth(config: ServerConfig) {
   return betterAuth({
     appName: "PokeFindr",
@@ -30,8 +70,33 @@ function makeAuth(config: ServerConfig) {
       schema: { user: users, session: sessions, account: accounts, verification: verifications, rateLimit: authRateLimits },
     }),
     // Ids are UUIDs, made by Postgres, so they match profiles.id.
-    advanced: { database: { generateId: "uuid" }, useSecureCookies: config.NODE_ENV === "production" },
-    emailAndPassword: { enabled: true, requireEmailVerification: true, minPasswordLength: 16, maxPasswordLength: 128 },
+    advanced: {
+      database: { generateId: "uuid" },
+      useSecureCookies: config.NODE_ENV === "production",
+      backgroundTasks: { handler: runInBackground },
+    },
+    emailAndPassword: {
+      enabled: true,
+      requireEmailVerification: true,
+      minPasswordLength: 16,
+      maxPasswordLength: 128,
+      resetPasswordTokenExpiresIn: 60 * 60,
+      revokeSessionsOnPasswordReset: true,
+      sendResetPassword: ({ user, url }) => sendAccountEmail(user.email, resetPassword({ name: user.name, url })),
+      // Opening the reset link proves the address is theirs, so it counts as confirmed:
+      // someone who signed up with your email and never confirmed can't keep you out.
+      onPasswordReset: async ({ user }) => {
+        await getDb().update(users).set({ emailVerified: true }).where(eq(users.id, user.id))
+      },
+    },
+    emailVerification: {
+      sendOnSignUp: true,
+      // A login before confirming sends a new link (the old one may have expired).
+      sendOnSignIn: true,
+      autoSignInAfterVerification: false,
+      expiresIn: 60 * 60 * 24,
+      sendVerificationEmail: ({ user, url }) => sendAccountEmail(user.email, verifyEmail({ name: user.name, url })),
+    },
     session: { expiresIn: 60 * 60 * 24 * 7 },
     // In the database, so limits hold across serverless instances. On everywhere but tests.
     rateLimit: { enabled: config.NODE_ENV !== "test", storage: "database", window: 60, max: 100 },
