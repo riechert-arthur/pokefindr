@@ -135,6 +135,20 @@ describe("/api/mcp", () => {
     expect((await batch(1, "198.51.100.4")).status).toBe(429)
   })
 
+  it("passes the client's abort signal on to the handler", async () => {
+    const ctl = new AbortController()
+    const seen: AbortSignal[] = []
+    const { mcpEndpoint, serveMcp } = await import("@/server/mcp/http")
+    const handler = { ...mcpEndpoint(() => createReadOnlyServer({ appUrl: APP_URL, ctx: () => ({ db: getDb(), geocoder: new FakeGeocoder(), viewer: null, now: new Date() }) })) }
+    handler.fetch = async (req: Request) => {
+      seen.push(req.signal)
+      return new Response(null, { status: 202 })
+    }
+    await serveMcp(handler, new Request(ENDPOINT, { method: "POST", body: "{}", signal: ctl.signal }), "ip:203.0.113.50")
+    ctl.abort()
+    expect(seen[0].aborted).toBe(true)
+  })
+
   it("answers a failure the model can't fix with a generic error, and logs the real one", async () => {
     const broken = new FakeGeocoder()
     broken.search = async () => {
@@ -158,7 +172,8 @@ describe("/api/mcp", () => {
   it("answers CORS preflights, refuses session streams, and caps the body", async () => {
     const pre = await OPTIONS()
     expect(pre.status).toBe(204)
-    expect(pre.headers.get("access-control-allow-headers")).toContain("Authorization")
+    // Any header (2026-07-28 clients send Mcp-Method, Mcp-Name, Mcp-Param-*), and Authorization by name.
+    expect(pre.headers.get("access-control-allow-headers")).toBe("*, Authorization")
     expect((await GET(new Request(ENDPOINT, { headers: { accept: "text/event-stream" } }))).status).toBe(405)
     expect((await DELETE(new Request(ENDPOINT, { method: "DELETE" }))).status).toBe(405)
     const huge = await POST(
