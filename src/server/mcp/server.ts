@@ -75,8 +75,15 @@ export function toolResult(result: Awaited<ReturnType<typeof runTool>>, appUrl: 
   return { content: [{ type: "text", text: JSON.stringify(data) }], structuredContent: data }
 }
 
+/**
+ * Runs one tool call with its context. The public server just builds one;
+ * the account server loads the person's place budget first and saves what
+ * the call showed after it.
+ */
+export type WithContext = <T>(call: (ctx: ToolContext) => Promise<T>) => Promise<T>
+
 /** Registers a read-only assistant tool on `server`. */
-function registerReadTool(server: McpServer, t: AssistantTool, ctx: () => ToolContext, appUrl: string) {
+function registerReadTool(server: McpServer, t: AssistantTool, withCtx: WithContext, appUrl: string) {
   server.registerTool(
     t.name,
     {
@@ -89,7 +96,7 @@ function registerReadTool(server: McpServer, t: AssistantTool, ctx: () => ToolCo
     },
     async (args) => {
       try {
-        return toolResult(await runTool(t.name, args, ctx()), appUrl)
+        return toolResult(await withCtx((ctx) => runTool(t.name, args, ctx)), appUrl)
       } catch (err) {
         // runTool throws only what the model can't fix (the database, the geocoder). The SDK would send
         // err.message to the client as is, so log it here and answer something generic.
@@ -107,7 +114,7 @@ function registerReadTool(server: McpServer, t: AssistantTool, ctx: () => ToolCo
 export function createReadOnlyServer({ ctx, appUrl }: { ctx: () => ToolContext; appUrl: string }): McpServer {
   // No tool takes more than a few dozen values; this bounds what one call can make us parse.
   const server = new McpServer(MCP_SERVER_INFO, { instructions: MCP_INSTRUCTIONS, maxToolInputElements: 200 })
-  for (const t of ASSISTANT_TOOLS) registerReadTool(server, t, ctx, appUrl)
+  for (const t of ASSISTANT_TOOLS) registerReadTool(server, t, (call) => call(ctx()), appUrl)
   return server
 }
 
@@ -136,16 +143,22 @@ function registerAccountTool(server: McpServer, t: AccountTool, ctx: () => Accou
         return { content: [{ type: "text", text: JSON.stringify(data) }], structuredContent: data }
       } catch (err) {
         if (err instanceof ToolInputError) return { isError: true, content: [{ type: "text", text: err.message }] }
-        throw err
+        // As for the read tools: log the real failure, answer something generic.
+        console.error(`[mcp] ${t.name} failed`, err)
+        return { isError: true, content: [{ type: "text", text: "PokeFindr couldn't do that right now. Try again in a moment." }] }
       }
     },
   )
 }
 
-/** A server for one signed-in request: the read-only tools, and the person's own. */
-export function createAccountServer({ ctx, appUrl, userId }: { ctx: () => ToolContext; appUrl: string; userId: string }): McpServer {
+/**
+ * A server for one signed-in request: the read-only tools (run through
+ * `withCtx`, which handles the person's place budget), and the person's own
+ * (`ctx`).
+ */
+export function createAccountServer({ ctx, withCtx, appUrl, userId }: { ctx: () => ToolContext; withCtx: WithContext; appUrl: string; userId: string }): McpServer {
   const server = new McpServer(MCP_SERVER_INFO, { instructions: MCP_ACCOUNT_INSTRUCTIONS, maxToolInputElements: 200 })
-  for (const t of ASSISTANT_TOOLS) registerReadTool(server, t, ctx, appUrl)
+  for (const t of ASSISTANT_TOOLS) registerReadTool(server, t, withCtx, appUrl)
   for (const t of ACCOUNT_TOOLS) registerAccountTool(server, t, () => ({ tools: ctx(), userId, appUrl }))
   return server
 }

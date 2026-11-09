@@ -12,7 +12,8 @@ import { eq } from "drizzle-orm"
 import { DELETE as accountDelete, POST as accountPost } from "@/app/api/mcp/account/route"
 import { resetAuthForTests } from "@/server/auth/auth"
 import { getDb } from "@/server/db/client"
-import { jwks, locationRatings, locations, profiles } from "@/server/db/schema"
+import { assistantPlaceViews, jwks, locationRatings, locations, profiles } from "@/server/db/schema"
+import { PLACES_PER_DAY, utcDay } from "@/server/assistant/limits"
 import { listMySubmissions } from "@/server/services/submissions"
 import { resetMcpLimitsForTests } from "@/server/mcp/limits"
 import { BASE, accessToken, identity, signIn } from "./oauthFlow"
@@ -146,6 +147,31 @@ describe("/api/mcp/account", () => {
     await keepKeys()
     const r = await client.callTool({ name: "my_reviews", arguments: {} })
     expect(r.structuredContent).toMatchObject({ total: 1, reviews: [{ rating: 4, untrusted_text: "Restocked on Fridays", place: { id: place.id, name: "Safeway", url: `${BASE}/map?location=${place.id}` } }] })
+    await client.close()
+  })
+
+  it("keeps the person's place count across 2025-era requests and calls sent at once", async () => {
+    const me = await signIn()
+    const rows = await getDb()
+      .insert(locations)
+      .values(Array.from({ length: 30 }, (_, i) => ({ machineId: `P${i}`, retailer: "Fred Meyer", city: "Portland", state: "OR", geog: { lng: -122.67 + i * 0.0005, lat: 45.52 } })))
+      .returning({ id: locations.id })
+    const others = await getDb()
+      .insert(locations)
+      .values(Array.from({ length: PLACES_PER_DAY - 5 }, (_, i) => ({ machineId: `X${i}`, retailer: "Elsewhere", city: "Miami", state: "FL", geog: { lng: -80.19, lat: 25.76 } })))
+      .returning({ id: locations.id })
+    // Already shown 195 places today: 5 are left.
+    const day = utcDay(new Date())
+    await getDb().insert(assistantPlaceViews).values(others.map((o) => ({ userId: me.userId, day, locationId: o.id })))
+    const client = await connect(await accessToken({ signedIn: me }))
+    await keepKeys()
+    expect(client.getProtocolEra()).toBe("legacy")
+    const calls = await Promise.all(Array.from({ length: 4 }, () => client.callTool({ name: "find_places", arguments: { near: "Portland, OR", limit: 10 } })))
+    const shown = new Set(calls.flatMap((c) => ((c.structuredContent as { places?: { id: string }[] } | undefined)?.places ?? []).map((p) => p.id)))
+    expect(shown.size).toBe(5)
+    const saved = await getDb().select().from(assistantPlaceViews).where(eq(assistantPlaceViews.userId, me.userId))
+    expect(saved).toHaveLength(PLACES_PER_DAY)
+    expect(rows.filter((r) => shown.has(r.id))).toHaveLength(5)
     await client.close()
   })
 
