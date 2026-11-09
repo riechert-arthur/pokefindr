@@ -10,6 +10,7 @@ vi.mock("@/config/banners", () => ({ pickBanner: () => ({ id: "tcg", sponsor: "S
 import { HeroSearch, ViewMapLink } from "@/components/landing/HeroSearch"
 import { DetailsSheet } from "@/components/map/DetailsSheet"
 import { SponsoredPlacement, resetAdsForTests } from "@/components/ads/SponsoredPlacement"
+import { AssistantCardView } from "@/components/assistant/AssistantCards"
 
 afterEach(() => {
   cleanup()
@@ -58,5 +59,11 @@ describe("product events", () => {
     expect(track).toHaveBeenCalledWith("sponsored_click", { placement: "results", banner: "tcg" })
     click(screen.getByRole("button", { name: "Hide ads for this visit" }))
     expect(track).toHaveBeenCalledWith("sponsored_dismiss", { placement: "results", banner: "tcg" })
+  })
+
+  it("counts a place opened from an assistant card", () => {
+    render(<AssistantCardView card={{ type: "places", title: "1 near Denver", total: 1, near: null, places: [{ id: "p1", name: "Kroger", kind: "vending", address: "1 Main", city: "Denver", state: "CO", lng: -104.99, lat: 39.74 }] }} />)
+    click(screen.getByRole("link", { name: "Kroger on the map" }))
+    expect(track).toHaveBeenCalledWith("details_open", { kind: "vending", from: "assistant" })
   })
 })

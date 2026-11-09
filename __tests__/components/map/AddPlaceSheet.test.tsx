@@ -123,6 +123,26 @@ describe("AddPlaceSheet", () => {
     expect(screen.getByLabelText("Starts")).toHaveAttribute("aria-invalid", "true")
   })
 
+  it("counts a send that couldn't reach PokeFindr as an error", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        if (url === "/api/submissions") throw new TypeError("Failed to fetch")
+        return new Response(JSON.stringify({ duplicates: [], results: [] }))
+      }),
+    )
+    track.mockClear()
+    setup({ pin: PIN, initialKind: "shop" })
+    await settle()
+    next()
+    type("Name", "Mile High Cards")
+    type(/City/, "Denver")
+    next()
+    fireEvent.click(screen.getByRole("button", { name: "Send for review" }))
+    expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't reach PokeFindr")
+    expect(track).toHaveBeenCalledWith("add_place_submit", { kind: "shop", outcome: "error" })
+  })
+
   it("says when the daily limit is reached", async () => {
     mockApi({ post: { status: 429, body: { error: "You've added the most places you can today. Try again tomorrow." } } })
     setup({ pin: PIN, initialKind: "shop" })

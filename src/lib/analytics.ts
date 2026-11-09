@@ -75,8 +75,8 @@ export interface ProductEvents {
   open_map_from_landing: { via: "search" | "quick_pick" | "my_location" | "button" }
   /** A kind chip, the retailer filter or the radius. `value` is what's now on: kinds or retailers joined by commas ("all" when none filtered), or the miles. */
   filter_change: { filter: "kinds" | "retailers" | "radius"; value: string }
-  /** A place's details opened: from the results list, a search, the map, or "Also nearby". */
-  details_open: { kind: string; from: "list" | "search" | "map" | "nearby" }
+  /** A place's details opened: from the results list, a search, the map, "Also nearby", or an assistant card. */
+  details_open: { kind: string; from: "list" | "search" | "map" | "nearby" | "assistant" }
   directions_click: { kind: string }
   /** Add a place sent: stored, or held back as a possible duplicate. */
   add_place_submit: { kind: string; outcome: "sent" | "duplicate" | "error" }

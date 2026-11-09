@@ -90,7 +90,8 @@ export function useAssistant() {
     const update = (fn: (m: Extract<ChatMessage, { role: "assistant" }>) => Partial<Extract<ChatMessage, { role: "assistant" }>>) =>
       setMessages((ms) => ms.map((m) => (m.id === answerId && m.role === "assistant" ? { ...m, ...fn(m) } : m)))
     setMessages((ms) => [...ms, user, { id: answerId, role: "assistant", text: "", cards: [], status: "Thinking…", note: null, memory: null, turnId: null, done: false }])
-    track("assistant_query", { turn: history.filter((m) => m.role === "user").length })
+    // Counted over the whole conversation: `history` is clipped to the last turns.
+    track("assistant_query", { turn: messagesRef.current.filter((m) => m.role === "user").length + 1 })
     const abort = new AbortController()
     ctl.current = abort
     setBusy(true)

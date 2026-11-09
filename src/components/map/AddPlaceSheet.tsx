@@ -183,6 +183,7 @@ export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindC
       if (res.status === 401) return setErrors({ form: "Your session ended. Log in again to send this." })
       setErrors({ form: body.error ?? "Couldn't send it. Try again." })
     } catch {
+      track("add_place_submit", { kind, outcome: "error" })
       setErrors({ form: "Couldn't reach PokeFindr. Check your connection and try again." })
     } finally {
       setSending(false)

@@ -23,7 +23,7 @@ Properties are kinds and where something happened. No ids, coordinates or typed 
 | `search` | A search result is picked | `result` (area kind or `location`), `from` (`landing` / `map`) |
 | `open_map_from_landing` | The landing page sends someone to the map | `via` (`search`, `quick_pick`, `my_location`, `button`) |
 | `filter_change` | A kind chip, the retailer filter or the radius changes | `filter` (`kinds`, `retailers`, `radius`), `value` |
-| `details_open` | A place's details open | `kind`, `from` (`list`, `search`, `map`, `nearby`) |
+| `details_open` | A place's details open | `kind`, `from` (`list`, `search`, `map`, `nearby`, `assistant`) |
 | `directions_click` | Directions is followed | `kind` |
 | `add_place_submit` | Add a place is sent | `kind`, `outcome` (`sent`, `duplicate`, `error`) |
 | `assistant_query` | A question to the assistant | `turn` |
