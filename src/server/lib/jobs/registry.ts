@@ -1,5 +1,5 @@
 import "server-only"
-import { z } from "zod"
+import { z } from "zod/v3"
 import { defineJob, type Job } from "./types"
 import { refreshRegionCountsJob } from "@/server/services/region-counts"
 import { assistantRetentionJob } from "@/server/assistant/log"

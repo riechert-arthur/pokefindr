@@ -19,7 +19,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { z } from "zod"
+import { z } from "zod/v3"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { handleSubmitError } from "@/lib/forms"
 import { LoadingButton } from "@/components/wrappers/LoadingButton"

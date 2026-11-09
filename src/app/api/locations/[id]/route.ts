@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { z } from "zod"
+import { z } from "zod/v3"
 import { getLocationFeature } from "@/server/services/locations"
 
 export const dynamic = "force-dynamic"

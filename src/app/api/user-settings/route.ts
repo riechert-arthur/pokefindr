@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { eq } from "drizzle-orm"
-import { z } from "zod"
+import { z } from "zod/v3"
 import { usernameField } from "@/lib/schemas"
 import { EMAIL_CHANGE_CALLBACK } from "@/lib/auth/paths"
 import { approveChangeToTakenEmail } from "@/server/auth/auth"

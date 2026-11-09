@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { z } from "zod"
+import { z } from "zod/v3"
 import { getPanelReviews } from "@/server/services/reviews"
 import { viewerId } from "@/server/auth/viewer"
 

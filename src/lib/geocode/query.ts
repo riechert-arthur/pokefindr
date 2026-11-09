@@ -1,4 +1,4 @@
-import { z } from "zod"
+import { z } from "zod/v3"
 
 /** Shortest query sent to the geocoder: one letter matches half the country. */
 export const MIN_QUERY_LENGTH = 2

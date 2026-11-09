@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { z } from "zod"
+import { z } from "zod/v3"
 import { REJECT_REASONS } from "@/lib/submissions/constants"
 import { approveSubmission, isModerator, rejectSubmission, undoDecision, type DecisionResult } from "@/server/services/moderation"
 import { REVIEWED_EMAIL_DELAY_SECONDS } from "@/server/services/submission-notifications"

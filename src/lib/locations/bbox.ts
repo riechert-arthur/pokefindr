@@ -1,4 +1,4 @@
-import { z } from "zod"
+import { z } from "zod/v3"
 import { LOCATION_KINDS, type LocationKind } from "@/lib/types/locations"
 
 /** [west, south, east, north] in degrees, as in GeoJSON. */
