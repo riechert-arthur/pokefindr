@@ -1,0 +1,109 @@
+import { z } from "zod"
+import { SHOP_SELLS } from "./constants"
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/** Optional text: trimmed, and empty becomes undefined. */
+const optionalText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max, { message: `Use at most ${max} characters.` })
+    .optional()
+    .transform((v) => v || undefined)
+
+/** A link people can open: http or https only (no javascript: or data: links in a moderator's queue). */
+const webLink = z
+  .string()
+  .trim()
+  .max(300, { message: "Use a shorter link." })
+  .optional()
+  .transform((v) => v || undefined)
+  .refine((v) => v === undefined || /^https?:\/\/[^\s/$.?#][^\s]*$/i.test(v), { message: "Enter a link starting with https://" })
+
+/** What every kind has: a name and where it is. */
+const place = {
+  name: z.string().trim().min(2, { message: "Enter a name." }).max(100, { message: "Use at most 100 characters." }),
+  lng: z.number().min(-180).max(180),
+  lat: z.number().min(-90).max(90),
+  address: optionalText(200),
+  city: z.string().trim().min(1, { message: "Enter a city." }).max(80),
+  /** Two-letter code in the US; the region's name elsewhere. */
+  state: optionalText(80),
+  countryCode: z.string().regex(/^[A-Z]{2}$/).default("US"),
+}
+
+export const shopSubmissionSchema = z.object({
+  kind: z.literal("shop"),
+  ...place,
+  website: webLink,
+  hours: optionalText(200),
+  sells: z.array(z.enum(SHOP_SELLS)).max(SHOP_SELLS.length).default([]),
+})
+
+export const eventSubmissionSchema = z.object({
+  kind: z.literal("event"),
+  ...place,
+  venue: optionalText(120),
+  startsAt: z.string().datetime({ offset: true, message: "Pick when it starts." }),
+  endsAt: z
+    .string()
+    .datetime({ offset: true })
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+  link: webLink,
+  isFree: z.boolean().optional(),
+})
+
+/** A card shop or an event, as POST /api/submissions takes it. */
+export const submissionSchema = z.discriminatedUnion("kind", [shopSubmissionSchema, eventSubmissionSchema]).superRefine((s, ctx) => {
+  if (s.kind === "event" && s.endsAt && Date.parse(s.endsAt) < Date.parse(s.startsAt)) {
+    ctx.addIssue({ code: "custom", message: "It has to end after it starts.", path: ["endsAt"] })
+  }
+})
+export type SubmissionInput = z.infer<typeof submissionSchema>
+export type ShopSubmission = z.infer<typeof shopSubmissionSchema>
+export type EventSubmission = z.infer<typeof eventSubmissionSchema>
+
+/**
+ * When an event may start: not more than a day ago (it may be on now), nor
+ * more than a year out. Checked on the server with its clock.
+ */
+export function eventDateProblem(startsAt: string, now = new Date()): string | null {
+  const t = Date.parse(startsAt)
+  if (t < now.getTime() - DAY_MS) return "That date has passed."
+  if (t > now.getTime() + 366 * DAY_MS) return "Pick a date within the next year."
+  return null
+}
+
+/** A place near the one being added, of the same kind: maybe the same place. */
+export type DuplicateCandidate = {
+  id: string
+  name: string
+  /** A location on the map, or one of your submissions still waiting for review. */
+  source: "location" | "submission"
+  address: string
+  city: string
+  state: string
+  meters: number
+}
+
+/** One of the viewer's submissions (GET /api/submissions?mine). */
+export type MySubmission = {
+  id: string
+  kind: "shop" | "event"
+  status: "pending" | "approved" | "rejected"
+  rejectReason: "duplicate" | "not_real" | "wrong_details" | "spam" | null
+  name: string
+  address: string
+  city: string
+  state: string
+  lng: number
+  lat: number
+  /** Events: when it starts. */
+  startsAt: string | null
+  /** Approved: the location it became. */
+  locationId: string | null
+  createdAt: string
+  reviewedAt: string | null
+}
