@@ -7,6 +7,7 @@ import { toKind } from "@/components/pokefindr/kinds"
 import { Button } from "@/components/ui/button"
 import { DetailsSheet } from "./DetailsSheet"
 import { ReportForm } from "./ReportForm"
+import { SponsoredPlacement } from "@/components/ads/SponsoredPlacement"
 import { ReviewSummary, ReviewsSection } from "./Reviews"
 import { useLocationReviews } from "./useLocationReviews"
 import { AlsoNearby, useAlsoNearby } from "./AlsoNearby"
@@ -49,6 +50,8 @@ export function LocationDetails({ kinds, retailers, onOpen, ...props }: Location
       }
       top={reporting && <ReportForm locationId={props.location.id} kind={kind} signedIn={!!session} onClose={closeReport} />}
     >
+      {/* Never next to the report form (#136). */}
+      {!reporting && <SponsoredPlacement placement="details" className="mt-3" />}
       <ReviewsSection kind={kind} reviews={reviews} username={session?.username ?? null} placeName={props.location.retailer} />
       <AlsoNearby rows={nearby} onOpen={onOpen} />
     </DetailsSheet>

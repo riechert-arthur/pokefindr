@@ -23,8 +23,6 @@ export interface Banner {
   href: string | undefined
   /** An impression pixel, loaded once when the banner shows. */
   pixel?: string
-  /** The image the floating banner shows. */
-  image?: string
   /** Relative chance of being picked among the banners for a placement. */
   weight: number
   /** Where it may show; all placements when omitted. */
@@ -40,7 +38,6 @@ export const BANNERS: readonly Banner[] = [
     cta: "See the deal",
     href: publicConfig.sponsor.link,
     pixel: publicConfig.sponsor.pixel,
-    image: publicConfig.sponsor.image,
     weight: 1,
   },
 ]

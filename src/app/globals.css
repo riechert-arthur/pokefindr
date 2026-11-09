@@ -327,10 +327,9 @@
   background: radial-gradient(46% 40% at 50% 46%, hsl(var(--background) / 0.82), transparent 75%);
 }
 
-/* The phone tab bar (TabBar, below sm): toasts and the floating ad sit above it. */
+/* The phone tab bar (TabBar, below sm): toasts sit above it. */
 @media (max-width: 639px) {
   :root.has-tabbar {
     --toast-bottom: calc(56px + 12px + env(safe-area-inset-bottom, 0px));
-    --banner-bottom: calc(56px + 8px + env(safe-area-inset-bottom, 0px));
   }
 }

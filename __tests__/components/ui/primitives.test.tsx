@@ -10,7 +10,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 // ContextProviders' session and ad providers fetch on mount; pass children through.
 vi.mock("@/components/providers/SessionProvider", () => ({ SessionContextProvider: ({ children }: { children: React.ReactNode }) => children }))
-vi.mock("@/components/providers/AdContextProvider", () => ({ AdContextProvider: ({ children }: { children: React.ReactNode }) => children }))
 
 import { ContextProviders } from "@/components/providers/ContextProviders"
 
