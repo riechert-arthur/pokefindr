@@ -75,12 +75,15 @@ export async function up(db: Kysely<unknown>): Promise<void> {
   await db.schema.createIndex("event_details_ends_at_idx").on("event_details").column("ends_at").execute()
 
   // Event highlights at an event location: their times move to event_details.
+  // Published ones only (an unpublished one would put its event in the
+  // upcoming list), and where a location has several, the one that ends
+  // last, so a past one can't hide an upcoming one.
   await sql`
     insert into event_details (location_id, starts_at, ends_at)
     select distinct on (h.location_id) h.location_id, h.starts_at, h.ends_at
     from highlights h join locations l on l.id = h.location_id and l.kind = 'event'
-    where h.kind = 'event' and h.starts_at is not null
-    order by h.location_id, h.starts_at
+    where h.kind = 'event' and h.is_published and h.starts_at is not null
+    order by h.location_id, coalesce(h.ends_at, h.starts_at + interval '1 day') desc
     on conflict (location_id) do nothing
   `.execute(db)
 }
