@@ -13,7 +13,9 @@ export const MAX_BODY_BYTES = 64 * 1024
 export const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, GET, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Accept, Authorization, Mcp-Protocol-Version, Mcp-Session-Id, Last-Event-ID, DPoP",
+  // Any header: 2026-07-28 clients send Mcp-Method, Mcp-Name and Mcp-Param-* ones, which a list can't name.
+  // "*" only covers requests without credentials, which is all these are; Authorization must be named.
+  "Access-Control-Allow-Headers": "*, Authorization",
   "Access-Control-Expose-Headers": "WWW-Authenticate, Mcp-Session-Id, Mcp-Protocol-Version, Retry-After",
   "Access-Control-Max-Age": "86400",
 } as const
@@ -70,7 +72,8 @@ export async function serveMcp(handler: McpHttpHandler, request: Request, key: s
     const body = await request.text()
     if (body.length > MAX_BODY_BYTES) return rpcError(413, "Request too large.")
     messages = messageCount(body)
-    forward = new Request(request.url, { method: "POST", headers: request.headers, body })
+    // Keep the signal: the SDK closes streams when the client goes away.
+    forward = new Request(request.url, { method: "POST", headers: request.headers, body, signal: request.signal })
   }
   if (!takeRequests(key, messages)) return rpcError(429, "Too many requests. Wait a minute and try again.", { "Retry-After": "60" })
   try {
