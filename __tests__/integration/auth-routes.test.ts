@@ -51,6 +51,27 @@ describe("sign-up", () => {
     expect(res.status).toBe(200)
     expect(await getDb().select().from(profiles)).toHaveLength(1)
   })
+
+  it("holds the username for a taken email too, so it can't show which emails have accounts", async () => {
+    await post(signup, form)
+    // Probe: the taken email with a fresh username, then the same username elsewhere.
+    expect((await post(signup, { ...form, username: "probe_1" })).status).toBe(200)
+    expect((await post(signup, { ...form, email: "other@example.com", username: "Probe_1" })).status).toBe(409)
+    // The same answer as for a new email.
+    expect((await post(signup, { ...form, email: "new@example.com", username: "probe_2" })).status).toBe(200)
+    expect((await post(signup, { ...form, email: "other@example.com", username: "probe_2" })).status).toBe(409)
+  })
+
+  it("lets a hold lapse after a day", async () => {
+    await post(signup, form)
+    await post(signup, { ...form, username: "probe_1" })
+    await sql`update username_holds set expires_at = now() - interval '1 minute'`
+    expect((await post(signup, { ...form, email: "other@example.com", username: "probe_1" })).status).toBe(200)
+  })
+
+  it("refuses a username of only spaces", async () => {
+    expect((await post(signup, { ...form, username: "   " })).status).toBe(400)
+  })
 })
 
 describe("login", () => {

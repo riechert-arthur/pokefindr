@@ -153,6 +153,17 @@ export const profiles = pgTable(
   (t) => [uniqueIndex("profiles_username_lower_key").on(sql`lower(${t.username})`)],
 )
 
+/**
+ * Usernames held by a sign-up for a day (migration 0010), new email or taken.
+ * Only a new email gets a profile, so without the hold, trying the same
+ * username again would show whether the email already had an account.
+ */
+export const usernameHolds = pgTable("username_holds", {
+  /** Lowercased. */
+  username: text("username").primaryKey(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+})
+
 /** Mapbox's per-field match result for a geocoded address, plus its overall `confidence`. */
 export type MatchCode = Record<string, string>
 

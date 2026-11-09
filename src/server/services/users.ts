@@ -1,7 +1,7 @@
 import "server-only"
-import { and, eq, ne, sql } from "drizzle-orm"
+import { and, eq, gt, ne, sql } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
-import { profiles, subscriptions, users } from "@/server/db/schema"
+import { profiles, subscriptions, usernameHolds, users } from "@/server/db/schema"
 import type { SessionTier } from "@/server/auth/session"
 
 /** What the client's session context gets (the shape /api/auth/user has always returned). */
@@ -52,7 +52,31 @@ export async function usernameTaken(username: string, exceptUserId?: string, db:
     .from(profiles)
     .where(exceptUserId ? and(same, ne(profiles.id, exceptUserId)) : same)
     .limit(1)
-  return Boolean(row)
+  if (row) return true
+  // A sign-up's hold counts too (from settings as well, or renaming would show the same thing),
+  // except for the account that already has the name.
+  if (exceptUserId) {
+    const [own] = await db.select({ id: profiles.id }).from(profiles).where(and(eq(profiles.id, exceptUserId), same)).limit(1)
+    if (own) return false
+  }
+  const [held] = await db
+    .select({ username: usernameHolds.username })
+    .from(usernameHolds)
+    .where(and(eq(usernameHolds.username, username.toLowerCase()), gt(usernameHolds.expiresAt, sql`now()`)))
+    .limit(1)
+  return Boolean(held)
+}
+
+/**
+ * Holds a username for a day, for a sign-up (see usernameHolds). Called for a
+ * new email and a taken one alike, so both leave the name taken.
+ */
+export async function holdUsername(username: string, db: Database = getDb()): Promise<void> {
+  const expiresAt = sql`now() + interval '1 day'`
+  await db
+    .insert(usernameHolds)
+    .values({ username: username.toLowerCase(), expiresAt })
+    .onConflictDoUpdate({ target: usernameHolds.username, set: { expiresAt }, setWhere: sql`${usernameHolds.expiresAt} <= now()` })
 }
 
 /** Creates a user's profile. Throws UsernameTakenError on a duplicate username. */
