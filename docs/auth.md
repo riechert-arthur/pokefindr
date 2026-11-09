@@ -30,8 +30,10 @@ that sends one answers as fast as one that doesn't.
 ### The flows
 
 - **Sign up** (`/signup`): creates the user and the profile, then emails a confirmation link. A taken
-  email gets the same answer as a new one, and holds the username for a day just the same
-  (`username_holds`), so the username can't show which emails have accounts. Better Auth's own
+  email gets the same answer as a new one, and claims the username for a day just the same
+  (`username_holds`), so the username can't show which emails have accounts. An account left
+  unconfirmed for a day (its link has expired) gives up its username too, and is removed when
+  someone else takes the name. Better Auth's own
   sign-up, login and change-email endpoints aren't reachable at `/api/identity`: they skip the
   profile and our checks.
 - **Confirm**: the link (24 hours) lands on `/login?verified=1`. Logging in before confirming sends a
