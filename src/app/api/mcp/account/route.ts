@@ -7,7 +7,7 @@ import { getDb } from "@/server/db/client"
 import { loadPlaceBudget, savePlaceViews } from "@/server/assistant/limits"
 import type { PlaceBudget } from "@/server/assistant/limits"
 import { grantStands } from "@/server/services/oauth-clients"
-import { MCP_ACCOUNT_SCOPES } from "@/lib/mcp/scopes"
+import { MCP_ACCOUNT_PATH, MCP_ACCOUNT_SCOPES } from "@/lib/mcp/scopes"
 import { mcpEndpoint, preflight, rpcError, serveMcp, withCors } from "@/server/mcp/http"
 import { oneAtATime } from "@/server/mcp/limits"
 import { createAccountServer } from "@/server/mcp/server"
@@ -56,7 +56,13 @@ async function withPlaceBudget<T>(userId: string, call: (places: PlaceBudget, no
 async function serveAccount(request: Request, claims: JWTPayload): Promise<Response> {
   const userId = claims.sub!
   // A JWT is checked without the database: make sure the account, the person's approval and the app still stand.
-  if (!(await grantStands(userId, String(claims.azp ?? ""), getDb()))) return rpcError(401, "This app is no longer connected to a PokeFindr account. Connect it again.")
+  if (!(await grantStands(userId, String(claims.azp ?? ""), getDb()))) {
+    // The same challenge requireMcpAuth sends, so clients offer to connect again.
+    const metadata = new URL(`/.well-known/oauth-protected-resource${MCP_ACCOUNT_PATH}`, getServerConfig().APP_URL)
+    return rpcError(401, "This app is no longer connected to a PokeFindr account. Connect it again.", {
+      "WWW-Authenticate": `Bearer error="invalid_token", error_description="The app is no longer connected", resource_metadata="${metadata}"`,
+    })
+  }
   const authInfo = {
     token: "",
     clientId: String(claims.azp ?? ""),

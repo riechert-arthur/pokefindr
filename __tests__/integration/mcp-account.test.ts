@@ -189,6 +189,8 @@ describe("/api/mcp/account", () => {
     const res = await list()
     expect(res.status).toBe(401)
     expect(await res.json()).toMatchObject({ error: { message: expect.stringContaining("no longer connected") } })
+    // The challenge clients act on, as for a missing token.
+    expect(res.headers.get("www-authenticate")).toContain(`resource_metadata="${BASE}/.well-known/oauth-protected-resource/api/mcp/account"`)
   })
 
   it("refuses a token whose account is gone", async () => {
