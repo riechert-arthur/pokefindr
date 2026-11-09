@@ -62,11 +62,40 @@ describe("sign-up", () => {
     expect((await post(signup, { ...form, email: "other@example.com", username: "probe_2" })).status).toBe(409)
   })
 
-  it("lets a hold lapse after a day", async () => {
+  it("answers two sign-ups at once with one username the same, new email or taken", async () => {
     await post(signup, form)
-    await post(signup, { ...form, username: "probe_1" })
+    for (const [i, probed] of [form.email, "new@example.com"].entries()) {
+      const username = `race_${i}`
+      const results = await Promise.all([
+        post(signup, { ...form, email: probed, username }),
+        post(signup, { ...form, email: `fresh-${username}@example.com`, username }),
+      ])
+      expect(results.map((r) => r.status).sort()).toEqual([200, 409])
+    }
+  })
+
+  it("a day later, frees the name either way: the hold lapses, and so does the unconfirmed account", async () => {
+    await post(signup, form)
+    await post(signup, { ...form, username: "probe_1" }) // taken email: only a hold
+    await post(signup, { ...form, email: "new@example.com", username: "probe_2" }) // new email: an unconfirmed account
     await sql`update username_holds set expires_at = now() - interval '1 minute'`
-    expect((await post(signup, { ...form, email: "other@example.com", username: "probe_1" })).status).toBe(200)
+    await sql`update users set created_at = now() - interval '25 hours' where email = 'new@example.com'`
+    expect((await post(signup, { ...form, email: "a@example.com", username: "probe_1" })).status).toBe(200)
+    expect((await post(signup, { ...form, email: "b@example.com", username: "probe_2" })).status).toBe(200)
+    // The expired account made way for the new one.
+    expect(await getDb().select().from(users).where(eq(users.email, "new@example.com"))).toEqual([])
+    // A confirmed account keeps its name for good.
+    await confirm("b@example.com")
+    await sql`update username_holds set expires_at = now() - interval '1 minute'`
+    await sql`update users set created_at = now() - interval '25 hours'`
+    expect((await post(signup, { ...form, email: "c@example.com", username: "probe_2" })).status).toBe(409)
+  })
+
+  it("lets go of the hold when the sign-up fails", async () => {
+    // Past Better Auth's 128-character limit: our form check passes, Better Auth refuses.
+    const tooLong = "a-very-long-password!".repeat(7)
+    expect((await post(signup, { ...form, username: "long_pw", password: tooLong, passwordVerification: tooLong })).status).toBe(400)
+    expect((await post(signup, { ...form, email: "other@example.com", username: "long_pw" })).status).toBe(200)
   })
 
   it("refuses a username of only spaces", async () => {

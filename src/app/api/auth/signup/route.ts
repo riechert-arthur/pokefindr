@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { registrationSchema } from "@/lib/schemas"
 import { VERIFIED_CALLBACK } from "@/lib/auth/paths"
 import { identityRequest, refuseCrossSite } from "@/server/auth/identity"
-import { createProfile, deleteUser, holdUsername, userExists, usernameTaken, UsernameTakenError } from "@/server/services/users"
+import { createProfile, deleteUser, holdUsername, releaseUsername, userExists, usernameTaken, UsernameTakenError } from "@/server/services/users"
 
 /**
  * Email sign-up. Better Auth creates the user and sends the confirmation
@@ -17,9 +17,13 @@ export async function POST(req: NextRequest) {
   const { email, password, name } = parsed.data
   const username = parsed.data.username
 
-  if (await usernameTaken(username)) return NextResponse.json({ error: "That username is already taken" }, { status: 409 })
+  // Claimed before Better Auth runs, whether the email turns out new or taken, so the
+  // username can't show which (and two sign-ups at once can't both get it).
+  if ((await usernameTaken(username)) || !(await holdUsername(username)))
+    return NextResponse.json({ error: "That username is already taken" }, { status: 409 })
 
   const res = await identityRequest(req, "/sign-up/email", { email, password, name, callbackURL: VERIFIED_CALLBACK })
+  if (!res.ok) await releaseUsername(username)
   if (res.status === 429) return NextResponse.json({ error: "Too many attempts. Wait a minute and try again." }, { status: 429 })
   if (!res.ok) {
     const { message } = ((await res.json().catch(() => ({}))) as { message?: string })
@@ -27,8 +31,6 @@ export async function POST(req: NextRequest) {
   }
 
   const { user } = (await res.json()) as { user: { id: string } }
-  // Held either way, so the username can't show whether the email was new.
-  await holdUsername(username)
   // An email that already has an account gets a made-up user back: nothing to add.
   if (await userExists(user.id)) {
     try {
