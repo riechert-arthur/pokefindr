@@ -4,6 +4,9 @@ import { oidcFederationProvider } from "@anthropic-ai/sdk/lib/credentials/oidc-f
 import { identityTokenSource } from "@/server/adapters/claude/identity"
 import { getServerConfig, type ServerConfig } from "@/server/config"
 import type { Geocoder } from "@/server/ports/geocoder"
+import type { Mailer } from "@/server/ports/mailer"
+import { ConsoleMailer } from "@/server/adapters/mailer/console"
+import { SmtpMailer } from "@/server/adapters/mailer/smtp"
 import { FakeGeocoder } from "@/server/adapters/geocoder/fake"
 import { PhotonGeocoder } from "@/server/adapters/geocoder/photon"
 import { MapboxGeocoder } from "@/server/adapters/geocoder/mapbox"
@@ -30,13 +33,29 @@ export function makeGeocoder(config: ServerConfig): Geocoder {
   }
 }
 
+export function makeMailer(config: ServerConfig): Mailer {
+  switch (config.MAIL_PROVIDER) {
+    case "smtp":
+      return new SmtpMailer(config.SMTP_URL!, config.MAIL_FROM)
+    case "console":
+      return new ConsoleMailer(config.NODE_ENV === "production")
+  }
+}
+
 let geocoder: Geocoder | undefined
+let mailer: Mailer | undefined
 let anthropic: Anthropic | null | undefined
 
 /** The configured geocoder, built once per server instance. */
 export function getGeocoder(): Geocoder {
   geocoder ??= makeGeocoder(getServerConfig())
   return geocoder
+}
+
+/** The configured mailer, built once per server instance. */
+export function getMailer(): Mailer {
+  mailer ??= makeMailer(getServerConfig())
+  return mailer
 }
 
 const CLAUDE_OPTIONS = { maxRetries: 1, timeout: 60_000 } as const
@@ -74,5 +93,6 @@ export function getAnthropic(): Anthropic | null {
 /** Test helper: forget the built adapters so the next call re-reads config. */
 export function resetContainerForTests() {
   geocoder = undefined
+  mailer = undefined
   anthropic = undefined
 }

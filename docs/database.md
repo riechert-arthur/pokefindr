@@ -47,6 +47,7 @@ server isn't restarted.
 | `init` | Runs once per `make run`: installs dependencies if needed, creates the branch's database if it's new, `db:migrate`, `db:check`, `db:seed` |
 | `web` | `next dev` on localhost:3000, with hot reload. Starts after `init` succeeds |
 | `storybook` | `storybook dev` on localhost:6006, with hot reload. Starts after `init` succeeds |
+| `mail` | Mailpit. Every email the app sends (sign-up, password reset) lands here instead of a real inbox: read them at localhost:8025 |
 
 Workers will be services that share the app's definition (`x-app` in
 `docker-compose.yml`, which has an example) and start after `init`, so

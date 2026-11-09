@@ -64,6 +64,21 @@ const serverSchema = z.object({
   /** A self-hosted instance instead of the provider's public one (photon, nominatim). */
   GEOCODER_BASE_URL: blankAsUnset(z.string().url().optional()),
 
+  /**
+   * How email is sent (src/server/container.ts): "console" prints it (local
+   * dev and CI, and it refuses to run in production), "smtp" sends it
+   * through SMTP_URL.
+   */
+  MAIL_PROVIDER: blankAsUnset(z.enum(["console", "smtp"]).default("console")),
+  /** e.g. smtps://user:pass@smtp.example.com:465. Required when MAIL_PROVIDER is smtp. */
+  SMTP_URL: blankAsUnset(z.string().url().optional()),
+  /**
+   * The From address. Its domain needs SPF and DKIM records with the SMTP
+   * provider. Required to send in production (providers reject the
+   * localhost default); elsewhere it defaults to one.
+   */
+  MAIL_FROM: blankAsUnset(z.string().min(1).optional()),
+
   /** Claude API key for the assistant (/api/assistant). Unset (and no federation below), the assistant says it's unavailable. */
   ANTHROPIC_API_KEY: blankAsUnset(z.string().min(1).optional()),
 
@@ -94,10 +109,15 @@ const serverSchema = z.object({
   ASSISTANT_ENABLED: blankAsUnset(z.enum(["true", "false"]).default("true")).transform((v) => v === "true"),
   /** The most the assistant may spend a UTC day, over all users, in dollars. Past it, it pauses until midnight UTC. */
   ASSISTANT_DAILY_BUDGET_USD: blankAsUnset(z.coerce.number().positive().default(10)),
-}).transform((env) => ({
-  ...env,
-  GEOCODER_PROVIDER: env.GEOCODER_PROVIDER ?? (env.NODE_ENV === "production" ? "photon" : "fake"),
-})).superRefine((env, ctx) => {
+}).transform((env, ctx) => {
+  if (env.NODE_ENV === "production" && env.MAIL_PROVIDER === "smtp" && !env.MAIL_FROM)
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["MAIL_FROM"], message: "required to send email in production" })
+  return {
+    ...env,
+    GEOCODER_PROVIDER: env.GEOCODER_PROVIDER ?? (env.NODE_ENV === "production" ? "photon" : "fake"),
+    MAIL_FROM: env.MAIL_FROM ?? "PokeFindr <no-reply@localhost>",
+  }
+}).superRefine((env, ctx) => {
   if ((env.GEOCODER_PROVIDER === "mapbox" || env.GEOCODER_PROVIDER === "maptiler") && !env.GEOCODER_API_KEY)
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["GEOCODER_API_KEY"], message: `required when GEOCODER_PROVIDER is ${env.GEOCODER_PROVIDER}` })
   if (Boolean(env.ANTHROPIC_FEDERATION_RULE_ID) !== Boolean(env.ANTHROPIC_ORGANIZATION_ID))
@@ -106,6 +126,8 @@ const serverSchema = z.object({
       path: [env.ANTHROPIC_FEDERATION_RULE_ID ? "ANTHROPIC_ORGANIZATION_ID" : "ANTHROPIC_FEDERATION_RULE_ID"],
       message: "workload identity federation needs both ANTHROPIC_FEDERATION_RULE_ID and ANTHROPIC_ORGANIZATION_ID",
     })
+  if (env.MAIL_PROVIDER === "smtp" && !env.SMTP_URL)
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["SMTP_URL"], message: "required when MAIL_PROVIDER is smtp" })
   if (env.GEOCODER_PROVIDER === "nominatim" && !env.GEOCODER_USER_AGENT)
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["GEOCODER_USER_AGENT"], message: "required when GEOCODER_PROVIDER is nominatim" })
 })

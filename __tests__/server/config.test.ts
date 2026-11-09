@@ -96,6 +96,28 @@ describe("getServerConfig", () => {
     expect(getServerConfig()).toMatchObject({ ANTHROPIC_FEDERATION_RULE_ID: "fdrl_abc", ANTHROPIC_ORGANIZATION_ID: "org-uuid" })
   })
 
+  it("prints email by default, and needs SMTP_URL to send it", () => {
+    expect(getServerConfig().MAIL_PROVIDER).toBe("console")
+    resetServerConfigForTests()
+    vi.stubEnv("MAIL_PROVIDER", "smtp")
+    expect(() => getServerConfig()).toThrowError(/SMTP_URL: required when MAIL_PROVIDER is smtp/)
+    resetServerConfigForTests()
+    vi.stubEnv("SMTP_URL", "smtp://localhost:1025")
+    expect(getServerConfig().SMTP_URL).toBe("smtp://localhost:1025")
+  })
+
+  it("needs MAIL_FROM to send email in production", () => {
+    vi.stubEnv("MAIL_PROVIDER", "smtp")
+    vi.stubEnv("SMTP_URL", "smtp://localhost:1025")
+    expect(getServerConfig().MAIL_FROM).toBe("PokeFindr <no-reply@localhost>")
+    resetServerConfigForTests()
+    vi.stubEnv("NODE_ENV", "production")
+    expect(() => getServerConfig()).toThrowError(/MAIL_FROM: required to send email in production/)
+    resetServerConfigForTests()
+    vi.stubEnv("MAIL_FROM", "PokeFindr <no-reply@pokefindr.app>")
+    expect(getServerConfig().MAIL_FROM).toBe("PokeFindr <no-reply@pokefindr.app>")
+  })
+
   it("rejects an unknown GEOCODER_PROVIDER", () => {
     vi.stubEnv("GEOCODER_PROVIDER", "google")
     expect(() => getServerConfig()).toThrowError(/GEOCODER_PROVIDER/)
