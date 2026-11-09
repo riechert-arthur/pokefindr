@@ -11,6 +11,8 @@ export function handleSubmitError(err: unknown) {
     if (status) {
       if (typeof payload === "string") {
         msg = payload.trim();
+      } else if (payload !== null && typeof payload === "object" && typeof (payload as { error?: unknown }).error === "string") {
+        msg = (payload as { error: string }).error;
       } else if (
         payload !== null &&
         typeof payload === "object" &&
