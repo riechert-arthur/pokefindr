@@ -3,7 +3,6 @@ import { JetBrains_Mono, Noto_Sans } from "next/font/google"
 import { ContextProviders } from "@/components/providers/ContextProviders"
 import { ThemeProvider } from "@/components/providers/ThemeProvider"
 import { Analytics } from "@/components/Analytics"
-import AffiliateBannerWrapper from "@/components/wrappers/AffiliateBannerWrapper"
 import { Toaster } from "@/components/ui/sonner"
 import { getSiteUrl } from "@/server/site-url"
 
@@ -43,7 +42,6 @@ export default function RootLayout({
           <ContextProviders>
             <main>{children}</main>
             <Toaster />
-            <AffiliateBannerWrapper />
             <Analytics />
           </ContextProviders>
         </ThemeProvider>

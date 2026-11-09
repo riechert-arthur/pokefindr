@@ -1,5 +1,6 @@
 "use client"
 
+import { Fragment } from "react"
 import { EmptyState } from "@/components/pokefindr/EmptyState"
 import { KIND_ORDER, countLabel, formatCount, placesLabel } from "@/components/pokefindr/kinds"
 import { Button } from "@/components/ui/button"
@@ -10,6 +11,7 @@ import type { LocationFeature, LocationKind, NearbyLocations } from "@/lib/types
 import { cn } from "@/lib/utils"
 import type { NearbyState } from "./useNearbyLocations"
 import { LocationRow } from "./LocationRow"
+import { SponsoredPlacement } from "@/components/ads/SponsoredPlacement"
 
 type Radius = (typeof RADII)[number]
 
@@ -109,10 +111,18 @@ export function ResultsSheet({ label, radius, onRadiusChange, kinds, nearby, sel
           </EmptyState>
         ) : (
           <ul aria-label={`Places near ${near}, closest first`}>
-            {results.features.map((f) => (
-              <li key={f.properties.id}>
-                <LocationRow feature={f} distance={f.properties.distance} selected={selectedId === f.properties.id} onOpen={onOpen} />
-              </li>
+            {results.features.map((f, i) => (
+              <Fragment key={f.properties.id}>
+                <li>
+                  <LocationRow feature={f} distance={f.properties.distance} selected={selectedId === f.properties.id} onOpen={onOpen} />
+                </li>
+                {/* One sponsored card after the third place (#136), only when more places follow. */}
+                {i === 2 && results.features.length > 3 && (
+                  <li>
+                    <SponsoredPlacement placement="results" className="my-1.5" />
+                  </li>
+                )}
+              </Fragment>
             ))}
             {results.truncated && (
               <li className="px-2.5 py-3 text-caption text-muted-foreground">

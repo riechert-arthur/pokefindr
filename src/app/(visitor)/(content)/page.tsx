@@ -5,6 +5,7 @@ import { FaqSection, HowItWorks, LocationTypes } from "@/components/landing/Land
 import { faqJsonLd } from "@/lib/faq"
 import type { LocationKind } from "@/lib/types/locations"
 import { getRegionCounts } from "@/server/services/region-counts"
+import { SponsoredPlacement } from "@/components/ads/SponsoredPlacement"
 
 // The counts change only after an import; rebuild the page at most hourly.
 export const revalidate = 3600
@@ -77,6 +78,7 @@ export default async function LandingPage() {
       <div className="isolate">
         <Hero stats={counts?.hero ?? null} background={<HeroMap />} />
         <HowItWorks />
+        <SponsoredPlacement placement="landing" />
         <LocationTypes counts={counts?.kinds ?? null} />
         <FaqSection />
       </div>
