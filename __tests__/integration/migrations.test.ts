@@ -243,3 +243,21 @@ describe("db:baseline", () => {
     }
   }, 60_000)
 })
+
+describe("0011_submissions", () => {
+  it("moves event times from published highlights, taking the one that ends last", async () => {
+    const { migrator } = createMigrator(sql)
+    throwIfFailed(await migrator.migrateTo("0010_unique_usernames"))
+    const point = sql`ST_SetSRID(ST_MakePoint(-105, 39.7), 4326)::geography`
+    const [show] = await sql<{ id: string }[]>`insert into locations (name, kind, geog) values ('Card show', 'event', ${point}) returning id`
+    const [draft] = await sql<{ id: string }[]>`insert into locations (name, kind, geog) values ('Draft show', 'event', ${point}) returning id`
+    await sql`insert into highlights (kind, title, starts_at, ends_at, location_id) values
+      ('event', 'Last year', '2025-11-01T17:00Z', '2025-11-01T22:00Z', ${show.id}),
+      ('event', 'This year', '2026-12-05T17:00Z', null, ${show.id})`
+    await sql`insert into highlights (kind, title, starts_at, location_id, is_published) values ('event', 'Not out yet', '2026-12-05T17:00Z', ${draft.id}, false)`
+    throwIfFailed(await migrator.migrateToLatest())
+    const rows = await sql<{ location_id: string; starts_at: Date }[]>`select location_id, starts_at from event_details`
+    expect(rows).toEqual([{ location_id: show.id, starts_at: new Date("2026-12-05T17:00Z") }])
+    await sql`truncate locations cascade`
+  })
+})
