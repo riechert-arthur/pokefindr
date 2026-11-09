@@ -62,11 +62,6 @@ const serverSchema = z.object({
   /** Set to "1" by Vercel on its build and runtime. Decides whether jobs go through Vercel Queues. */
   VERCEL: blankAsUnset(z.string().optional()),
 
-  // Supabase is still used for auth until the auth migration lands.
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-
   /**
    * Which geocoder answers the search box (src/server/container.ts). Unset,
    * production uses `photon` (free, no key, built for type-ahead) and

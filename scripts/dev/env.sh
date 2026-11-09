@@ -24,7 +24,7 @@ fi
 # Required at start-up by src/server/config.ts. The web container reads these
 # files the way Next.js does (first one wins). DATABASE_URL isn't listed: the
 # containers set it themselves.
-required=(APP_URL JWT_SECRET NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY)
+required=(APP_URL JWT_SECRET)
 missing=()
 for var in "${required[@]}"; do
   value=""
@@ -38,6 +38,5 @@ done
 if [ ${#missing[@]} -gt 0 ]; then
   echo "error: the app won't start until these are set in $file:" >&2
   printf '  %s\n' "${missing[@]}" >&2
-  echo "Placeholders work if you only need the map, e.g. NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321" >&2
   exit 1
 fi

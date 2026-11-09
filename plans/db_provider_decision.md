@@ -61,4 +61,4 @@ production   (Neon's default/root branch; the live data)
 - [ ] Connect the Vercel Marketplace integration and turn on per-preview branches (Preview deploys aren't running on Vercel today).
 - [ ] Update `docs/database.md`: Neon URLs (pooled `-pooler` host for `DATABASE_URL`, direct host for `DATABASE_URL_UNPOOLED`) instead of the Supavisor ports.
 - [ ] Load locations into the Neon production branch (§4).
-- [ ] Move auth off Supabase (`plans/postgres_orm_rearchitecture.md` phase 4) before production depends on Neon.
+- [x] Move auth off Supabase (`plans/postgres_orm_rearchitecture.md` phase 4) before production depends on Neon. Done in PA-3 (docs/auth.md).

@@ -103,14 +103,18 @@ const COLOR_RULES = [
   ...VALUE_RULES.map((selector) => ({ selector, message: `Colors come from design tokens. ${TOKENS_HINT}` })),
 ]
 
-/** Only src/components/map/engine.ts may import the map library (#46). */
-const MAP_LIBRARY_RULE = [
+/** Only src/components/map/engine.ts may import the map library (#46), and nothing imports Supabase (PA-3). */
+const RESTRICTED_IMPORTS = [
   "error",
   {
     patterns: [
       {
         group: ["maplibre-gl", "maplibre-gl/*", "@vis.gl/react-maplibre", "react-map-gl", "react-map-gl/*", "mapbox-gl", "mapbox-gl/*"],
         message: "Import map components and types from @/components/map/engine, the only module that imports the map library.",
+      },
+      {
+        group: ["@supabase/*"],
+        message: "Accounts are in our own database (Better Auth, src/server/auth) and data goes through Drizzle. Supabase isn't used.",
       },
     ],
   },
@@ -120,7 +124,7 @@ module.exports = {
   extends: ["next/core-web-vitals", "next/typescript"],
   rules: {
     "no-restricted-syntax": ["error", ...ENV_RULES],
-    "no-restricted-imports": MAP_LIBRARY_RULE,
+    "no-restricted-imports": RESTRICTED_IMPORTS,
   },
   overrides: [
     {

@@ -26,9 +26,6 @@ const SECRET = "s".repeat(40)
 const baseEnv = {
   APP_URL: "https://pokefindr.example",
   JWT_SECRET: "secret",
-  NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co",
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: "anon",
-  SUPABASE_SERVICE_ROLE_KEY: "service",
   CRON_SECRET: SECRET,
   VERCEL: "",
 }
