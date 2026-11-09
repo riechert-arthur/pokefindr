@@ -58,7 +58,7 @@ export function AdminApp({ role, username }: { role: StaffRole; username: string
     <RefreshSummary.Provider value={refreshSummary}>
       <div className="flex min-h-svh flex-col bg-background md:flex-row">
         <AdminSidebar groups={groupsFor(role)} current={section.id} counts={counts} onSelect={(id) => void setParam(id === DEFAULT_SECTION ? null : id)} user={{ username, role }} />
-        <main className="flex min-w-0 flex-1 flex-col gap-4 p-4 md:p-5">
+        <div className="flex min-w-0 flex-1 flex-col gap-4 p-4 md:p-5">
           <header className="flex flex-wrap items-start gap-3">
             {/* A full row on phones, so the buttons wrap below the title instead of squeezing it. */}
             <div className="min-w-0 flex-[1_1_100%] sm:flex-[1_1_0%]">
@@ -71,7 +71,7 @@ export function AdminApp({ role, username }: { role: StaffRole; username: string
             </Link>
           </header>
           {SECTIONS[section.id]?.()}
-        </main>
+        </div>
       </div>
     </RefreshSummary.Provider>
   )
