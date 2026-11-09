@@ -10,9 +10,9 @@ vi.mock("@/server/lib/jobs/enqueue", () => ({
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client"
 import { eq } from "drizzle-orm"
 import { DELETE as accountDelete, POST as accountPost } from "@/app/api/mcp/account/route"
-import { resetAuthForTests } from "@/server/auth/auth"
+import { resetAuthForTests, revokeConnectedApps } from "@/server/auth/auth"
 import { getDb } from "@/server/db/client"
-import { assistantPlaceViews, jwks, locationRatings, locations, profiles } from "@/server/db/schema"
+import { assistantPlaceViews, jwks, oauthClients, locationRatings, locations, profiles } from "@/server/db/schema"
 import { PLACES_PER_DAY, utcDay } from "@/server/assistant/limits"
 import { listMySubmissions } from "@/server/services/submissions"
 import { resetMcpLimitsForTests } from "@/server/mcp/limits"
@@ -173,6 +173,22 @@ describe("/api/mcp/account", () => {
     expect(saved).toHaveLength(PLACES_PER_DAY)
     expect(rows.filter((r) => shown.has(r.id))).toHaveLength(5)
     await client.close()
+  })
+
+  it("refuses a token at once when its app is disconnected (password reset) or disabled", async () => {
+    const me = await signIn()
+    const bearer = await accessToken({ signedIn: me })
+    await keepKeys()
+    const list = () => rpc({ jsonrpc: "2.0", id: 1, method: "tools/list" }, bearer)
+    expect((await list()).status).toBe(200)
+    await getDb().update(oauthClients).set({ disabled: true })
+    expect((await list()).status).toBe(401)
+    await getDb().update(oauthClients).set({ disabled: null })
+    expect((await list()).status).toBe(200)
+    await revokeConnectedApps(me.userId)
+    const res = await list()
+    expect(res.status).toBe(401)
+    expect(await res.json()).toMatchObject({ error: { message: expect.stringContaining("no longer connected") } })
   })
 
   it("refuses a token whose account is gone", async () => {

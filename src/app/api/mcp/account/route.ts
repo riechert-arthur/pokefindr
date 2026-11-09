@@ -6,7 +6,7 @@ import { getServerConfig } from "@/server/config"
 import { getDb } from "@/server/db/client"
 import { loadPlaceBudget, savePlaceViews } from "@/server/assistant/limits"
 import type { PlaceBudget } from "@/server/assistant/limits"
-import { getProfile } from "@/server/services/users"
+import { grantStands } from "@/server/services/oauth-clients"
 import { MCP_ACCOUNT_SCOPES } from "@/lib/mcp/scopes"
 import { mcpEndpoint, preflight, rpcError, serveMcp, withCors } from "@/server/mcp/http"
 import { oneAtATime } from "@/server/mcp/limits"
@@ -55,8 +55,8 @@ async function withPlaceBudget<T>(userId: string, call: (places: PlaceBudget, no
 /** One request with a verified token: the person's own limits. */
 async function serveAccount(request: Request, claims: JWTPayload): Promise<Response> {
   const userId = claims.sub!
-  // The token outlives a deleted account by up to an hour.
-  if (!(await getProfile(userId, getDb()))) return rpcError(401, "This PokeFindr account no longer exists.")
+  // A JWT is checked without the database: make sure the account, the person's approval and the app still stand.
+  if (!(await grantStands(userId, String(claims.azp ?? ""), getDb()))) return rpcError(401, "This app is no longer connected to a PokeFindr account. Connect it again.")
   const authInfo = {
     token: "",
     clientId: String(claims.azp ?? ""),
