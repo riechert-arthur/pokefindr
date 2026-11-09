@@ -75,7 +75,7 @@ export async function usernameTaken(username: string, exceptUserId?: string, db:
   const [held] = await db
     .select({ username: usernameHolds.username })
     .from(usernameHolds)
-    .where(and(eq(usernameHolds.username, username.toLowerCase()), gt(usernameHolds.expiresAt, sql`now()`)))
+    .where(and(eq(usernameHolds.username, sql`lower(${username})`), gt(usernameHolds.expiresAt, sql`now()`)))
     .limit(1)
   return Boolean(held)
 }
@@ -103,7 +103,7 @@ export async function holdUsername(username: string, db: Database = getDb()): Pr
   const expiresAt = sql`now() + interval '1 day'`
   const claimed = await db
     .insert(usernameHolds)
-    .values({ username: username.toLowerCase(), expiresAt })
+    .values({ username: sql`lower(${username})`, expiresAt })
     .onConflictDoUpdate({ target: usernameHolds.username, set: { expiresAt }, setWhere: sql`${usernameHolds.expiresAt} <= now()` })
     .returning({ username: usernameHolds.username })
   return claimed.length > 0
@@ -111,7 +111,7 @@ export async function holdUsername(username: string, db: Database = getDb()): Pr
 
 /** Lets go of a hold, when the sign-up that claimed it didn't go through (bad input, rate limit). */
 export async function releaseUsername(username: string, db: Database = getDb()): Promise<void> {
-  await db.delete(usernameHolds).where(eq(usernameHolds.username, username.toLowerCase()))
+  await db.delete(usernameHolds).where(eq(usernameHolds.username, sql`lower(${username})`))
 }
 
 /** Creates a user's profile. Throws UsernameTakenError on a duplicate username. */
