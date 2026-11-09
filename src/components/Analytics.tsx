@@ -3,6 +3,7 @@
 import Script from "next/script"
 import { Analytics as VercelAnalytics } from "@vercel/analytics/next"
 import { publicConfig } from "@/config.public"
+import { flushUmami } from "@/lib/analytics"
 
 /**
  * The configured analytics provider's page-view tracker (#53): Vercel,
@@ -18,7 +19,7 @@ export function Analytics({ config = publicConfig.analytics }: { config?: typeof
       return <Script defer data-domain={config.site} src={config.scriptUrl || "https://plausible.io/js/script.js"} strategy="afterInteractive" />
     case "umami":
       if (!config.site) return null
-      return <Script defer data-website-id={config.site} src={config.scriptUrl || "https://cloud.umami.is/script.js"} strategy="afterInteractive" />
+      return <Script defer data-website-id={config.site} src={config.scriptUrl || "https://cloud.umami.is/script.js"} strategy="afterInteractive" onReady={flushUmami} />
     default:
       return null
   }

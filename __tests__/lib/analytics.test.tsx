@@ -7,13 +7,16 @@ vi.mock("@vercel/analytics/next", () => ({ Analytics: () => <span data-testid="v
 vi.mock("next/script", () => ({ default: (props: Record<string, string>) => <script data-testid="script" {...props} /> }))
 
 import { analyticsProviderOf } from "@/config.public"
-import { sendEvent } from "@/lib/analytics"
+import { flushUmami, sendEvent } from "@/lib/analytics"
 import { Analytics } from "@/components/Analytics"
 
 afterEach(() => {
   vi.clearAllMocks()
   delete window.plausible
   delete window.umami
+  const w = window as unknown as { va?: unknown; vaq?: unknown }
+  delete w.va
+  delete w.vaq
 })
 
 describe("analyticsProviderOf", () => {
@@ -27,9 +30,13 @@ describe("analyticsProviderOf", () => {
 })
 
 describe("sendEvent", () => {
-  it("sends to Vercel", () => {
+  it("sends to Vercel, with a queue for events sent before its script is injected", () => {
     sendEvent("vercel", "search", { kind: "city" })
     expect(vercelTrack).toHaveBeenCalledWith("search", { kind: "city" })
+    // The stub is the library's own: the script reads window.vaq once it loads.
+    const w = window as unknown as { va: (...a: unknown[]) => void; vaq?: unknown[][] }
+    w.va("event", { name: "search" })
+    expect(w.vaq).toEqual([["event", { name: "search" }]])
   })
 
   it("queues for Plausible until its script loads, then the script reads the queue", () => {
@@ -41,12 +48,19 @@ describe("sendEvent", () => {
     expect(loaded).toHaveBeenCalledWith("details_open", undefined)
   })
 
-  it("sends to Umami when its script is there, and does nothing when it isn't", () => {
-    sendEvent("umami", "search")
+  it("holds Umami events until its script is ready, then sends them in order", () => {
+    sendEvent("umami", "search", { kind: "city" })
+    sendEvent("umami", "details_open")
     const track = vi.fn()
     window.umami = { track }
-    sendEvent("umami", "search", { kind: "city" })
-    expect(track).toHaveBeenCalledWith("search", { kind: "city" })
+    expect(track).not.toHaveBeenCalled()
+    flushUmami()
+    expect(track.mock.calls).toEqual([
+      ["search", { kind: "city" }],
+      ["details_open", undefined],
+    ])
+    sendEvent("umami", "directions_click")
+    expect(track).toHaveBeenLastCalledWith("directions_click", undefined)
   })
 
   it("sends nothing for none, and never throws", () => {
