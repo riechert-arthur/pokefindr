@@ -22,8 +22,13 @@ describe("zonedToIso", () => {
 
 describe("zone names and formatting", () => {
   it("names zones as people say them and shows times in the zone", () => {
-    expect(zoneName(STATE_ZONES.CO)).toBe("Mountain Time")
-    expect(formatInZone("2026-11-16T02:00:00.000Z", STATE_ZONES.WA)).toBe("Sun, Nov 15, 6:00 PM")
+    expect(zoneName(STATE_ZONES.CO, "en")).toBe("Mountain Time")
+    expect(formatInZone("2026-11-16T02:00:00.000Z", STATE_ZONES.WA, "en")).toBe("Sun, Nov 15, 6:00 PM")
+  })
+
+  it("writes them in the page's language", () => {
+    expect(zoneName(STATE_ZONES.CO, "es", new Date("2026-01-15T12:00:00Z"))).toMatch(/^hora de las Montañas Rocosas|^hora estándar de las Montañas Rocosas/)
+    expect(formatInZone("2026-11-16T02:00:00.000Z", STATE_ZONES.WA, "es")).toBe("dom, 15 nov, 18:00")
   })
 })
 
@@ -36,7 +41,7 @@ describe("zoneName without longGeneric", () => {
     } as unknown as typeof Intl.DateTimeFormat
     Intl.DateTimeFormat = Fake
     try {
-      expect(zoneName(STATE_ZONES.CO, new Date("2026-01-15T12:00:00Z"))).toBe("Mountain Standard Time")
+      expect(zoneName(STATE_ZONES.CO, "en", new Date("2026-01-15T12:00:00Z"))).toBe("Mountain Standard Time")
     } finally {
       Intl.DateTimeFormat = Real
     }

@@ -4,7 +4,7 @@ import { fireEvent, render, screen } from "../../helpers/intl"
 import { InboxIcon } from "lucide-react"
 import { EmptyState } from "@/components/pokefindr/EmptyState"
 import { KindDot } from "@/components/pokefindr/KindDot"
-import { KIND_ORDER, KINDS, countLabel, toKind } from "@/components/pokefindr/kinds"
+import { KIND_ORDER, KINDS, toKind } from "@/components/pokefindr/kinds"
 import { SponsoredSlot } from "@/components/pokefindr/SponsoredSlot"
 import { StatusBadge } from "@/components/pokefindr/StatusBadge"
 import { TypeChip } from "@/components/pokefindr/TypeChip"
@@ -12,10 +12,6 @@ import { TypeChip } from "@/components/pokefindr/TypeChip"
 describe("kinds", () => {
   it("maps every kind to its token color", () => {
     for (const k of KIND_ORDER) expect(KINDS[k].bg).toBe(`bg-kind-${k}`)
-  })
-  it("pluralizes counts", () => {
-    expect(countLabel("vending", 1)).toBe("1 vending machine")
-    expect(countLabel("shop", 1457)).toBe("1,457 card shops")
   })
 })
 

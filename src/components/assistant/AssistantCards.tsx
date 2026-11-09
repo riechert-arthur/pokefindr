@@ -4,12 +4,13 @@ import { ExternalLinkIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { KindDot } from "@/components/pokefindr/KindDot"
 import { StatusBadge } from "@/components/pokefindr/StatusBadge"
-import { KINDS, KIND_ORDER, formatCount } from "@/components/pokefindr/kinds"
-import { formatEventWhen } from "@/lib/highlights/format"
+import { KINDS, KIND_ORDER } from "@/components/pokefindr/kinds"
 import { DEFAULT_RADIUS, RADII, mapUrl, roundPlace } from "@/lib/map/url-state"
 import { safeHref } from "@/lib/assistant/safe-link"
 import { track } from "@/lib/analytics"
 import type { AssistantCard, AssistantPlace } from "@/lib/types/assistant"
+import { useFormat } from "@/i18n/format"
+import { useDistance } from "@/i18n/useDistance"
 
 /** The prototype's `.acard`: a bordered card with a muted header and an optional footer of actions. */
 function Card({ title, children, footer }: { title: ReactNode; children: ReactNode; footer?: ReactNode }) {
@@ -24,12 +25,12 @@ function Card({ title, children, footer }: { title: ReactNode; children: ReactNo
 
 const sub = "block truncate text-caption text-muted-foreground"
 const dist = "whitespace-nowrap text-caption tabular-nums text-muted-foreground"
-const miles = (n: number) => `${n.toFixed(1)} mi`
 
 /** The map's radius closest to (and at least) a search radius. */
 const mapRadius = (r: number) => RADII.find((x) => x >= r) ?? RADII[RADII.length - 1]
 
 function PlaceRow({ p }: { p: AssistantPlace }) {
+  const { distance } = useDistance()
   return (
     <div className="flex items-center gap-2.5 border-b border-border px-3 py-2 text-body last:border-b-0">
       <KindDot kind={p.kind} label={KINDS[p.kind].one} />
@@ -40,7 +41,7 @@ function PlaceRow({ p }: { p: AssistantPlace }) {
         </span>
         <span className={sub}>{[p.address, p.city].filter(Boolean).join(", ")}</span>
       </span>
-      {p.miles !== undefined && <span className={dist}>{miles(p.miles)}</span>}
+      {p.miles !== undefined && <span className={dist}>{distance(p.miles)}</span>}
       <Button asChild variant="ghost" size="sm">
         <Link href={mapUrl("/map", { location: p.id })} aria-label={`${p.name} on the map`} onClick={() => track("details_open", { kind: p.kind, from: "assistant" })}>
           Map
@@ -52,6 +53,8 @@ function PlaceRow({ p }: { p: AssistantPlace }) {
 
 /** One tool result as the composer shows it: places, a route, counts or events. */
 export function AssistantCardView({ card }: { card: AssistantCard }) {
+  const f = useFormat()
+  const { distance } = useDistance()
   if (card.type === "places") {
     return (
       <Card
@@ -75,7 +78,7 @@ export function AssistantCardView({ card }: { card: AssistantCard }) {
     const directions = safeHref(card.mapsUrl)
     return (
       <Card
-        title={`Route · ${card.stops.length} stops · ${miles(card.totalMiles)} straight-line`}
+        title={`Route · ${card.stops.length} stops · ${distance(card.totalMiles)} straight-line`}
         footer={
           <>
             <Button asChild variant="outline" size="sm">
@@ -102,7 +105,7 @@ export function AssistantCardView({ card }: { card: AssistantCard }) {
                 <b className="block truncate font-semibold text-foreground">{s.name}</b>
                 <span className={sub}>{[s.address, s.city].filter(Boolean).join(", ")}</span>
               </span>
-              <span className={dist}>{i === 0 && !card.start ? "Start" : `+${miles(card.legs[i] ?? 0)}`}</span>
+              <span className={dist}>{i === 0 && !card.start ? "Start" : `+${distance(card.legs[i] ?? 0)}`}</span>
             </li>
           ))}
         </ol>
@@ -117,7 +120,7 @@ export function AssistantCardView({ card }: { card: AssistantCard }) {
         <div className="flex flex-wrap gap-[18px] px-3 py-2.5 text-caption text-muted-foreground">
           {KIND_ORDER.map((k) => (
             <span key={k}>
-              <b className="block text-heading tabular-nums text-foreground">{formatCount(card.byKind[k] ?? 0)}</b>
+              <b className="block text-heading tabular-nums text-foreground">{f.count(card.byKind[k] ?? 0)}</b>
               {KINDS[k].many}
             </span>
           ))}
@@ -130,7 +133,7 @@ export function AssistantCardView({ card }: { card: AssistantCard }) {
                 <span className="h-2 overflow-hidden rounded bg-muted">
                   <i className="block h-full rounded bg-kind-vending" style={{ width: `${(r.count / max) * 100}%` }} />
                 </span>
-                <b className="text-right tabular-nums">{formatCount(r.count)}</b>
+                <b className="text-right tabular-nums">{f.count(r.count)}</b>
               </div>
             ))}
           </div>
@@ -150,9 +153,9 @@ export function AssistantCardView({ card }: { card: AssistantCard }) {
                 <b className="truncate font-semibold text-foreground">{e.title}</b>
                 {e.sample && <StatusBadge status="sample" />}
               </span>
-              <span className={sub}>{[formatEventWhen(e.startsAt, e.endsAt), [e.city, e.state].filter(Boolean).join(", ")].filter(Boolean).join(" · ")}</span>
+              <span className={sub}>{[f.eventWhen(e.startsAt, e.endsAt), [e.city, e.state].filter(Boolean).join(", ")].filter(Boolean).join(" · ")}</span>
             </span>
-            {e.miles !== undefined && <span className={dist}>{miles(e.miles)}</span>}
+            {e.miles !== undefined && <span className={dist}>{distance(e.miles)}</span>}
             <Button asChild variant="ghost" size="sm">
               <Link href={mapUrl("/map", { q: [e.city, e.state].filter(Boolean).join(", ") || e.title, lng: roundPlace(e.lng), lat: roundPlace(e.lat), r: DEFAULT_RADIUS, types: ["event"] })} aria-label={`${e.title} on the map`}>
                 Map

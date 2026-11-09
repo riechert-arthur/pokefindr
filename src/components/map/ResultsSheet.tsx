@@ -2,7 +2,9 @@
 
 import { Fragment } from "react"
 import { EmptyState } from "@/components/pokefindr/EmptyState"
-import { KIND_ORDER, countLabel, formatCount, placesLabel } from "@/components/pokefindr/kinds"
+import { KIND_ORDER } from "@/components/pokefindr/kinds"
+import { useFormat, type Format } from "@/i18n/format"
+import { useDistance } from "@/i18n/useDistance"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -28,9 +30,9 @@ interface ResultsSheetProps {
 }
 
 /** "41 vending machines · 1 card shop", in kind order. */
-export function breakdown(counts: NearbyLocations["counts"], kinds: readonly LocationKind[]): string {
+export function breakdown(counts: NearbyLocations["counts"], kinds: readonly LocationKind[], f: Format): string {
   return KIND_ORDER.filter((k) => kinds.includes(k) && counts[k])
-    .map((k) => countLabel(k, counts[k]!))
+    .map((k) => f.kindCount(k, counts[k]!))
     .join(" · ")
 }
 
@@ -45,17 +47,19 @@ export function ResultsSheet({ label, radius, onRadiusChange, kinds, nearby, sel
   const fresh = results && !stale ? results : null
   const near = label ?? "you"
   const wider = RADII.find((r) => r > radius)
+  const f = useFormat()
+  const { radius: radiusText } = useDistance()
 
   return (
     <>
       <div className="flex flex-col gap-2.5 border-b border-border px-4 pb-2.5 pt-3.5">
         <div aria-live="polite" aria-atomic>
           <h2 className="text-subheading text-foreground">
-            {fresh ? `${placesLabel(fresh.total, kinds)} near ${near}` : `Places near ${near}`}
+            {fresh ? `${f.places(fresh.total, kinds)} near ${near}` : `Places near ${near}`}
           </h2>
           <p className="text-body text-muted-foreground">
             {fresh && fresh.total > 0
-              ? breakdown(fresh.counts, kinds)
+              ? breakdown(fresh.counts, kinds, f)
               : `Sorted by distance from ${label ? "the center" : "you"}`}
           </p>
         </div>
@@ -77,7 +81,7 @@ export function ResultsSheet({ label, radius, onRadiusChange, kinds, nearby, sel
                 value={String(r)}
                 className="h-7 rounded-none border-r border-border bg-background px-2.5 text-body font-normal tabular-nums text-foreground last:border-r-0 hover:bg-muted hover:text-foreground data-[state=on]:bg-foreground data-[state=on]:text-background"
               >
-                {r} mi
+                {radiusText(r)}
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
@@ -103,9 +107,9 @@ export function ResultsSheet({ label, radius, onRadiusChange, kinds, nearby, sel
           </div>
         ) : results.features.length === 0 ? (
           <EmptyState
-            title={`Nothing within ${radius} mi`}
+            title={`Nothing within ${radiusText(radius)}`}
             className="m-1.5"
-            action={wider && <Button size="sm" variant="outline" onClick={() => onRadiusChange(wider)}>Widen to {wider} mi</Button>}
+            action={wider && <Button size="sm" variant="outline" onClick={() => onRadiusChange(wider)}>Widen to {radiusText(wider)}</Button>}
           >
             Try a wider radius or turn on more types.
           </EmptyState>
@@ -122,7 +126,7 @@ export function ResultsSheet({ label, radius, onRadiusChange, kinds, nearby, sel
             ))}
             {results.truncated && (
               <li className="px-2.5 py-3 text-caption text-muted-foreground">
-                Showing the closest {formatCount(results.features.length)} of {formatCount(results.total)}.
+                Showing the closest {f.count(results.features.length)} of {f.count(results.total)}.
               </li>
             )}
           </ul>

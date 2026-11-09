@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button"
 import { KindDot } from "@/components/pokefindr/KindDot"
 import { StarRating } from "@/components/pokefindr/StarRating"
 import { StatusBadge } from "@/components/pokefindr/StatusBadge"
-import { formatCount } from "@/components/pokefindr/kinds"
-import { formatEventWhen } from "@/lib/highlights/format"
 import { DEFAULT_RADIUS, mapUrl } from "@/lib/map/url-state"
 import type { UpcomingEvent } from "@/lib/types/highlights"
+import { useFormat } from "@/i18n/format"
+import { useDistance } from "@/i18n/useDistance"
 
 /** A dashboard tile, as the prototype's `.tiles .dcard`. */
 function Tile({ title, badge, children }: { title: string; badge?: ReactNode; children: ReactNode }) {
@@ -31,6 +31,8 @@ const itemClass = "flex w-full items-start gap-2.5 rounded-md py-1 text-left hov
 export type NearState = { status: "idle" } | { status: "locating" } | { status: "denied" } | { status: "ready"; count: number | null }
 
 export function NearYouTile({ near, onLocate }: { near: NearState; onLocate: () => void }) {
+  const f = useFormat()
+  const { radius: radiusText } = useDistance()
   const openLink = useRef<HTMLAnchorElement>(null)
   const button = useRef<HTMLButtonElement>(null)
   const asked = useRef(false)
@@ -55,8 +57,8 @@ export function NearYouTile({ near, onLocate }: { near: NearState; onLocate: () 
       <div aria-live="polite" className="grid content-start gap-1.5">
       {near.status === "ready" ? (
         <>
-          <p className="text-heading tabular-nums text-foreground">{near.count === null ? "–" : formatCount(near.count)}</p>
-          <p className={muted}>places within {DEFAULT_RADIUS} mi</p>
+          <p className="text-heading tabular-nums text-foreground">{near.count === null ? "–" : f.count(near.count)}</p>
+          <p className={muted}>places within {radiusText(DEFAULT_RADIUS)}</p>
           <Button asChild variant="outline" size="sm" className="justify-self-start">
             <Link ref={openLink} href={mapUrl("/map", { near: "me", r: DEFAULT_RADIUS })}>Open on map</Link>
           </Button>
@@ -135,6 +137,7 @@ export function SubmissionsTile() {
 }
 
 export function EventsTile({ events }: { events: UpcomingEvent[] | "error" | null }) {
+  const f = useFormat()
   return (
     <Tile title="Upcoming events" badge={Array.isArray(events) && events.some((e) => e.isSample) && <StatusBadge status="sample" />}>
       {events === null ? (
@@ -149,7 +152,7 @@ export function EventsTile({ events }: { events: UpcomingEvent[] | "error" | nul
             <KindDot kind="event" className="mt-1" />
             <span className="min-w-0 flex-1">
               <span className="block truncate text-body font-medium text-foreground">{e.title}</span>
-              <span className={`block truncate ${muted}`}>{[formatEventWhen(e.startsAt, e.endsAt), e.city].filter(Boolean).join(" · ")}</span>
+              <span className={`block truncate ${muted}`}>{[f.eventWhen(e.startsAt, e.endsAt), e.city].filter(Boolean).join(" · ")}</span>
             </span>
           </Link>
         ))

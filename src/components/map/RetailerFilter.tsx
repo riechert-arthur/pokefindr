@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { SlidersHorizontalIcon } from "lucide-react"
-import { formatCount } from "@/components/pokefindr/kinds"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
+import { useFormat } from "@/i18n/format"
 
 export interface RetailerOption {
   retailer: string
@@ -48,6 +48,7 @@ interface RetailerFilterProps {
  * with real data.
  */
 export function RetailerFilter({ selected, onChange, vendingShown }: RetailerFilterProps) {
+  const f = useFormat()
   const [open, setOpen] = useState(false)
   const [list, setList] = useState<RetailerOption[] | null>(null)
   const [failed, setFailed] = useState(false)
@@ -117,7 +118,7 @@ export function RetailerFilter({ selected, onChange, vendingShown }: RetailerFil
                     <label key={retailer} htmlFor={id} className="flex cursor-pointer items-center gap-2.5 rounded-md px-1 py-1.5 text-body hover:bg-muted">
                       <Checkbox id={id} checked={selected.includes(retailer)} onCheckedChange={(on) => toggle(retailer, on === true)} />
                       <span className="min-w-0 flex-1 truncate">{retailer}</span>
-                      {count >= 0 && <span className="text-caption tabular-nums text-muted-foreground">{formatCount(count)}</span>}
+                      {count >= 0 && <span className="text-caption tabular-nums text-muted-foreground">{f.count(count)}</span>}
                     </label>
                   )
                 })}

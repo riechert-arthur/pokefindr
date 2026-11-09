@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { AgentMark } from "@/components/assistant/AgentMark"
 import { APP_NAV_ID } from "@/components/pokefindr/AppRail"
 import { UserMenu } from "@/components/pokefindr/UserMenu"
-import { formatCount } from "@/components/pokefindr/kinds"
 import { useSidebar } from "@/components/providers/SidebarContextProvider"
 import { useSessionContext } from "@/components/providers/SessionProvider"
 import { DEFAULT_RADIUS } from "@/lib/map/url-state"
@@ -15,6 +14,7 @@ import { LOCATE_GIVE_UP_MS } from "@/lib/map/locate"
 import type { Highlights, UpcomingEvent } from "@/lib/types/highlights"
 import type { RegionCount } from "@/lib/types/locations"
 import { EventsTile, NearYouTile, ReviewsTile, SubmissionsTile, type MyReview, type NearState } from "./DashboardTiles"
+import { useFormat } from "@/i18n/format"
 
 /** The prototype's suggestions, one tap to ask. */
 export const SUGGESTIONS = [
@@ -52,6 +52,7 @@ interface DashboardProps {
  * the greeting, suggestions and tiles step aside for it.
  */
 export function Dashboard({ assistant }: DashboardProps) {
+  const f = useFormat()
   const { session } = useSessionContext()
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const [vending, setVending] = useState<number | null>(null)
@@ -150,7 +151,7 @@ export function Dashboard({ assistant }: DashboardProps) {
               <AgentMark size="lg" />
               <h1 className="mt-1.5 text-balance text-title text-foreground">What are you hunting for today?</h1>
               <p className="max-w-[52ch] text-subheading font-normal text-muted-foreground">
-                Ask about any of {vending === null ? "the" : formatCount(vending)} vending machines, card shops and events. It searches the map, counts by area and plans routes.
+                Ask about any of {vending === null ? "the" : f.count(vending)} vending machines, card shops and events. It searches the map, counts by area and plans routes.
               </p>
             </div>
           )}

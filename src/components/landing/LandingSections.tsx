@@ -1,10 +1,11 @@
 import type { ReactNode } from "react"
 import { KindDot } from "@/components/pokefindr/KindDot"
 import { StatusBadge } from "@/components/pokefindr/StatusBadge"
-import { KIND_ORDER, KINDS, formatCount, type LocationKind } from "@/components/pokefindr/kinds"
+import { KIND_ORDER, KINDS, type LocationKind } from "@/components/pokefindr/kinds"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { FAQS, answerParts } from "@/lib/faq"
 import { cn } from "@/lib/utils"
+import { useFormat } from "@/i18n/format"
 
 /** A full-width band with a top rule, as the prototype's landing sections. */
 function Band({ id, children, className }: { id: string; children: ReactNode; className?: string }) {
@@ -52,6 +53,7 @@ const KIND_COPY: Record<LocationKind, string> = {
 
 /** "More than vending machines": each kind, live with its count or coming soon. */
 export function LocationTypes({ counts }: { counts: Partial<Record<LocationKind, number>> | null }) {
+  const f = useFormat()
   return (
     <Band id="kinds-title">
       <h2 id="kinds-title" className="text-balance text-title text-foreground">More than vending machines</h2>
@@ -68,7 +70,7 @@ export function LocationTypes({ counts }: { counts: Partial<Record<LocationKind,
               </div>
               <h3 className="text-subheading text-foreground">
                 {KINDS[kind].label}
-                {live && ` · ${formatCount(n)}`}
+                {live && ` · ${f.count(n)}`}
               </h3>
               <p className="text-body text-muted-foreground">{KIND_COPY[kind]}</p>
             </article>

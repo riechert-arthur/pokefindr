@@ -2,10 +2,10 @@
 
 import { CalendarDaysIcon, FlameIcon, type LucideIcon } from "lucide-react"
 import { Marker } from "./engine"
-import { formatEventWhen } from "@/lib/highlights/format"
 import type { Highlights, Hotspot, UpcomingEvent } from "@/lib/types/highlights"
 import type { LocationKind } from "@/lib/types/locations"
 import { cn } from "@/lib/utils"
+import { useFormat } from "@/i18n/format"
 
 interface HighlightMarkersProps {
   highlights: Highlights
@@ -38,6 +38,7 @@ function Pill({ icon: Icon, tone, label, onClick }: { icon: LucideIcon; tone: st
  * Fri, Nov 13"), each hidden when its kind is. Clicking one opens that area.
  */
 export function HighlightMarkers({ highlights, kinds, onHotspot, onEvent }: HighlightMarkersProps) {
+  const f = useFormat()
   return (
     <>
       {kinds.includes("vending") &&
@@ -49,7 +50,7 @@ export function HighlightMarkers({ highlights, kinds, onHotspot, onEvent }: High
       {kinds.includes("event") &&
         highlights.events.map((e) => (
           <Marker key={`evt-${e.id}`} longitude={e.lng} latitude={e.lat} anchor="left">
-            <Pill icon={CalendarDaysIcon} tone="bg-kind-event" label={`${e.title} · ${formatEventWhen(e.startsAt, e.endsAt)}`} onClick={() => onEvent(e)} />
+            <Pill icon={CalendarDaysIcon} tone="bg-kind-event" label={`${e.title} · ${f.eventWhen(e.startsAt, e.endsAt)}`} onClick={() => onEvent(e)} />
           </Marker>
         ))}
     </>

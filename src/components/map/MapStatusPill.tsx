@@ -1,12 +1,11 @@
-import { placesLabel } from "@/components/pokefindr/kinds"
+import { useFormat, type Format } from "@/i18n/format"
 import type { LocationKind } from "@/lib/types/locations"
 import { cn } from "@/lib/utils"
 import type { ViewportStatus } from "./useViewportLocations"
 
-export { placesLabel }
-
 /** What the pill says, as plain text: also what screen readers hear once the view settles. */
-export function statusText({ zoomedOut, total, inView, status, truncated, kinds }: Omit<MapStatusPillProps, "className">): string | null {
+export function statusText({ zoomedOut, total, inView, status, truncated, kinds }: Omit<MapStatusPillProps, "className">, f: Format): string | null {
+  const placesLabel = f.places
   if (zoomedOut) return total === null ? null : `${placesLabel(total, kinds)} in the US · Zoom in or pick a state to see them`
   if (status === "error") return "Couldn't load this area · Move the map to try again"
   if (status === "idle" || (status === "loading" && inView === 0)) return "Loading this area…"
@@ -32,6 +31,8 @@ interface MapStatusPillProps {
  */
 export function MapStatusPill(props: MapStatusPillProps) {
   const { zoomedOut, total, inView, status, truncated, kinds, className } = props
+  const f = useFormat()
+  const placesLabel = f.places
   let content: React.ReactNode
   if (zoomedOut) {
     if (total === null) return null
@@ -80,7 +81,7 @@ export function MapStatusPill(props: MapStatusPillProps) {
         {content}
       </div>
       <span role="status" className="sr-only">
-        {settled ? statusText(props) : ""}
+        {settled ? statusText(props, f) : ""}
       </span>
     </>
   )

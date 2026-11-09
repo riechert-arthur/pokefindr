@@ -5,7 +5,8 @@
  * test that renders copy or links.
  */
 import type { ReactNode } from "react"
-import { createTranslator, NextIntlClientProvider } from "next-intl"
+import { createFormatter, createTranslator, NextIntlClientProvider } from "next-intl"
+import { makeFormat } from "@/i18n/format"
 import * as rtl from "@testing-library/react"
 import { merge, type Messages, type Tree } from "@/i18n/messages"
 import { DEFAULT_LOCALE, type Locale } from "@/i18n/routing"
@@ -40,4 +41,9 @@ export function renderHook<Result, Props>(hook: (props: Props) => Result, { loca
 /** A message by key, to assert on what the catalog says instead of a copy of it. */
 export function message(locale: Locale = DEFAULT_LOCALE) {
   return createTranslator({ locale, messages: MESSAGES[locale] })
+}
+
+/** useFormat()'s formatters outside a component, for testing functions that take one. */
+export function formatFor(locale: Locale = DEFAULT_LOCALE) {
+  return makeFormat(locale, createTranslator({ locale, messages: MESSAGES[locale], namespace: "format" }), createFormatter({ locale }))
 }

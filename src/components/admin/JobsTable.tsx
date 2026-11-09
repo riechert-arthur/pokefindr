@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/pokefindr/EmptyState"
 import { Pill, type PillTone } from "@/components/admin/Pill"
 import { resultText, type JobRow } from "@/lib/admin/jobs"
-import { timeAgo } from "@/lib/format/time"
 import { cn } from "@/lib/utils"
+import { useFormat } from "@/i18n/format"
 
 const th = "px-3 py-2.5 text-left text-caption font-semibold text-muted-foreground"
 const td = "px-3 py-3 align-top text-body"
@@ -36,6 +36,7 @@ function status(j: JobRow): [PillTone, string] {
  * says why and can't be run; Pause and Resume set its flag.
  */
 export function JobsTable() {
+  const f = useFormat()
   const [rows, setRows] = useState<JobRow[] | null | "error">(null)
   const [busy, setBusy] = useState<string | null>(null)
   const load = useCallback(async () => {
@@ -101,7 +102,7 @@ export function JobsTable() {
                     <div className="text-caption text-muted-foreground">{j.description}</div>
                   </td>
                   <td className={td}>{j.trigger}</td>
-                  <td className={td}>{run ? timeAgo(run.startedAt) : "Never ran"}</td>
+                  <td className={td}>{run ? f.ago(run.startedAt) : "Never ran"}</td>
                   <td className={cn(td, "max-w-[18rem]")}>
                     {j.paused && !run ? j.paused : run?.status === "failed" ? <span className="text-destructive">{run.error ?? "Failed"}</span> : resultText(run?.result ?? null) || (run?.status === "running" ? "Running…" : "—")}
                   </td>

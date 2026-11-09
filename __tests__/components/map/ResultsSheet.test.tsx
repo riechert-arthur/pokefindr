@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, render, screen, within } from "../../helpers/intl"
+import { formatFor, cleanup, fireEvent, render, screen, within } from "../../helpers/intl"
 import { breakdown, ResultsSheet } from "@/components/map/ResultsSheet"
 import type { NearbyLocations } from "@/lib/types/locations"
 import type { NearbyState } from "@/components/map/useNearbyLocations"
@@ -98,7 +98,7 @@ describe("ResultsSheet", () => {
 
 describe("breakdown", () => {
   it("lists the shown kinds that have results, in kind order", () => {
-    expect(breakdown({ shop: 1, vending: 41 }, KINDS)).toBe("41 vending machines · 1 card shop")
-    expect(breakdown({ shop: 1, vending: 41 }, ["shop"])).toBe("1 card shop")
+    expect(breakdown({ shop: 1, vending: 41 }, KINDS, formatFor())).toBe("41 vending machines · 1 card shop")
+    expect(breakdown({ shop: 1, vending: 41 }, ["shop"], formatFor())).toBe("1 card shop")
   })
 })

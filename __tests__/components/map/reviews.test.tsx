@@ -1,8 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, fireEvent, render, renderHook, screen, waitFor } from "../../helpers/intl"
+import { formatFor, act, fireEvent, render, renderHook, screen, waitFor } from "../../helpers/intl"
 import { useLocationReviews, type Review, type ReviewsState } from "@/components/map/useLocationReviews"
 import { ReviewSummary, ReviewsSection } from "@/components/map/Reviews"
-import { timeAgo } from "@/lib/format/time"
 
 const { toast } = vi.hoisted(() => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }) }))
 vi.mock("sonner", () => ({ toast }))
@@ -140,7 +139,8 @@ describe("ReviewsSection", () => {
   })
 })
 
-describe("timeAgo", () => {
+describe("ago", () => {
+  const timeAgo = formatFor().ago
   const now = new Date("2026-11-07T12:00:00Z")
   it("says how long ago, then the date", () => {
     expect(timeAgo("2026-11-07T11:59:30Z", now)).toBe("just now")

@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
-import { timeAgo } from "@/lib/format/time"
 import type { Review, ReviewsState } from "./useLocationReviews"
+import { useFormat } from "@/i18n/format"
 
 /** The longest review text the API takes. */
 export const REVIEW_MAX_LENGTH = 500
@@ -41,6 +41,7 @@ interface ReviewsSectionProps {
  * their own; posting shows the review at once.
  */
 export function ReviewsSection({ kind, reviews, username, placeName }: ReviewsSectionProps) {
+  const f = useFormat()
   // The review being edited in the form, or null for a new one.
   const [editing, setEditing] = useState<Review | null>(null)
   const [rating, setRating] = useState(0)
@@ -125,7 +126,7 @@ export function ReviewsSection({ kind, reviews, username, placeName }: ReviewsSe
                 <b className="font-semibold">{r.username}</b>
                 <StarRating rating={r.rating} starSize={13} />
                 <span className="grow" />
-                <span className="text-caption text-muted-foreground">{timeAgo(r.createdAt)}</span>
+                <span className="text-caption text-muted-foreground">{f.ago(r.createdAt)}</span>
               </div>
               {r.text && <p className="mt-1.5 whitespace-pre-line break-words">{r.text}</p>}
               {r.mine && !r.id.startsWith("pending-") && (

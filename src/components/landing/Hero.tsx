@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge"
-import { formatCount } from "@/components/pokefindr/kinds"
 import { HeroSearch, ViewMapLink } from "./HeroSearch"
+import { useFormat } from "@/i18n/format"
 
 export interface HeroStats {
   vending: number
@@ -13,6 +13,7 @@ export interface HeroStats {
  * floats over it, so the background runs behind the nav.
  */
 export function Hero({ stats, background }: { stats: HeroStats | null; background?: React.ReactNode }) {
+  const f = useFormat()
   return (
     <div className="relative isolate overflow-hidden">
       <div aria-hidden className="hero-bg pointer-events-none absolute inset-0 -z-10">
@@ -36,8 +37,8 @@ export function Hero({ stats, background }: { stats: HeroStats | null; backgroun
         {stats && (
           <dl className="mt-11 flex flex-wrap justify-center gap-9 text-body text-muted-foreground">
             {[
-              [formatCount(stats.vending), "vending machines"],
-              [formatCount(stats.states), stats.states === 1 ? "state" : "states"],
+              [f.count(stats.vending), "vending machines"],
+              [f.count(stats.states), stats.states === 1 ? "state" : "states"],
               ["1", "country, more coming"],
             ].map(([n, label]) => (
               <div key={label} className="flex flex-col-reverse">
