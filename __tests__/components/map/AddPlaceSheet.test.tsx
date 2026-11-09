@@ -97,19 +97,24 @@ describe("AddPlaceSheet", () => {
     await waitFor(() => expect(calls.find((c) => c.url === "/api/submissions")?.body).toMatchObject({ confirmDuplicate: true }))
   })
 
-  it("asks for an event's start, and shows the server's field error on the details step", async () => {
-    mockApi({ post: { status: 400, body: { error: "That date has passed.", field: "startsAt" } } })
+  it("asks for an event's start, reads it in the event's zone, and shows the server's field error", async () => {
+    const calls = mockApi({ post: { status: 400, body: { error: "That date has passed.", field: "startsAt" } } })
     setup({ pin: PIN, initialKind: "event" })
     await settle()
     next()
     type("Name", "League night")
     type(/City/, "Denver")
+    type(/State/, "co")
+    expect(screen.getByText(/In the event's local time: Mountain Time/)).toBeInTheDocument()
     next()
     expect(screen.getByText("Pick when it starts.")).toBeInTheDocument()
     type("Starts", "2026-11-20T18:00")
     next()
+    expect(screen.getByText("Fri, Nov 20, 6:00 PM, Mountain Time")).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Send for review" }))
     expect(await screen.findByText("That date has passed.")).toBeInTheDocument()
+    // 6 PM in Denver, wherever the person typing it is.
+    expect(calls.find((c) => c.url === "/api/submissions")?.body).toMatchObject({ submission: { startsAt: "2026-11-21T01:00:00.000Z", state: "CO" } })
     expect(screen.getByLabelText("Starts")).toHaveAttribute("aria-invalid", "true")
   })
 

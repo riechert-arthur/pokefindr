@@ -24,7 +24,7 @@ interface StateLayersProps {
   colors: MapColors
   /** The layer to draw under (useBasemapStack's shadingBeforeId). */
   beforeId?: string
-  /** Called with a state's code after clicking it zooms there. */
+  /** Called with a state's code after clicking it zooms there. Without it, clicking a state does nothing (e.g. while placing a pin). */
   onSelect?: (code: string) => void
 }
 
@@ -55,11 +55,11 @@ export function StateLayers({ states, max, bounds, colors, beforeId, onSelect }:
     }
     const onClick = (e: MapLayerMouseEvent) => {
       const f = e.features?.[0]
-      if (!f || map.getZoom() >= POINT_ZOOM || !f.properties.count) return
+      if (!onSelect || !f || map.getZoom() >= POINT_ZOOM || !f.properties.count) return
       const box = bounds.get(f.properties.region)
       if (!box) return
       map.fitBounds(box, { padding: cameraPadding(map.getContainer(), { sheet: true }), maxZoom: 7.5, duration: 1400 })
-      onSelect?.(f.properties.region)
+      onSelect(f.properties.region)
     }
     map.on("mousemove", LAYERS.statesFill, onMove)
     map.on("mouseleave", LAYERS.statesFill, onLeave)

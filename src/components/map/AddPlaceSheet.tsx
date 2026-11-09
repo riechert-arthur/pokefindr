@@ -13,6 +13,7 @@ import { searchPlaces, type GeocodeResult } from "@/lib/geocode/client"
 import { SHOP_SELLS, SHOP_SELLS_LABELS, type SubmissionKind } from "@/lib/submissions/constants"
 import { submissionSchema, type DuplicateCandidate } from "@/lib/submissions/schemas"
 import { cn } from "@/lib/utils"
+import { STATE_ZONES, browserZone, formatInZone, zoneName, zonedToIso } from "@/lib/time/zones"
 
 type InputProps = ComponentProps<typeof Input>
 
@@ -40,11 +41,15 @@ interface Draft {
 }
 const EMPTY: Draft = { name: "", address: "", city: "", state: "", website: "", hours: "", sells: [], venue: "", startsAt: "", endsAt: "", link: "", cost: "" }
 
-/** A datetime-local value ("2026-11-15T18:00") as an ISO time in the viewer's zone. */
-const toIso = (local: string) => (local ? new Date(local).toISOString() : "")
+/**
+ * The zone an event's times are typed in: its state's (the event's local
+ * time), or the viewer's until a state is filled in.
+ */
+const eventZone = (d: Draft) => STATE_ZONES[d.state.trim().toUpperCase()] ?? browserZone()
 
-/** What goes to POST /api/submissions. */
+/** What goes to POST /api/submissions. Event times are read as wall-clock times in the event's zone. */
 function toSubmission(kind: SubmissionKind, pin: Pin, d: Draft) {
+  const toIso = (local: string) => zonedToIso(local, eventZone(d))
   const place = { name: d.name, lng: pin.lng, lat: pin.lat, address: d.address, city: d.city, state: d.state, countryCode: "US" }
   return kind === "shop"
     ? { kind, ...place, website: d.website, hours: d.hours, sells: d.sells }
@@ -75,6 +80,8 @@ interface AddPlaceSheetProps {
   onKindChange?: (kind: SubmissionKind) => void
   /** Already chosen (`add=shop` in the URL): starts at the location step. */
   initialKind?: SubmissionKind | null
+  /** The step shown (0 type, 1 location, 2 details, 3 review): the map only moves the pin on the location step. */
+  onStepChange?: (step: number) => void
 }
 
 /**
@@ -83,7 +90,7 @@ interface AddPlaceSheetProps {
  * review. Places of the same kind within 150 m show as a warning; sending
  * one anyway needs a tick. Errors show next to their field.
  */
-export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindChange, initialKind = null }: AddPlaceSheetProps) {
+export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindChange, onStepChange, initialKind = null }: AddPlaceSheetProps) {
   const [step, setStep] = useState(initialKind ? 1 : 0)
   const [kind, setKind] = useState<SubmissionKind | null>(initialKind)
   const [draft, setDraft] = useState<Draft>(EMPTY)
@@ -97,6 +104,8 @@ export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindC
   // Focus the step's heading when the step changes, so screen readers hear where they are.
   useEffect(() => {
     headingRef.current?.focus()
+    onStepChange?.(step)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
 
   // Places of this kind near the pin, as soon as it's placed or moved.
@@ -273,6 +282,10 @@ export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindC
                 <Field id={`${id}-venue`} label="Venue" hint="Where it's held, if it has a name." error={errors.venue}>
                   <Input id={`${id}-venue`} value={draft.venue} onChange={(e) => set("venue", e.target.value)} />
                 </Field>
+                <p className="-mb-1 text-caption text-muted-foreground">
+                  In the event&apos;s local time: {zoneName(eventZone(draft))}
+                  {STATE_ZONES[draft.state.trim().toUpperCase()] ? "" : ", yours. Fill in the state below to use the event's."}
+                </p>
                 <div className="grid grid-cols-2 gap-2">
                   <Field id={`${id}-starts`} label="Starts" required error={errors.startsAt}>
                     <Input id={`${id}-starts`} type="datetime-local" value={draft.startsAt} onChange={(e) => set("startsAt", e.target.value)} />
@@ -421,10 +434,13 @@ function DuplicateWarning({ duplicates, kind }: { duplicates: DuplicateCandidate
 }
 
 function Review({ kind, draft }: { kind: SubmissionKind; draft: Draft }) {
-  const when = (v: string) => (v ? new Date(v).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "")
+  const zone = eventZone(draft)
+  const when = (v: string) => (v ? `${formatInZone(zonedToIso(v, zone), zone)}` : "")
   const rows: [string, string][] = [
     ["Name", draft.name],
-    ...(kind === "event" ? ([["Venue", draft.venue], ["When", [when(draft.startsAt), when(draft.endsAt)].filter(Boolean).join(" – ")]] as [string, string][]) : []),
+    ...(kind === "event"
+      ? ([["Venue", draft.venue], ["When", [[when(draft.startsAt), when(draft.endsAt)].filter(Boolean).join(" – "), draft.startsAt ? zoneName(zone) : ""].filter(Boolean).join(", ")]] as [string, string][])
+      : []),
     ["Address", [draft.address, [draft.city, draft.state].filter(Boolean).join(", ")].filter(Boolean).join(", ")],
     ...(kind === "shop"
       ? ([["Website", draft.website], ["Hours", draft.hours], ["Sells", draft.sells.map((s) => SHOP_SELLS_LABELS[s as keyof typeof SHOP_SELLS_LABELS]).join(", ")]] as [string, string][])
@@ -448,9 +464,11 @@ function AddressSearch({ onPick }: { onPick: (r: GeocodeResult) => void }) {
   const [results, setResults] = useState<GeocodeResult[] | null>(null)
   const [failed, setFailed] = useState(false)
   const id = useId()
+  // The label of the result just picked: showing it in the box isn't a new search.
+  const picked = useRef<string | null>(null)
 
   useEffect(() => {
-    if (q.trim().length < 3) return setResults(null)
+    if (q.trim().length < 3 || q === picked.current) return setResults(null)
     const ctl = new AbortController()
     const t = setTimeout(() => {
       searchPlaces(q, { limit: 5, signal: ctl.signal })
@@ -485,6 +503,7 @@ function AddressSearch({ onPick }: { onPick: (r: GeocodeResult) => void }) {
                   type="button"
                   onClick={() => {
                     onPick(r)
+                    picked.current = r.label
                     setResults(null)
                     setQ(r.label)
                   }}
