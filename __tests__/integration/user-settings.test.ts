@@ -127,10 +127,12 @@ describe("changing the email", () => {
   it("handles an email that's taken the same as a free one, up to where it can't finish", async () => {
     await signedInUser("misty@example.com", "misty")
     const { id, cookie } = await signedInUser()
-    expect(await (await patch(id, { email: "misty@example.com" }, cookie)).json()).toEqual({ ok: true, emailPending: true })
+    expect(await (await patch(id, { email: "Misty@Example.COM" }, cookie)).json()).toEqual({ ok: true, emailPending: true })
     // The same approval email as for a free address, so the old inbox can't tell which.
     expect(outbox).toHaveLength(1)
     expect(outbox[0]).toMatchObject({ to: "ash@example.com", subject: "Approve your PokeFindr email change" })
+    expect(outbox[0].text).toContain("misty@example.com")
+    expect(outbox[0].text).not.toContain("Misty@Example.COM")
     // Approving it sends the other account nothing, and changes nothing.
     const approved = await getAuth().handler(new Request(linkIn(outbox[0])))
     await settleBackgroundForTests()

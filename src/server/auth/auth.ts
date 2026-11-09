@@ -69,7 +69,9 @@ async function emailTakenByOther(email: string, userId: string): Promise<boolean
  * with a real approval link: approving it leads nowhere, since the address
  * is taken (see sendVerificationEmail).
  */
-export async function approveChangeToTakenEmail(user: { id: string; name: string; email: string }, newEmail: string, callbackURL: string) {
+export async function approveChangeToTakenEmail(user: { id: string; name: string; email: string }, requested: string, callbackURL: string) {
+  // Lowercased, as Better Auth shows it in the email for a free address.
+  const newEmail = requested.toLowerCase()
   if (!(await emailTakenByOther(newEmail, user.id))) return
   const { secret, baseURL } = await getAuth().$context
   const token = await createEmailVerificationToken(secret, user.email, newEmail, VERIFY_LINK_SECONDS, { requestType: "change-email-confirmation", userId: user.id })
