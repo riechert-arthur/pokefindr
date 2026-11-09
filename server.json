@@ -1,0 +1,22 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.riechert-arthur/pokefindr",
+  "title": "PokeFindr",
+  "description": "Find Pokémon card vending machines, card shops and events in the US, and add new places.",
+  "repository": {
+    "url": "https://github.com/riechert-arthur/pokefindr",
+    "source": "github"
+  },
+  "websiteUrl": "https://pokefindr.app/developers",
+  "version": "1.0.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://pokefindr.app/api/mcp"
+    },
+    {
+      "type": "streamable-http",
+      "url": "https://pokefindr.app/api/mcp/account"
+    }
+  ]
+}

@@ -41,6 +41,7 @@ describe("landing sections", () => {
       "Blog",
       "Support",
       "Changelog",
+      "Developers",
       "Privacy policy",
       "Terms of service",
     ])

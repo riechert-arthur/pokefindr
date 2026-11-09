@@ -73,3 +73,23 @@ npx @modelcontextprotocol/inspector   # then connect to http://localhost:3000/ap
 
 `__tests__/integration/mcp.test.ts` connects the SDK's own client to the route, over both
 protocol versions.
+
+## Listing it in MCP directories
+
+`/developers` has setup steps for Claude, Claude Code, ChatGPT, Cursor, VS Code and other clients,
+and the footer links to it.
+
+`server.json` describes both endpoints for the [official MCP Registry](https://registry.modelcontextprotocol.io),
+under the GitHub namespace `io.github.riechert-arthur/pokefindr`. To publish it (or a new version,
+after bumping `version`), as the repo owner:
+
+```bash
+brew install mcp-publisher        # or download it from the registry's GitHub releases
+mcp-publisher validate
+mcp-publisher login github        # device-code sign-in as riechert-arthur
+mcp-publisher publish
+```
+
+Directories that read the registry pick it up from there. Others take a submission by hand, with
+the name, the description in `server.json`, the URL `https://pokefindr.app/api/mcp` and the
+`/developers` link.

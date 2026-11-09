@@ -6,6 +6,7 @@ const LINKS = [
   { name: "Blog", href: "/blog" },
   { name: "Support", href: "https://discord.gg/f2uUR5bAZU" },
   { name: "Changelog", href: "/changelog" },
+  { name: "Developers", href: "/developers" },
   { name: "Privacy policy", href: "/privacy-policy" },
   { name: "Terms of service", href: "/terms-of-service" },
 ]
