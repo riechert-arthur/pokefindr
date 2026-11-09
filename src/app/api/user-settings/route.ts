@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm"
 import { z } from "zod"
 import { usernameField } from "@/lib/schemas"
 import { EMAIL_CHANGE_CALLBACK } from "@/lib/auth/paths"
+import { approveChangeToTakenEmail } from "@/server/auth/auth"
 import { identityRequest, refuseCrossSite } from "@/server/auth/identity"
 import { getDb } from "@/server/db/client"
 import { profiles, users } from "@/server/db/schema"
@@ -68,6 +69,9 @@ export async function PATCH(req: NextRequest) {
       const { message } = (await res.json().catch(() => ({}))) as { message?: string }
       return NextResponse.json({ error: message === "Email is the same" ? "That's already your email." : "Couldn't start the email change" }, { status: 400 })
     }
+    // Better Auth sends no approval email for an address another account has; send the same one.
+    const [current] = await getDb().select({ id: users.id, name: users.name, email: users.email }).from(users).where(eq(users.id, userId))
+    if (current) await approveChangeToTakenEmail(current, email, EMAIL_CHANGE_CALLBACK)
     return NextResponse.json({ ok: true, emailPending: true })
   }
   return NextResponse.json({ ok: true })

@@ -1,8 +1,9 @@
 import "server-only"
 import { createHmac } from "node:crypto"
 import { betterAuth } from "better-auth"
+import { createEmailVerificationToken } from "better-auth/api"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import { after } from "next/server"
 import { getMailer } from "@/server/container"
 import { getDb } from "@/server/db/client"
@@ -36,6 +37,9 @@ async function sendAccountEmail(to: string, email: EmailContent): Promise<void> 
   }
 }
 
+/** How long a confirmation or email-change link works. */
+const VERIFY_LINK_SECONDS = 60 * 60 * 24
+
 const pending = new Set<Promise<unknown>>()
 
 /**
@@ -51,6 +55,26 @@ function runInBackground(task: Promise<unknown>) {
   } catch {
     // Outside a request (tests, scripts): it still runs.
   }
+}
+
+async function emailTakenByOther(email: string, userId: string): Promise<boolean> {
+  const [other] = await getDb().select({ id: users.id }).from(users).where(sql`lower(${users.email}) = lower(${email}) and ${users.id} <> ${userId}`).limit(1)
+  return Boolean(other)
+}
+
+/**
+ * The approval email for changing to an address another account already has.
+ * Better Auth sends none in that case, so whether the old inbox got one would
+ * show whether the new address has an account. This sends the same email,
+ * with a real approval link: approving it leads nowhere, since the address
+ * is taken (see sendVerificationEmail).
+ */
+export async function approveChangeToTakenEmail(user: { id: string; name: string; email: string }, newEmail: string, callbackURL: string) {
+  if (!(await emailTakenByOther(newEmail, user.id))) return
+  const { secret, baseURL } = await getAuth().$context
+  const token = await createEmailVerificationToken(secret, user.email, newEmail, VERIFY_LINK_SECONDS, { requestType: "change-email-confirmation", userId: user.id })
+  const url = `${baseURL}/verify-email?token=${token}&callbackURL=${encodeURIComponent(callbackURL)}`
+  runInBackground(sendAccountEmail(user.email, approveEmailChange({ name: user.name, newEmail, url })))
 }
 
 /** Test helper: wait for the emails requests so far have started sending. */
@@ -134,11 +158,13 @@ function makeAuth(config: ServerConfig) {
       // A login before confirming sends a new link (the old one may have expired).
       sendOnSignIn: true,
       autoSignInAfterVerification: false,
-      expiresIn: 60 * 60 * 24,
+      expiresIn: VERIFY_LINK_SECONDS,
       // Also the second step of an email change, to the new address (user.email is the new one then).
       sendVerificationEmail: async ({ user, url }) => {
         const [current] = await getDb().select({ email: users.email }).from(users).where(eq(users.id, user.id))
         const changing = current && current.email !== user.email
+        // Changing to an address another account has: the change can't finish, so its owner gets nothing.
+        if (changing && (await emailTakenByOther(user.email, user.id))) return
         await sendAccountEmail(user.email, changing ? confirmEmailChange({ name: user.name, newEmail: user.email, url }) : verifyEmail({ name: user.name, url }))
       },
     },
