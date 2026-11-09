@@ -2,10 +2,10 @@ import type { Metadata } from "next"
 import type { ReactNode } from "react"
 import Link from "next/link"
 import { CopyBlock } from "@/components/developers/CopyBlock"
-import { StatusBadge } from "@/components/pokefindr/StatusBadge"
+import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MCP_ACCOUNT_PATH } from "@/lib/mcp/scopes"
-import { PRODUCTION_URL, getSiteUrl } from "@/server/site-url"
+import { getServerConfig } from "@/server/config"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = {
@@ -14,17 +14,25 @@ export const metadata: Metadata = {
   alternates: { canonical: "/developers" },
 }
 
-/** The site's origin for the snippets: the production URL unless SITE_URL says otherwise. */
-const origin = () => (getSiteUrl() ?? new URL(PRODUCTION_URL)).origin
+// The URLs come from APP_URL, like the MCP routes and the OAuth audience, so each deployment shows its own.
+export const dynamic = "force-dynamic"
+
+const origin = () => new URL(getServerConfig().APP_URL).origin
 
 /** A full-width band with a top rule, as the landing sections. */
 function Band({ id, title, intro, children, first = false }: { id: string; title: string; intro?: ReactNode; children: ReactNode; first?: boolean }) {
   return (
     <section aria-labelledby={id} className={cn("px-6 py-[56px]", !first && "border-t border-border")}>
       <div className="mx-auto max-w-[1040px]">
-        <h2 id={id} className="text-balance text-title text-foreground">
-          {title}
-        </h2>
+        {first ? (
+          <h1 id={id} className="text-balance text-title text-foreground">
+            {title}
+          </h1>
+        ) : (
+          <h2 id={id} className="text-balance text-title text-foreground">
+            {title}
+          </h2>
+        )}
         {intro && <p className="mt-2.5 max-w-[65ch] text-body-lg text-muted-foreground">{intro}</p>}
         <div className="mt-8">{children}</div>
       </div>
@@ -137,7 +145,7 @@ export default function DevelopersPage() {
           <article className={cn(card, "flex flex-col gap-3")}>
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-subheading text-foreground">Public</h3>
-              <StatusBadge status="live">No sign-in</StatusBadge>
+              <Badge variant="secondary">No sign-in</Badge>
             </div>
             <p className="text-body text-muted-foreground">Search, counts, routes and events. Nothing to set up.</p>
             <CopyBlock text={publicUrl} label="URL" className="mt-auto" />
@@ -145,7 +153,7 @@ export default function DevelopersPage() {
           <article className={cn(card, "flex flex-col gap-3")}>
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-subheading text-foreground">Your account</h3>
-              <StatusBadge status="sample">Log in</StatusBadge>
+              <Badge variant="outline">Log in</Badge>
             </div>
             <p className="text-body text-muted-foreground">Everything above, plus your reviews and submissions, and adding a shop or event. You approve each app once.</p>
             <CopyBlock text={accountUrl} label="URL" className="mt-auto" />

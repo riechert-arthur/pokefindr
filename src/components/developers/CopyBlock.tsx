@@ -25,7 +25,7 @@ export function CopyBlock({ text, label, multiline = false, className }: { text:
           <code>{text}</code>
         </pre>
       ) : (
-        <code className="min-w-0 flex-1 truncate py-1.5 font-mono text-caption text-foreground">{text}</code>
+        <code className="min-w-0 flex-1 break-all py-1.5 font-mono text-caption text-foreground">{text}</code>
       )}
       <Button type="button" variant="ghost" size="sm" onClick={copy} aria-label={`Copy ${label.toLowerCase()}`} className="shrink-0">
         {copied ? <Check aria-hidden /> : <Copy aria-hidden />}
