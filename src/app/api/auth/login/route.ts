@@ -6,6 +6,9 @@ import { getProfile, getSessionTier } from "@/server/services/users"
 
 const body = z.object({ email: z.string().min(1).max(320), password: z.string().min(1).max(256) })
 
+const loginFailed = () =>
+  NextResponse.json({ error: "Wrong email or password. If you haven't confirmed your email yet, we've sent you a new link." }, { status: 401 })
+
 /**
  * Email and password login, checked by Better Auth (with its rate limit).
  * Signs the app's own `app_session` cookie, which middleware reads, and
@@ -19,14 +22,13 @@ export async function POST(req: NextRequest) {
 
   const res = await identityRequest(req, "/sign-in/email", parsed.data)
   if (res.status === 429) return NextResponse.json({ error: "Too many attempts. Wait a minute and try again." }, { status: 429 })
-  if (res.status === 403) {
-    // Better Auth sends a fresh confirmation link on this attempt.
-    return NextResponse.json({ error: "Confirm your email first. We've sent you a new link.", code: "EMAIL_NOT_VERIFIED" }, { status: 401 })
-  }
-  if (!res.ok) return NextResponse.json({ error: "Wrong email or password" }, { status: 401 })
+  // An unconfirmed email gets the same answer as a wrong password (Better Auth sends it a new
+  // link): sign up with any email and a password you pick, and a different answer here would
+  // show whether that email already had an account.
+  if (!res.ok) return loginFailed()
 
   const { user } = (await res.json()) as { user: { id: string; email: string } }
-  if (!(await getProfile(user.id))) return NextResponse.json({ error: "Wrong email or password" }, { status: 401 })
+  if (!(await getProfile(user.id))) return loginFailed()
 
   const response = NextResponse.json({ ok: true })
   for (const cookie of identityCookies(res)) response.headers.append("Set-Cookie", cookie)
