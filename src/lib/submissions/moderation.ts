@@ -45,4 +45,6 @@ export interface ModerationItem {
   locationId: string | null
   /** Pending ones only. */
   checks: ModerationCheck[]
+  /** The viewer sent it: a moderator can't decide their own (an admin can). */
+  sentByViewer: boolean
 }

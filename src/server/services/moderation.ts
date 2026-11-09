@@ -90,7 +90,7 @@ async function checksFor(row: Row, db: Database, now: Date): Promise<ModerationC
   return checks
 }
 
-async function toItems(rows: Row[], db: Database, now: Date): Promise<ModerationItem[]> {
+async function toItems(rows: Row[], db: Database, now: Date, viewerId?: string): Promise<ModerationItem[]> {
   return Promise.all(
     rows.map(async (r) => ({
       id: r.id,
@@ -106,14 +106,15 @@ async function toItems(rows: Row[], db: Database, now: Date): Promise<Moderation
       reviewedAt: r.reviewedAt && new Date(r.reviewedAt).toISOString(),
       locationId: r.locationId,
       checks: r.status === "pending" ? await checksFor(r, db, now) : [],
+      sentByViewer: r.submitterId === viewerId,
     })),
   )
 }
 
 /** Pending submissions, oldest first: the review queue. */
-export async function listQueue(db: Database = getDb(), now = new Date(), limit = 100): Promise<ModerationItem[]> {
+export async function listQueue(viewerId?: string, db: Database = getDb(), now = new Date(), limit = 100): Promise<ModerationItem[]> {
   const rows = await db.execute<Row>(sql`${selectItems} where s.status = 'pending' order by s.created_at, s.id limit ${limit}`)
-  return toItems([...rows], db, now)
+  return toItems([...rows], db, now, viewerId)
 }
 
 /** What this moderator decided in the last day, newest first: the "Decided" list, with Undo while it's allowed. */
@@ -122,12 +123,22 @@ export async function listDecided(reviewerId: string, db: Database = getDb(), no
     ${selectItems}
     where s.status <> 'pending' and s.reviewed_by = ${reviewerId} and s.reviewed_at > ${new Date(now.getTime() - DAY_MS).toISOString()}::timestamptz
     order by s.reviewed_at desc, s.id limit ${limit}`)
-  return toItems([...rows], db, now)
+  return toItems([...rows], db, now, reviewerId)
 }
 
-export type DecisionResult = { status: "done"; locationId?: string } | { status: "not_found" } | { status: "not_pending" } | { status: "too_late" } | { status: "in_use" }
+export type DecisionResult = { status: "done"; locationId?: string } | { status: "not_found" } | { status: "not_pending" } | { status: "too_late" } | { status: "in_use" } | { status: "own" }
 
 type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0]
+
+/**
+ * A moderator can't decide their own submission: someone else checks it.
+ * Admins can, so a site with one admin isn't stuck.
+ */
+async function decidingOwn(tx: Tx, submittedBy: string, reviewerId: string): Promise<boolean> {
+  if (submittedBy !== reviewerId) return false
+  const [me] = await tx.select({ role: profiles.role }).from(profiles).where(eq(profiles.id, reviewerId))
+  return me?.role !== "admin"
+}
 
 /** Locks the submission for this decision. */
 async function lockSubmission(tx: Tx, id: string) {
@@ -145,6 +156,7 @@ export async function approveSubmission(id: string, reviewerId: string, db: Data
     const sub = await lockSubmission(tx, id)
     if (!sub) return { status: "not_found" }
     if (sub.status !== "pending") return { status: "not_pending" }
+    if (await decidingOwn(tx, sub.submittedBy, reviewerId)) return { status: "own" }
     const p = sub.payload as Payload
     const region = regionAt(sub.geog.lng, sub.geog.lat)
     const [location] = await tx
@@ -189,6 +201,7 @@ export async function rejectSubmission(id: string, reviewerId: string, reason: R
     const sub = await lockSubmission(tx, id)
     if (!sub) return { status: "not_found" }
     if (sub.status !== "pending") return { status: "not_pending" }
+    if (await decidingOwn(tx, sub.submittedBy, reviewerId)) return { status: "own" }
     await tx.update(locationSubmissions).set({ status: "rejected", rejectReason: reason, reviewedBy: reviewerId, reviewedAt: now }).where(eq(locationSubmissions.id, id))
     return { status: "done" }
   })
