@@ -13,7 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Map, Marker, MAP_STYLES } from "@/components/map/engine"
 import { useIsDark } from "@/lib/design/useThemeKey"
 import { REJECT_REASONS, REJECT_REASON_LABELS, SHOP_SELLS_LABELS, type RejectReason } from "@/lib/submissions/constants"
-import type { ModerationItem } from "@/lib/submissions/moderation"
+import { canUndo, type ModerationItem } from "@/lib/submissions/moderation"
 import { cn } from "@/lib/utils"
 
 type Load = { status: "loading" } | { status: "forbidden" } | { status: "error" } | { status: "ready"; queue: ModerationItem[]; decided: ModerationItem[] }
@@ -283,14 +283,16 @@ function Detail({ item, busy, onDecide }: { item: ModerationItem; busy: boolean;
               </Button>
             </div>
           )
-        ) : (
+        ) : canUndo(item.reviewedAt) ? (
           <div>
             <Button variant="outline" disabled={busy} onClick={() => onDecide({ action: "undo" })}>
               <Undo2Icon aria-hidden />
               Undo
             </Button>
-            <p className="mt-1.5 text-caption text-muted-foreground">You can undo your own decisions for an hour.</p>
+            <p className="mt-1.5 text-caption text-muted-foreground">You can undo your own decisions for an hour, until people review or report the place.</p>
           </div>
+        ) : (
+          <p className="text-caption text-muted-foreground">Decided over an hour ago, so it can&apos;t be undone here.</p>
         )}
       </div>
     </article>

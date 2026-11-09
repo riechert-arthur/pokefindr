@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto"
 import { eq } from "drizzle-orm"
 import { NextRequest } from "next/server"
 import { getDb } from "@/server/db/client"
-import { cardShopDetails, eventDetails, locationSubmissions, locations, profiles } from "@/server/db/schema"
+import { cardShopDetails, eventDetails, locationRatings, locationSubmissions, locations, profiles } from "@/server/db/schema"
 import { GET } from "@/app/api/admin/submissions/route"
 import { POST } from "@/app/api/admin/submissions/[id]/route"
 import { createSubmission, listMySubmissions } from "@/server/services/submissions"
@@ -132,6 +132,17 @@ describe("the review queue", () => {
     expect(await getDb().select().from(locations)).toEqual([])
     expect(await getDb().select().from(cardShopDetails)).toEqual([])
     expect((await getDb().select().from(locationSubmissions))[0]).toMatchObject({ status: "pending", locationId: null, reviewedBy: null })
+  })
+
+  it("undo refuses once people rated or reported the place, and changes nothing", async () => {
+    const id = await submit()
+    const { locationId } = await (await act(id, { action: "approve" })).json()
+    await getDb().insert(locationRatings).values({ locationId, userId: MOD2, rating: 5 })
+    const res = await act(id, { action: "undo" })
+    expect(res.status).toBe(409)
+    expect((await res.json()).error).toMatch(/would delete their posts/)
+    expect(await getDb().select().from(locationRatings)).toHaveLength(1)
+    expect((await getDb().select().from(locationSubmissions))[0]).toMatchObject({ status: "approved", locationId })
   })
 
   it("undo only works for an hour", async () => {
