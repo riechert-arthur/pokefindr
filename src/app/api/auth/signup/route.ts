@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { registrationSchema } from "@/lib/schemas"
 import { VERIFIED_CALLBACK } from "@/lib/auth/paths"
-import { identityRequest } from "@/server/auth/identity"
+import { identityRequest, refuseCrossSite } from "@/server/auth/identity"
 import { createProfile, deleteUser, userExists, usernameTaken, UsernameTakenError } from "@/server/services/users"
 
 /**
@@ -10,6 +10,8 @@ import { createProfile, deleteUser, userExists, usernameTaken, UsernameTakenErro
  * same answer as a new one, so the form can't be used to find accounts.
  */
 export async function POST(req: NextRequest) {
+  const refused = refuseCrossSite(req)
+  if (refused) return refused
   const parsed = registrationSchema.safeParse(await req.json().catch(() => null))
   if (!parsed.success) return NextResponse.json({ error: parsed.error.errors.map((e) => e.message).join(", ") }, { status: 400 })
   const { email, password, name } = parsed.data
