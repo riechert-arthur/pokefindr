@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod"
 import { eventDateProblem, submissionSchema } from "@/lib/submissions/schemas"
 import { createSubmission, listMySubmissions } from "@/server/services/submissions"
+import { enqueueJob } from "@/server/lib/jobs/enqueue"
 
 export const dynamic = "force-dynamic"
 
@@ -38,6 +39,10 @@ export async function POST(request: NextRequest) {
     if (result.status === "duplicate") {
       return NextResponse.json({ error: "This might already be on the map.", duplicates: result.duplicates }, { status: 409 })
     }
+    // Moderators hear about it by email; a failure to queue doesn't lose the submission.
+    await enqueueJob("submission-created", { submissionId: result.id }, { idempotencyKey: `submission-created:${result.id}` }).catch((err) =>
+      console.error("[api/submissions] couldn't queue the email to moderators", err),
+    )
     return NextResponse.json({ id: result.id, status: "pending" }, { status: 201 })
   } catch (err) {
     console.error("[api/submissions] failed to store the submission", err)

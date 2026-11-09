@@ -126,7 +126,7 @@ export async function listDecided(reviewerId: string, db: Database = getDb(), no
   return toItems([...rows], db, now)
 }
 
-export type DecisionResult = { status: "done"; locationId?: string } | { status: "not_found" } | { status: "not_pending" } | { status: "too_late" }
+export type DecisionResult = { status: "done"; locationId?: string; reviewedAt?: Date } | { status: "not_found" } | { status: "not_pending" } | { status: "too_late" }
 
 type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0]
 
@@ -180,7 +180,7 @@ export async function approveSubmission(id: string, reviewerId: string, db: Data
       .update(locationSubmissions)
       .set({ status: "approved", locationId: location.id, reviewedBy: reviewerId, reviewedAt: now, rejectReason: null })
       .where(eq(locationSubmissions.id, id))
-    return { status: "done", locationId: location.id }
+    return { status: "done", locationId: location.id, reviewedAt: now }
   })
 }
 
@@ -191,7 +191,7 @@ export async function rejectSubmission(id: string, reviewerId: string, reason: R
     if (!sub) return { status: "not_found" }
     if (sub.status !== "pending") return { status: "not_pending" }
     await tx.update(locationSubmissions).set({ status: "rejected", rejectReason: reason, reviewedBy: reviewerId, reviewedAt: now }).where(eq(locationSubmissions.id, id))
-    return { status: "done" }
+    return { status: "done", reviewedAt: now }
   })
 }
 

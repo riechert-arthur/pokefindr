@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod"
 import { REJECT_REASONS } from "@/lib/submissions/constants"
 import { approveSubmission, isModerator, rejectSubmission, undoDecision, type DecisionResult } from "@/server/services/moderation"
+import { REVIEWED_EMAIL_DELAY_SECONDS } from "@/server/services/submission-notifications"
+import { enqueueJob } from "@/server/lib/jobs/enqueue"
 
 export const dynamic = "force-dynamic"
 
@@ -40,6 +42,14 @@ export async function POST(request: NextRequest, context: Context) {
     if (result.status !== "done") {
       const [status, error] = ANSWERS[result.status]
       return NextResponse.json({ error }, { status })
+    }
+    if (result.reviewedAt) {
+      // The submitter hears in a few minutes, after the window where an undo is most likely.
+      const reviewedAt = result.reviewedAt.toISOString()
+      await enqueueJob("submission-reviewed", { submissionId: id.data, reviewedAt }, {
+        idempotencyKey: `submission-reviewed:${id.data}:${reviewedAt}`,
+        delaySeconds: REVIEWED_EMAIL_DELAY_SECONDS,
+      }).catch((err) => console.error("[api/admin/submissions/id] couldn't queue the email to the submitter", err))
     }
     return NextResponse.json({ ok: true, locationId: result.locationId ?? null })
   } catch (err) {
