@@ -18,7 +18,7 @@ import { authorizeContinuation } from "@/lib/auth/oauth-continue"
 export const BASE = "http://localhost:3000"
 export const RESOURCE = `${BASE}/api/mcp/account`
 export const REDIRECT = "http://127.0.0.1:43123/callback"
-export const ALL_SCOPES = "openid profile offline_access account:read places:submit"
+export const ALL_SCOPES = "openid offline_access account:read places:submit"
 
 export const identity = (path: string, init: RequestInit = {}) => {
   const req = new Request(`${BASE}/api/identity${path}`, init)
