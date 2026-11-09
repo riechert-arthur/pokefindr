@@ -405,9 +405,12 @@ export const locations = pgTable(
     /** An admin took it off the map (#153); also is_active = false. The import keeps it hidden. */
     hiddenAt: timestamp("hidden_at", { withTimezone: true }),
     hiddenBy: uuid("hidden_by").references((): AnyPgColumn => profiles.id, { onDelete: "set null" }),
+    /** The address compared for duplicates (#154): normalize_address(address), migration 0016. */
+    addressNormalized: text("address_normalized").generatedAlwaysAs(sql`normalize_address(address)`),
   },
   (t) => [
     uniqueIndex("locations_machine_id_key").on(t.machineId),
+    index("locations_vending_address_idx").on(t.state, t.addressNormalized).where(sql`${t.kind} = 'vending'`),
     index("locations_geog_gist").using("gist", t.geog),
     // The viewport query (getLocationsInBbox) filters on planar boxes (migration 0002).
     index("locations_geog_geometry_gist").using("gist", sql`(${t.geog}::geometry)`),
