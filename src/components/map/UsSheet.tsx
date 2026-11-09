@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { CalendarDaysIcon, FlameIcon, MapIcon } from "lucide-react"
+import { CalendarDaysIcon, FlameIcon, MapIcon, SendIcon } from "lucide-react"
 import { KindDot } from "@/components/pokefindr/KindDot"
 import { StatusBadge } from "@/components/pokefindr/StatusBadge"
 import { countLabel, placesLabel } from "@/components/pokefindr/kinds"
@@ -9,6 +9,8 @@ import { formatEventWhen } from "@/lib/highlights/format"
 import type { Highlights, Hotspot, UpcomingEvent } from "@/lib/types/highlights"
 import type { LocationKind } from "@/lib/types/locations"
 import { HOTSPOT_RADIUS_MILES } from "@/lib/highlights/constants"
+import type { MySubmission } from "@/lib/submissions/schemas"
+import { SubmissionRows } from "./MySubmissions"
 
 /** A state and its count for the shown kinds. */
 export interface StateTotal {
@@ -25,6 +27,9 @@ interface UsSheetProps {
   onHotspot: (hotspot: Hotspot) => void
   onEvent: (event: UpcomingEvent) => void
   onState: (code: string) => void
+  /** The signed-in person's submissions (#125), newest first; none when signed out. */
+  submissions?: readonly MySubmission[] | null
+  onSubmission?: (s: MySubmission) => void
 }
 
 function Section({ icon, label, badge, children }: { icon: ReactNode; label: string; badge?: ReactNode; children: ReactNode }) {
@@ -68,7 +73,7 @@ const iconBox = "grid size-8 shrink-0 place-items-center rounded-lg bg-muted gro
  * hotspots, upcoming events and the states with the most locations, each a
  * way in.
  */
-export function UsSheet({ highlights, states, kinds, onHotspot, onEvent, onState }: UsSheetProps) {
+export function UsSheet({ highlights, states, kinds, onHotspot, onEvent, onState, submissions, onSubmission }: UsSheetProps) {
   const hotspots = kinds.includes("vending") ? (highlights?.hotspots ?? []) : []
   const events = kinds.includes("event") ? (highlights?.events ?? []) : []
   const top = states.filter((s) => s.count > 0).slice(0, 5)
@@ -80,6 +85,11 @@ export function UsSheet({ highlights, states, kinds, onHotspot, onEvent, onState
         <p className="text-body text-muted-foreground">Search a city, or start from a highlight.</p>
       </div>
       <div className="min-h-0 overflow-y-auto p-1.5">
+        {submissions && submissions.length > 0 && onSubmission && (
+          <Section icon={<SendIcon className="size-3.5" aria-hidden />} label="Your submissions">
+            <SubmissionRows submissions={submissions} onOpen={onSubmission} />
+          </Section>
+        )}
         {hotspots.length > 0 && (
           <Section icon={<FlameIcon className="size-3.5" aria-hidden />} label="Vending hotspots">
             {hotspots.map((h) => (
