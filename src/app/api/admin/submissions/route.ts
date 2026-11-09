@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   if (!userId) return NextResponse.json({ error: "Log in to continue" }, { status: 401 })
   try {
     if (!(await isModerator(userId))) return NextResponse.json({ error: "Only moderators can see the review queue" }, { status: 403 })
-    const [queue, decided] = await Promise.all([listQueue(), listDecided(userId)])
+    const [queue, decided] = await Promise.all([listQueue(userId), listDecided(userId)])
     return NextResponse.json({ queue, decided })
   } catch (err) {
     console.error("[api/admin/submissions] failed to load the queue", err)

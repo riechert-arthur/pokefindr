@@ -19,6 +19,7 @@ const ANSWERS: Record<Exclude<DecisionResult["status"], "done">, [number, string
   not_found: [404, "Submission not found"],
   not_pending: [409, "Someone already decided this one"],
   too_late: [409, "Only the moderator who decided can undo it, within an hour"],
+  own: [403, "You sent this one, so another moderator has to review it"],
   in_use: [409, "People have already reviewed or reported this place, so undoing it would delete their posts"],
 }
 

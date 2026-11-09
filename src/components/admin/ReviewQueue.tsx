@@ -10,8 +10,10 @@ import { StatusBadge } from "@/components/pokefindr/StatusBadge"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Map, Marker, MAP_STYLES } from "@/components/map/engine"
 import { useIsDark } from "@/lib/design/useThemeKey"
+import { useSessionContext } from "@/components/providers/SessionProvider"
 import { REJECT_REASONS, REJECT_REASON_LABELS, SHOP_SELLS_LABELS, type RejectReason } from "@/lib/submissions/constants"
 import { canUndo, type ModerationItem } from "@/lib/submissions/moderation"
 import { cn } from "@/lib/utils"
@@ -100,64 +102,62 @@ export function ReviewQueue() {
       </Shell>
     )
 
-  const list = tab === "queue" ? load.queue : load.decided
   const selected = [...load.queue, ...load.decided].find((i) => i.id === selectedId) ?? null
 
   return (
     <Shell count={load.queue.length}>
       <div className="flex flex-wrap gap-4">
         <section aria-label="Submissions" className="flex min-w-0 flex-[1_1_300px] flex-col gap-2 lg:max-w-[360px]">
-          <div role="tablist" aria-label="Show" className="grid grid-cols-2 overflow-hidden rounded-lg border border-border">
-            {(["queue", "decided"] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                role="tab"
-                aria-selected={tab === t}
-                onClick={() => setTab(t)}
-                className="h-9 text-body font-medium aria-selected:bg-foreground aria-selected:text-background"
-              >
-                {t === "queue" ? `Pending · ${load.queue.length}` : `Decided · ${load.decided.length}`}
-              </button>
-            ))}
-          </div>
-          {list.length === 0 ? (
-            <EmptyState icon={InboxIcon} title={tab === "queue" ? "Nothing to review" : "Nothing decided today"}>
-              {tab === "queue" ? "New card shops and events show up here, oldest first." : "Approvals and rejections from the last day show up here."}
-            </EmptyState>
-          ) : (
-            <ul className="flex flex-col gap-1 rounded-xl border border-border bg-card p-1.5">
-              {list.map((item) => (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedId(item.id)}
-                    aria-current={item.id === selectedId ? "true" : undefined}
-                    className="flex w-full items-start gap-2.5 rounded-lg p-2.5 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=true]:bg-muted"
-                  >
-                    <KindDot kind={item.kind} className="mt-px" />
-                    <span className="min-w-0 flex-1">
-                      <span className="flex flex-wrap items-center gap-1.5 text-body font-semibold">
-                        {item.fields.name}
-                        {item.status === "approved" && <StatusBadge status="live">Approved</StatusBadge>}
-                        {item.status === "rejected" && <StatusBadge status="sample">Rejected</StatusBadge>}
-                      </span>
-                      <span className="block truncate text-body text-muted-foreground">
-                        {[item.fields.city, item.fields.state].filter(Boolean).join(", ")} · by {item.submittedBy} · {ago(item.reviewedAt ?? item.createdAt)}
-                      </span>
-                    </span>
-                    {item.status === "pending" && flags(item) > 0 && (
-                      <span className="inline-flex items-center gap-1 text-caption font-semibold text-warning" title={`${flags(item)} check${flags(item) === 1 ? "" : "s"} flagged`}>
-                        <TriangleAlertIcon className="size-3.5" aria-hidden />
-                        {flags(item)}
-                        <span className="sr-only"> checks flagged</span>
-                      </span>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+          <Tabs value={tab} onValueChange={(v) => setTab(v as "queue" | "decided")} className="flex flex-col gap-2">
+            <TabsList aria-label="Show" className="grid w-full grid-cols-2">
+              <TabsTrigger value="queue">Pending · {load.queue.length}</TabsTrigger>
+              <TabsTrigger value="decided">Decided · {load.decided.length}</TabsTrigger>
+            </TabsList>
+            {(["queue", "decided"] as const).map((which) => {
+              const items = which === "queue" ? load.queue : load.decided
+              return (
+                <TabsContent key={which} value={which} className="mt-0">
+                  {items.length === 0 ? (
+                    <EmptyState icon={InboxIcon} title={which === "queue" ? "Nothing to review" : "Nothing decided today"}>
+                      {which === "queue" ? "New card shops and events show up here, oldest first." : "Approvals and rejections from the last day show up here."}
+                    </EmptyState>
+                  ) : (
+                    <ul className="flex flex-col gap-1 rounded-xl border border-border bg-card p-1.5">
+                      {items.map((item) => (
+                        <li key={item.id}>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedId(item.id)}
+                            aria-current={item.id === selectedId ? "true" : undefined}
+                            className="flex w-full items-start gap-2.5 rounded-lg p-2.5 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[current=true]:bg-muted"
+                          >
+                            <KindDot kind={item.kind} className="mt-px" />
+                            <span className="min-w-0 flex-1">
+                              <span className="flex flex-wrap items-center gap-1.5 text-body font-semibold">
+                                {item.fields.name}
+                                {item.status === "approved" && <StatusBadge status="live">Approved</StatusBadge>}
+                                {item.status === "rejected" && <StatusBadge status="sample">Rejected</StatusBadge>}
+                              </span>
+                              <span className="block truncate text-body text-muted-foreground">
+                                {[item.fields.city, item.fields.state].filter(Boolean).join(", ")} · by {item.submittedBy} · {ago(item.reviewedAt ?? item.createdAt)}
+                              </span>
+                            </span>
+                            {item.status === "pending" && flags(item) > 0 && (
+                              <span className="inline-flex items-center gap-1 text-caption font-semibold text-warning" title={`${flags(item)} check${flags(item) === 1 ? "" : "s"} flagged`}>
+                                <TriangleAlertIcon className="size-3.5" aria-hidden />
+                                {flags(item)}
+                                <span className="sr-only"> checks flagged</span>
+                              </span>
+                            )}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </TabsContent>
+              )
+            })}
+          </Tabs>
         </section>
 
         <section aria-label="Selected submission" className="min-w-0 flex-[999_1_480px]">
@@ -189,6 +189,7 @@ function Shell({ count, children }: { count?: number; children: React.ReactNode 
 
 function Detail({ item, busy, onDecide }: { item: ModerationItem; busy: boolean; onDecide: (body: { action: "approve" } | { action: "reject"; reason: RejectReason } | { action: "undo" }) => void }) {
   const isDark = useIsDark()
+  const { session } = useSessionContext()
   const [rejecting, setRejecting] = useState(false)
   const [reason, setReason] = useState<RejectReason | "">("")
   const id = useId()
@@ -253,7 +254,9 @@ function Detail({ item, busy, onDecide }: { item: ModerationItem; busy: boolean;
         </dl>
 
         {item.status === "pending" ? (
-          rejecting ? (
+          item.sentByViewer && session?.role !== "admin" ? (
+            <p className="text-body text-muted-foreground">You sent this one, so another moderator has to review it.</p>
+          ) : rejecting ? (
             <fieldset className="flex flex-col gap-3 rounded-lg border border-border p-3">
               <legend className="px-1 text-body font-medium">Why reject it? The submitter sees this.</legend>
               <RadioGroup value={reason} onValueChange={(v) => setReason(v as RejectReason)} className="gap-2">
