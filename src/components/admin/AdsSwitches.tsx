@@ -4,10 +4,10 @@ import { useCallback, useEffect, useState } from "react"
 import { MegaphoneIcon, TriangleAlertIcon } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { Switch } from "@/components/ui/switch"
 import { EmptyState } from "@/components/pokefindr/EmptyState"
 import { Pill } from "@/components/admin/Pill"
 import type { SponsorPlacement } from "@/config/banners"
-import { cn } from "@/lib/utils"
 
 const PLACEMENTS: { id: SponsorPlacement; title: string; sub: string }[] = [
   { id: "results", title: "Map results list", sub: "One card after the third result. Never on the map itself." },
@@ -16,26 +16,6 @@ const PLACEMENTS: { id: SponsorPlacement; title: string; sub: string }[] = [
 ]
 
 type Data = { placements: Record<SponsorPlacement, boolean>; sponsors: string[] }
-
-/** An on/off switch, as in the prototype. */
-function Switch({ on, labelledBy, disabled, onChange }: { on: boolean; labelledBy: string; disabled?: boolean; onChange: (on: boolean) => void }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      aria-labelledby={labelledBy}
-      disabled={disabled}
-      onClick={() => onChange(!on)}
-      className={cn(
-        "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50",
-        on ? "bg-success" : "bg-muted-foreground/40",
-      )}
-    >
-      <span aria-hidden className={cn("block size-5 rounded-full bg-background shadow transition-transform", on ? "translate-x-5" : "translate-x-0")} />
-    </button>
-  )
-}
 
 /**
  * System → Ads (#159), as in the prototype: one switch per sponsored
@@ -58,6 +38,7 @@ export function AdsSwitches() {
   useEffect(() => void load(), [load])
 
   const flip = async (id: SponsorPlacement, on: boolean, title: string) => {
+    if (busy) return
     setBusy(id)
     try {
       const res = await fetch(`/api/admin/ads/${id}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ enabled: on }) })
@@ -90,7 +71,15 @@ export function AdsSwitches() {
               <p className="text-body text-muted-foreground">{p.sub}</p>
             </div>
             <Pill tone={on ? "ok" : "idle"}>{on ? "Showing" : "Off"}</Pill>
-            <Switch on={on} labelledBy={`ad-${p.id}`} disabled={busy !== null} onChange={(next) => void flip(p.id, next, p.title)} />
+            {/* aria-disabled, not disabled, while a change saves: a disabled switch would drop keyboard focus. */}
+            <Switch
+              checked={on}
+              aria-labelledby={`ad-${p.id}`}
+              aria-disabled={busy !== null || undefined}
+              onCheckedChange={(next) => void flip(p.id, next, p.title)}
+              // The prototype's sizes and colors: off on the border color, on in success.
+              className="h-[22px] w-[38px] data-[state=checked]:bg-success data-[state=unchecked]:bg-border aria-disabled:opacity-50"
+            />
           </section>
         )
       })}

@@ -35,4 +35,27 @@ describe("AdsSwitches", () => {
     await waitFor(() => expect(screen.getByRole("switch", { name: "Location details" })).toHaveAttribute("aria-checked", "false"))
     expect(calls).toEqual([{ url: "/api/admin/ads/details", body: { enabled: false } }])
   })
+
+  it("keeps focus on the switch while the change saves, and ignores presses until it's done", async () => {
+    let finish: (r: Response) => void = () => {}
+    const post = vi.fn(() => new Promise<Response>((resolve) => (finish = resolve)))
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init?: RequestInit) =>
+        init?.method === "POST" ? post() : new Response(JSON.stringify({ placements: { results: true, details: true, landing: false }, sponsors: [] })),
+      ),
+    )
+    render(<AdsSwitches />)
+    const results = await screen.findByRole("switch", { name: "Map results list" })
+    results.focus()
+    fireEvent.click(results)
+    await waitFor(() => expect(results).toHaveAttribute("aria-disabled", "true"))
+    expect(results).not.toBeDisabled()
+    expect(results).toHaveFocus()
+    fireEvent.click(screen.getByRole("switch", { name: "Landing page strip" }))
+    expect(post).toHaveBeenCalledTimes(1)
+    finish(new Response(JSON.stringify({ ok: true })))
+    await waitFor(() => expect(results).not.toHaveAttribute("aria-disabled"))
+    expect(results).toHaveFocus()
+  })
 })
