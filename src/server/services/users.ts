@@ -1,5 +1,5 @@
 import "server-only"
-import { and, eq, gt, ne, sql } from "drizzle-orm"
+import { and, eq, gt, ne, sql, type SQL } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
 import { profiles, subscriptions, usernameHolds, users } from "@/server/db/schema"
 import type { SessionTier } from "@/server/auth/session"
@@ -45,12 +45,16 @@ export async function deleteUser(userId: string, db: Database = getDb()): Promis
 }
 
 /**
- * An account that never confirmed its email within a day (its link has
- * expired). Its username is free again, at the same moment a sign-up's hold
- * on a name lapses, so a day later a name can't show whether the email that
- * held it was new.
+ * A profile whose account never confirmed its email, and whose sign-up's hold
+ * on the name has lapsed (a day: the confirmation link has expired too). Its
+ * name is free again, on the hold's clock, the same moment a hold left by a
+ * sign-up with a taken email lapses. Profiles from before our own accounts
+ * have no user row, and keep their names.
  */
-const unconfirmedForADay = sql`(${users.emailVerified} = false and ${users.createdAt} <= now() - interval '1 day')`
+const expiredClaim = (username: SQL) => sql`(
+  ${users.emailVerified} = false
+  and not exists (select 1 from ${usernameHolds} where ${usernameHolds.username} = lower(${username}) and ${usernameHolds.expiresAt} > now())
+)`
 
 /** Whether another profile, or a sign-up's hold, has this username, in any case ("Ash" and "ash" are the same). */
 export async function usernameTaken(username: string, exceptUserId?: string, db: Database = getDb()): Promise<boolean> {
@@ -58,8 +62,8 @@ export async function usernameTaken(username: string, exceptUserId?: string, db:
   const [row] = await db
     .select({ id: profiles.id })
     .from(profiles)
-    .innerJoin(users, eq(users.id, profiles.id))
-    .where(and(exceptUserId ? and(same, ne(profiles.id, exceptUserId)) : same, sql`not ${unconfirmedForADay}`))
+    .leftJoin(users, eq(users.id, profiles.id))
+    .where(and(exceptUserId ? and(same, ne(profiles.id, exceptUserId)) : same, sql`not coalesce(${expiredClaim(profiles.username)}, false)`))
     .limit(1)
   if (row) return true
   // A sign-up's hold counts too (from settings as well, or renaming would show the same thing),
@@ -74,6 +78,20 @@ export async function usernameTaken(username: string, exceptUserId?: string, db:
     .where(and(eq(usernameHolds.username, username.toLowerCase()), gt(usernameHolds.expiresAt, sql`now()`)))
     .limit(1)
   return Boolean(held)
+}
+
+/**
+ * Removes an unconfirmed account whose claim on this username has lapsed
+ * (expiredClaim), so the name can be used. Sign-up calls it before Better
+ * Auth runs, for a new email and a taken one alike.
+ */
+export async function clearExpiredClaim(username: string, db: Database = getDb()): Promise<void> {
+  await db.delete(users).where(
+    and(
+      sql`${users.id} in (select ${profiles.id} from ${profiles} where lower(${profiles.username}) = lower(${username}))`,
+      sql`${expiredClaim(sql`${username}`)}`,
+    ),
+  )
 }
 
 /**
@@ -94,13 +112,6 @@ export async function holdUsername(username: string, db: Database = getDb()): Pr
 /** Lets go of a hold, when the sign-up that claimed it didn't go through (bad input, rate limit). */
 export async function releaseUsername(username: string, db: Database = getDb()): Promise<void> {
   await db.delete(usernameHolds).where(eq(usernameHolds.username, username.toLowerCase()))
-}
-
-/** Removes an account unconfirmed for a day that still has this username, so the name can be used. */
-async function clearExpiredClaim(username: string, db: Database) {
-  await db
-    .delete(users)
-    .where(and(sql`${unconfirmedForADay}`, sql`${users.id} in (select ${profiles.id} from ${profiles} where lower(${profiles.username}) = lower(${username}))`))
 }
 
 /** Creates a user's profile. Throws UsernameTakenError on a duplicate username. */
