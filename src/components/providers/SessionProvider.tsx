@@ -10,12 +10,15 @@ import {
 } from "react";
 import axios from "axios";
 import { subscribeAuth } from "@/lib/auth/broadcast";
+import type { Role } from "@/lib/auth/roles";
 
 export interface AuthUser {
   id: string;
   username: string;
   full_name: string;
   metadata: Record<string, unknown>;
+  /** member, moderator or admin (migration 0012). */
+  role?: Role;
 }
 
 export interface SessionContextType {
