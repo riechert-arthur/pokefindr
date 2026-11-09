@@ -73,8 +73,9 @@ const act = (id: string, body: unknown, userId = MOD) =>
 describe("the review queue", () => {
   it("is for moderators and admins only", async () => {
     const id = await submit()
-    expect((await list(ASH)).status).toBe(403)
-    expect((await act(id, { action: "approve" }, ASH)).status).toBe(403)
+    // Not staff: the admin API answers as if it weren't there.
+    expect((await list(ASH)).status).toBe(404)
+    expect((await act(id, { action: "approve" }, ASH)).status).toBe(404)
     expect((await list(MOD)).status).toBe(200)
     expect((await list(MOD2)).status).toBe(200)
   })
