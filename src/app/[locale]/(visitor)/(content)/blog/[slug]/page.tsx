@@ -8,6 +8,7 @@ import { BlogPostHero } from "@/components/BlogPostHero"
 import type { Metadata } from "next"
 import type { Plugin } from "unified"
 import { setPageLocale } from "@/i18n/static"
+import { englishOnlyMetadata } from "@/i18n/seo"
 
 interface BlogPostPageProps {
   params: Promise<{
@@ -22,14 +23,15 @@ export async function generateMetadata({
   const { slug } = await params
   const metadata: BlogPostMetadata = await readBlogPostMetadata(slug)
 
-  return {
+  // Posts are in English only.
+  return englishOnlyMetadata(`/blog/${slug}`, {
     title: metadata.title,
     description: metadata.description,
     openGraph: {
       title: metadata.title,
       description: metadata.description,
     },
-  }
+  })
 }
 
 const BlogPostPage: FC<BlogPostPageProps> = async ({ params }) => {

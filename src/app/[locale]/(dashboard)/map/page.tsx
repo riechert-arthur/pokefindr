@@ -10,15 +10,17 @@ import { getGeocoder } from "@/server/container"
 import { initialMapView } from "@/lib/map/initial-view"
 import { getLocationFeature } from "@/server/services/locations"
 import type { LocationFeature } from "@/lib/types/locations"
+import { pageMetadata } from "@/i18n/seo"
 
 export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
-  const t = await getTranslations({ locale: (await params).locale as Locale, namespace: "map.meta" })
-  return {
+  const locale = (await params).locale as Locale
+  const t = await getTranslations({ locale, namespace: "map.meta" })
+  return pageMetadata("/map", locale, {
     title: t("title"),
     description: t("description"),
     keywords: t("keywords").split(",").map((k) => k.trim()),
     openGraph: { title: t("ogTitle"), description: t("ogDescription") },
-  }
+  })
 }
 
 /** Looks up the location a shared link names; the map opens without it if that fails. */

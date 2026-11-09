@@ -79,7 +79,7 @@ describe("design-system lint guardrails", () => {
   it("exempts illustration icons and generated images", async () => {
     const svg = `export const I = () => <path fill="#eb5569" />`
     expect(await colorErrors(svg, "src/components/icons/Example.tsx")).toEqual([])
-    expect(await colorErrors(`export const color = "#ffffff"`, "src/app/opengraph-image.tsx")).toEqual([])
+    expect(await colorErrors(`export const color = "#ffffff"`, "src/app/[locale]/social-card/route.tsx")).toEqual([])
     expect(await colorErrors(`export const color = "#ffffff"`, "src/app/(visitor)/(content)/blog/[slug]/opengraph-image.tsx")).toEqual([])
   })
 })

@@ -6,16 +6,17 @@ import { setPageLocale, type LocaleParams } from "@/i18n/static"
 import type { Locale } from "@/i18n/routing"
 import type { Metadata } from "next"
 import { getTranslations } from "next-intl/server"
+import { pageMetadata } from "@/i18n/seo"
 
 export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
   const { locale } = await params
   const t = await getTranslations({ locale: locale as Locale, namespace: "content.blog.meta" })
-  return {
+  return pageMetadata("/blog", locale as Locale, {
     title: t("title"),
     description: t("description"),
     keywords: t("keywords").split(/,\s*/),
     openGraph: { title: t("title"), description: t("ogDescription") },
-  }
+  })
 }
 
 const BlogPage: FC<LocaleParams> = async ({ params }) => {

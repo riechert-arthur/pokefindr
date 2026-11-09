@@ -10,6 +10,7 @@ import { setPageLocale, type LocaleParams } from "@/i18n/static"
 import type { Locale } from "@/i18n/routing"
 import type { Metadata } from "next"
 import { getTranslations } from "next-intl/server"
+import { pageMetadata } from "@/i18n/seo"
 
 // The counts change only after an import; rebuild the page at most hourly.
 export const revalidate = 3600
@@ -18,12 +19,12 @@ export const revalidate = 3600
 export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
   const { locale } = await params
   const t = await getTranslations({ locale: locale as Locale, namespace: "landing.meta" })
-  return {
+  return pageMetadata("/", locale as Locale, {
     title: t("title"),
     description: t("description"),
     keywords: t("keywords").split(/,\s*/),
     openGraph: { title: t("ogTitle"), description: t("description") },
-  }
+  })
 }
 
 /**

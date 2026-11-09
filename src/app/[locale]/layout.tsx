@@ -4,7 +4,8 @@ import { notFound } from "next/navigation"
 import { hasLocale, NextIntlClientProvider } from "next-intl"
 import { setRequestLocale } from "next-intl/server"
 import type { Metadata } from "next"
-import { PUBLIC_LOCALES, routing } from "@/i18n/routing"
+import { PUBLIC_LOCALES, routing, type Locale } from "@/i18n/routing"
+import { languageMetadata } from "@/i18n/seo"
 import { JetBrains_Mono, Noto_Sans } from "next/font/google"
 import { ContextProviders } from "@/components/providers/ContextProviders"
 import { ThemeProvider } from "@/components/providers/ThemeProvider"
@@ -22,11 +23,12 @@ const metadata = {
   }
 }
 
-/** A language that isn't public yet (docs/i18n.md) isn't indexed. */
+/** A language that isn't public yet (docs/i18n.md) isn't indexed. Every page gets the link preview in its language. */
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params
   const isPublic = (PUBLIC_LOCALES as readonly string[]).includes(locale)
-  return { ...metadata, robots: { index: isPublic, follow: isPublic } }
+  // Pages that set their own metadata replace these through src/i18n/seo.ts.
+  return languageMetadata(locale as Locale, { ...metadata, robots: { index: isPublic, follow: isPublic } })
 }
 
 // Fonts from the redesign prototype, self-hosted by next/font with size-adjusted

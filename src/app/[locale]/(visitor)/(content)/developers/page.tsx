@@ -12,11 +12,12 @@ import { useTranslations } from "next-intl"
 import { getTranslations } from "next-intl/server"
 import type { LocaleParams } from "@/i18n/static"
 import type { Locale } from "@/i18n/routing"
+import { pageMetadata } from "@/i18n/seo"
 
 export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
   const { locale } = await params
   const t = await getTranslations({ locale: locale as Locale, namespace: "content.developers.meta" })
-  return { title: t("title"), description: t("description"), alternates: { canonical: "/developers" } }
+  return pageMetadata("/developers", locale as Locale, { title: t("title"), description: t("description") })
 }
 
 // The URLs come from APP_URL, like the MCP routes and the OAuth audience, so each deployment shows its own.
