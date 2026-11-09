@@ -44,13 +44,22 @@ export async function deleteUser(userId: string, db: Database = getDb()): Promis
   await db.delete(users).where(eq(users.id, userId))
 }
 
-/** Whether another profile has this username, in any case ("Ash" and "ash" are the same). */
+/**
+ * An account that never confirmed its email within a day (its link has
+ * expired). Its username is free again, at the same moment a sign-up's hold
+ * on a name lapses, so a day later a name can't show whether the email that
+ * held it was new.
+ */
+const unconfirmedForADay = sql`(${users.emailVerified} = false and ${users.createdAt} <= now() - interval '1 day')`
+
+/** Whether another profile, or a sign-up's hold, has this username, in any case ("Ash" and "ash" are the same). */
 export async function usernameTaken(username: string, exceptUserId?: string, db: Database = getDb()): Promise<boolean> {
   const same = sql`lower(${profiles.username}) = lower(${username})`
   const [row] = await db
     .select({ id: profiles.id })
     .from(profiles)
-    .where(exceptUserId ? and(same, ne(profiles.id, exceptUserId)) : same)
+    .innerJoin(users, eq(users.id, profiles.id))
+    .where(and(exceptUserId ? and(same, ne(profiles.id, exceptUserId)) : same, sql`not ${unconfirmedForADay}`))
     .limit(1)
   if (row) return true
   // A sign-up's hold counts too (from settings as well, or renaming would show the same thing),
@@ -68,15 +77,30 @@ export async function usernameTaken(username: string, exceptUserId?: string, db:
 }
 
 /**
- * Holds a username for a day, for a sign-up (see usernameHolds). Called for a
- * new email and a taken one alike, so both leave the name taken.
+ * Claims a username for a day, for a sign-up (see usernameHolds), in one
+ * statement, so two sign-ups at once can't both get it. Called before the
+ * email is known to be new or taken. False if it's already held.
  */
-export async function holdUsername(username: string, db: Database = getDb()): Promise<void> {
+export async function holdUsername(username: string, db: Database = getDb()): Promise<boolean> {
   const expiresAt = sql`now() + interval '1 day'`
-  await db
+  const claimed = await db
     .insert(usernameHolds)
     .values({ username: username.toLowerCase(), expiresAt })
     .onConflictDoUpdate({ target: usernameHolds.username, set: { expiresAt }, setWhere: sql`${usernameHolds.expiresAt} <= now()` })
+    .returning({ username: usernameHolds.username })
+  return claimed.length > 0
+}
+
+/** Lets go of a hold, when the sign-up that claimed it didn't go through (bad input, rate limit). */
+export async function releaseUsername(username: string, db: Database = getDb()): Promise<void> {
+  await db.delete(usernameHolds).where(eq(usernameHolds.username, username.toLowerCase()))
+}
+
+/** Removes an account unconfirmed for a day that still has this username, so the name can be used. */
+async function clearExpiredClaim(username: string, db: Database) {
+  await db
+    .delete(users)
+    .where(and(sql`${unconfirmedForADay}`, sql`${users.id} in (select ${profiles.id} from ${profiles} where lower(${profiles.username}) = lower(${username}))`))
 }
 
 /** Creates a user's profile. Throws UsernameTakenError on a duplicate username. */
@@ -84,6 +108,7 @@ export async function createProfile(
   profile: { id: string; username: string; fullName?: string | null; onboarded: boolean },
   db: Database = getDb(),
 ): Promise<void> {
+  await clearExpiredClaim(profile.username, db)
   try {
     await db.insert(profiles).values(profile)
   } catch (err) {
@@ -100,6 +125,7 @@ export async function updateProfile(
 ): Promise<boolean> {
   const set = Object.fromEntries(Object.entries(changes).filter(([, v]) => v !== undefined))
   if (Object.keys(set).length === 0) return true
+  if (changes.username) await clearExpiredClaim(changes.username, db)
   try {
     const updated = await db.update(profiles).set(set).where(eq(profiles.id, userId)).returning({ id: profiles.id })
     return updated.length > 0
