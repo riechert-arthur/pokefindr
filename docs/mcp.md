@@ -6,6 +6,7 @@ so people can search it from Claude, ChatGPT, Cursor and other MCP clients.
 | Endpoint | Sign-in | Tools |
 | --- | --- | --- |
 | `https://pokefindr.app/api/mcp` | none | `find_places`, `area_stats`, `plan_route`, `list_events`, `get_place` |
+| `https://pokefindr.app/api/mcp/account` | OAuth (a PokeFindr account) | the same, plus `my_reviews`, `my_submissions`, `submit_place` |
 
 ## How it fits together
 
@@ -15,7 +16,8 @@ so people can search it from Claude, ChatGPT, Cursor and other MCP clients.
 | The MCP server: tool registration, links back to the map | `src/server/mcp/server.ts` |
 | HTTP: CORS, the body cap, rate-limit answers | `src/server/mcp/http.ts` |
 | Per-client limits | `src/server/mcp/limits.ts` |
-| The route | `src/app/api/mcp/route.ts` |
+| The routes | `src/app/api/mcp/route.ts`, `src/app/api/mcp/account/route.ts` |
+| The account tools | `src/server/mcp/account-tools.ts` |
 
 It uses version 2 of the official TypeScript SDK (`@modelcontextprotocol/server`) over Streamable
 HTTP. Every request gets its own server instance and there are no MCP sessions, so any serverless
@@ -28,16 +30,39 @@ or the map around an event), so answers lead back to the map. Results come as JS
 `structuredContent`. An input the model can fix (an unknown city, a bad id) comes back as a tool
 error with a message saying what to change.
 
+## Signed in (/api/mcp/account)
+
+Without a token, `/api/mcp/account` answers 401 with a `WWW-Authenticate` header naming its
+protected-resource document, which is how MCP clients start signing in. The OAuth side
+(registration, login, consent, tokens) is in [auth.md](auth.md#mcp-clients-oauth).
+
+| Tool | Scope | What it does |
+| --- | --- | --- |
+| `my_reviews` | `account:read` | The person's reviews, newest 20 |
+| `my_submissions` | `account:read` | Their submissions and each one's status (pending, approved, rejected with the reason, ended) |
+| `submit_place` | `places:submit` | Adds a card shop or event for review, as them |
+
+A token without a tool's scope gets a 403 with an `insufficient_scope` challenge naming it, so the
+client can ask for it. `submit_place` geocodes the street address (only a street-level match in the
+given state), then goes through the same checks, five-a-day limit, duplicate check and moderator
+email as the Add a place form. When places of the same kind are within 150 m it returns them
+instead of submitting; the model asks the person and calls again with `confirm_duplicate`.
+
+The token's account is checked on every request (a deleted account's token still verifies for up
+to an hour). Signed in, the limits are per person, and the 200 places a day are shared with the
+in-app assistant.
+
 ## Limits
 
-A client is its IP (an IPv6 /64).
+A client is its IP (an IPv6 /64), or its person once signed in.
 
 - 30 requests a minute; past that, a 429 with `Retry-After: 60`.
 - 200 distinct places a day, as the assistant allows. Places already shown that day stay free;
   past the cap, tools answer with an error pointing to the map.
 
-Like the assistant's per-minute bucket, both live in each server instance's memory until the
-shared limiter (#199) lands, so with several instances the real limit is a multiple of these.
+A signed-in person's places are counted in Postgres with the assistant's. The per-minute limit and
+an anonymous client's places live in each server instance's memory until the shared limiter (#199)
+lands, so with several instances the real limit is a multiple of these.
 
 ## Trying it locally
 

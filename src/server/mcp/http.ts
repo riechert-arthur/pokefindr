@@ -1,5 +1,5 @@
 import "server-only"
-import { createMcpHandler, type McpHttpHandler, type McpServerFactory } from "@modelcontextprotocol/server"
+import { createMcpHandler, type AuthInfo, type McpHttpHandler, type McpServerFactory } from "@modelcontextprotocol/server"
 import { takeRequests } from "./limits"
 
 /** Largest MCP request body read: tool inputs are a few hundred bytes. */
@@ -61,8 +61,9 @@ function messageCount(body: string): number {
  * Serves one request for the client `key`, after its rate limit: one token
  * per message, so a batch of tool calls costs what sending them one by one
  * would. The body is read here (within the size cap) and handed on.
+ * `authInfo` reaches the server factory and the scope checks.
  */
-export async function serveMcp(handler: McpHttpHandler, request: Request, key: string): Promise<Response> {
+export async function serveMcp(handler: McpHttpHandler, request: Request, key: string, authInfo?: AuthInfo): Promise<Response> {
   let forward = request
   let messages = 1
   if (request.method === "POST") {
@@ -76,7 +77,7 @@ export async function serveMcp(handler: McpHttpHandler, request: Request, key: s
   }
   if (!takeRequests(key, messages)) return rpcError(429, "Too many requests. Wait a minute and try again.", { "Retry-After": "60" })
   try {
-    return withCors(await handler.fetch(forward))
+    return withCors(await handler.fetch(forward, authInfo ? { authInfo } : undefined))
   } catch (err) {
     console.error("[mcp] request failed", err)
     return rpcError(500, "Something went wrong. Try again.")

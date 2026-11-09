@@ -49,6 +49,24 @@ export function placeBudgetFor(key: string, now: Date): PlaceBudget {
   return entry.budget
 }
 
+const queues = new Map<string, Promise<unknown>>()
+
+/**
+ * Runs `task` after the client's earlier tasks have finished, one at a
+ * time, so each one sees what the last one recorded (the places shown
+ * today). In this instance's memory, like the in-app assistant's one open
+ * turn per person.
+ */
+export function oneAtATime<T>(key: string, task: () => Promise<T>): Promise<T> {
+  const run = (queues.get(key) ?? Promise.resolve()).then(task, task)
+  const tail = run.catch(() => {})
+  queues.set(key, tail)
+  void tail.then(() => {
+    if (queues.get(key) === tail) queues.delete(key)
+  })
+  return run
+}
+
 /** Test helper: forget every client. */
 export function resetMcpLimitsForTests() {
   perMinute = tokenBucket({ perMinute: MCP_REQUESTS_PER_MINUTE, burst: MCP_REQUESTS_PER_MINUTE, maxKeys: MAX_CLIENTS })
