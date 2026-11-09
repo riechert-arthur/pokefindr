@@ -44,7 +44,7 @@ describe("AffiliateBanner Component", () => {
     const closeBtn = screen.getByLabelText("Close ad")
     expect(closeBtn).toBeTruthy()
 
-    const link = screen.getByRole("link", { name: /Sponsored Ad/i })
+    const link = screen.getByRole("link", { name: /Sponsored: TCGplayer/i })
     expect(link).toBeInTheDocument()
   })
 
