@@ -1,7 +1,15 @@
-import { beforeEach, describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import { randomUUID } from "node:crypto"
 import { eq } from "drizzle-orm"
 import { NextRequest } from "next/server"
+const { enqueued } = vi.hoisted(() => ({ enqueued: [] as { job: string; payload: unknown; options: unknown }[] }))
+vi.mock("@/server/lib/jobs/enqueue", () => ({
+  enqueueJob: async (job: string, payload: unknown, options: unknown) => {
+    enqueued.push({ job, payload, options })
+    return { mode: "queued", messageId: null }
+  },
+}))
+
 import { getDb } from "@/server/db/client"
 import { cardShopDetails, eventDetails, locationRatings, locationSubmissions, locations, profiles } from "@/server/db/schema"
 import { GET } from "@/app/api/admin/submissions/route"
@@ -19,6 +27,7 @@ const MOD2 = randomUUID()
 const BASE = "http://localhost/api/admin/submissions"
 
 beforeEach(async () => {
+  enqueued.length = 0
   await insertProfiles(getDb(), [
     { id: ASH, username: "ash" },
     { id: MOD, username: "brock" },
@@ -118,6 +127,8 @@ describe("the review queue", () => {
     expect((await act(id, { action: "reject" })).status).toBe(400)
     expect((await act(id, { action: "reject", reason: "spam" })).status).toBe(200)
     expect((await listMySubmissions(ASH))[0]).toMatchObject({ status: "rejected", rejectReason: "spam" })
+    // The submitter hears once the undo hour is over, keyed to this decision.
+    expect(enqueued).toMatchObject([{ job: "submission-reviewed", payload: { submissionId: id }, options: { delaySeconds: 3900 } }])
     expect(await getDb().select().from(locations)).toEqual([])
     const { queue, decided } = await (await list(MOD)).json()
     expect(queue).toEqual([])

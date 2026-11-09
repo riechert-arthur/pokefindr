@@ -1,6 +1,14 @@
-import { beforeEach, describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import { randomUUID } from "node:crypto"
 import { NextRequest } from "next/server"
+const { enqueued } = vi.hoisted(() => ({ enqueued: [] as { job: string; payload: unknown; options: unknown }[] }))
+vi.mock("@/server/lib/jobs/enqueue", () => ({
+  enqueueJob: async (job: string, payload: unknown, options: unknown) => {
+    enqueued.push({ job, payload, options })
+    return { mode: "queued", messageId: null }
+  },
+}))
+
 import { getDb } from "@/server/db/client"
 import { locationSubmissions, locations } from "@/server/db/schema"
 import { GET, POST } from "@/app/api/submissions/route"
@@ -13,6 +21,7 @@ const MISTY = randomUUID()
 const URL_BASE = "http://localhost/api/submissions"
 
 beforeEach(async () => {
+  enqueued.length = 0
   await insertProfiles(getDb(), [
     { id: ASH, username: "ash" },
     { id: MISTY, username: "misty" },
@@ -57,6 +66,8 @@ describe("POST /api/submissions", () => {
     const [row] = await getDb().select().from(locationSubmissions)
     expect(row).toMatchObject({ id, kind: "shop", status: "pending", submittedBy: ASH, geog: { lng: -104.9876, lat: 39.7392 } })
     expect(row.payload).toEqual({ name: "Mile High Cards", address: "1450 Grant St", city: "Denver", state: "CO", countryCode: "US", website: "https://milehighcards.example", sells: ["singles", "sealed"] })
+    // Moderators hear about it, once.
+    expect(enqueued).toEqual([{ job: "submission-created", payload: { submissionId: id }, options: { idempotencyKey: `submission-created:${id}` } }])
   })
 
   it("stores an event", async () => {

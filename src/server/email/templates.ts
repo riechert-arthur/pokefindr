@@ -92,3 +92,36 @@ export function approveEmailChange({ name, newEmail, url }: { name: string; newE
     ),
   }
 }
+
+const kindName = (kind: "shop" | "event") => (kind === "shop" ? "card shop" : "event")
+
+/** To moderators when someone sends a place in (#127). */
+export function submissionToReview({ kind, name, place, submitter, url }: { kind: "shop" | "event"; name: string; place: string; submitter: string; url: string }): EmailContent {
+  return {
+    subject: `New ${kindName(kind)} to review: ${name}`,
+    text: `${submitter} added a ${kindName(kind)}: ${name}${place ? `, ${place}` : ""}.\n\nReview it here:\n${url}`,
+    html: layout(
+      `<p style="margin:0">${escapeHtml(submitter)} added a ${kindName(kind)}: <strong>${escapeHtml(name)}</strong>${place ? `, ${escapeHtml(place)}` : ""}.</p>${button(url, "Open the review queue")}`,
+    ),
+  }
+}
+
+/** To the submitter once a moderator approves their place. */
+export function submissionApproved({ name, kind, url }: { name: string; kind: "shop" | "event"; url: string }): EmailContent {
+  return {
+    subject: `${name} is on PokeFindr`,
+    text: `Thanks for adding ${name}. A moderator checked it, and the ${kindName(kind)} is now on the map for everyone:\n${url}`,
+    html: layout(`<p style="margin:0">Thanks for adding <strong>${escapeHtml(name)}</strong>. A moderator checked it, and the ${kindName(kind)} is now on the map for everyone.</p>${button(url, "See it on the map")}`),
+  }
+}
+
+/** To the submitter when a moderator rejects their place, with the reason. */
+export function submissionRejected({ name, reason, url }: { name: string; reason: string; url: string }): EmailContent {
+  return {
+    subject: `${name} wasn't added to PokeFindr`,
+    text: `Thanks for sending ${name}. A moderator didn't add it to the map. The reason: ${reason}.\n\nIf something was wrong, you can add it again with the right details:\n${url}`,
+    html: layout(
+      `<p style="margin:0 0 12px">Thanks for sending <strong>${escapeHtml(name)}</strong>. A moderator didn't add it to the map.</p><p style="margin:0">The reason: ${escapeHtml(reason)}.</p>${button(url, "Add it again")}<p style="margin:20px 0 0;color:${EMAIL_COLORS.muted};font-size:13px">If something was wrong, add it again with the right details.</p>`,
+    ),
+  }
+}
