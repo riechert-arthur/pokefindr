@@ -114,6 +114,18 @@ describe("getServerConfig", () => {
     expect(getServerConfig().GOOGLE_CLIENT_ID).toBe("id")
   })
 
+  it("needs MAIL_FROM to send email in production", () => {
+    vi.stubEnv("MAIL_PROVIDER", "smtp")
+    vi.stubEnv("SMTP_URL", "smtp://localhost:1025")
+    expect(getServerConfig().MAIL_FROM).toBe("PokeFindr <no-reply@localhost>")
+    resetServerConfigForTests()
+    vi.stubEnv("NODE_ENV", "production")
+    expect(() => getServerConfig()).toThrowError(/MAIL_FROM: required to send email in production/)
+    resetServerConfigForTests()
+    vi.stubEnv("MAIL_FROM", "PokeFindr <no-reply@pokefindr.app>")
+    expect(getServerConfig().MAIL_FROM).toBe("PokeFindr <no-reply@pokefindr.app>")
+  })
+
   it("rejects an unknown GEOCODER_PROVIDER", () => {
     vi.stubEnv("GEOCODER_PROVIDER", "google")
     expect(() => getServerConfig()).toThrowError(/GEOCODER_PROVIDER/)

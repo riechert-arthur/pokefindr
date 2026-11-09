@@ -3,6 +3,7 @@ import { createHmac } from "node:crypto"
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { eq } from "drizzle-orm"
+import { after } from "next/server"
 import { getMailer } from "@/server/container"
 import { getDb } from "@/server/db/client"
 import { resetPassword, verifyEmail } from "@/server/email/templates"
@@ -35,6 +36,28 @@ async function sendAccountEmail(to: string, email: EmailContent): Promise<void> 
   }
 }
 
+const pending = new Set<Promise<unknown>>()
+
+/**
+ * Better Auth's background tasks (its emails): they finish after the
+ * response, so a request that sends an email answers as fast as one that
+ * doesn't, and the timing can't tell whether an address has an account.
+ */
+function runInBackground(task: Promise<unknown>) {
+  const tracked = task.catch((err) => console.error("[auth] background task failed", err)).finally(() => pending.delete(tracked))
+  pending.add(tracked)
+  try {
+    after(tracked)
+  } catch {
+    // Outside a request (tests, scripts): it still runs.
+  }
+}
+
+/** Test helper: wait for the emails requests so far have started sending. */
+export async function settleBackgroundForTests() {
+  await Promise.all(pending)
+}
+
 function socialProviders(config: ServerConfig) {
   return {
     ...(config.GOOGLE_CLIENT_ID && { google: { clientId: config.GOOGLE_CLIENT_ID, clientSecret: config.GOOGLE_CLIENT_SECRET! } }),
@@ -54,7 +77,11 @@ function makeAuth(config: ServerConfig) {
       schema: { user: users, session: sessions, account: accounts, verification: verifications, rateLimit: authRateLimits },
     }),
     // Ids are UUIDs, made by Postgres, so they match profiles.id.
-    advanced: { database: { generateId: "uuid" }, useSecureCookies: config.NODE_ENV === "production" },
+    advanced: {
+      database: { generateId: "uuid" },
+      useSecureCookies: config.NODE_ENV === "production",
+      backgroundTasks: { handler: runInBackground },
+    },
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: true,
