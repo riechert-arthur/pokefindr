@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useSyncExternalStore } from "react"
+import { useRef, useState, useSyncExternalStore } from "react"
+import { toast } from "sonner"
 import { SponsoredSlot } from "@/components/pokefindr/SponsoredSlot"
 import { pickBanner, type SponsorPlacement } from "@/config/banners"
 import { cn } from "@/lib/utils"
@@ -46,8 +47,22 @@ function useAdsHidden(): boolean {
   return useSyncExternalStore(subscribe, () => memoryHidden || readHidden(), () => true)
 }
 
-export function SponsoredPlacement({ placement, className }: { placement: SponsorPlacement; className?: string }) {
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+
+/** The first focusable element after `el` in the page, else the last one before it: where focus goes when `el` goes away. */
+function focusAfter(el: HTMLElement): HTMLElement | null {
+  const all = [...document.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((x) => !el.contains(x) && !x.closest("[hidden], [inert]"))
+  const after = all.find((x) => el.compareDocumentPosition(x) & Node.DOCUMENT_POSITION_FOLLOWING)
+  return after ?? all.filter((x) => el.compareDocumentPosition(x) & Node.DOCUMENT_POSITION_PRECEDING).at(-1) ?? null
+}
+
+/**
+ * `listItem`: render as an <li>, so a list gets an item only when a card
+ * shows (an empty one would be read as a blank place).
+ */
+export function SponsoredPlacement({ placement, className, listItem = false }: { placement: SponsorPlacement; className?: string; listItem?: boolean }) {
   const hidden = useAdsHidden()
+  const ref = useRef<HTMLElement>(null)
   // Picked once per view, in the browser.
   const [banner] = useState(() => (typeof window === "undefined" ? null : pickBanner(placement)))
   if (hidden || !banner || !banner.href) return null
@@ -63,7 +78,13 @@ export function SponsoredPlacement({ placement, className }: { placement: Sponso
         cta={banner.cta}
         href={banner.href}
         variant={strip ? "strip" : "compact"}
-        onDismiss={hideAds}
+        onDismiss={() => {
+          // The dismiss button goes away with the card: move focus on instead of losing it to the page.
+          const next = ref.current ? focusAfter(ref.current) : null
+          hideAds()
+          next?.focus()
+          toast("Ads hidden", { description: "They stay hidden for the rest of this visit." })
+        }}
         className={strip ? undefined : className}
       />
     </>
@@ -71,11 +92,21 @@ export function SponsoredPlacement({ placement, className }: { placement: Sponso
   // The landing strip is a band between sections, like the prototype's.
   if (strip)
     return (
-      <div data-placement={placement} className={cn("border-t border-border px-6 py-8", className)}>
+      <div ref={ref as React.RefObject<HTMLDivElement>} data-placement={placement} className={cn("border-t border-border px-6 py-8", className)}>
         <div className="mx-auto max-w-[1040px]">{slot}</div>
       </div>
     )
-  return <div data-placement={placement}>{slot}</div>
+  if (listItem)
+    return (
+      <li ref={ref as React.RefObject<HTMLLIElement>} data-placement={placement}>
+        {slot}
+      </li>
+    )
+  return (
+    <div ref={ref as React.RefObject<HTMLDivElement>} data-placement={placement}>
+      {slot}
+    </div>
+  )
 }
 
 /** Test helper: forget a dismissal made in memory. */
