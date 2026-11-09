@@ -42,6 +42,14 @@ export async function PATCH(req: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.errors.map((e) => e.message).join(", ") }, { status: 400 })
   const { fullName, username, email } = parsed.data
 
+  // Better Auth asks the current address to approve a change only once it's confirmed:
+  // without this, a stolen session could move an unconfirmed account to a new address in one step.
+  if (email) {
+    const [user] = await getDb().select({ emailVerified: users.emailVerified }).from(users).where(eq(users.id, userId))
+    if (!user?.emailVerified)
+      return NextResponse.json({ error: "Confirm your current email before changing it. Logging in again sends a new link." }, { status: 403 })
+  }
+
   if (username && (await usernameTaken(username, userId))) return NextResponse.json({ error: "That username is already taken" }, { status: 409 })
   try {
     if (!(await updateProfile(userId, { fullName, username }))) return NextResponse.json({ error: "Account not found" }, { status: 404 })

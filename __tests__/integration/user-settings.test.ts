@@ -11,7 +11,7 @@ vi.mock("@/server/container", async (importOriginal) => ({
 
 import { GET, PATCH } from "@/app/api/user-settings/route"
 import { POST as login } from "@/app/api/auth/login/route"
-import { getAuth, resetAuthForTests } from "@/server/auth/auth"
+import { getAuth, resetAuthForTests, settleBackgroundForTests } from "@/server/auth/auth"
 import { getDb } from "@/server/db/client"
 import { profiles, users } from "@/server/db/schema"
 import { closeTestConnection, insertProfiles } from "./testDatabase"
@@ -31,13 +31,18 @@ async function signedInUser(email = "ash@example.com", username = "ash") {
   await getDb().update(users).set({ emailVerified: true }).where(eq(users.id, user.id))
   await getDb().insert(profiles).values({ id: user.id, username, fullName: "Ash", onboarded: true })
   const res = await login(new NextRequest(`${APP}/api/auth/login`, { method: "POST", body: JSON.stringify({ email, password: PASSWORD }) }))
+  await settleBackgroundForTests()
   outbox.length = 0
   return { id: user.id, cookie: res.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ") }
 }
 
 const settings = (userId: string, cookie = "") => new NextRequest(`${APP}/api/user-settings`, { headers: { "x-user-id": userId, cookie } })
-const patch = (userId: string, body: unknown, cookie = "") =>
-  PATCH(new NextRequest(`${APP}/api/user-settings`, { method: "PATCH", body: JSON.stringify(body), headers: { "x-user-id": userId, cookie } }))
+/** Also waits for the emails it sends, which go out after the response. */
+const patch = async (userId: string, body: unknown, cookie = "") => {
+  const res = await PATCH(new NextRequest(`${APP}/api/user-settings`, { method: "PATCH", body: JSON.stringify(body), headers: { "x-user-id": userId, cookie } }))
+  await settleBackgroundForTests()
+  return res
+}
 const emailOf = async (id: string) => (await getDb().select({ email: users.email }).from(users).where(eq(users.id, id)))[0].email
 const linkIn = (m: MailMessage) => m.text.match(/https?:\/\/\S+/)![0]
 
@@ -69,6 +74,7 @@ describe("changing the email", () => {
     expect(outbox).toHaveLength(1)
     expect(outbox[0]).toMatchObject({ to: "ash@example.com", subject: "Approve your PokeFindr email change" })
     const approved = await getAuth().handler(new Request(linkIn(outbox[0])))
+    await settleBackgroundForTests()
     expect(approved.headers.get("location")).toBe("/settings?email=link")
     expect(await emailOf(id)).toBe("ash@example.com")
 
@@ -78,11 +84,29 @@ describe("changing the email", () => {
     expect(await emailOf(id)).toBe("ash@new.example")
   })
 
+  it("sends an expired or reused link back to settings with an error", async () => {
+    const { id, cookie } = await signedInUser()
+    await patch(id, { email: "ash@new.example" }, cookie)
+    const link = new URL(linkIn(outbox[0]))
+    link.searchParams.set("token", "not-a-real-token")
+    const res = await getAuth().handler(new Request(link))
+    expect(res.headers.get("location")).toMatch(/^\/settings\?email=link&error=/)
+  })
+
   it("needs a fresh login (a Better Auth session), not just the app cookie", async () => {
     const { id } = await signedInUser()
     const res = await patch(id, { email: "ash@new.example" })
     expect(res.status).toBe(401)
     expect(await res.json()).toMatchObject({ code: "REAUTH" })
+  })
+
+  it("won't change an email that isn't confirmed yet", async () => {
+    const { id, cookie } = await signedInUser()
+    await getDb().update(users).set({ emailVerified: false }).where(eq(users.id, id))
+    const res = await patch(id, { email: "ash@new.example" }, cookie)
+    expect(res.status).toBe(403)
+    expect(outbox).toHaveLength(0)
+    expect(await emailOf(id)).toBe("ash@example.com")
   })
 
   it("answers the same for an email that's taken, and sends nothing", async () => {

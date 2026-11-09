@@ -32,7 +32,10 @@ export default function SettingsPage() {
 
   useEffect(() => {
     // Both email-change links land on /settings?email=link.
-    if (new URLSearchParams(window.location.search).get('email') === 'link') {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('email') === 'link' && params.get('error')) {
+      setEmailNote("That link has expired or was already used. Start the change again below.")
+    } else if (params.get('email') === 'link') {
       setEmailNote("Thanks. If you approved the change from your old address, confirm it from the new one's inbox. Your email below is the current one.")
     }
   }, [])
