@@ -5,6 +5,8 @@ const { banner } = vi.hoisted(() => ({
   banner: { current: { id: "t", sponsor: "TCGplayer", title: "Missed the restock?", body: "10% off.", cta: "See the deal", href: "https://partner.example/x", pixel: "https://pixel.example/p", weight: 1 } as Record<string, unknown> | null },
 }))
 vi.mock("@/config/banners", () => ({ pickBanner: () => banner.current }))
+const { toast } = vi.hoisted(() => ({ toast: vi.fn() }))
+vi.mock("sonner", () => ({ toast }))
 
 import { SponsoredPlacement, resetAdsForTests } from "@/components/ads/SponsoredPlacement"
 import { ResultsSheet } from "@/components/map/ResultsSheet"
@@ -50,6 +52,21 @@ describe("SponsoredPlacement", () => {
     expect(screen.queryByRole("complementary")).toBeNull()
   })
 
+  it("moves focus to the next control when dismissed, and says ads are hidden", () => {
+    render(
+      <>
+        <button type="button">Before</button>
+        <SponsoredPlacement placement="details" />
+        <button type="button">After</button>
+      </>,
+    )
+    const x = screen.getByRole("button", { name: "Hide ads for this visit" })
+    x.focus()
+    act(() => fireEvent.click(x))
+    expect(screen.getByRole("button", { name: "After" })).toHaveFocus()
+    expect(toast).toHaveBeenCalledWith("Ads hidden", expect.anything())
+  })
+
   it("shows nothing without a banner for the placement", () => {
     banner.current = null
     const { container } = render(<SponsoredPlacement placement="results" />)
@@ -92,6 +109,12 @@ describe("the results slot", () => {
     const items = screen.getAllByRole("listitem")
     expect(items).toHaveLength(6)
     expect(items[3]).toContainElement(screen.getByRole("complementary"))
+  })
+
+  it("adds no list item when no card shows (dismissed, or no banner)", () => {
+    sessionStorage.setItem("pf:ads-hidden", "1")
+    sheet(5)
+    expect(screen.getAllByRole("listitem")).toHaveLength(5)
   })
 
   it("isn't shown in a list of three or fewer", () => {

@@ -117,11 +117,7 @@ export function ResultsSheet({ label, radius, onRadiusChange, kinds, nearby, sel
                   <LocationRow feature={f} distance={f.properties.distance} selected={selectedId === f.properties.id} onOpen={onOpen} />
                 </li>
                 {/* One sponsored card after the third place (#136), only when more places follow. */}
-                {i === 2 && results.features.length > 3 && (
-                  <li>
-                    <SponsoredPlacement placement="results" className="my-1.5" />
-                  </li>
-                )}
+                {i === 2 && results.features.length > 3 && <SponsoredPlacement placement="results" className="my-1.5" listItem />}
               </Fragment>
             ))}
             {results.truncated && (
