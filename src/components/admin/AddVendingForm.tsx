@@ -164,6 +164,17 @@ export function AddVendingForm() {
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
       <div className="flex flex-col gap-4">
         <form onSubmit={submit} noValidate className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 sm:p-5">
+          {/* Suggestions for Retailer and City and state; outside the grids, so they take no row. */}
+          <datalist id={`${ids}-retailers`}>
+            {retailers.map((r) => (
+              <option key={r} value={r} />
+            ))}
+          </datalist>
+          <datalist id={`${ids}-cities`}>
+            {cities.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
           <div>
             <h2 className="text-subheading text-foreground">Add a vending machine</h2>
             <p className="text-body text-muted-foreground">For machines missing from the official list. It goes live as soon as you add it.</p>
@@ -174,11 +185,6 @@ export function AddVendingForm() {
                 Retailer <span aria-hidden className="text-destructive">*</span>
               </Label>
               <Input id={field("retailer")} required list={`${ids}-retailers`} autoComplete="off" value={draft.retailer} onChange={set("retailer")} placeholder="Fred Meyer" />
-              <datalist id={`${ids}-retailers`}>
-                {retailers.map((r) => (
-                  <option key={r} value={r} />
-                ))}
-              </datalist>
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor={field("machineId")}>
@@ -211,11 +217,6 @@ export function AddVendingForm() {
               City and state <span aria-hidden className="text-destructive">*</span>
             </Label>
             <Input id={field("cityState")} required list={`${ids}-cities`} autoComplete="off" value={draft.cityState} onChange={set("cityState")} placeholder="Kirkland, WA" />
-            <datalist id={`${ids}-cities`}>
-              {cities.map((c) => (
-                <option key={c} value={c} />
-              ))}
-            </datalist>
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor={field("pin")}>
