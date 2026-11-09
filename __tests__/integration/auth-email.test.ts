@@ -17,7 +17,7 @@ vi.mock("@/server/container", async (importOriginal) => ({
 
 import { POST as signup } from "@/app/api/auth/signup/route"
 import { POST as login } from "@/app/api/auth/login/route"
-import { getAuth, resetAuthForTests } from "@/server/auth/auth"
+import { getAuth, resetAuthForTests, settleBackgroundForTests } from "@/server/auth/auth"
 import { getDb } from "@/server/db/client"
 import { sessions, users } from "@/server/db/schema"
 import { closeTestConnection } from "./testDatabase"
@@ -30,12 +30,18 @@ beforeEach(() => {
 })
 
 const APP = "http://localhost:3000"
+// Each waits for the emails the request sends in the background.
+const settled = async (res: Promise<Response>) => {
+  const done = await res
+  await settleBackgroundForTests()
+  return done
+}
 const post = (handler: (r: NextRequest) => Promise<Response>, body: unknown) =>
-  handler(new NextRequest(`${APP}/api/auth/x`, { method: "POST", body: JSON.stringify(body) }))
+  settled(handler(new NextRequest(`${APP}/api/auth/x`, { method: "POST", body: JSON.stringify(body) })))
 const identity = (path: string, init?: RequestInit) =>
-  getAuth().handler(new Request(`${APP}/api/identity${path}`, { ...init, headers: { "content-type": "application/json", origin: APP, ...init?.headers } }))
+  settled(getAuth().handler(new Request(`${APP}/api/identity${path}`, { ...init, headers: { "content-type": "application/json", origin: APP, ...init?.headers } })))
 const linkIn = (m: MailMessage) => m.text.match(/https?:\/\/\S+/)![0]
-const open = (url: string) => getAuth().handler(new Request(url))
+const open = (url: string) => settled(getAuth().handler(new Request(url)))
 
 const form = { name: "Misty", username: "misty", email: "misty@example.com", password: "cerulean-gym-water!", passwordVerification: "cerulean-gym-water!" }
 
@@ -55,10 +61,11 @@ describe("confirming an email", () => {
     expect((await post(login, { email: form.email, password: form.password })).status).toBe(200)
   })
 
-  it("sends a new link when someone logs in before confirming", async () => {
+  it("sends a new link when someone logs in before confirming, which also lands on /login?verified=1", async () => {
     await post(signup, form)
     await post(login, { email: form.email, password: form.password })
     expect(outbox.map((m) => m.subject)).toEqual(["Confirm your PokeFindr account", "Confirm your PokeFindr account"])
+    expect((await open(linkIn(outbox[1]))).headers.get("location")).toBe("/login?verified=1")
   })
 
   it("sends a bad link back to /login with an error", async () => {
