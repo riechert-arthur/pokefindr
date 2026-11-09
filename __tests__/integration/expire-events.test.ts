@@ -59,13 +59,17 @@ describe("expire-events", () => {
   it("shows the submitter their approved event as off the map once it's over", async () => {
     const db = getDb()
     const ash = randomUUID()
-    await insertProfiles(db, { id: ash, username: "ash" })
+    const brock = randomUUID()
+    await insertProfiles(db, [
+      { id: ash, username: "ash" },
+      { id: brock, username: "brock" },
+    ])
     const r = await createSubmission({
       userId: ash,
       input: { kind: "event", name: "League night", lng: -105, lat: 39.7, city: "Denver", state: "CO", countryCode: "US", startsAt: "2026-11-08T01:00:00Z" },
     })
     if (r.status !== "created") throw new Error(r.status)
-    await approveSubmission(r.id, ash, db, new Date("2026-11-07T12:00:00Z"))
+    await approveSubmission(r.id, brock, db, new Date("2026-11-07T12:00:00Z"))
     expect((await listMySubmissions(ash))[0]).toMatchObject({ status: "approved", locationActive: true })
     await expireEvents(db, NOW)
     expect((await listMySubmissions(ash))[0]).toMatchObject({ status: "approved", locationActive: false })
