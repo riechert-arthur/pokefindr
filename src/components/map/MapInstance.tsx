@@ -462,7 +462,12 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
       pushedAdd.current = { search: search.toString(), length: window.history.length }
     })
   }
-  const stopAdding = () => {
+  /**
+   * Closes Add a place. Cancel goes Back to before + (when that entry is still
+   * current); after sending (`stay`), it stays where the person put the pin,
+   * so their new pending marker is in view.
+   */
+  const stopAdding = ({ stay = false }: { stay?: boolean } = {}) => {
     setAddPin(null)
     const pushed = pushedAdd.current
     pushedAdd.current = null
@@ -475,7 +480,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     }
     const stillOnIt = pushed !== null && window.history.length === pushed.length && view(window.location.search) === view(pushed.search)
     // Opened here with +, and still on that entry: go back to the one before it. Otherwise just drop add=.
-    if (stillOnIt) window.history.back()
+    if (stillOnIt && !stay) window.history.back()
     else void setParams({ add: null }, { history: "replace" })
   }
   const moveAddPin = (pin: Pin, fly = false) => {
@@ -669,7 +674,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
                 type="button"
                 variant="outline"
                 size="icon"
-                onClick={adding ? stopAdding : startAdding}
+                onClick={adding ? () => stopAdding() : startAdding}
                 aria-pressed={adding}
                 aria-label="Add a card shop or event"
                 title="Add a card shop or event"
@@ -694,10 +699,10 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
                     if (pushedAdd.current !== null) pushedAdd.current = { ...pushedAdd.current, search: search.toString() }
                   })}
                   onStepChange={setAddStep}
-                  onCancel={stopAdding}
+                  onCancel={() => stopAdding()}
                   onSubmitted={({ name }) => {
                     toast.success("Sent for review", { description: `${name} shows as Pending review to you until a moderator checks it.` })
-                    stopAdding()
+                    stopAdding({ stay: true })
                     refreshSubmissions()
                   }}
                 />
@@ -708,7 +713,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
                     <p className="text-body text-muted-foreground">Log in to add a card shop or event. A moderator checks each one before it goes on the map.</p>
                     <div className="flex gap-2">
                       <Button type="button" onClick={() => router.push("/login")}>Log in</Button>
-                      <Button type="button" variant="ghost" onClick={stopAdding}>Cancel</Button>
+                      <Button type="button" variant="ghost" onClick={() => stopAdding()}>Cancel</Button>
                     </div>
                   </div>
                 )
