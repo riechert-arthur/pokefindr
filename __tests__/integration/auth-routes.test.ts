@@ -94,7 +94,8 @@ describe("requests from other sites", () => {
     await post(signup, form)
     await confirm(form.email)
     const creds = { email: form.email, password: form.password }
-    for (const headers of [{ origin: "https://evil.example" }, { "sec-fetch-site": "cross-site" }, { "sec-fetch-site": "same-site" }]) {
+    const crossSite: Record<string, string>[] = [{ origin: "https://evil.example" }, { "sec-fetch-site": "cross-site" }, { "sec-fetch-site": "same-site" }]
+    for (const headers of crossSite) {
       for (const handler of [login, signup, logout]) {
         const res = await post(handler, handler === signup ? { ...form, email: "x@example.com", username: "x_user" } : creds, headers)
         expect(res.status).toBe(403)
