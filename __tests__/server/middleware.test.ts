@@ -39,10 +39,15 @@ describe("middleware and the language (#177)", () => {
     expect(es.headers.get("location")).toBeNull()
   })
 
-  it("sets no cookie and no hreflang header while English is the only public language", async () => {
-    const res = await middleware(new NextRequest("http://localhost/map"))
+  it("sets no hreflang header, and no language cookie for a browser already in English", async () => {
+    const res = await middleware(new NextRequest("http://localhost/map", { headers: { "accept-language": "en-US,en;q=0.9" } }))
     expect(res.headers.get("set-cookie")).toBeNull()
     expect(res.headers.get("link")).toBeNull()
+  })
+
+  it("keeps a visit to another language in the language cookie for a year (#182)", async () => {
+    const res = await middleware(new NextRequest("http://localhost/es/map", { headers: { "accept-language": "en-US,en;q=0.9" } }))
+    expect(res.headers.get("set-cookie")).toMatch(/^NEXT_LOCALE=es; Path=\/; .*Max-Age=31536000/)
   })
 
   it("drops a prefix English doesn't need", async () => {

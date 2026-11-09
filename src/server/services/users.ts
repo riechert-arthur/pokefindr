@@ -13,6 +13,8 @@ export interface PublicProfile {
   metadata: unknown
   /** member, moderator or admin: what the app shows (an Admin link); the API checks it again. */
   role: Role
+  /** The language they picked (#182), or null. */
+  locale: string | null
 }
 
 export class UsernameTakenError extends Error {
@@ -30,7 +32,7 @@ function isUniqueViolation(err: unknown): boolean {
 
 export async function getProfile(userId: string, db: Database = getDb()): Promise<PublicProfile | null> {
   const [row] = await db
-    .select({ id: profiles.id, username: profiles.username, full_name: profiles.fullName, metadata: profiles.metadata, role: profiles.role })
+    .select({ id: profiles.id, username: profiles.username, full_name: profiles.fullName, metadata: profiles.metadata, role: profiles.role, locale: profiles.locale })
     .from(profiles)
     .where(eq(profiles.id, userId))
   return row ?? null
@@ -134,7 +136,7 @@ export async function createProfile(
 /** Updates profile fields. Returns false if the profile doesn't exist. Throws UsernameTakenError on a duplicate username. */
 export async function updateProfile(
   userId: string,
-  changes: { username?: string; fullName?: string; onboarded?: boolean },
+  changes: { username?: string; fullName?: string; onboarded?: boolean; locale?: string },
   db: Database = getDb(),
 ): Promise<boolean> {
   const set = Object.fromEntries(Object.entries(changes).filter(([, v]) => v !== undefined))

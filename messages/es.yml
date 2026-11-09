@@ -387,6 +387,10 @@ ui:
     system: Sistema
     switchToLight: Cambiar al tema claro
     switchToDark: Cambiar al tema oscuro
+  language:
+    label: Idioma
+    saveFailed: No se pudo guardar tu idioma
+    saveFailedBody: Quedó elegido en este dispositivo. Vuelve a intentarlo desde la configuración para usarlo en los demás.
   starRating:
     label: Calificación
     readOnly: "{rating, number} de 5 estrellas"
@@ -557,6 +561,9 @@ settings:
   appearance:
     title: Apariencia
     body: Claro, oscuro o según tu dispositivo.
+  language:
+    title: Idioma
+    body: El idioma en que PokeFindr te habla, en cada dispositivo donde inicies sesión.
   assistant:
     title: Asistente
     body: Guardamos el texto de tus conversaciones con el asistente durante 30 días. Puedes borrarlo ahora si quieres.

@@ -323,6 +323,8 @@ export const profiles = pgTable(
     metadata: jsonb("metadata"),
     /** member, moderator (reviews submissions) or admin (migration 0012). */
     role: text("role").$type<Role>().notNull().default("member"),
+    /** The language they picked, e.g. "es" (migration 0019); null until they pick one. */
+    locale: text("locale"),
     createdAt: createdAt(),
     // Set by the ORM on every update; there is no database trigger for it.
     updatedAt: timestamp("updated_at", { withTimezone: true })

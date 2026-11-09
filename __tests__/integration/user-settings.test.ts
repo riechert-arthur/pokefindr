@@ -47,9 +47,9 @@ const emailOf = async (id: string) => (await getDb().select({ email: users.email
 const linkIn = (m: MailMessage) => m.text.match(/https?:\/\/\S+/)![0]
 
 describe("user settings", () => {
-  it("reads the name, username and email from our database", async () => {
+  it("reads the name, username, email and language from our database", async () => {
     const { id } = await signedInUser()
-    expect(await (await GET(settings(id))).json()).toEqual({ fullName: "Ash", username: "ash", email: "ash@example.com" })
+    expect(await (await GET(settings(id))).json()).toEqual({ fullName: "Ash", username: "ash", email: "ash@example.com", locale: null })
   })
 
   it("changes the name and username, but not to a taken username", async () => {
@@ -139,5 +139,28 @@ describe("changing the email", () => {
     expect(approved.headers.get("location")).toBe("/settings?email=link")
     expect(outbox).toHaveLength(1)
     expect(await emailOf(id)).toBe("ash@example.com")
+  })
+})
+
+describe("the language (#182)", () => {
+  const logIn = (email = "ash@example.com") =>
+    login(new NextRequest(`${APP}/api/auth/login`, { method: "POST", body: JSON.stringify({ email, password: PASSWORD }) }))
+
+  it("saves the language picked, and only a language the site has", async () => {
+    const { id } = await signedInUser()
+    expect((await (await GET(settings(id))).json()).locale).toBeNull()
+    expect((await patch(id, { locale: "es" })).status).toBe(200)
+    expect((await (await GET(settings(id))).json()).locale).toBe("es")
+    expect((await patch(id, { locale: "fr" })).status).toBe(400)
+    expect((await getDb().select({ locale: profiles.locale }).from(profiles).where(eq(profiles.id, id)))[0].locale).toBe("es")
+  })
+
+  it("sets the language cookie from the profile on login, so it follows them to another device", async () => {
+    const { id } = await signedInUser()
+    const before = await logIn()
+    expect(before.headers.getSetCookie().some((c) => c.startsWith("NEXT_LOCALE="))).toBe(false)
+    await patch(id, { locale: "es" })
+    const after = (await logIn()).headers.getSetCookie().find((c) => c.startsWith("NEXT_LOCALE="))
+    expect(after).toMatch(/^NEXT_LOCALE=es; Max-Age=31536000; Path=\/; SameSite=Lax/)
   })
 })
