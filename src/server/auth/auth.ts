@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm"
 import { after } from "next/server"
 import { getMailer } from "@/server/container"
 import { getDb } from "@/server/db/client"
-import { resetPassword, verifyEmail } from "@/server/email/templates"
+import { approveEmailChange, confirmEmailChange, resetPassword, verifyEmail } from "@/server/email/templates"
 import type { EmailContent } from "@/server/email/templates"
 import { accounts, authRateLimits, sessions, users, verifications } from "@/server/db/schema"
 import { getServerConfig, type ServerConfig } from "@/server/config"
@@ -135,7 +135,19 @@ function makeAuth(config: ServerConfig) {
       sendOnSignIn: true,
       autoSignInAfterVerification: false,
       expiresIn: 60 * 60 * 24,
-      sendVerificationEmail: ({ user, url }) => sendAccountEmail(user.email, verifyEmail({ name: user.name, url })),
+      // Also the second step of an email change, to the new address (user.email is the new one then).
+      sendVerificationEmail: async ({ user, url }) => {
+        const [current] = await getDb().select({ email: users.email }).from(users).where(eq(users.id, user.id))
+        const changing = current && current.email !== user.email
+        await sendAccountEmail(user.email, changing ? confirmEmailChange({ name: user.name, newEmail: user.email, url }) : verifyEmail({ name: user.name, url }))
+      },
+    },
+    user: {
+      // Two steps: the current address approves, then the new one confirms. Nothing changes before both.
+      changeEmail: {
+        enabled: true,
+        sendChangeEmailConfirmation: ({ user, newEmail, url }) => sendAccountEmail(user.email, approveEmailChange({ name: user.name, newEmail, url })),
+      },
     },
     // Signing in with Google or Discord links to an existing account with the same
     // email only when both sides have confirmed it (Better Auth's default).

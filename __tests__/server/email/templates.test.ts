@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest"
 
 vi.mock("server-only", () => ({}))
 
-import { confirmEmailChange, emailChangeRequested, escapeHtml, resetPassword, verifyEmail } from "@/server/email/templates"
+import { approveEmailChange, confirmEmailChange, escapeHtml, resetPassword, verifyEmail } from "@/server/email/templates"
 
 const url = "https://pokefindr.example/api/identity/verify-email?token=abc&callbackURL=%2Flogin%3Fverified%3D1"
 
@@ -12,7 +12,7 @@ describe("email templates", () => {
     ["verifyEmail", verifyEmail({ name: "Ash", url })],
     ["resetPassword", resetPassword({ name: "Ash", url })],
     ["confirmEmailChange", confirmEmailChange({ name: "Ash", newEmail: "ash@new.example", url })],
-    ["emailChangeRequested", emailChangeRequested({ name: "Ash", newEmail: "ash@new.example" })],
+    ["approveEmailChange", approveEmailChange({ name: "Ash", newEmail: "ash@new.example", url })],
   ])("%s", (_name, email) => {
     expect(email).toMatchSnapshot()
   })
