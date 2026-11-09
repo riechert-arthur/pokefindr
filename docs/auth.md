@@ -40,12 +40,16 @@ that sends one answers as fast as one that doesn't.
   new link.
 - **Log in** (`/login`): email and password, or Google or Discord. A new OAuth user picks a username
   on `/login/callback` first. Google or Discord can only make an account from an email they have
-  confirmed (Discord allows unconfirmed ones), so nobody can sign up as an address's owner.
+  confirmed (Discord allows unconfirmed ones), so nobody can sign up as an address's owner. An
+  unconfirmed one is dropped before the lookup, so the error doesn't say whether it has an account.
+  A wrong password and an unconfirmed email get the same login answer.
 - **Forgot password** (`/forgot-password`): emails a link (1 hour, single use) to `/reset-password`.
   A reset ends every other session and also confirms the email. Opening the link proves the
   address belongs to them, so someone who signed up with that email can't keep its owner out.
 - **Change email** (`/settings`): the current address approves, then the new one confirms. Nothing
-  changes before both, and only a confirmed email can be changed.
+  changes before both, and only a confirmed email can be changed. An address another account has
+  gets the same approval email, then nothing, so the old inbox can't tell which addresses have
+  accounts.
 - **Linking**: an OAuth sign-in joins an existing account with the same email only when both sides
   have confirmed it.
 
