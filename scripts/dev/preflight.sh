@@ -41,3 +41,5 @@ check_port() {
 check_port db "${DB_PORT:-5433}" DB_PORT
 check_port web "${WEB_PORT:-3000}" WEB_PORT
 check_port storybook "${STORYBOOK_PORT:-6006}" STORYBOOK_PORT
+check_port mail "${MAIL_UI_PORT:-8025}" MAIL_UI_PORT
+check_port mail "${MAIL_SMTP_PORT:-1025}" MAIL_SMTP_PORT

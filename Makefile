@@ -12,10 +12,12 @@ SHELL := /bin/bash
 DB_PORT ?= 5433
 WEB_PORT ?= 3000
 STORYBOOK_PORT ?= 6006
+MAIL_UI_PORT ?= 8025
+MAIL_SMTP_PORT ?= 1025
 # Each git branch gets its own local database, so migrations tried on one
 # branch never reach another (docs/database.md, "Branch databases").
 DB_NAME ?= $(shell scripts/dev/db-name.sh)
-export DB_PORT WEB_PORT STORYBOOK_PORT DB_NAME
+export DB_PORT WEB_PORT STORYBOOK_PORT MAIL_UI_PORT MAIL_SMTP_PORT DB_NAME
 
 .PHONY: help run stop logs shell prune reset preflight env
 
@@ -35,6 +37,7 @@ run: preflight env ## Start or update everything: db, migrations, seed data, web
 	@echo
 	@echo "PokeFindr is running at http://localhost:$(WEB_PORT)"
 	@echo "Storybook is running at http://localhost:$(STORYBOOK_PORT)"
+	@echo "Emails the app sends land in Mailpit at http://localhost:$(MAIL_UI_PORT)"
 	@echo "Database for this branch: postgres://pokefindr:pokefindr@localhost:$(DB_PORT)/$(DB_NAME)"
 	@echo "Follow output with 'make logs'; stop with 'make stop'."
 
