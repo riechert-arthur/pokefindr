@@ -1,5 +1,5 @@
 import "server-only"
-import { and, eq, gt, ne, sql, type SQL } from "drizzle-orm"
+import { and, eq, gt, ne, sql, type SQLWrapper } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
 import { profiles, subscriptions, usernameHolds, users } from "@/server/db/schema"
 import type { SessionTier } from "@/server/auth/session"
@@ -51,7 +51,7 @@ export async function deleteUser(userId: string, db: Database = getDb()): Promis
  * sign-up with a taken email lapses. Profiles from before our own accounts
  * have no user row, and keep their names.
  */
-const expiredClaim = (username: SQL) => sql`(
+const expiredClaim = (username: SQLWrapper) => sql`(
   ${users.emailVerified} = false
   and not exists (select 1 from ${usernameHolds} where ${usernameHolds.username} = lower(${username}) and ${usernameHolds.expiresAt} > now())
 )`
