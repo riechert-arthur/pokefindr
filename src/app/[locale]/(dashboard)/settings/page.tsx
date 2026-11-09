@@ -5,6 +5,7 @@ import { useState, useEffect, Fragment } from 'react'
 import { MenuIcon } from "lucide-react"
 import { ThemeToggle } from "@/components/pokefindr/ThemeToggle"
 import axios from 'axios'
+import { useTranslations } from 'next-intl'
 import { useSidebar } from '@/components/providers/SidebarContextProvider'
 import { APP_NAV_ID } from '@/components/pokefindr/AppRail'
 import { UserMenu } from "@/components/pokefindr/UserMenu"
@@ -20,6 +21,7 @@ interface Settings {
 }
 
 export default function SettingsPage() {
+  const t = useTranslations('settings')
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const { session, isLoading } = useSessionContext()
 
@@ -34,11 +36,11 @@ export default function SettingsPage() {
     // Both email-change links land on /settings?email=link.
     const params = new URLSearchParams(window.location.search)
     if (params.get('email') === 'link' && params.get('error')) {
-      setEmailNote("That link has expired or was already used. Start the change again below.")
+      setEmailNote(t('email.expired'))
     } else if (params.get('email') === 'link') {
-      setEmailNote("Thanks. If you approved the change from your old address, confirm it from the new one's inbox. Your email below is the current one.")
+      setEmailNote(t('email.approved'))
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     ;(async () => {
@@ -69,7 +71,7 @@ export default function SettingsPage() {
       )
       if (data.emailPending) {
         // Nothing changes until both addresses have answered.
-        setEmailNote(`We've emailed ${settings.email} a link to approve the change to ${inputValue}. Then confirm it from that inbox.`)
+        setEmailNote(t('email.pending', { current: settings.email, next: inputValue }))
       } else {
         setSettings((s) => ({ ...s, [field]: inputValue }))
       }
@@ -84,14 +86,14 @@ export default function SettingsPage() {
   }
 
   if (isLoading) {
-    return <LoadSpinner text="Loading profile.." fullScreen={false} />
+    return <LoadSpinner text={t("loadingProfile")} fullScreen={false} />
   }
 
   return (
     <div className={isSidebarOpen ? 'max-sm:ml-16' : undefined}>
       <header className="absolute inset-x-0 top-0 z-10 flex h-16 border-b border-border">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <button onClick={toggleSidebar} className="sm:hidden mr-2 p-1 rounded" aria-label="Open navigation" aria-controls={APP_NAV_ID} aria-expanded={isSidebarOpen}>
+          <button onClick={toggleSidebar} className="sm:hidden mr-2 p-1 rounded" aria-label={t("openNav")} aria-controls={APP_NAV_ID} aria-expanded={isSidebarOpen}>
             <MenuIcon className="size-6 text-muted-foreground hover:text-primary/80" />
           </button>
           <div />
@@ -106,14 +108,14 @@ export default function SettingsPage() {
       </header>
 
       <div className="mx-auto max-w-7xl pt-8 lg:flex lg:gap-x-16 lg:px-8">
-        <h1 className="sr-only">General Settings</h1>
+        <h1 className="sr-only">{t("title")}</h1>
 
         <main className="px-4 py-16 sm:px-6 lg:flex-auto lg:px-0 lg:py-20">
           <div className="mx-auto max-w-2xl space-y-16 sm:space-y-20 lg:mx-0 lg:max-w-none">
             <section>
-              <h2 className="text-base/7 font-semibold text-foreground">Profile</h2>
+              <h2 className="text-base/7 font-semibold text-foreground">{t("profile.title")}</h2>
               <p className="mt-1 text-sm/6 text-muted-foreground">
-                This information will be displayed publicly so be careful what you share.
+                {t("profile.body")}
               </p>
 
               {emailNote && (
@@ -122,15 +124,11 @@ export default function SettingsPage() {
                 </p>
               )}
               {loading ? (
-                <LoadSpinner text="Loading settings..." fullScreen={false} /> 
+                <LoadSpinner text={t("loading")} fullScreen={false} /> 
               ) : (
                 <dl className="mt-6 divide-y divide-border border-t border-border text-sm/6">
                   {(['fullName','email','username'] as const).map((field) => {
-                    const label = field === 'fullName'
-                      ? 'Full name'
-                      : field === 'email'
-                      ? 'Email address'
-                      : 'Username'
+                    const label = t(`fields.${field}`)
                     const value = settings[field]
 
                     return (
@@ -152,13 +150,13 @@ export default function SettingsPage() {
                                 onClick={() => saveEdit(field)}
                                 className="px-3 py-1 text-sm font-semibold text-primary-foreground bg-primary rounded hover:bg-primary/90"
                               >
-                                Save
+                                {t("save")}
                               </button>
                               <button
                                 onClick={cancelEdit}
                                 className="px-3 py-1 text-sm font-semibold text-muted-foreground rounded hover:text-foreground"
                               >
-                                Cancel
+                                {t("cancel")}
                               </button>
                             </div>
                           ) : (
@@ -168,7 +166,7 @@ export default function SettingsPage() {
                                 onClick={() => startEdit(field)}
                                 className="font-semibold text-primary hover:text-primary/80"
                               >
-                                Update
+                                {t("update")}
                               </button>
                             </Fragment>
                           )}
@@ -181,14 +179,14 @@ export default function SettingsPage() {
             </section>
 
             <section>
-              <h2 className="text-base/7 font-semibold text-foreground">Appearance</h2>
-              <p className="mt-1 text-sm/6 text-muted-foreground">Light, dark, or follow your device.</p>
+              <h2 className="text-base/7 font-semibold text-foreground">{t("appearance.title")}</h2>
+              <p className="mt-1 text-sm/6 text-muted-foreground">{t("appearance.body")}</p>
               <ThemeToggle className="mt-4" />
             </section>
 
             <section>
-              <h2 className="text-base/7 font-semibold text-foreground">Assistant</h2>
-              <p className="mt-1 text-sm/6 text-muted-foreground">We keep the text of your assistant conversations for 30 days. Clear it now if you like.</p>
+              <h2 className="text-base/7 font-semibold text-foreground">{t("assistant.title")}</h2>
+              <p className="mt-1 text-sm/6 text-muted-foreground">{t("assistant.body")}</p>
               <ClearAssistantHistory className="mt-4" />
             </section>
           </div>

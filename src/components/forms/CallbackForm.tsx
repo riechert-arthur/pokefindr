@@ -22,7 +22,11 @@ import { useForm } from "react-hook-form"
 import axios from "axios"
 import { toast } from "sonner"
 import { useRouter } from "@/i18n/navigation"
-import { callbackSchema } from "@/lib/schemas"
+import type { AuthSchemas } from "@/lib/schemas"
+import { useTranslations } from "next-intl"
+import { useAuthSchemas } from "./useAuthSchemas"
+
+type CallbackValues = z.infer<AuthSchemas["callbackSchema"]>
 import { z } from "zod/v3"
 import { broadcastAuth } from "@/lib/auth/broadcast"
 import { handleSubmitError } from "@/lib/forms"
@@ -34,16 +38,18 @@ export function CallbackForm({
   ...props
 }: React.ComponentProps<"div"> & { next?: string | null }) {
   const router = useRouter()
-  const form = useForm<z.infer<typeof callbackSchema>>({
+  const t = useTranslations("auth")
+  const { callbackSchema } = useAuthSchemas()
+  const form = useForm<CallbackValues>({
     resolver: zodResolver(callbackSchema),
     defaultValues: { username: "" },
   })
 
-  async function onSubmit(values: z.infer<typeof callbackSchema>) {
+  async function onSubmit(values: CallbackValues) {
     try {
       await axios.post("/api/auth/onboarding", { username: values.username }, { withCredentials: true })
       broadcastAuth("login")
-      toast.success("Welcome aboard!")
+      toast.success(t("callback.welcome"))
       if (next) window.location.assign(next)
       else router.push("/home")
     } catch (err: unknown) {
@@ -55,9 +61,9 @@ export function CallbackForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle>Almost done…</CardTitle>
+          <CardTitle>{t("callback.title")}</CardTitle>
           <CardDescription>
-            Pick a username. It&apos;s what others see on your reviews.
+            {t("callback.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -68,9 +74,9 @@ export function CallbackForm({
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel>{t("fields.username")}</FormLabel>
                     <FormControl>
-                      <Input placeholder="your-handle" autoComplete="username" {...field} />
+                      <Input placeholder={t("callback.usernamePlaceholder")} autoComplete="username" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -82,9 +88,7 @@ export function CallbackForm({
                 className="mt-4 w-full"
                 disabled={form.formState.isSubmitting}
               >
-                {form.formState.isSubmitting
-                  ? "Finishing up…"
-                  : "Finish signing in"}
+                {form.formState.isSubmitting ? t("callback.submitting") : t("callback.submit")}
               </Button>
             </form>
           </Form>

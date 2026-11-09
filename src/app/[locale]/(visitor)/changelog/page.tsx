@@ -1,76 +1,39 @@
-import type { FC } from "react"
+import { Fragment, type FC } from "react"
+import { getTranslations } from "next-intl/server"
 import { setPageLocale, type LocaleParams } from "@/i18n/static"
 
+const ids = <K extends string, I extends string>(release: K, items: readonly I[]) => items.map((item) => `${release}.items.${item}` as const)
+
+/** Each release, oldest first, with the keys of its changes in order (`content.changelog`). */
+const RELEASES = [
+  { version: "1.1", key: "v1_1", items: ids("v1_1", ["load", "grouping", "precise", "data", "zoom", "search", "ui", "discord"]) },
+  { version: "1.2", key: "v1_2", items: ids("v1_2", ["accounts", "reviews", "settings", "sso", "ratings"]) },
+] as const
+
 const ChangelogPage: FC<LocaleParams> = async ({ params }) => {
-  await setPageLocale(params)
+  const locale = await setPageLocale(params)
+  const t = await getTranslations({ locale, namespace: "content.changelog" })
   return (
     <div className="max-w-3xl mx-auto p-6 text-foreground">
-      <h1 className="text-3xl font-bold mb-4">What&apos;s New in Version 1.1</h1>
-      <p className="mb-4">Released May 10, 2025</p>
+      {RELEASES.map((release) => (
+        <Fragment key={release.version}>
+          <h1 className="text-3xl font-bold mb-4">{t("title", { version: release.version })}</h1>
+          <p className="mb-4">{t(`${release.key}.released`)}</p>
 
-      <p className="mb-4">
-        We’ve made improvements to make it easier and faster to find vending
-        machines near you.
-      </p>
+          <p className="mb-4">{t(`${release.key}.intro`)}</p>
 
-      <ul className="list-disc list-inside mb-4 space-y-2">
-        <li>
-          <strong>Faster Map Load</strong> – The map now opens more quickly and
-          runs smoothly.
-        </li>
-        <li>
-          <strong>Smart Grouping</strong> – Nearby machines are grouped together
-          so the map stays clear.
-        </li>
-        <li>
-          <strong>Precise Locations</strong> – Each machine pin is more accurate
-          to its real-world spot.
-        </li>
-        <li>
-          <strong>Up-to-Date Data</strong> – Machines that were added recently
-          have been added to the map.
-        </li>
-        <li>
-          <strong>Easy Zoom</strong> – Tap any group to zoom in and view each
-          machine individually.
-        </li>
-        <li>
-          <strong>Search Bar</strong> – Search for any address and find the closest
-          vending machine within a 30-mile radius.
-        </li>
-        <li>
-          <strong>UI Updates</strong> – Made the sidebar less intrusive.
-        </li>
-        <li>
-          <strong>Discord Community</strong> – We now have a discord community for
-          users to ask for support or request new features. Click support on the home page.
-        </li>
-      </ul>
-      
-      <h1 className="text-3xl font-bold mb-4">What&apos;s New in Version 1.2</h1>
-      <p className="mb-4">Released May 19, 2025</p>
-
-      <p className="mb-4">
-        This update introduces several new features and improvements.
-      </p>
-
-      <ul className="list-disc list-inside mb-4 space-y-2">
-        <li>
-          <strong>Free User Accounts</strong> – Users can now create accounts for free <i>(Email verification required)</i>.
-        </li>
-        <li>
-          <strong>Review Management</strong> – Add, edit, and delete reviews for locations.
-        </li>
-        <li>
-          <strong>Settings Page</strong> – Manage your profile, preferences, and account information.
-        </li>
-        <li>
-          <strong>SSO (Single Sign-On)</strong> – Log in using Google or other providers.
-        </li>
-        <li>
-          <strong>Star Ratings</strong> – Locations now have star ratings based on user reviews.
-        </li>
-      </ul>
+          <ul className="list-disc list-inside mb-4 space-y-2">
+            {release.items.map((item) => (
+              <li key={item}>
+                {t.rich(item, {
+                  b: (chunks) => <strong>{chunks}</strong>,
+                  i: (chunks) => <i>{chunks}</i>,
+                })}
+              </li>
+            ))}
+          </ul>
+        </Fragment>
+      ))}
     </div>
   )
 }

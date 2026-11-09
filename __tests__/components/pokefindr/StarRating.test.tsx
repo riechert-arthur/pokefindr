@@ -97,4 +97,16 @@ describe("StarRating", () => {
     expect(container.querySelectorAll("svg.lucide-star-half")).toHaveLength(0)
     expect(container.querySelectorAll('svg.lucide-star[fill="currentColor"]')).toHaveLength(4)
   })
+
+  it("labels the stars in Spanish, with plurals", () => {
+    render(<StarRating rating={1} onChange={() => {}} />, { locale: "es" })
+    expect(screen.getByRole("radiogroup", { name: "Calificación" })).toBeInTheDocument()
+    expect(screen.getByRole("radio", { name: "1 estrella" })).toHaveAttribute("aria-checked", "true")
+    expect(screen.getByRole("radio", { name: "3 estrellas" })).toBeInTheDocument()
+  })
+
+  it("reads a Spanish rating with a decimal comma", () => {
+    render(<StarRating rating={4.33} />, { locale: "es" })
+    expect(screen.getByRole("img", { name: "4,5 de 5 estrellas" })).toBeInTheDocument()
+  })
 })

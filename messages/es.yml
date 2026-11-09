@@ -28,14 +28,17 @@ kinds:
     label: Máquinas expendedoras
     short: Máquinas
     name: Máquina expendedora
+    many: máquinas expendedoras
   shop:
     label: Tiendas de cartas
     short: Tiendas
     name: Tienda de cartas
+    many: tiendas de cartas
   event:
     label: Eventos
     short: Eventos
     name: Evento
+    many: eventos
 
 map:
   meta:
@@ -354,3 +357,519 @@ addPlace:
     sessionEnded: Tu sesión terminó. Vuelve a iniciar sesión para enviarlo.
     failed: No se pudo enviar. Inténtalo de nuevo.
     offline: No pudimos conectar con PokeFindr. Revisa tu conexión e inténtalo de nuevo.
+
+common:
+  close: Cerrar
+
+nav:
+  home: Inicio
+  blog: Blog
+  map: Mapa
+  discord: Discord
+  settings: Configuración
+  admin: Admin
+  addPlace: Agregar un lugar
+  appNavigation: Navegación de la app
+  tabs: Pestañas
+  logoHome: Inicio de PokeFindr
+  closeNavigation: Cerrar navegación
+  userMenu:
+    trigger: "Menú de la cuenta de {name}"
+    settings: Configuración
+    logOut: Cerrar sesión
+    logOutFailed: No se pudo cerrar sesión. Inténtalo de nuevo.
+
+ui:
+  theme:
+    group: Tema
+    light: Claro
+    dark: Oscuro
+    system: Sistema
+    switchToLight: Cambiar al tema claro
+    switchToDark: Cambiar al tema oscuro
+  starRating:
+    label: Calificación
+    readOnly: "{rating, number} de 5 estrellas"
+    star: "{count, plural, one {# estrella} other {# estrellas}}"
+  status:
+    live: Activo
+    sample: Ejemplo
+    pending: En revisión
+    comingSoon: Próximamente
+    sponsored: Patrocinado
+  search:
+    label: Buscar una ubicación
+    submit: Buscar
+    clear: Borrar búsqueda
+    areas: Zonas
+    locations: Lugares
+    error: La búsqueda no funciona en este momento. Inténtalo de nuevo en un momento.
+    searching: Buscando…
+    noMatches: "Ningún lugar coincide con “{query}”. Prueba con una ciudad, un código postal o una dirección."
+    keys: "<key>↑</key><key>↓</key> para moverte <key>↵</key> para abrir"
+    announce:
+      error: La búsqueda no funciona en este momento.
+      none: No hay coincidencias.
+      results: "{count, plural, one {# resultado} other {# resultados}}. Usa las flechas para moverte y Enter para abrir."
+  commandDialog: Buscar
+
+ads:
+  label: "Patrocinado · {sponsor}"
+  landmark: "Patrocinado: {title}"
+  dismiss: Ocultar anuncios en esta visita
+  hidden: Anuncios ocultos
+  hiddenBody: Seguirán ocultos durante el resto de esta visita.
+
+dashboard:
+  openNav: Abrir navegación
+  openMap: Abrir mapa
+  guest: Invitado
+  greeting: ¿Qué estás buscando hoy?
+  intro: Pregunta por cualquiera de las {count} máquinas expendedoras, tiendas de cartas y eventos. Busca en el mapa, cuenta por zona y planea rutas.
+  introNoCount: Pregunta por cualquiera de las máquinas expendedoras, tiendas de cartas y eventos. Busca en el mapa, cuenta por zona y planea rutas.
+  suggestionsLabel: Sugerencias
+  suggestions:
+    closest: ¿Qué es lo más cercano a mí?
+    portland: Máquinas expendedoras a menos de 5 millas de Portland, las más cercanas primero
+    denver: Planea una ruta por 4 máquinas cerca de Denver
+    washington: ¿Qué tiendas tienen más máquinas en Washington?
+    phoenix: ¿Qué eventos se vienen cerca de Phoenix?
+  tiles:
+    loading: Cargando…
+    near:
+      title: Cerca de ti
+      count: lugares a menos de {radius}
+      openOnMap: Abrir en el mapa
+      denied: La ubicación está desactivada. Busca una ciudad en el mapa.
+      prompt: Comparte tu ubicación para ver qué hay cerca y preguntarle al asistente.
+      locating: Buscando tu ubicación…
+      locate: Usar mi ubicación
+    reviews:
+      title: Tus reseñas
+      error: No pudimos cargar tus reseñas. Revisa tu conexión y recarga la página.
+      empty: Las reseñas que escribas sobre un lugar aparecen aquí, para que puedas encontrarlas de nuevo.
+      unnamed: Un lugar
+      manage: Administrar tus reseñas
+    submissions:
+      title: Tus aportes
+      body: Las tiendas de cartas y los eventos que agregues aparecen aquí mientras esperan revisión.
+      add: Agregar un lugar
+    events:
+      title: Próximos eventos
+      error: No pudimos cargar los eventos. Revisa tu conexión y recarga la página.
+      empty: Las ferias de cartas y las noches de liga aparecen aquí cuando se agregan.
+  reviews:
+    loadingProfile: Cargando perfil..
+    loading: Cargando tus reseñas…
+    empty: Todavía no has escrito ninguna reseña.
+    deleteConfirm: ¿Eliminar esta reseña?
+    edit:
+      title: Editar reseña
+      description: Actualiza tu calificación y tu comentario.
+      rating: Calificación
+      comment: Comentario
+      cancel: Cancelar
+      save: Guardar
+
+assistant:
+  newChat: Nuevo chat
+  followUp: Haz otra pregunta…
+  disclaimer: Las distancias son en línea recta. Las respuestas pueden tener errores, así que revisa el mapa.
+  composer:
+    label: Escríbele al asistente
+    stop: Detener
+    send: Enviar
+  placeholder:
+    still: Pregunta por máquinas, tiendas o eventos…
+    prompts:
+      portland: Máquinas expendedoras a menos de 5 millas de Portland
+      denver: Planea una ruta por 4 máquinas cerca de Denver
+      washington: ¿Qué tiendas tienen más máquinas en Washington?
+      closest: ¿Cuál es la máquina más cercana a mí?
+      seattle: Tiendas de cartas cerca de Seattle que vendan cartas sueltas
+      phoenix: ¿Hay eventos próximos cerca de Phoenix?
+  chat:
+    thinking: Pensando…
+    stopped: Detenido.
+    sessionEnded: Tu sesión terminó. Inicia sesión de nuevo para seguir chateando.
+    failed: Algo salió mal con el asistente. Inténtalo de nuevo.
+    cutShort: La respuesta quedó incompleta. Pide menos cosas a la vez.
+    stoppedEarly: La respuesta se detuvo antes de tiempo. Inténtalo de nuevo.
+    unreachable: No pudimos conectar con el asistente. Revisa tu conexión e inténtalo de nuevo.
+  feedback:
+    group: Califica esta respuesta
+    good: Buena respuesta
+    bad: Mala respuesta
+    failed: No pudimos enviarlo. Inténtalo de nuevo.
+    thanks: Gracias por tus comentarios.
+    why: ¿Qué estuvo mal? (opcional)
+    reasons:
+      wrong_place: Lugar equivocado
+      outdated: Información desactualizada
+      misunderstood: No entendió
+      other: Otro
+    more: Cuéntanos más (opcional)
+    skip: Omitir
+    send: Enviar
+  cards:
+    map: Mapa
+    onMap: "{name} en el mapa"
+    openArea: Abrir esta zona en el mapa
+    nothingMatched: No hubo resultados.
+    route: "Ruta · {count, plural, one {# parada} other {# paradas}} · {distance} en línea recta"
+    showOnMap: Mostrar en el mapa
+    googleMaps: Abrir en Google Maps
+    start: Inicio
+    leg: "+{distance}"
+    topRetailers: Tiendas con más máquinas
+    event: Evento
+    noEvents: No hay eventos próximos.
+  clearHistory:
+    button: Borrar historial del asistente
+    clearing: Borrando…
+    done: Historial del asistente borrado
+    doneBody: Se eliminó el texto de tus conversaciones.
+    failed: No pudimos borrar tu historial
+    failedBody: Revisa tu conexión e inténtalo de nuevo.
+
+settings:
+  title: Configuración general
+  loadingProfile: Cargando perfil..
+  loading: Cargando configuración...
+  openNav: Abrir navegación
+  profile:
+    title: Perfil
+    body: Esta información se mostrará públicamente, así que ten cuidado con lo que compartes.
+  fields:
+    fullName: Nombre completo
+    email: Correo electrónico
+    username: Nombre de usuario
+  save: Guardar
+  cancel: Cancelar
+  update: Cambiar
+  email:
+    pending: Enviamos a {current} un enlace para aprobar el cambio a {next}. Después, confírmalo desde esa bandeja de entrada.
+    approved: Gracias. Si aprobaste el cambio desde tu dirección anterior, confírmalo desde la bandeja de entrada de la nueva. El correo de abajo es el actual.
+    expired: Ese enlace caducó o ya se usó. Vuelve a empezar el cambio abajo.
+  appearance:
+    title: Apariencia
+    body: Claro, oscuro o según tu dispositivo.
+  assistant:
+    title: Asistente
+    body: Guardamos el texto de tus conversaciones con el asistente durante 30 días. Puedes borrarlo ahora si quieres.
+
+auth:
+  meta:
+    forgotPassword: Restablece tu contraseña
+    resetPassword: Elige una contraseña nueva
+    consent: Conectar una app
+  terms: "Al hacer clic en continuar, aceptas nuestros <terms>Términos del servicio</terms> y nuestra <privacy>Política de privacidad</privacy>."
+  fields:
+    email: Correo electrónico
+    emailPlaceholder: m@example.com
+    password: Contraseña
+    name: Nombre
+    namePlaceholder: María López
+    username: Nombre de usuario
+    usernamePlaceholder: mlopez1234
+    verifyPassword: Confirmar contraseña
+  oauth:
+    continueWith: "Continuar con {provider}"
+    opening: "Abriendo {provider}…"
+    failed: "No pudimos conectar con {provider}. Inténtalo de nuevo."
+    divider: O continúa con tu correo
+  login:
+    title: Hola de nuevo
+    descriptionWithProviders: Inicia sesión con tu cuenta o tu correo
+    description: Inicia sesión con tu correo
+    notices:
+      verified: Tu correo está confirmado. Inicia sesión para empezar.
+      linkExpired: Ese enlace expiró o ya se usó. Inicia sesión y te enviaremos uno nuevo.
+      oauthFailed: Ese inicio de sesión no se completó. Inténtalo de nuevo o usa tu correo.
+      connectApp: Inicia sesión para conectar una app a tu cuenta de PokeFindr. Después verás lo que pide.
+    forgot: ¿Olvidaste tu contraseña?
+    submit: Iniciar sesión
+    submitting: Iniciando sesión...
+    noAccount: "¿No tienes una cuenta? <link>Regístrate</link>"
+    success: ¡Sesión iniciada!
+  signup:
+    title: Encantados de conocerte
+    descriptionWithProviders: Regístrate con tu cuenta o tu correo
+    description: Regístrate con tu correo
+    submit: Crear cuenta
+    submitting: Creando cuenta...
+    haveAccount: "¿Ya tienes una cuenta? <link>Inicia sesión</link>"
+  callback:
+    checking: Iniciando sesión...
+    failed: Ese inicio de sesión no se completó.
+    backToLogin: Volver a iniciar sesión
+    title: Ya casi…
+    description: Elige un nombre de usuario. Es lo que otros ven en tus reseñas.
+    usernamePlaceholder: tu-usuario
+    submit: Terminar de iniciar sesión
+    submitting: Terminando…
+    welcome: ¡Te damos la bienvenida!
+  confirm:
+    title: Revisa tu correo
+    body: Te enviamos un enlace para confirmar tu cuenta. Funciona durante 24 horas. ¿No te llegó? Revisa la carpeta de spam, o inicia sesión y te enviaremos otro.
+    login: Ir a iniciar sesión
+    support: Contactar con soporte
+  forgotPassword:
+    title: Restablece tu contraseña
+    description: Te enviaremos por correo un enlace para elegir una nueva
+    sentDescription: Revisa tu bandeja de entrada
+    sent: "Si <b>{email}</b> tiene una cuenta de PokeFindr, ya va en camino un enlace para restablecer la contraseña. Funciona durante 1 hora."
+    backToLogin: Volver a iniciar sesión
+    submit: Enviar enlace
+    submitting: Enviando...
+    remembered: "¿Ya la recordaste? <link>Inicia sesión</link>"
+  resetPassword:
+    expiredTitle: Ese enlace expiró
+    expiredDescription: Los enlaces para restablecer la contraseña funcionan una sola vez, durante 1 hora.
+    newLink: Enviar un enlace nuevo
+    title: Elige una contraseña nueva
+    description: Se cerrará tu sesión en todos los demás dispositivos.
+    password: Contraseña nueva
+    repeat: Repítela
+    submit: Cambiar contraseña
+    submitting: Guardando...
+    success: Contraseña cambiada. Inicia sesión con la nueva.
+    expired: Ese enlace expiró o ya se usó. Pide uno nuevo.
+    failed: No pudimos cambiar tu contraseña. Inténtalo de nuevo.
+  consent:
+    invalid: Este enlace expiró o no es válido. Vuelve a conectar desde la app.
+    title: "¿Conectar {app}?"
+    description: "Quiere usar tu cuenta de PokeFindr, <user>@{username}</user>."
+    you: tú
+    canDo: "Podrá:"
+    warning: "Si lo permites, volverás a <b>{host}</b>. Permítelo solo si acabas de pedirle a una app que se conecte. Nunca podrá ver tu contraseña. Puedes desconectarla cuando quieras desde la app."
+    allow: Permitir
+    allowing: Conectando…
+    cancel: Cancelar
+    cancelling: Cancelando…
+    failed: No se completó. Vuelve a conectar desde la app.
+    scopes:
+      accountRead: Ver tus reseñas y los lugares que enviaste
+      placesSubmit: Enviar tiendas de cartas y eventos para revisión, en tu nombre
+      offlineAccess: Seguir conectada hasta que la desconectes
+      none: Saber que tienes una cuenta de PokeFindr
+  validation:
+    emailRequired: Ingresa un correo
+    emailInvalid: Ingresa un correo válido
+    passwordRequired: Ingresa una contraseña
+    passwordTooShort: Ingresa una contraseña más larga
+    passwordTooLong: Ingresa una contraseña más corta
+    passwordSymbol: Incluye al menos un carácter que no sea letra ni dígito
+    passwordMismatch: Las contraseñas no coinciden
+    nameRequired: Ingresa un nombre.
+    nameLetters: Solo se permiten letras.
+    usernameTooShort: Usa al menos 3 caracteres.
+    usernameTooLong: Usa como máximo 30 caracteres.
+    usernameCharacters: Usa letras, dígitos, puntos, guiones y guiones bajos.
+
+landing:
+  meta:
+    title: Encuentra todas las máquinas expendedoras de Pokémon - Mapa gratis | PokeFindr
+    description: Encuentra todas las máquinas expendedoras de Pokémon cerca de ti con el mapa gratis de PokeFindr. Descubre máquinas expendedoras de cartas Pokémon en Kroger, Safeway y otras tiendas. ¡Planea tus paradas para comprar cartas del TCG y coleccionar cartas Pokémon!
+    keywords: máquinas expendedoras de Pokémon, máquinas expendedoras de cartas Pokémon, máquinas expendedoras de Pokémon cerca de mí, ubicaciones de máquinas expendedoras de Pokémon, cartas Pokémon, mapa de Pokémon, máquina expendedora de cartas Pokémon cerca de mí, máquina expendedora TCG, máquina expendedora de Pokémon Kroger, máquina expendedora de Pokémon Colorado, coleccionar cartas Pokémon
+    ogTitle: Encuentra todas las máquinas expendedoras de Pokémon | PokeFindr
+    pageName: Encuentra máquinas expendedoras de Pokémon cerca de ti
+    pageDescription: Busca una ciudad para ver en un mapa gratis cada máquina expendedora de cartas Pokémon cercana.
+  hero:
+    new: Nuevo
+    eyebrow: Busca por ciudad y explora lo que hay cerca
+    title: Encuentra máquinas expendedoras de Pokémon <em>cerca de ti</em>
+    body: Descubre las máquinas expendedoras de cartas Pokémon más cercanas en Kroger, King Soopers, Safeway y más, y planea tu próxima parada para coleccionar cartas.
+    stats:
+      vending: máquinas expendedoras
+      states: "{count, plural, one {estado} other {estados}}"
+      countries: país, pronto más
+  search:
+    placeholder: Ciudad o dirección, como Denver, CO
+    try: Prueba
+    myLocation: Usar mi ubicación
+    viewMap: Ver el mapa completo
+  how:
+    title: De tu ciudad a la máquina en tres pasos
+    intro: No necesitas cuenta. Busca, mira y ve.
+    steps:
+      search:
+        title: Busca tu ciudad
+        text: Escribe una ciudad o dirección. Cada sugerencia muestra cuántos lugares hay a menos de 10 millas.
+      nearby:
+        title: Mira qué hay cerca
+        text: El mapa se abre en tu zona con todo lo que está dentro del radio, primero lo más cercano. Amplíalo a 25 o 50 millas.
+      directions:
+        title: Obtén indicaciones
+        text: Abre cualquier lugar en Google Maps, o copia el enlace de la página para compartir la vista exacta con un amigo.
+  kinds:
+    title: Más que máquinas expendedoras
+    intro: El mapa está creciendo para incluir los lugares a los que de verdad van los coleccionistas.
+    vending: Máquinas expendedoras oficiales de cartas Pokémon en Safeway, Kroger, Fred Meyer y más, de la lista de tiendas del Pokémon Center.
+    shop: Tiendas de juegos locales que venden cartas sueltas y producto sellado, con horarios y enlaces.
+    event: Ferias de cartas, noches de liga y eventos de presentación, con fechas en el mapa.
+
+faq:
+  title: Preguntas frecuentes
+  intro: ¿Algo más? Pregunta en <link>Soporte</link>.
+  items:
+    what:
+      question: ¿Qué es una máquina expendedora de Pokémon?
+      answer: Una máquina de venta automática que vende productos oficiales del Juego de Cartas Coleccionables Pokémon, como sobres y Cajas de Entrenador Élite. Las surte The Pokémon Company International, así que todo lo que contienen es auténtico.
+    map:
+      question: ¿Cómo uso el mapa?
+      answer: Busca una ciudad o dirección desde la página de inicio o el mapa. El mapa se abre en esa zona y muestra cada lugar dentro de tu radio, primero el más cercano. Aleja el mapa para ver todo el país, o elige un estado para explorarlo.
+    verified:
+      question: ¿Las ubicaciones de las máquinas expendedoras están verificadas?
+      answer: Sí. Las ubicaciones vienen de la lista oficial de tiendas en el <center>sitio web del Pokémon Center</center>.
+    info:
+      question: ¿Qué información hay de cada lugar?
+      answer: Cada máquina expendedora muestra su tienda, dirección, número de máquina y un enlace a Google Maps. Los usuarios con sesión iniciada pueden leer y escribir reseñas.
+    filter:
+      question: ¿Puedo filtrar los lugares?
+      answer: Sí. Elige qué tipos de lugares mostrar y fija un radio de búsqueda de 5, 10, 25 o 50 millas.
+    add:
+      question: ¿Cómo puedo agregar un lugar nuevo?
+      answer: Las máquinas expendedoras vienen de la lista oficial, así que avísanos de una que falte a través de <support>Soporte</support>. Pronto podrás agregar tú mismo tiendas de cartas y eventos.
+    report:
+      question: ¿Puedo reportar información desactualizada o incorrecta?
+      answer: Sí. Envíanosla a través de <support>Soporte</support> y la corregiremos.
+    account:
+      question: ¿Necesito una cuenta?
+      answer: No. Cualquiera puede explorar el mapa. Con una cuenta puedes escribir reseñas.
+    countries:
+      question: ¿PokeFindr está disponible fuera de EE. UU.?
+      answer: Todavía no. Los demás países aparecen en gris en el mapa hasta que los agreguemos.
+    official:
+      question: ¿Es un sitio web oficial de Pokémon?
+      answer: No. PokeFindr es un recurso hecho por fans y no está afiliado a The Pokémon Company International.
+
+content:
+  nav:
+    map: Mapa
+    blog: Blog
+    support: Soporte
+    changelog: Novedades
+    dashboard: Panel
+    developers: Desarrolladores
+    privacy: Política de privacidad
+    terms: Términos del servicio
+  header:
+    navLabel: Global
+    logIn: Iniciar sesión
+    openMenu: Abrir el menú principal
+    menu: Menú
+    closeMenu: Cerrar el menú
+  footer:
+    home: Inicio de PokeFindr
+    navLabel: Pie de página
+    notice: PokeFindr es un recurso hecho por fans y no está afiliado a The Pokémon Company International. Las ubicaciones de las máquinas expendedoras vienen de la lista de tiendas oficiales en EE. UU. del Pokémon Center.
+  blog:
+    meta:
+      title: "Blog de PokeFindr: tu guía definitiva para coleccionar cartas Pokémon"
+      description: Descubre consejos de expertos y las últimas noticias sobre coleccionar cartas Pokémon. Desde estrategias para armar mazos hasta tendencias del mercado, PokeFindr es tu recurso para todo lo relacionado con el TCG de Pokémon.
+      keywords: coleccionar cartas Pokémon, TCG de Pokémon, estrategias para armar mazos, tendencias del mercado de cartas Pokémon, blog de PokeFindr
+      ogDescription: Mantente al día con consejos de expertos y las últimas noticias sobre coleccionar cartas Pokémon. Descubre guías completas y recursos en PokeFindr.
+    title: Del blog
+    intro: Aprende detalles interesantes sobre cómo conseguir cartas Pokémon para tu colección.
+  changelog:
+    title: Novedades de la versión {version}
+    v1_1:
+      released: Publicada el 10 de mayo de 2025
+      intro: Hicimos mejoras para que encontrar máquinas expendedoras cerca de ti sea más fácil y rápido.
+      items:
+        load: <b>Mapa más rápido</b> – El mapa ahora se abre más rápido y funciona con fluidez.
+        grouping: <b>Agrupación inteligente</b> – Las máquinas cercanas se agrupan para que el mapa se vea despejado.
+        precise: <b>Ubicaciones precisas</b> – Cada marcador de máquina está más cerca de su lugar real.
+        data: <b>Datos al día</b> – Las máquinas agregadas recientemente ya están en el mapa.
+        zoom: <b>Zoom fácil</b> – Toca cualquier grupo para acercarte y ver cada máquina por separado.
+        search: <b>Barra de búsqueda</b> – Busca cualquier dirección y encuentra la máquina expendedora más cercana en un radio de 30 millas.
+        ui: <b>Cambios en la interfaz</b> – La barra lateral ahora estorba menos.
+        discord: <b>Comunidad de Discord</b> – Ahora tenemos una comunidad en Discord para pedir ayuda o sugerir funciones nuevas. Haz clic en Soporte en la página de inicio.
+    v1_2:
+      released: Publicada el 19 de mayo de 2025
+      intro: Esta actualización trae varias funciones nuevas y mejoras.
+      items:
+        accounts: <b>Cuentas gratis</b> – Ahora puedes crear una cuenta gratis <i>(requiere verificar tu correo)</i>.
+        reviews: <b>Gestión de reseñas</b> – Agrega, edita y elimina reseñas de lugares.
+        settings: <b>Página de configuración</b> – Administra tu perfil, tus preferencias y la información de tu cuenta.
+        sso: <b>Inicio de sesión único (SSO)</b> – Inicia sesión con Google u otros proveedores.
+        ratings: <b>Calificaciones con estrellas</b> – Los lugares ahora tienen calificaciones con estrellas según las reseñas de los usuarios.
+    modal:
+      items:
+        accounts: <b>Cuentas gratis</b> – Ahora puedes crear una cuenta gratis.
+        settings: <b>Página de configuración</b> – Administra tu perfil y la información de tu cuenta.
+        sso: <b>Inicio de sesión único (SSO)</b> – Inicia sesión con Google (pronto más proveedores).
+      close: ¡Entendido!
+  developers:
+    meta:
+      title: "PokeFindr para desarrolladores: úsalo desde Claude, ChatGPT y Cursor"
+      description: Conecta el servidor MCP de PokeFindr a Claude, ChatGPT, Cursor, VS Code o cualquier cliente MCP para encontrar máquinas expendedoras de cartas Pokémon, tiendas de cartas y eventos.
+    title: Usa PokeFindr desde tu asistente de IA
+    intro: PokeFindr tiene un servidor MCP, así que Claude, ChatGPT, Cursor y otros clientes MCP pueden encontrar por ti máquinas expendedoras de cartas Pokémon, tiendas de cartas y eventos. Cada respuesta enlaza al mapa.
+    public:
+      title: Pública
+      badge: Sin iniciar sesión
+      body: Búsqueda, conteos, rutas y eventos. No hay nada que configurar.
+    account:
+      title: Tu cuenta
+      badge: Iniciar sesión
+      body: Todo lo anterior, más tus reseñas y propuestas, y agregar una tienda o un evento. Apruebas cada app una sola vez.
+    setup:
+      title: Configúralo
+      intro: Elige tu cliente. Los ejemplos usan la URL pública; cámbiala por la URL de la cuenta para iniciar sesión.
+      other: Otros clientes
+      claude:
+        settings: En Claude (web o escritorio), abre Settings y luego Connectors.
+        add: Agrega un conector personalizado llamado PokeFindr, con la URL de abajo.
+        account: Con la URL de la cuenta, Claude abre PokeFindr para que inicies sesión y lo apruebes.
+      claudeCode: Ejecuta esto en una terminal. Usa la URL de la cuenta para iniciar sesión (ejecuta /mcp en Claude Code para terminar).
+      chatgpt:
+        settings: En ChatGPT, abre Settings, luego Apps & Connectors, y activa el modo de desarrollador en Advanced.
+        add: Crea un conector llamado PokeFindr con la URL de abajo.
+        account: "Con la URL de la cuenta, elige OAuth: ChatGPT abre PokeFindr para que inicies sesión y lo apruebes."
+      cursor: Agrega esto a ~/.cursor/mcp.json (o a .cursor/mcp.json en un proyecto).
+      vscode: "Agrega esto a .vscode/mcp.json, o ejecuta MCP: Add Server desde la paleta de comandos."
+      otherClients: Funciona cualquier cliente que use Streamable HTTP, con el protocolo 2025 o 2026-07-28. No se usan sesiones, así que cada solicitud es independiente.
+    tools:
+      title: Qué puede hacer
+      intro: Pregunta con tus propias palabras, como “¿Dónde puedo comprar cartas Pokémon cerca de Denver?” o “Planea una ruta por las tres máquinas más cercanas a Seattle.”
+      everyone: Para todos
+      withAccount: Con tu cuenta
+      find_places: Máquinas expendedoras, tiendas de cartas y eventos cerca de una ciudad o dirección de EE. UU., o en un estado. Hasta 10, primero los más cercanos.
+      area_stats: Cuántos lugares de cada tipo hay en una zona, las tiendas principales y las ciudades principales.
+      plan_route: Ordena de 2 a 9 lugares de forma lógica, con un enlace a las indicaciones de Google Maps.
+      list_events: Próximas ferias de cartas, noches de liga y reabastecimientos, primero los más próximos o los más cercanos.
+      get_place: Los detalles de un lugar y un resumen de sus reseñas.
+      my_reviews: Tus reseñas, primero las más recientes.
+      my_submissions: Las tiendas y los eventos que propusiste, y si cada uno está pendiente, aprobado o no aprobado.
+      submit_place: Agrega una tienda de cartas o un evento, a tu nombre, para que lo revise un moderador.
+    limits:
+      title: Límites y privacidad
+      rate: Cada cliente puede enviar 30 solicitudes por minuto y ver 200 lugares distintos al día. El mapa tiene todos los lugares, sin límite.
+      answers: Cada respuesta tiene hasta 10 lugares. Los nombres, las direcciones y las reseñas los escriben usuarios de PokeFindr.
+      password: Conectar tu cuenta nunca comparte tu contraseña. Ves lo que pide una app antes de permitirlo, y puedes desconectarla desde la app.
+      submissions: Los lugares que propones esperan a un moderador, igual que los que se agregan en el mapa. Puedes proponer cinco al día.
+      questions: ¿Preguntas o ideas? Pregunta en <link>Discord</link>.
+    copy:
+      copy: Copiar
+      copied: Copiado
+      url:
+        aria: Copiar la URL
+        done: URL copiada
+        manual: Copia la URL a mano
+      command:
+        aria: Copiar el comando
+        done: Comando copiado
+        manual: Copia el comando a mano
+      config:
+        aria: Copiar la configuración
+        done: Configuración copiada
+        manual: Copia la configuración a mano
+  recentReviews:
+    title: Tus reseñas recientes
+    edit: Editar
+    delete: Eliminar
+
+legal:
+  englishOnly: Esta página solo está disponible en inglés. <link>Leerla en inglés</link>.

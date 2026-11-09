@@ -1,10 +1,12 @@
 import type { FC } from "react"
 import { setPageLocale, type LocaleParams } from "@/i18n/static"
+import { EnglishOnlyNotice } from "@/components/EnglishOnlyNotice"
 
 const PrivacyPolicyPage: FC<LocaleParams> = async ({ params }) => {
   await setPageLocale(params)
   return (
-    <div className="max-w-3xl mx-auto p-6 text-foreground">
+    <div lang="en" className="max-w-3xl mx-auto p-6 text-foreground">
+      <EnglishOnlyNotice href="/privacy-policy" />
       <h1 className="text-3xl font-bold mb-4">PRIVACY NOTICE</h1>
       <p className="mb-4">Last updated November 8, 2026</p>
 

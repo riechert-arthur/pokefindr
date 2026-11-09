@@ -4,13 +4,14 @@ import { ExternalLinkIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { KindDot } from "@/components/pokefindr/KindDot"
 import { StatusBadge } from "@/components/pokefindr/StatusBadge"
-import { KINDS, KIND_ORDER } from "@/components/pokefindr/kinds"
+import { KIND_ORDER } from "@/components/pokefindr/kinds"
 import { DEFAULT_RADIUS, RADII, mapUrl, roundPlace } from "@/lib/map/url-state"
 import { safeHref } from "@/lib/assistant/safe-link"
 import { track } from "@/lib/analytics"
 import type { AssistantCard, AssistantPlace } from "@/lib/types/assistant"
 import { useFormat } from "@/i18n/format"
 import { useDistance } from "@/i18n/useDistance"
+import { useTranslations } from "next-intl"
 
 /** The prototype's `.acard`: a bordered card with a muted header and an optional footer of actions. */
 function Card({ title, children, footer }: { title: ReactNode; children: ReactNode; footer?: ReactNode }) {
@@ -31,9 +32,11 @@ const mapRadius = (r: number) => RADII.find((x) => x >= r) ?? RADII[RADII.length
 
 function PlaceRow({ p }: { p: AssistantPlace }) {
   const { distance } = useDistance()
+  const t = useTranslations("assistant.cards")
+  const tk = useTranslations("kinds")
   return (
     <div className="flex items-center gap-2.5 border-b border-border px-3 py-2 text-body last:border-b-0">
-      <KindDot kind={p.kind} label={KINDS[p.kind].one} />
+      <KindDot kind={p.kind} label={tk(`${p.kind}.name`)} />
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
           <b className="truncate font-semibold text-foreground">{p.name}</b>
@@ -43,8 +46,8 @@ function PlaceRow({ p }: { p: AssistantPlace }) {
       </span>
       {p.miles !== undefined && <span className={dist}>{distance(p.miles)}</span>}
       <Button asChild variant="ghost" size="sm">
-        <Link href={mapUrl("/map", { location: p.id })} aria-label={`${p.name} on the map`} onClick={() => track("details_open", { kind: p.kind, from: "assistant" })}>
-          Map
+        <Link href={mapUrl("/map", { location: p.id })} aria-label={t("onMap", { name: p.name })} onClick={() => track("details_open", { kind: p.kind, from: "assistant" })}>
+          {t("map")}
         </Link>
       </Button>
     </div>
@@ -55,6 +58,8 @@ function PlaceRow({ p }: { p: AssistantPlace }) {
 export function AssistantCardView({ card }: { card: AssistantCard }) {
   const f = useFormat()
   const { distance } = useDistance()
+  const t = useTranslations("assistant.cards")
+  const tk = useTranslations("kinds")
   if (card.type === "places") {
     return (
       <Card
@@ -63,13 +68,13 @@ export function AssistantCardView({ card }: { card: AssistantCard }) {
           card.near && (
             <Button asChild variant="outline" size="sm">
               <Link href={mapUrl("/map", { q: card.near.label === "you" ? null : card.near.label, near: card.near.label === "you" ? "me" : null, lng: card.near.label === "you" ? null : roundPlace(card.near.lng), lat: card.near.label === "you" ? null : roundPlace(card.near.lat), r: mapRadius(card.near.radiusMiles) })}>
-                Open this area on the map
+                {t("openArea")}
               </Link>
             </Button>
           )
         }
       >
-        {card.places.length ? card.places.map((p) => <PlaceRow key={p.id} p={p} />) : <p className="px-3 py-2.5 text-body text-muted-foreground">Nothing matched.</p>}
+        {card.places.length ? card.places.map((p) => <PlaceRow key={p.id} p={p} />) : <p className="px-3 py-2.5 text-body text-muted-foreground">{t("nothingMatched")}</p>}
       </Card>
     )
   }
@@ -78,16 +83,16 @@ export function AssistantCardView({ card }: { card: AssistantCard }) {
     const directions = safeHref(card.mapsUrl)
     return (
       <Card
-        title={`Route · ${card.stops.length} stops · ${distance(card.totalMiles)} straight-line`}
+        title={t("route", { count: card.stops.length, distance: distance(card.totalMiles) })}
         footer={
           <>
             <Button asChild variant="outline" size="sm">
-              <Link href={mapUrl("/map", { route: card.stops.map((s) => s.id) })}>Show on map</Link>
+              <Link href={mapUrl("/map", { route: card.stops.map((s) => s.id) })}>{t("showOnMap")}</Link>
             </Button>
             {directions && (
               <Button asChild size="sm">
                 <a href={directions} target="_blank" rel="noopener noreferrer">
-                  Open in Google Maps
+                  {t("googleMaps")}
                   <ExternalLinkIcon className="size-3.5" aria-hidden />
                 </a>
               </Button>
@@ -105,7 +110,7 @@ export function AssistantCardView({ card }: { card: AssistantCard }) {
                 <b className="block truncate font-semibold text-foreground">{s.name}</b>
                 <span className={sub}>{[s.address, s.city].filter(Boolean).join(", ")}</span>
               </span>
-              <span className={dist}>{i === 0 && !card.start ? "Start" : `+${distance(card.legs[i] ?? 0)}`}</span>
+              <span className={dist}>{i === 0 && !card.start ? t("start") : t("leg", { distance: distance(card.legs[i] ?? 0) })}</span>
             </li>
           ))}
         </ol>
@@ -121,12 +126,12 @@ export function AssistantCardView({ card }: { card: AssistantCard }) {
           {KIND_ORDER.map((k) => (
             <span key={k}>
               <b className="block text-heading tabular-nums text-foreground">{f.count(card.byKind[k] ?? 0)}</b>
-              {KINDS[k].many}
+              {tk(`${k}.many`)}
             </span>
           ))}
         </div>
         {card.topRetailers.length > 0 && (
-          <div className="grid gap-1.5 px-3 pb-3" aria-label="Top retailers">
+          <div className="grid gap-1.5 px-3 pb-3" aria-label={t("topRetailers")}>
             {card.topRetailers.map((r) => (
               <div key={r.retailer} className="grid grid-cols-[110px_minmax(0,1fr)_36px] items-center gap-2 text-caption">
                 <span className="truncate">{r.retailer}</span>
@@ -147,7 +152,7 @@ export function AssistantCardView({ card }: { card: AssistantCard }) {
       {card.events.length ? (
         card.events.map((e) => (
           <div key={e.id} className="flex items-center gap-2.5 border-b border-border px-3 py-2 text-body last:border-b-0">
-            <KindDot kind="event" label="Event" />
+            <KindDot kind="event" label={t("event")} />
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-1.5">
                 <b className="truncate font-semibold text-foreground">{e.title}</b>
@@ -157,14 +162,14 @@ export function AssistantCardView({ card }: { card: AssistantCard }) {
             </span>
             {e.miles !== undefined && <span className={dist}>{distance(e.miles)}</span>}
             <Button asChild variant="ghost" size="sm">
-              <Link href={mapUrl("/map", { q: [e.city, e.state].filter(Boolean).join(", ") || e.title, lng: roundPlace(e.lng), lat: roundPlace(e.lat), r: DEFAULT_RADIUS, types: ["event"] })} aria-label={`${e.title} on the map`}>
-                Map
+              <Link href={mapUrl("/map", { q: [e.city, e.state].filter(Boolean).join(", ") || e.title, lng: roundPlace(e.lng), lat: roundPlace(e.lat), r: DEFAULT_RADIUS, types: ["event"] })} aria-label={t("onMap", { name: e.title })}>
+                {t("map")}
               </Link>
             </Button>
           </div>
         ))
       ) : (
-        <p className="px-3 py-2.5 text-body text-muted-foreground">No upcoming events.</p>
+        <p className="px-3 py-2.5 text-body text-muted-foreground">{t("noEvents")}</p>
       )}
     </Card>
   )

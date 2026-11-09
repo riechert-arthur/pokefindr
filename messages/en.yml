@@ -47,14 +47,18 @@ kinds:
     short: Vending
     # One of them, as a label over a place's name.
     name: Vending machine
+    # Several, under a number: "1,457 vending machines".
+    many: vending machines
   shop:
     label: Card shops
     short: Shops
     name: Card shop
+    many: card shops
   event:
     label: Events
     short: Events
     name: Event
+    many: events
 
 # The map page (/map): everything on and around the map.
 map:
@@ -444,3 +448,665 @@ addPlace:
     sessionEnded: Your session ended. Log in again to send this.
     failed: Couldn't send it. Try again.
     offline: Couldn't reach PokeFindr. Check your connection and try again.
+
+# Words used by many components.
+common:
+  # Screen-reader label of the X button on dialogs, sheets and drawers.
+  close: Close
+
+# The app's navigation: the side rail (desktop), the tab bar (phones) and the user menu.
+nav:
+  home: Home
+  blog: Blog
+  map: Map
+  discord: Discord
+  settings: Settings
+  admin: Admin
+  # Tab bar: opens the map's add-a-place flow.
+  addPlace: Add a place
+  # Accessible names of the navigation landmarks.
+  appNavigation: App navigation
+  tabs: Tabs
+  # The logo at the top of the rail, a link to the landing page.
+  logoHome: PokeFindr home
+  # Phones: the button that closes the slide-in rail.
+  closeNavigation: Close navigation
+  userMenu:
+    # The avatar button. {name} is the user's display name.
+    trigger: "Account menu for {name}"
+    settings: Settings
+    logOut: Log out
+    logOutFailed: Couldn't log out. Please try again.
+
+# Shared UI pieces (src/components/ui and src/components/pokefindr).
+ui:
+  # The light/dark theme switch.
+  theme:
+    # Accessible name of the light/dark/system button group.
+    group: Theme
+    light: Light
+    dark: Dark
+    system: System
+    # The one-button version: what clicking it does.
+    switchToLight: Switch to light theme
+    switchToDark: Switch to dark theme
+  starRating:
+    # Default accessible name of the star input.
+    label: Rating
+    # A read-only rating, read by screen readers. {rating} is 0–5 in half steps (4.5).
+    readOnly: "{rating, number} out of 5 stars"
+    # Each star of the input.
+    star: "{count, plural, one {# star} other {# stars}}"
+  # Small outlined badges.
+  status:
+    live: Live
+    sample: Sample
+    pending: Pending review
+    comingSoon: Coming soon
+    sponsored: Sponsored
+  # The search box on the landing page and the map.
+  search:
+    # The input's default accessible name.
+    label: Search a location
+    # The landing page's button.
+    submit: Search
+    clear: Clear search
+    # Result group headings: places from the geocoder, and our own places.
+    areas: Areas
+    locations: Locations
+    error: Search isn't working right now. Try again in a moment.
+    searching: Searching…
+    # {query} is what was typed.
+    noMatches: "No places match “{query}”. Try a city, ZIP code or street address."
+    # Keyboard hint under the results. <key></key> draws a key cap.
+    keys: "<key>↑</key><key>↓</key> to move <key>↵</key> to open"
+    # Read by screen readers when the results change.
+    announce:
+      error: Search isn't working right now.
+      none: No matches.
+      results: "{count, plural, one {# result} other {# results}}. Use the arrow keys to move and Enter to open."
+  # Default title of a command palette dialog (visually hidden).
+  commandDialog: Search
+
+# Sponsored slots.
+ads:
+  # The small label above a sponsor's card. {sponsor} is its name.
+  label: "Sponsored · {sponsor}"
+  # The card's accessible name. {title} is the sponsor's headline.
+  landmark: "Sponsored: {title}"
+  dismiss: Hide ads for this visit
+  # Toast after dismissing.
+  hidden: Ads hidden
+  hiddenBody: They stay hidden for the rest of this visit.
+
+# The signed-in home (/home): a greeting, the assistant, suggestions and tiles.
+dashboard:
+  # The header's menu button on phones; opens the app's navigation.
+  openNav: Open navigation
+  openMap: Open map
+  # Shown in the user menu while the session has no username yet.
+  guest: Guest
+  greeting: What are you hunting for today?
+  # Under the greeting. {count} is the number of vending machines in the US ("1,457").
+  intro: Ask about any of {count} vending machines, card shops and events. It searches the map, counts by area and plans routes.
+  # The same, before the count has loaded.
+  introNoCount: Ask about any of the vending machines, card shops and events. It searches the map, counts by area and plans routes.
+  # Accessible name of the row of suggested questions.
+  suggestionsLabel: Suggestions
+  # Questions the viewer can tap to ask the assistant. They're sent as written,
+  # so keep the places (US cities and states) and numbers.
+  suggestions:
+    # Only offered once the viewer has shared their location.
+    closest: What's closest to me?
+    portland: Vending machines within 5 miles of Portland, closest first
+    denver: Plan a route through 4 machines near Denver
+    washington: Which retailers have the most machines in Washington?
+    phoenix: What events are coming up near Phoenix?
+  tiles:
+    loading: Loading…
+    near:
+      title: Near you
+      # Under the number of places near the viewer. {radius} is a distance ("5 mi").
+      count: places within {radius}
+      openOnMap: Open on map
+      denied: Location is off. Search a city on the map instead.
+      prompt: Share your location to see what's close and ask the assistant about it.
+      locating: Locating…
+      locate: Use my location
+    reviews:
+      title: Your reviews
+      error: Couldn't load your reviews. Check your connection and refresh.
+      empty: Reviews you write on a location show up here, so you can find them again.
+      # A reviewed place without a name.
+      unnamed: A place
+      manage: Manage your reviews
+    submissions:
+      title: Your submissions
+      body: Card shops and events you add appear here while they wait for review.
+      add: Add a place
+    events:
+      title: Upcoming events
+      error: Couldn't load events. Check your connection and refresh.
+      empty: Card shows and league nights show up here once they're added.
+  # /home/reviews: the reviews you've written, to edit or delete.
+  reviews:
+    loadingProfile: Loading profile..
+    loading: Loading your reviews…
+    empty: You haven’t written any reviews yet.
+    # The browser's confirm dialog before deleting a review.
+    deleteConfirm: Delete this review?
+    edit:
+      title: Edit Review
+      description: Update your rating and comment below.
+      rating: Rating
+      comment: Comment
+      cancel: Cancel
+      save: Save
+
+# The assistant on /home: the chat, the composer and the cards in its answers.
+# The answers themselves come from the model.
+assistant:
+  newChat: New chat
+  # The composer's placeholder once a conversation has started.
+  followUp: Ask a follow-up…
+  # Under the composer.
+  disclaimer: Distances are straight-line. Answers can be wrong, so check the map.
+  composer:
+    # Accessible name of the text field.
+    label: Message the assistant
+    stop: Stop
+    send: Send
+  # The empty composer types out these example questions one after another.
+  placeholder:
+    # Shown instead, without moving, when the viewer prefers reduced motion.
+    still: Ask about machines, shops or events…
+    prompts:
+      portland: Vending machines within 5 miles of Portland
+      denver: Plan a route through 4 machines near Denver
+      washington: Which retailers have the most machines in Washington?
+      closest: What's the closest machine to me?
+      seattle: Card shops near Seattle that sell singles
+      phoenix: Any events coming up near Phoenix?
+  # Notes under an answer, and its status before any text arrives.
+  chat:
+    thinking: Thinking…
+    stopped: Stopped.
+    sessionEnded: Your session ended. Log in again to keep chatting.
+    failed: Something went wrong with the assistant. Try again.
+    cutShort: The answer was cut short. Ask for less at a time.
+    stoppedEarly: The answer stopped early. Try again.
+    unreachable: Couldn't reach the assistant. Check your connection and try again.
+  # Thumbs up or down under each answer.
+  feedback:
+    group: Rate this answer
+    good: Good answer
+    bad: Bad answer
+    failed: Couldn't send that. Try again.
+    thanks: Thanks for the feedback.
+    # Asked after a thumbs down, above the reasons.
+    why: What was wrong? (optional)
+    reasons:
+      wrong_place: Wrong place
+      outdated: Outdated info
+      misunderstood: Didn't understand
+      other: Other
+    more: Tell us more (optional)
+    skip: Skip
+    send: Send
+  # Cards in an answer: places, a route, counts and events.
+  cards:
+    # A button that opens one place or event on the map.
+    map: Map
+    # Its accessible name. {name} is the place's or event's name.
+    onMap: "{name} on the map"
+    openArea: Open this area on the map
+    nothingMatched: Nothing matched.
+    # A route card's title. {distance} is the total straight-line distance ("12 mi").
+    route: "Route · {count, plural, one {# stop} other {# stops}} · {distance} straight-line"
+    showOnMap: Show on map
+    googleMaps: Open in Google Maps
+    # Next to a route's first stop, when it starts there instead of at the viewer.
+    start: Start
+    # Next to each later stop: the distance from the one before ("+2.1 mi").
+    leg: "+{distance}"
+    # Accessible name of a bar chart of retailers by number of machines.
+    topRetailers: Top retailers
+    # The colored dot next to an event.
+    event: Event
+    noEvents: No upcoming events.
+  # Settings' button to delete the stored text of your conversations.
+  clearHistory:
+    button: Clear assistant history
+    clearing: Clearing…
+    done: Assistant history cleared
+    doneBody: The text of your conversations is deleted.
+    failed: Couldn't clear your history
+    failedBody: Check your connection and try again.
+
+# /settings.
+settings:
+  # Heading for screen readers.
+  title: General Settings
+  loadingProfile: Loading profile..
+  loading: Loading settings...
+  openNav: Open navigation
+  profile:
+    title: Profile
+    body: This information will be displayed publicly so be careful what you share.
+  fields:
+    fullName: Full name
+    email: Email address
+    username: Username
+  save: Save
+  cancel: Cancel
+  update: Update
+  # Notes about an email change, which needs approval from the old address and confirmation from the new one.
+  email:
+    # After saving a new address. {current} is the current address, {next} the new one.
+    pending: We've emailed {current} a link to approve the change to {next}. Then confirm it from that inbox.
+    # Back from a link in one of those emails.
+    approved: Thanks. If you approved the change from your old address, confirm it from the new one's inbox. Your email below is the current one.
+    expired: That link has expired or was already used. Start the change again below.
+  appearance:
+    title: Appearance
+    body: Light, dark, or follow your device.
+  assistant:
+    title: Assistant
+    body: We keep the text of your assistant conversations for 30 days. Clear it now if you like.
+
+# The landing page (/).
+landing:
+  meta:
+    title: Find all Pokemon Vending Machine Locations - Free Map | PokeFindr
+    description: Find all Pokemon vending machine locations near you with PokeFindr's free map. Discover Pokemon card vending machines at Kroger, Safeway, and other stores. Plan your stops for easy TCG vending and Pokemon card collecting!
+    # Search keywords for the page, separated by commas.
+    keywords: Pokemon vending machines, pokemon card vending machines, pokemon vending machines near me, pokemon vending machine locations, pokemon card vending, Pokemon map, pokemon card vending machine near me, tcg vending machine, kroger pokemon vending machine, pokemon vending machine colorado, pokemon card collecting
+    # The title when the page is shared on social media.
+    ogTitle: Find all Pokemon Vending Machine Locations | PokeFindr
+    # The page's name and summary in the structured data search engines read.
+    pageName: Find Pokémon Vending Machines Near You
+    pageDescription: Search a city to see every Pokémon card vending machine nearby on a free map.
+  hero:
+    # The small badge in the pill above the headline.
+    new: New
+    eyebrow: Search by city, then browse what's nearby
+    # <em> is the highlighted (gradient) end of the headline.
+    title: Find Pokémon Vending Machines <em>Near You</em>
+    body: Discover the nearest Pokémon card vending machines at Kroger, King Soopers, Safeway and more, and plan your next stop for card collecting.
+    # Labels under the live counts: the number shows above each label.
+    stats:
+      vending: vending machines
+      states: "{count, plural, one {state} other {states}}"
+      # Under "1".
+      countries: country, more coming
+  search:
+    placeholder: City or address, like Denver, CO
+    # Before the quick-pick city chips ("Try Seattle, WA  Phoenix, AZ …").
+    try: Try
+    myLocation: Use my location
+    viewMap: View full map
+  how:
+    title: From your city to the machine in three steps
+    intro: No account needed. Search, look, and go.
+    steps:
+      search:
+        title: Search your city
+        text: Type a city or address. Each suggestion shows how many locations are within 10 miles.
+      nearby:
+        title: See what's nearby
+        text: The map opens on your area with everything inside the radius, closest first. Widen it to 25 or 50 miles.
+      directions:
+        title: Get directions
+        text: Open any location in Google Maps, or copy the page link to share the exact view with a friend.
+  kinds:
+    title: More than vending machines
+    intro: The map is growing to cover the places collectors actually go.
+    # One card per kind of place, under its name.
+    vending: Official Pokémon card vending machines at Safeway, Kroger, Fred Meyer and more, from the Pokémon Center's retailer list.
+    shop: Local game stores that sell singles and sealed product, with hours and links.
+    event: Card shows, league nights and prerelease events, with dates on the map.
+
+# The FAQ on the landing page. Each question's answer also goes in the page's
+# structured data for search engines, as plain text.
+faq:
+  title: Frequently asked questions
+  # <link> opens our Discord server.
+  intro: Something else? Ask on <link>Support</link>.
+  items:
+    what:
+      question: What is a Pokémon vending machine?
+      answer: An automated retail machine that sells official Pokémon Trading Card Game products like booster packs and Elite Trainer Boxes. They're stocked by The Pokémon Company International, so everything inside is authentic.
+    map:
+      question: How do I use the map?
+      answer: Search a city or address from the home page or the map. The map opens on that area and lists every location inside your radius, closest first. Zoom out to see the whole country, or pick a state to explore it.
+    verified:
+      question: Are the vending machine locations verified?
+      # <center> links to the retailer list on the Pokémon Center website.
+      answer: Yes. Locations come from the official retailer list on the <center>Pokémon Center website</center>.
+    info:
+      question: What information is available for each location?
+      answer: Each vending machine shows its retailer, address, machine ID and a Google Maps link. Signed-in users can read and leave reviews.
+    filter:
+      question: Can I filter locations?
+      answer: Yes. Choose which kinds of places to show and set a search radius of 5, 10, 25 or 50 miles.
+    add:
+      question: How can I add a new location?
+      # <support> opens our Discord server.
+      answer: Vending machines come from the official list, so report a missing one through <support>Support</support>. Adding card shops and events yourself is coming soon.
+    report:
+      question: Can I report outdated or incorrect information?
+      # <support> opens our Discord server.
+      answer: Yes. Send it to us through <support>Support</support> and we'll fix it.
+    account:
+      question: Do I need an account?
+      answer: No. Anyone can browse the map. An account lets you write reviews.
+    countries:
+      question: Is PokeFindr available outside the US?
+      answer: Not yet. Other countries appear grey on the map until we add them.
+    official:
+      question: Is this an official Pokémon website?
+      answer: No. PokeFindr is a fan-made resource and is not affiliated with The Pokémon Company International.
+
+# The visitor pages' shared parts and the content pages (blog, changelog, developers).
+content:
+  # Links in the header, the mobile menu and the footer.
+  nav:
+    map: Map
+    blog: Blog
+    # Opens our Discord server.
+    support: Support
+    changelog: Changelog
+    # The signed-in home page (/home).
+    dashboard: Dashboard
+    developers: Developers
+    privacy: Privacy policy
+    terms: Terms of service
+  header:
+    # Name of the header's navigation, for screen readers.
+    navLabel: Global
+    logIn: Log in
+    # Screen-reader label of the menu button on small screens.
+    openMenu: Open main menu
+    # The menu panel on small screens: its title (screen readers only) and close button.
+    menu: Menu
+    closeMenu: Close menu
+  footer:
+    # Screen-reader names of the logo link and the footer's navigation.
+    home: PokeFindr home
+    navLabel: Footer
+    notice: PokeFindr is a fan-made resource and is not affiliated with The Pokémon Company International. Vending machine locations come from the Pokémon Center's list of official U.S. retailers.
+  blog:
+    meta:
+      title: "PokeFindr Blog: Your Ultimate Guide to Pokémon Card Collecting"
+      description: "Explore expert insights, tips, and the latest news on Pokémon card collecting. From deck-building strategies to market trends, PokeFindr is your go-to resource for all things Pokémon TCG."
+      # Search keywords for the page, separated by commas.
+      keywords: Pokémon card collecting, Pokémon TCG, deck-building strategies, Pokémon card market trends, PokeFindr blog
+      # The description when the page is shared on social media.
+      ogDescription: Stay updated with expert insights, tips, and the latest news on Pokémon card collecting. Discover comprehensive guides and resources at PokeFindr.
+    title: From the blog
+    intro: Learn some cool details about acquiring Pokemon cards for your collection.
+  # The release notes: the /changelog page and the pop-up on the signed-in pages.
+  # <b> is a feature's name, in bold, before its description.
+  changelog:
+    # The heading of each release.
+    title: What's New in Version {version}
+    v1_1:
+      released: Released May 10, 2025
+      intro: We’ve made improvements to make it easier and faster to find vending machines near you.
+      items:
+        load: <b>Faster Map Load</b> – The map now opens more quickly and runs smoothly.
+        grouping: <b>Smart Grouping</b> – Nearby machines are grouped together so the map stays clear.
+        precise: <b>Precise Locations</b> – Each machine pin is more accurate to its real-world spot.
+        data: <b>Up-to-Date Data</b> – Machines that were added recently have been added to the map.
+        zoom: <b>Easy Zoom</b> – Tap any group to zoom in and view each machine individually.
+        search: <b>Search Bar</b> – Search for any address and find the closest vending machine within a 30-mile radius.
+        ui: <b>UI Updates</b> – Made the sidebar less intrusive.
+        discord: <b>Discord Community</b> – We now have a discord community for users to ask for support or request new features. Click support on the home page.
+    v1_2:
+      released: Released May 19, 2025
+      intro: This update introduces several new features and improvements.
+      items:
+        # <i> is a note in italics.
+        accounts: <b>Free User Accounts</b> – Users can now create accounts for free <i>(Email verification required)</i>.
+        reviews: <b>Review Management</b> – Add, edit, and delete reviews for locations.
+        settings: <b>Settings Page</b> – Manage your profile, preferences, and account information.
+        sso: <b>SSO (Single Sign-On)</b> – Log in using Google or other providers.
+        ratings: <b>Star Ratings</b> – Locations now have star ratings based on user reviews.
+    # The pop-up shown once on the signed-in pages after a release. Shorter than the page.
+    modal:
+      items:
+        accounts: <b>Free User Accounts</b> – Users can now create accounts for free.
+        settings: <b>Settings Page</b> – Manage your profile and account information.
+        sso: <b>SSO (Single Sign-On)</b> – Log in using Google (more providers coming).
+      close: Got it!
+  developers:
+    meta:
+      title: "PokeFindr for developers: use it from Claude, ChatGPT and Cursor"
+      description: Connect PokeFindr's MCP server to Claude, ChatGPT, Cursor, VS Code or any MCP client to find Pokémon card vending machines, card shops and events.
+    title: Use PokeFindr from your AI assistant
+    intro: PokeFindr runs an MCP server, so Claude, ChatGPT, Cursor and other MCP clients can find Pokémon card vending machines, card shops and events for you. Every answer links back to the map.
+    # The two MCP server URLs: one anyone can use, one that signs in to the user's account.
+    public:
+      title: Public
+      badge: No sign-in
+      body: Search, counts, routes and events. Nothing to set up.
+    account:
+      title: Your account
+      badge: Log in
+      body: Everything above, plus your reviews and submissions, and adding a shop or event. You approve each app once.
+    setup:
+      title: Set it up
+      intro: Pick your client. The snippets use the public URL; swap in the account URL to sign in.
+      # A tab for the clients that aren't listed by name (Claude, ChatGPT, Cursor, VS Code).
+      other: Other clients
+      # Steps for each client. Names of their menus and commands are in quotes in
+      # those apps' own words: keep them as the app shows them.
+      claude:
+        settings: In Claude (web or desktop), open Settings, then Connectors.
+        add: Add a custom connector named PokeFindr, with the URL below.
+        account: For the account URL, Claude opens PokeFindr to log in and approve it.
+      claudeCode: Run this in a terminal. Use the account URL instead to sign in (run /mcp in Claude Code to finish).
+      chatgpt:
+        settings: In ChatGPT, open Settings, then Apps & Connectors, and turn on developer mode under Advanced.
+        add: Create a connector named PokeFindr with the URL below.
+        account: "For the account URL, choose OAuth: ChatGPT opens PokeFindr to log in and approve it."
+      cursor: Add this to ~/.cursor/mcp.json (or .cursor/mcp.json in a project).
+      vscode: "Add this to .vscode/mcp.json, or run MCP: Add Server from the command palette."
+      otherClients: Any client that speaks Streamable HTTP works, on the 2025 or 2026-07-28 protocol. Sessions aren't used, so each request stands alone.
+    tools:
+      title: What it can do
+      intro: Ask in plain words, like “Where can I buy Pokémon cards near Denver?” or “Plan a route through the three closest machines to Seattle.”
+      everyone: Everyone
+      withAccount: With your account
+      # What each MCP tool does. The tool names (find_places…) show next to them and aren't translated.
+      find_places: Vending machines, card shops and events near a US city or address, or in a state. Up to 10, closest first.
+      area_stats: How many of each kind an area has, the top retailers and the top cities.
+      plan_route: Puts 2 to 9 places in a sensible order, with a Google Maps directions link.
+      list_events: Upcoming card shows, league nights and restocks, soonest or nearest first.
+      get_place: One place's details and a summary of its reviews.
+      my_reviews: Your reviews, newest first.
+      my_submissions: The shops and events you've submitted, and whether each is pending, approved or not approved.
+      submit_place: Adds a card shop or event for a moderator to check, as you.
+    limits:
+      title: Limits and privacy
+      rate: Each client can send 30 requests a minute and see 200 different places a day. The map has every place, with no limit.
+      answers: Each answer has up to 10 places. Names, addresses and reviews are written by PokeFindr users.
+      password: Connecting your account never shares your password. You see what an app asks for before you allow it, and you can disconnect it from the app.
+      submissions: Places you submit wait for a moderator, like ones added on the map. You can submit five a day.
+      # <link> opens our Discord server.
+      questions: Questions or ideas? Ask on <link>Discord</link>.
+    # The box around a URL, command or config snippet, with a Copy button. Each
+    # kind of snippet has its own messages.
+    copy:
+      copy: Copy
+      copied: Copied
+      url:
+        # The Copy button's screen-reader label.
+        aria: Copy url
+        done: URL copied
+        # When the browser won't copy: the user selects the text instead.
+        manual: Copy the url by hand
+      command:
+        aria: Copy command
+        done: Command copied
+        manual: Copy the command by hand
+      config:
+        aria: Copy config
+        done: Config copied
+        manual: Copy the config by hand
+  # The review cards on /home/reviews.
+  recentReviews:
+    title: Your Recent Reviews
+    edit: Edit
+    delete: Delete
+
+# The privacy policy and terms of service, which are in English only.
+legal:
+  # At the top of those pages in another language. <link> opens the page on the English site.
+  englishOnly: This page is only available in English. <link>Read it in English</link>.
+
+# Logging in, signing up, password resets, and connecting an app (MCP) to an account.
+auth:
+  # Page titles (the browser tab).
+  meta:
+    forgotPassword: Reset your password
+    resetPassword: Choose a new password
+    consent: Connect an app
+  # Under the login and sign-up cards. <terms> and <privacy> link to the documents.
+  terms: "By clicking continue, you agree to our <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>."
+  # Form field labels and example values.
+  fields:
+    email: Email
+    emailPlaceholder: m@example.com
+    password: Password
+    name: Name
+    # An example full name in the sign-up form.
+    namePlaceholder: Jane Doe
+    username: Username
+    # An example username in the sign-up form.
+    usernamePlaceholder: jdoe1234
+    verifyPassword: Verify Password
+  # Sign-in buttons for Google and Discord. {provider} is the service's name.
+  oauth:
+    continueWith: "Continue with {provider}"
+    # On the button while the service's page opens.
+    opening: "Opening {provider}…"
+    failed: "Couldn't reach {provider}. Try again."
+    # The divider between those buttons and the email form.
+    divider: Or continue with email
+  login:
+    title: Welcome back
+    # When Google or Discord sign-in is offered too.
+    descriptionWithProviders: Log in with your account or email
+    description: Log in with your email
+    # A note above the form, for why the visitor landed on the login page.
+    notices:
+      # After clicking the link in the confirmation email.
+      verified: Your email is confirmed. Log in to get started.
+      linkExpired: That link has expired or was already used. Log in and we'll send a new one.
+      oauthFailed: That sign-in didn't go through. Try again, or use your email.
+      # An app (an AI assistant) asked to connect to the account.
+      connectApp: Log in to connect an app to your PokeFindr account. You'll see what it's asking for next.
+    forgot: Forgot your password?
+    submit: Login
+    submitting: Logging in...
+    # <link> goes to the sign-up page.
+    noAccount: "Don't have an account? <link>Sign up</link>"
+    # Toast.
+    success: Logged in!
+  signup:
+    title: Nice to meet you
+    descriptionWithProviders: Sign up with your account or email
+    description: Sign up with your email
+    submit: Register
+    submitting: Registering...
+    # <link> goes to the login page.
+    haveAccount: "Have an account already? <link>Sign in</link>"
+  # After signing in with Google or Discord. A new user picks a username first.
+  callback:
+    checking: Logging you in...
+    failed: That sign-in didn't go through.
+    backToLogin: Back to login
+    title: Almost done…
+    description: Pick a username. It's what others see on your reviews.
+    usernamePlaceholder: your-handle
+    submit: Finish signing in
+    submitting: Finishing up…
+    # Toast once the username is saved.
+    welcome: Welcome aboard!
+  # After signing up with an email: the confirmation link is on its way.
+  confirm:
+    title: Check your email
+    body: We've sent you a link to confirm your account. It works for 24 hours. No email? Check spam, or log in and we'll send another.
+    login: Go to login
+    # Opens our Discord server.
+    support: Contact support
+  forgotPassword:
+    title: Reset your password
+    description: We'll email you a link to choose a new one
+    # Replaces the description once the link was asked for.
+    sentDescription: Check your inbox
+    # {email} is the address typed in, shown in bold (<b>).
+    sent: "If <b>{email}</b> has a PokeFindr account, a reset link is on its way. It works for 1 hour."
+    backToLogin: Back to login
+    submit: Send reset link
+    submitting: Sending...
+    # <link> goes to the login page.
+    remembered: "Remembered it? <link>Log in</link>"
+  # Where the reset link lands.
+  resetPassword:
+    expiredTitle: That link has expired
+    expiredDescription: Reset links work once, for 1 hour.
+    newLink: Send a new link
+    title: Choose a new password
+    description: You'll be logged out everywhere else.
+    password: New password
+    # The second password field.
+    repeat: Repeat it
+    submit: Change password
+    submitting: Saving...
+    # Toasts.
+    success: Password changed. Log in with your new one.
+    expired: That link has expired or was already used. Ask for a new one.
+    failed: Couldn't change your password. Try again.
+  # An app (an AI assistant, over MCP) asks to use the visitor's account.
+  consent:
+    invalid: This link has expired or isn't valid. Start connecting from the app again.
+    # {app} is the app's name.
+    title: "Connect {app}?"
+    # {username} is the visitor's username, in bold.
+    description: "It wants to use your PokeFindr account, <user>@{username}</user>."
+    # Shown after the @ when the account has no username yet.
+    you: you
+    # Above the list of what the app is asking for.
+    canDo: "It will be able to:"
+    # {host} is the website the app sends people back to, in bold (<b>).
+    warning: "Allowing sends you back to <b>{host}</b>. Only allow it if you just asked an app to connect. It can never see your password. Disconnect it any time from the app."
+    allow: Allow
+    allowing: Connecting…
+    cancel: Cancel
+    cancelling: Cancelling…
+    # Toast.
+    failed: That didn't go through. Start connecting from the app again.
+    # What the app will be able to do, one line per permission.
+    scopes:
+      accountRead: See your reviews and the places you've submitted
+      placesSubmit: Submit card shops and events for review, as you
+      offlineAccess: Stay connected until you disconnect it
+      # When it asks for none of the above.
+      none: See that you have a PokeFindr account
+  # Errors under the form fields.
+  validation:
+    emailRequired: Please enter an email
+    emailInvalid: Please enter a valid email
+    passwordRequired: Please enter a password
+    passwordTooShort: Please enter a longer password
+    passwordTooLong: Please enter a shorter password
+    # A new password needs a character that isn't a letter or digit.
+    passwordSymbol: Please include one non-letter, non-digit character
+    passwordMismatch: Passwords do not match
+    nameRequired: Please enter a name.
+    nameLetters: Only letters are allowed.
+    usernameTooShort: Use at least 3 characters.
+    usernameTooLong: Use at most 30 characters.
+    usernameCharacters: Use letters, digits, dots, dashes and underscores.

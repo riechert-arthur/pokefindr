@@ -4,6 +4,7 @@
 import React, { useEffect, useState } from 'react'
 import { MenuIcon } from "lucide-react"
 import axios from 'axios'
+import { useTranslations } from 'next-intl'
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,8 @@ import { useSessionContext } from '@/components/providers/SessionProvider'
 import { LoadSpinner } from '@/components/wrappers/LoadSpinner'
 
 export default function ReviewsPage() {
+  const t = useTranslations('dashboard.reviews')
+  const tDashboard = useTranslations('dashboard')
   const { isSidebarOpen } = useSidebar()
   const [reviews, setReviews] = useState<Review[]>([])
   const [loading, setLoading] = useState(true)
@@ -60,7 +63,7 @@ export default function ReviewsPage() {
   }, [session])
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this review?')) return
+    if (!confirm(t('deleteConfirm'))) return
     try {
       await axios.delete(`/api/reviews/${id}`, { withCredentials: true })
       setReviews((rs) => rs.filter((r) => r.id !== id))
@@ -97,7 +100,7 @@ export default function ReviewsPage() {
   })
 
   if (isLoading && !session) {
-    return <LoadSpinner text="Loading profile.." fullScreen={false} />
+    return <LoadSpinner text={t("loadingProfile")} fullScreen={false} />
   }
 
   return (
@@ -105,7 +108,7 @@ export default function ReviewsPage() {
       {/* header */}
       <header className="absolute inset-x-0 top-0 z-40 flex h-16 border-b border-border">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <button onClick={toggleSidebar} className="sm:hidden mr-2 p-1 rounded" aria-label="Open navigation" aria-controls={APP_NAV_ID} aria-expanded={isSidebarOpen}>
+          <button onClick={toggleSidebar} className="sm:hidden mr-2 p-1 rounded" aria-label={tDashboard("openNav")} aria-controls={APP_NAV_ID} aria-expanded={isSidebarOpen}>
             <MenuIcon className="size-6 text-muted-foreground hover:text-primary/80" />
           </button>
           <div />
@@ -114,7 +117,7 @@ export default function ReviewsPage() {
               <span className="sr-only">View notifications</span>
               <BellIcon className="size-6" />
             </button>*/}
-            <UserMenu userName={session?.username ?? "Guest"} size={40}  />
+            <UserMenu userName={session?.username ?? tDashboard("guest")} size={40}  />
           </div>
         </div>
       </header>
@@ -124,10 +127,10 @@ export default function ReviewsPage() {
           <div className="pt-8 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {loading ? (
               <div className="text-sm text-muted-foreground">
-                <LoadSpinner text="Loading your reviews…" fullScreen={false} />
+                <LoadSpinner text={t("loading")} fullScreen={false} />
               </div>
             ) : reviews.length === 0 ? (
-              <p className="text-sm text-muted-foreground">You haven’t written any reviews yet.</p>
+              <p className="text-sm text-muted-foreground">{t("empty")}</p>
             ) : (
               <RecentReviewsSection
                 reviews={reviews}
@@ -143,8 +146,8 @@ export default function ReviewsPage() {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Review</DialogTitle>
-            <DialogDescription>Update your rating and comment below.</DialogDescription>
+            <DialogTitle>{t("edit.title")}</DialogTitle>
+            <DialogDescription>{t("edit.description")}</DialogDescription>
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={saveEdit} className="space-y-4">
@@ -153,7 +156,7 @@ export default function ReviewsPage() {
                 name="rating"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Rating</FormLabel>
+                    <FormLabel>{t("edit.rating")}</FormLabel>
                     <FormControl>
                       <StarRating rating={field.value} starSize={24} onChange={field.onChange} />
                     </FormControl>
@@ -166,7 +169,7 @@ export default function ReviewsPage() {
                 name="text"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Comment</FormLabel>
+                    <FormLabel>{t("edit.comment")}</FormLabel>
                     <FormControl>
                       <textarea
                         rows={4}
@@ -183,11 +186,11 @@ export default function ReviewsPage() {
                   type="button"
                   onClick={() => setEditOpen(false)}
                   className="px-3 py-1 text-sm font-medium text-muted-foreground hover:text-foreground"
-                >Cancel</button>
+                >{t("edit.cancel")}</button>
                 <button
                   type="submit"
                   className="px-3 py-1 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded"
-                >Save</button>
+                >{t("edit.save")}</button>
               </div>
             </form>
           </Form>

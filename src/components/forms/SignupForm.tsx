@@ -23,7 +23,12 @@ import { z } from "zod/v3"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { handleSubmitError } from "@/lib/forms"
 import { LoadingButton } from "@/components/wrappers/LoadingButton"
-import { registrationSchema } from "@/lib/schemas"
+import type { AuthSchemas } from "@/lib/schemas"
+import { useTranslations } from "next-intl"
+import { useAuthSchemas } from "./useAuthSchemas"
+import { Terms } from "./Terms"
+
+type RegistrationValues = z.infer<AuthSchemas["registrationSchema"]>
 import axios from "axios"
 import type { OAuthProvider } from "@/lib/auth/providers"
 import { OAuthButtons } from "./OAuthButtons"
@@ -34,9 +39,11 @@ export function RegistrationForm({
   providers = [],
   ...props
 }: React.ComponentProps<"div"> & { providers?: readonly OAuthProvider[] }) {
-  const router = useRouter() 
+  const router = useRouter()
+  const t = useTranslations("auth")
+  const { registrationSchema } = useAuthSchemas()
 
-  const form = useForm<z.infer<typeof registrationSchema>>({
+  const form = useForm<RegistrationValues>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
       name: "",
@@ -47,7 +54,7 @@ export function RegistrationForm({
     },
   })
 
-  async function onSubmit(values: z.infer<typeof registrationSchema>) {
+  async function onSubmit(values: RegistrationValues) {
     try {
       await axios.post("/api/auth/signup", {
         email: values.email,
@@ -70,9 +77,9 @@ export function RegistrationForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Nice to meet you</CardTitle>
+          <CardTitle className="text-xl">{t("signup.title")}</CardTitle>
           <CardDescription>
-            {providers.length ? "Sign up with your account or email" : "Sign up with your email"}
+            {providers.length ? t("signup.descriptionWithProviders") : t("signup.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -87,9 +94,9 @@ export function RegistrationForm({
                     render={({ field }) => (
                       <FormItem>
                         <div className="grid gap-3">
-                          <FormLabel>Name</FormLabel>
+                          <FormLabel>{t("fields.name")}</FormLabel>
                           <FormControl>
-                            <Input placeholder="Jane Doe" autoComplete="name" {...field} />
+                            <Input placeholder={t("fields.namePlaceholder")} autoComplete="name" {...field} />
                           </FormControl>
                         </div>
                         <FormMessage />
@@ -102,9 +109,9 @@ export function RegistrationForm({
                     render={({ field }) => (
                       <FormItem>
                         <div className="grid gap-3">
-                          <FormLabel>Username</FormLabel>
+                          <FormLabel>{t("fields.username")}</FormLabel>
                           <FormControl>
-                            <Input placeholder="jdoe1234" autoComplete="username" {...field} />
+                            <Input placeholder={t("fields.usernamePlaceholder")} autoComplete="username" {...field} />
                           </FormControl>
                         </div>
                         <FormMessage />
@@ -117,9 +124,9 @@ export function RegistrationForm({
                     render={({ field }) => (
                       <FormItem>
                         <div className="grid gap-3">
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel>{t("fields.email")}</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="m@example.com" autoComplete="email" {...field} />
+                            <Input type="email" placeholder={t("fields.emailPlaceholder")} autoComplete="email" {...field} />
                           </FormControl>
                         </div>
                         <FormMessage />
@@ -132,7 +139,7 @@ export function RegistrationForm({
                     render={({ field }) => (
                       <FormItem>
                         <div className="grid gap-3">
-                          <FormLabel>Password</FormLabel>
+                          <FormLabel>{t("fields.password")}</FormLabel>
                           <FormControl>
                             <Input type="password" autoComplete="new-password" {...field} />
                           </FormControl>
@@ -147,7 +154,7 @@ export function RegistrationForm({
                     render={({ field }) => (
                       <FormItem>
                         <div className="grid gap-3">
-                          <FormLabel>Verify Password</FormLabel>
+                          <FormLabel>{t("fields.verifyPassword")}</FormLabel>
                           <FormControl>
                             <Input type="password" autoComplete="new-password" {...field} />
                           </FormControl>
@@ -158,30 +165,30 @@ export function RegistrationForm({
                   />
                   {!form.formState.isSubmitting && (
                     <Button type="submit" className="w-full">
-                      Register
+                      {t("signup.submit")}
                     </Button>
                   )}
                   {form.formState.isSubmitting && (
                     <LoadingButton className="w-full">
-                      Registering...
+                      {t("signup.submitting")}
                     </LoadingButton>
                   )}
                 </div>
                 <div className="text-center text-sm">
-                  Have an account already?{" "}
-                  <Link href="/login" className="underline underline-offset-4">
-                    Sign in
-                  </Link>
+                  {t.rich("signup.haveAccount", {
+                    link: (chunks) => (
+                      <Link href="/login" className="underline underline-offset-4">
+                        {chunks}
+                      </Link>
+                    ),
+                  })}
                 </div>
               </div>
             </form>
           </Form>
         </CardContent>
       </Card>
-      <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-        By clicking continue, you agree to our <Link href="/terms-of-service">Terms of Service</Link>{" "}
-        and <Link href="/privacy-policy">Privacy Policy</Link>.
-      </div>
+      <Terms />
     </div>
   )
 }

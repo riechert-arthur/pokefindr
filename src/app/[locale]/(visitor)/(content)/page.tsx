@@ -7,30 +7,22 @@ import type { LocationKind } from "@/lib/types/locations"
 import { getRegionCounts } from "@/server/services/region-counts"
 import { SponsoredPlacement } from "@/components/ads/SponsoredPlacement"
 import { setPageLocale, type LocaleParams } from "@/i18n/static"
+import type { Locale } from "@/i18n/routing"
+import type { Metadata } from "next"
+import { getTranslations } from "next-intl/server"
 
 // The counts change only after an import; rebuild the page at most hourly.
 export const revalidate = 3600
 
-export const metadata = {
-  "title": "Find all Pokemon Vending Machine Locations - Free Map | PokeFindr",
-  "description": "Find all Pokemon vending machine locations near you with PokeFindr's free map. Discover Pokemon card vending machines at Kroger, Safeway, and other stores. Plan your stops for easy TCG vending and Pokemon card collecting!",
-  "keywords": [
-    "Pokemon vending machines",
-    "pokemon card vending machines",
-    "pokemon vending machines near me",
-    "pokemon vending machine locations",
-    "pokemon card vending",
-    "Pokemon map",
-    "pokemon card vending machine near me",
-    "tcg vending machine",
-    "kroger pokemon vending machine",
-    "pokemon vending machine colorado",
-    "pokemon card collecting"
-  ],
-  "author": "PokeFindr Developer",
-  "openGraph": {
-    "title": "Find all Pokemon Vending Machine Locations | PokeFindr",
-    "description": "Find all Pokemon vending machine locations near you with PokeFindr's free map. Discover Pokemon card vending machines at Kroger, Safeway, and other stores. Plan your stops for easy TCG vending and Pokemon card collecting!"
+/** The page's title, description, keywords and Open Graph, in its language. */
+export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale: locale as Locale, namespace: "landing.meta" })
+  return {
+    title: t("title"),
+    description: t("description"),
+    keywords: t("keywords").split(/,\s*/),
+    openGraph: { title: t("ogTitle"), description: t("description") },
   }
 }
 
@@ -59,24 +51,27 @@ async function landingCounts(): Promise<{ hero: HeroStats; kinds: Partial<Record
   }
 }
 
-const WEB_PAGE_JSON_LD = {
-  "@context": "https://schema.org",
-  "@type": "WebPage",
-  name: "Find Pokémon Vending Machines Near You",
-  description: "Search a city to see every Pokémon card vending machine nearby on a free map.",
-  url: "https://pokefindr.app/",
-}
-
 /** JSON-LD as a script tag; `<` is escaped so the data can't close the tag. */
 const jsonLd = (data: unknown) => ({ __html: JSON.stringify(data).replace(/</g, "\\u003c") })
 
 export default async function LandingPage({ params }: LocaleParams) {
-  await setPageLocale(params)
-  const counts = await landingCounts()
+  const locale = await setPageLocale(params)
+  const [counts, t, faq] = await Promise.all([
+    landingCounts(),
+    getTranslations({ locale, namespace: "landing.meta" }),
+    getTranslations({ locale, namespace: "faq" }),
+  ])
+  const webPage = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: t("pageName"),
+    description: t("pageDescription"),
+    url: "https://pokefindr.app/",
+  }
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(WEB_PAGE_JSON_LD)} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(faqJsonLd())} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(webPage)} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(faqJsonLd(faq))} />
       <div className="isolate">
         <Hero stats={counts?.hero ?? null} background={<HeroMap />} />
         <HowItWorks />

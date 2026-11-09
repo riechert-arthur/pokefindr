@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { AgentMark } from "./AgentMark"
 import { AssistantCardView } from "./AssistantCards"
@@ -46,6 +47,7 @@ function AnswerView({ m }: { m: Extract<ChatMessage, { role: "assistant" }> }) {
  * cards. "New chat" clears it.
  */
 export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChattingChange }: AssistantChatProps) {
+  const t = useTranslations("assistant")
   const { messages, busy, send, stop, reset } = useAssistant()
   const [text, setText] = useState("")
   const [focused, setFocused] = useState(false)
@@ -80,7 +82,7 @@ export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChatting
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex justify-end pb-1">
             <Button type="button" variant="ghost" size="sm" onClick={reset} disabled={busy}>
-              New chat
+              {t("newChat")}
             </Button>
           </div>
           <div ref={log} aria-live="polite" className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-0.5 py-2">
@@ -104,9 +106,9 @@ export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChatting
           busy={busy}
           onStop={stop}
           onFocusChange={setFocused}
-          placeholder={chatting ? "Ask a follow-up…" : focused ? undefined : <TypingPlaceholder />}
+          placeholder={chatting ? t("followUp") : focused ? undefined : <TypingPlaceholder />}
         />
-        <p className="mt-2 text-center text-caption text-muted-foreground">Distances are straight-line. Answers can be wrong, so check the map.</p>
+        <p className="mt-2 text-center text-caption text-muted-foreground">{t("disclaimer")}</p>
       </div>
     </>
   )

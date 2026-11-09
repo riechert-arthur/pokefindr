@@ -11,21 +11,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/wrappers/LoadingButton"
-import { resetPasswordSchema } from "@/lib/schemas"
+import type { AuthSchemas } from "@/lib/schemas"
+import { useTranslations } from "next-intl"
+import { useAuthSchemas } from "./useAuthSchemas"
+
+type ResetPasswordValues = z.infer<AuthSchemas["resetPasswordSchema"]>
 
 /** Sets a new password from a reset link's token. Without a valid token, offers a new link. */
 export function ResetPasswordForm({ token }: { token: string | null }) {
   const router = useRouter()
-  const form = useForm<z.infer<typeof resetPasswordSchema>>({ resolver: zodResolver(resetPasswordSchema), defaultValues: { password: "", passwordVerification: "" } })
+  const t = useTranslations("auth.resetPassword")
+  const { resetPasswordSchema } = useAuthSchemas()
+  const form = useForm<ResetPasswordValues>({ resolver: zodResolver(resetPasswordSchema), defaultValues: { password: "", passwordVerification: "" } })
 
-  async function onSubmit({ password }: z.infer<typeof resetPasswordSchema>) {
+  async function onSubmit({ password }: ResetPasswordValues) {
     try {
       await axios.post("/api/identity/reset-password", { newPassword: password, token })
-      toast.success("Password changed. Log in with your new one.")
+      toast.success(t("success"))
       router.push("/login")
     } catch (err) {
       const expired = axios.isAxiosError(err) && err.response?.status === 400
-      toast.error(expired ? "That link has expired or was already used. Ask for a new one." : "Couldn't change your password. Try again.")
+      toast.error(expired ? t("expired") : t("failed"))
     }
   }
 
@@ -33,12 +39,12 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
     return (
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">That link has expired</CardTitle>
-          <CardDescription>Reset links work once, for 1 hour.</CardDescription>
+          <CardTitle className="text-xl">{t("expiredTitle")}</CardTitle>
+          <CardDescription>{t("expiredDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           <Button asChild className="w-full">
-            <Link href="/forgot-password">Send a new link</Link>
+            <Link href="/forgot-password">{t("newLink")}</Link>
           </Button>
         </CardContent>
       </Card>
@@ -47,8 +53,8 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-xl">Choose a new password</CardTitle>
-        <CardDescription>You&apos;ll be logged out everywhere else.</CardDescription>
+        <CardTitle className="text-xl">{t("title")}</CardTitle>
+        <CardDescription>{t("description")}</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -59,7 +65,7 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
               render={({ field }) => (
                 <FormItem>
                   <div className="grid gap-3">
-                    <FormLabel>New password</FormLabel>
+                    <FormLabel>{t("password")}</FormLabel>
                     <FormControl>
                       <Input type="password" autoComplete="new-password" {...field} />
                     </FormControl>
@@ -74,7 +80,7 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
               render={({ field }) => (
                 <FormItem>
                   <div className="grid gap-3">
-                    <FormLabel>Repeat it</FormLabel>
+                    <FormLabel>{t("repeat")}</FormLabel>
                     <FormControl>
                       <Input type="password" autoComplete="new-password" {...field} />
                     </FormControl>
@@ -84,10 +90,10 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
               )}
             />
             {form.formState.isSubmitting ? (
-              <LoadingButton className="w-full">Saving...</LoadingButton>
+              <LoadingButton className="w-full">{t("submitting")}</LoadingButton>
             ) : (
               <Button type="submit" className="w-full">
-                Change password
+                {t("submit")}
               </Button>
             )}
           </form>

@@ -15,14 +15,10 @@ import type { Highlights, UpcomingEvent } from "@/lib/types/highlights"
 import type { RegionCount } from "@/lib/types/locations"
 import { EventsTile, NearYouTile, ReviewsTile, SubmissionsTile, type MyReview, type NearState } from "./DashboardTiles"
 import { useFormat } from "@/i18n/format"
+import { useTranslations } from "next-intl"
 
-/** The prototype's suggestions, one tap to ask. */
-export const SUGGESTIONS = [
-  "Vending machines within 5 miles of Portland, closest first",
-  "Plan a route through 4 machines near Denver",
-  "Which retailers have the most machines in Washington?",
-  "What events are coming up near Phoenix?",
-] as const
+/** The prototype's suggestions, one tap to ask (dashboard.suggestions in the catalog). */
+export const SUGGESTIONS = ["portland", "denver", "washington", "phoenix"] as const
 
 const chip =
   "rounded-full border border-border bg-card/85 px-[11px] py-1 text-body text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -53,6 +49,7 @@ interface DashboardProps {
  */
 export function Dashboard({ assistant }: DashboardProps) {
   const f = useFormat()
+  const t = useTranslations("dashboard")
   const { session } = useSessionContext()
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const [vending, setVending] = useState<number | null>(null)
@@ -129,14 +126,14 @@ export function Dashboard({ assistant }: DashboardProps) {
           className="pointer-events-none absolute inset-x-[-10%] top-[-30%] -z-10 h-[70%] opacity-35 blur-[70px] [background:radial-gradient(35%_45%_at_30%_40%,hsl(var(--brand)/0.5),transparent_70%),radial-gradient(35%_45%_at_70%_35%,hsl(var(--brand-2)/0.45),transparent_70%)]"
         />
         <header className="flex items-center gap-1.5 px-4 py-3 sm:px-5">
-          <button type="button" onClick={toggleSidebar} className="mr-1 rounded p-1 sm:hidden" aria-label="Open navigation" aria-controls={APP_NAV_ID} aria-expanded={isSidebarOpen}>
+          <button type="button" onClick={toggleSidebar} className="mr-1 rounded p-1 sm:hidden" aria-label={t("openNav")} aria-controls={APP_NAV_ID} aria-expanded={isSidebarOpen}>
             <MenuIcon className="size-6 text-muted-foreground" aria-hidden />
           </button>
           <span className="flex-1" />
           <Button asChild variant="ghost" size="sm">
-            <Link href="/map">Open map</Link>
+            <Link href="/map">{t("openMap")}</Link>
           </Button>
-          <UserMenu userName={session?.username ?? "Guest"} size={32} />
+          <UserMenu userName={session?.username ?? t("guest")} size={32} />
         </header>
 
         <main
@@ -149,9 +146,9 @@ export function Dashboard({ assistant }: DashboardProps) {
           {!chatting && (
             <div className="grid justify-items-center gap-2.5 text-center">
               <AgentMark size="lg" />
-              <h1 className="mt-1.5 text-balance text-title text-foreground">What are you hunting for today?</h1>
+              <h1 className="mt-1.5 text-balance text-title text-foreground">{t("greeting")}</h1>
               <p className="max-w-[52ch] text-subheading font-normal text-muted-foreground">
-                Ask about any of {vending === null ? "the" : f.count(vending)} vending machines, card shops and events. It searches the map, counts by area and plans routes.
+                {vending === null ? t("introNoCount") : t("intro", { count: f.count(vending) })}
               </p>
             </div>
           )}
@@ -160,8 +157,8 @@ export function Dashboard({ assistant }: DashboardProps) {
 
           {!chatting && (
             <>
-              <div className="flex flex-wrap justify-center gap-2" aria-label="Suggestions">
-                {(viewer ? ["What's closest to me?", ...SUGGESTIONS] : SUGGESTIONS).map((s) => (
+              <div className="flex flex-wrap justify-center gap-2" aria-label={t("suggestionsLabel")}>
+                {(viewer ? (["closest", ...SUGGESTIONS] as const) : SUGGESTIONS).map((key) => t(`suggestions.${key}`)).map((s) => (
                   <button key={s} type="button" className={chip} onClick={() => setSuggestion(s)}>
                     {s}
                   </button>

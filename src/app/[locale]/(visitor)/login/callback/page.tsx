@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Link, useRouter } from "@/i18n/navigation"
 import { buttonVariants } from "@/components/ui/button"
 import { AuthPage } from "@/components/forms/AuthPage"
@@ -19,6 +20,7 @@ type Step = "checking" | "onboarding" | "failed"
  */
 export default function OAuthCallback() {
   const router = useRouter()
+  const t = useTranslations("auth.callback")
   const [step, setStep] = useState<Step>("checking")
   const [next, setNext] = useState<string | null>(null)
   const started = useRef(false)
@@ -39,16 +41,16 @@ export default function OAuthCallback() {
       .catch(() => setStep("failed"))
   }, [router])
 
-  if (step === "checking") return <LoadSpinner text="Logging you in..." />
+  if (step === "checking") return <LoadSpinner text={t("checking")} />
   return (
     <AuthPage>
       {step === "onboarding" ? (
         <CallbackForm next={next} />
       ) : (
         <div className="grid gap-4 text-center" role="alert">
-          <p className="text-body text-foreground">That sign-in didn&apos;t go through.</p>
+          <p className="text-body text-foreground">{t("failed")}</p>
           <Link href="/login" className={buttonVariants()}>
-            Back to login
+            {t("backToLogin")}
           </Link>
         </div>
       )}

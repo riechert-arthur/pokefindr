@@ -14,6 +14,13 @@ describe("AssistantCardView", () => {
     expect(screen.getByRole("link", { name: /Open in Google Maps/ })).toHaveAttribute("href", expect.stringMatching(/^https:\/\/www\.google\.com\/maps\/dir\//))
   })
 
+  it("labels a route in Spanish on a Spanish page", () => {
+    render(<AssistantCardView card={{ type: "route", stops: [stop("a", "Kroger"), stop("b", "King Soopers")], legs: [0, 1.24], totalMiles: 1.24, start: null, mapsUrl: "https://www.google.com/maps/dir/?api=1&origin=1,2&destination=3,4" }} />, { locale: "es" })
+    expect(screen.getByText("Ruta · 2 paradas · 1,2 mi en línea recta")).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Mostrar en el mapa" })).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Abrir en Google Maps" })).toBeInTheDocument()
+  })
+
   it("drops a directions link that isn't Google Maps", () => {
     render(<AssistantCardView card={{ type: "route", stops: [stop("a", "A"), stop("b", "B")], legs: [0, 1], totalMiles: 1, start: null, mapsUrl: "javascript:alert(1)" }} />)
     expect(screen.queryByRole("link", { name: /Google Maps/ })).toBeNull()

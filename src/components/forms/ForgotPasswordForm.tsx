@@ -12,14 +12,20 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/wrappers/LoadingButton"
 import { handleSubmitError } from "@/lib/forms"
-import { forgotPasswordSchema } from "@/lib/schemas"
+import type { AuthSchemas } from "@/lib/schemas"
+import { useTranslations } from "next-intl"
+import { useAuthSchemas } from "./useAuthSchemas"
+
+type ForgotPasswordValues = z.infer<AuthSchemas["forgotPasswordSchema"]>
 
 /** Asks for a password reset link. Says the same whether or not the email has an account. */
 export function ForgotPasswordForm() {
+  const t = useTranslations("auth")
+  const { forgotPasswordSchema } = useAuthSchemas()
   const [sentTo, setSentTo] = useState<string | null>(null)
-  const form = useForm<z.infer<typeof forgotPasswordSchema>>({ resolver: zodResolver(forgotPasswordSchema), defaultValues: { email: "" } })
+  const form = useForm<ForgotPasswordValues>({ resolver: zodResolver(forgotPasswordSchema), defaultValues: { email: "" } })
 
-  async function onSubmit({ email }: z.infer<typeof forgotPasswordSchema>) {
+  async function onSubmit({ email }: ForgotPasswordValues) {
     try {
       await axios.post("/api/identity/request-password-reset", { email, redirectTo: "/reset-password" })
       setSentTo(email)
@@ -31,17 +37,17 @@ export function ForgotPasswordForm() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-xl">Reset your password</CardTitle>
-        <CardDescription>{sentTo ? "Check your inbox" : "We'll email you a link to choose a new one"}</CardDescription>
+        <CardTitle className="text-xl">{t("forgotPassword.title")}</CardTitle>
+        <CardDescription>{sentTo ? t("forgotPassword.sentDescription") : t("forgotPassword.description")}</CardDescription>
       </CardHeader>
       <CardContent>
         {sentTo ? (
           <div className="grid gap-6 text-center text-sm" role="status">
             <p className="text-muted-foreground">
-              If <span className="font-medium text-foreground">{sentTo}</span> has a PokeFindr account, a reset link is on its way. It works for 1 hour.
+              {t.rich("forgotPassword.sent", { email: sentTo, b: (chunks) => <span className="font-medium text-foreground">{chunks}</span> })}
             </p>
             <Link href="/login" className="underline underline-offset-4">
-              Back to login
+              {t("forgotPassword.backToLogin")}
             </Link>
           </div>
         ) : (
@@ -53,9 +59,9 @@ export function ForgotPasswordForm() {
                 render={({ field }) => (
                   <FormItem>
                     <div className="grid gap-3">
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{t("fields.email")}</FormLabel>
                       <FormControl>
-                        <Input type="email" autoComplete="email" placeholder="m@example.com" {...field} />
+                        <Input type="email" autoComplete="email" placeholder={t("fields.emailPlaceholder")} {...field} />
                       </FormControl>
                     </div>
                     <FormMessage />
@@ -63,17 +69,20 @@ export function ForgotPasswordForm() {
                 )}
               />
               {form.formState.isSubmitting ? (
-                <LoadingButton className="w-full">Sending...</LoadingButton>
+                <LoadingButton className="w-full">{t("forgotPassword.submitting")}</LoadingButton>
               ) : (
                 <Button type="submit" className="w-full">
-                  Send reset link
+                  {t("forgotPassword.submit")}
                 </Button>
               )}
               <div className="text-center text-sm">
-                Remembered it?{" "}
-                <Link href="/login" className="underline underline-offset-4">
-                  Log in
-                </Link>
+                {t.rich("forgotPassword.remembered", {
+                  link: (chunks) => (
+                    <Link href="/login" className="underline underline-offset-4">
+                      {chunks}
+                    </Link>
+                  ),
+                })}
               </div>
             </form>
           </Form>

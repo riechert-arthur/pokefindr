@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { describe, expect, it, vi } from "vitest"
-import { fireEvent, render, screen } from "../../helpers/intl"
+import { fireEvent, message, render, screen } from "../../helpers/intl"
 import { SearchCommand, type SearchCommandItem, type SearchCommandStatus } from "@/components/pokefindr/SearchCommand"
 
 const ITEMS: SearchCommandItem[] = [
@@ -114,6 +114,21 @@ describe("SearchCommand", () => {
     render(<Harness />)
     type("Den")
     expect(screen.getByRole("status")).toHaveTextContent("3 results")
+  })
+
+  it("announces one result in the singular", () => {
+    render(<Harness items={ITEMS.slice(0, 1)} />)
+    type("Den")
+    expect(screen.getByRole("status")).toHaveTextContent(/^1 result\. /)
+  })
+
+  it("speaks Spanish on a Spanish page", () => {
+    render(<Harness items={ITEMS.slice(0, 1)} variant="hero" />, { locale: "es" })
+    type("Den")
+    expect(screen.getByRole("status")).toHaveTextContent(message("es")("ui.search.announce.results", { count: 1 }))
+    expect(screen.getByRole("status")).toHaveTextContent(/^1 resultado\. /)
+    expect(screen.getByText(message("es")("ui.search.areas"))).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Buscar" })).toBeInTheDocument()
   })
 
   it("closes on Escape and reopens on the next keystroke", () => {

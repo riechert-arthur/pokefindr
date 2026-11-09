@@ -1,40 +1,43 @@
-import faqs from "@/data/faqs.json"
+import type { ReactNode } from "react"
+import type { useTranslations } from "next-intl"
 
-export interface Faq {
-  id: number
-  question: string
-  /** Plain text; `[text](https://…)` makes a link. */
-  answer: string
-}
+/** The FAQ's questions, in order. Each one's question and answer are in the catalog (`faq.items.<id>`). */
+export const FAQ_IDS = ["what", "map", "verified", "info", "filter", "add", "report", "account", "countries", "official"] as const
+export type FaqId = (typeof FAQ_IDS)[number]
 
-export const FAQS: readonly Faq[] = faqs
+/** Where the tags in the answers link: `<center>` and `<support>`. */
+export const FAQ_LINKS = {
+  center: "https://support.pokemoncenter.com/hc/en-us/sections/13360842288916-Pok%C3%A9mon-Automated-Retail-Vending-Machines",
+  support: "https://discord.gg/f2uUR5bAZU",
+} as const
 
-/** Splits an answer into text and links, so it renders without raw HTML. */
-export function answerParts(answer: string): ({ text: string } | { text: string; href: string })[] {
-  const parts: ({ text: string } | { text: string; href: string })[] = []
-  const link = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g
-  let at = 0
-  for (const m of answer.matchAll(link)) {
-    if (m.index > at) parts.push({ text: answer.slice(at, m.index) })
-    parts.push({ text: m[1], href: m[2] })
-    at = m.index + m[0].length
-  }
-  if (at < answer.length) parts.push({ text: answer.slice(at) })
-  return parts
+export type FaqTag = keyof typeof FAQ_LINKS
+
+/** The "faq" messages, from useTranslations("faq") or getTranslations("faq"). */
+export type FaqMessages = ReturnType<typeof useTranslations<"faq">>
+
+/** An answer as rich text, each link made by `link(tag, chunks)`. */
+export function faqAnswer(t: FaqMessages, id: FaqId, link: (tag: FaqTag, chunks: ReactNode) => ReactNode): ReactNode {
+  return t.rich(`items.${id}.answer`, {
+    center: (chunks) => link("center", chunks),
+    support: (chunks) => link("support", chunks),
+  })
 }
 
 /** An answer as plain text (links become their text), for structured data. */
-export const answerText = (answer: string) => answerParts(answer).map((p) => p.text).join("")
+export function faqAnswerText(t: FaqMessages, id: FaqId): string {
+  return t.markup(`items.${id}.answer`, { center: (chunks) => chunks, support: (chunks) => chunks })
+}
 
-/** schema.org FAQPage for the landing page's FAQ, so search results can show it. */
-export function faqJsonLd(faqs: readonly Faq[] = FAQS) {
+/** schema.org FAQPage for the landing page's FAQ, in the page's language, so search results can show it. */
+export function faqJsonLd(t: FaqMessages) {
   return {
     "@context": "https://schema.org",
     "@type": "FAQPage",
-    mainEntity: faqs.map((f) => ({
+    mainEntity: FAQ_IDS.map((id) => ({
       "@type": "Question",
-      name: f.question,
-      acceptedAnswer: { "@type": "Answer", text: answerText(f.answer) },
+      name: t(`items.${id}.question`),
+      acceptedAnswer: { "@type": "Answer", text: faqAnswerText(t, id) },
     })),
   }
 }

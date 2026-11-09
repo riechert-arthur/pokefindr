@@ -1,11 +1,13 @@
 import { Link } from "@/i18n/navigation"
 import type { FC } from "react"
 import { setPageLocale, type LocaleParams } from "@/i18n/static"
+import { EnglishOnlyNotice } from "@/components/EnglishOnlyNotice"
 
 const TermsOfServicePage: FC<LocaleParams> = async ({ params }) => {
   await setPageLocale(params)
   return (
-    <div className="max-w-3xl mx-auto p-6 text-foreground">
+    <div lang="en" className="max-w-3xl mx-auto p-6 text-foreground">
+      <EnglishOnlyNotice href="/terms-of-service" />
       <h1 className="text-3xl font-bold mb-4">TERMS OF SERVICE</h1>
       <p className="mb-4">Last updated November 8, 2026</p>
 
