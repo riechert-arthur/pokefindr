@@ -35,6 +35,13 @@ async function sendAccountEmail(to: string, email: EmailContent): Promise<void> 
   }
 }
 
+function socialProviders(config: ServerConfig) {
+  return {
+    ...(config.GOOGLE_CLIENT_ID && { google: { clientId: config.GOOGLE_CLIENT_ID, clientSecret: config.GOOGLE_CLIENT_SECRET! } }),
+    ...(config.DISCORD_CLIENT_ID && { discord: { clientId: config.DISCORD_CLIENT_ID, clientSecret: config.DISCORD_CLIENT_SECRET! } }),
+  }
+}
+
 function makeAuth(config: ServerConfig) {
   return betterAuth({
     appName: "PokeFindr",
@@ -70,6 +77,9 @@ function makeAuth(config: ServerConfig) {
       expiresIn: 60 * 60 * 24,
       sendVerificationEmail: ({ user, url }) => sendAccountEmail(user.email, verifyEmail({ name: user.name, url })),
     },
+    // Signing in with Google or Discord links to an existing account with the same
+    // email only when both sides have confirmed it (Better Auth's default).
+    socialProviders: socialProviders(config),
     session: { expiresIn: 60 * 60 * 24 * 7 },
     // In the database, so limits hold across serverless instances. On everywhere but tests.
     rateLimit: { enabled: config.NODE_ENV !== "test", storage: "database", window: 60, max: 100 },

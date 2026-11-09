@@ -30,6 +30,15 @@ const serverSchema = z.object({
    * characters. Unset, it's derived from JWT_SECRET.
    */
   BETTER_AUTH_SECRET: blankAsUnset(z.string().min(32, "must be at least 32 characters").optional()),
+  /**
+   * OAuth sign-in. A provider is offered when both its id and secret are
+   * set. Each provider's console must list the redirect URI
+   * `${APP_URL}/api/identity/callback/<google|discord>`.
+   */
+  GOOGLE_CLIENT_ID: blankAsUnset(z.string().min(1).optional()),
+  GOOGLE_CLIENT_SECRET: blankAsUnset(z.string().min(1).optional()),
+  DISCORD_CLIENT_ID: blankAsUnset(z.string().min(1).optional()),
+  DISCORD_CLIENT_SECRET: blankAsUnset(z.string().min(1).optional()),
   /** Better Auth's public URL. Defaults to APP_URL. */
   BETTER_AUTH_URL: blankAsUnset(z.string().url().optional()),
 
@@ -125,6 +134,9 @@ const serverSchema = z.object({
       path: [env.ANTHROPIC_FEDERATION_RULE_ID ? "ANTHROPIC_ORGANIZATION_ID" : "ANTHROPIC_FEDERATION_RULE_ID"],
       message: "workload identity federation needs both ANTHROPIC_FEDERATION_RULE_ID and ANTHROPIC_ORGANIZATION_ID",
     })
+  for (const p of ["GOOGLE", "DISCORD"] as const)
+    if (Boolean(env[`${p}_CLIENT_ID`]) !== Boolean(env[`${p}_CLIENT_SECRET`]))
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: [`${p}_CLIENT_${env[`${p}_CLIENT_ID`] ? "SECRET" : "ID"}`], message: `${p.toLowerCase()} sign-in needs both ${p}_CLIENT_ID and ${p}_CLIENT_SECRET` })
   if (env.MAIL_PROVIDER === "smtp" && !env.SMTP_URL)
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["SMTP_URL"], message: "required when MAIL_PROVIDER is smtp" })
   if (env.GEOCODER_PROVIDER === "nominatim" && !env.GEOCODER_USER_AGENT)

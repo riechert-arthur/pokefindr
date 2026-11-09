@@ -25,6 +25,20 @@ describe("LoginForm", () => {
   })
 })
 
+describe("OAuth buttons", () => {
+  it("show the configured providers only", () => {
+    render(<LoginForm providers={["google", "discord"]} />)
+    expect(screen.getByRole("button", { name: /Continue with Google/ })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /Continue with Discord/ })).toBeInTheDocument()
+  })
+
+  it("and nothing, not even the divider, without any", () => {
+    render(<LoginForm />)
+    expect(screen.queryByRole("button", { name: /Continue with/ })).toBeNull()
+    expect(screen.queryByText("Or continue with email")).toBeNull()
+  })
+})
+
 describe("ResetPasswordForm", () => {
   it("offers a new link when the token is missing or bad", () => {
     render(<ResetPasswordForm token={null} />)

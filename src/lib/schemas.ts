@@ -8,6 +8,14 @@ export const loginSchema = z.object({
   password: z.string().nonempty({ message: "Please enter a password" }),
 })
 
+/** A username: what other people see on reviews. Unique ignoring case. */
+export const usernameField = z
+  .string()
+  .trim()
+  .min(3, { message: "Use at least 3 characters." })
+  .max(30, { message: "Use at most 30 characters." })
+  .regex(/^[A-Za-z0-9_.-]+$/, { message: "Use letters, digits, dots, dashes and underscores." })
+
 /** A new password: long, with at least one character that isn't a letter or digit. */
 const newPassword = z
   .string()
@@ -38,9 +46,7 @@ export const registrationSchema = z
       .string()
       .nonempty({ message: "Please enter a name." })
       .regex(/^[\p{L} ]+$/u, { message: "Only letters are allowed." }),
-    username: z
-      .string()
-      .nonempty({ message: "Please enter a username." }),
+    username: usernameField,
     email: z
       .string()
       .nonempty({ message: "Please enter an email" })
@@ -53,9 +59,4 @@ export const registrationSchema = z
     path: ["passwordVerification"],
   })
 
-export const callbackSchema = z.object({
-  username: z
-    .string()
-    .nonempty({ message: "Please enter a name." })
-    .regex(/^[\p{L} ]+$/u, { message: "Only letters are allowed." }),
-})
+export const callbackSchema = z.object({ username: usernameField })

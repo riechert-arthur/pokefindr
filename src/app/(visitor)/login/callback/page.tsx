@@ -1,66 +1,52 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { buttonVariants } from "@/components/ui/button"
+import { AuthPage } from "@/components/forms/AuthPage"
 import { CallbackForm } from "@/components/forms/CallbackForm"
-import { Logo } from "@/components/brand/Logo"
-import Link from "next/link";
-import axios from "axios";
-import { LoadSpinner } from "@/components/wrappers/LoadSpinner";
+import { LoadSpinner } from "@/components/wrappers/LoadSpinner"
 import { broadcastAuth } from "@/lib/auth/broadcast"
 
+type Step = "checking" | "onboarding" | "failed"
+
+/**
+ * Where Google or Discord send people back (via Better Auth, which has set
+ * its session cookie). An existing user goes straight to /home; a new one
+ * picks a username first.
+ */
 export default function OAuthCallback() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(true)
-  const [onboarding, setOnboarding] = useState(false)
+  const router = useRouter()
+  const [step, setStep] = useState<Step>("checking")
+  const started = useRef(false)
 
   useEffect(() => {
-    const doOAuth = async () => {
-      const hashFragment = window.location.hash.substring(1);
-      const params = new URLSearchParams(hashFragment);
-      const accessToken = params.get("access_token");
-
-      if (!accessToken) {
-        throw Error("No access token!") 
-      }
-
-      try {
-
-        console.log("Run once")
-        const { status } = await axios.post(
-          "/api/auth/callback",
-          { access_token: accessToken },
-          { withCredentials: true }         
-        )
-
-        if (status === 200) { 
-          broadcastAuth("login");
+    if (started.current) return
+    started.current = true
+    fetch("/api/auth/callback", { method: "POST" })
+      .then((res) => {
+        if (res.status === 200) {
+          broadcastAuth("login")
           router.push("/home")
-          return
-        }
-        setOnboarding(true)
-        setLoading(false)
-      } catch (err) {
-        throw err 
-      }
-    };
+        } else setStep(res.status === 204 ? "onboarding" : "failed")
+      })
+      .catch(() => setStep("failed"))
+  }, [router])
 
-    if (!onboarding) doOAuth();
-  }, [router]);
-
-  if (loading) {
-    return <LoadSpinner text="Logging you in..." />
-  } else {
-    return (
-      <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10">
-        <div className="z-1000 flex w-full max-w-sm flex-col gap-6">
-          <Link href="/" className="flex items-center gap-2 self-center font-medium">
-            <Logo variant="full" size={28} />
+  if (step === "checking") return <LoadSpinner text="Logging you in..." />
+  return (
+    <AuthPage>
+      {step === "onboarding" ? (
+        <CallbackForm />
+      ) : (
+        <div className="grid gap-4 text-center" role="alert">
+          <p className="text-body text-foreground">That sign-in didn&apos;t go through.</p>
+          <Link href="/login" className={buttonVariants()}>
+            Back to login
           </Link>
-          <CallbackForm /> 
         </div>
-      </div>
-    )
-  }
+      )}
+    </AuthPage>
+  )
 }
-

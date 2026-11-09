@@ -106,6 +106,14 @@ describe("getServerConfig", () => {
     expect(getServerConfig().SMTP_URL).toBe("smtp://localhost:1025")
   })
 
+  it("needs both halves of an OAuth provider's credentials", () => {
+    vi.stubEnv("GOOGLE_CLIENT_ID", "id")
+    expect(() => getServerConfig()).toThrowError(/GOOGLE_CLIENT_SECRET: google sign-in needs both/)
+    resetServerConfigForTests()
+    vi.stubEnv("GOOGLE_CLIENT_SECRET", "secret")
+    expect(getServerConfig().GOOGLE_CLIENT_ID).toBe("id")
+  })
+
   it("rejects an unknown GEOCODER_PROVIDER", () => {
     vi.stubEnv("GEOCODER_PROVIDER", "google")
     expect(() => getServerConfig()).toThrowError(/GEOCODER_PROVIDER/)
