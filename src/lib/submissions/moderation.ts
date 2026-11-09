@@ -1,5 +1,11 @@
 import type { RejectReason, SubmissionKind, SubmissionStatus } from "./constants"
 
+/** A decision can be undone this long after it was made, by the moderator who made it. */
+export const UNDO_MS = 60 * 60 * 1000
+
+/** Whether the Undo for this decision is still allowed (the server checks again). */
+export const canUndo = (reviewedAt: string | null, now = Date.now()) => reviewedAt !== null && now - Date.parse(reviewedAt) <= UNDO_MS
+
 /** One automatic check on a submission, shown in the review queue. */
 export interface ModerationCheck {
   key: "country" | "duplicate" | "address" | "website" | "date"
