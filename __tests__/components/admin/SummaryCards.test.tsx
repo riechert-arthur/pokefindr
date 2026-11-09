@@ -29,6 +29,12 @@ describe("SummaryCards", () => {
     expect(screen.queryByText("Live on the map")).toBeNull()
   })
 
+  it("renders a moderator's summary, which has no live or sync counts", () => {
+    const { live: _live, sync: _sync, ...moderation } = SUMMARY
+    render(<SummaryCards summary={moderation} role="moderator" onOpen={vi.fn()} />)
+    expect(screen.getAllByRole("listitem")).toHaveLength(2)
+  })
+
   it("says when the queue and reports are clear", () => {
     render(<SummaryCards summary={{ ...SUMMARY, queue: { count: 0, oldestAt: null }, reports: { locations: 0, reports: 0, maxOnOne: 0 } }} role="admin" onOpen={vi.fn()} />)
     expect(screen.getByText("Queue is clear")).toBeInTheDocument()

@@ -22,6 +22,7 @@ const MEMBER = randomUUID()
 const OTHER = randomUUID()
 const THIRD = randomUUID()
 const MOD = randomUUID()
+const ADMIN = randomUUID()
 
 let kroger: string
 let safeway: string
@@ -33,6 +34,7 @@ beforeEach(async () => {
     { id: OTHER, username: "brock" },
     { id: THIRD, username: "gary" },
     { id: MOD, username: "misty", role: "moderator" },
+    { id: ADMIN, username: "erika", role: "admin" },
   ])
   const rows = await getDb()
     .insert(locations)
@@ -154,11 +156,16 @@ describe("admin reports", () => {
   })
 
   it("the summary's live counts drop as soon as a location is hidden, and sync shows as paused", async () => {
-    const before = await (await summaryRoute(req("/api/admin/summary", MOD))).json()
+    const before = await (await summaryRoute(req("/api/admin/summary", ADMIN))).json()
     expect(before.live).toEqual({ total: 2, byKind: { vending: 2 } })
     expect(before.sync).toEqual({ status: "paused", detail: "Waiting on an approved data source (#85)", at: null })
     await act(kroger, "hide")
-    expect((await (await summaryRoute(req("/api/admin/summary", MOD))).json()).live).toEqual({ total: 1, byKind: { vending: 1 } })
+    expect((await (await summaryRoute(req("/api/admin/summary", ADMIN))).json()).live).toEqual({ total: 1, byKind: { vending: 1 } })
+  })
+
+  it("gives moderators the Moderation counts only", async () => {
+    const summary = await (await summaryRoute(req("/api/admin/summary", MOD))).json()
+    expect(Object.keys(summary).sort()).toEqual(["queue", "reports"])
   })
 
   it("refuses a bad action or an unknown location", async () => {

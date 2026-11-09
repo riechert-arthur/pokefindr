@@ -20,7 +20,7 @@ interface Card {
 function cards(s: AdminSummary): Card[] {
   const late = queueIsLate(s.queue)
   const r = s.reports
-  const sync = s.sync
+  const { live, sync } = s
   return [
     {
       section: "queue",
@@ -36,23 +36,23 @@ function cards(s: AdminSummary): Card[] {
       detail: r.locations ? `${formatCount(r.reports)} ${r.reports === 1 ? "report" : "reports"} on ${formatCount(r.locations)} ${r.locations === 1 ? "location" : "locations"}` : "Nothing reported",
       pill: r.maxOnOne >= REPORTS_HOT ? ["crit", `${REPORTS_HOT}+ on one place`] : r.locations ? ["warn", "Needs a look"] : ["ok", "Clear"],
     },
-    {
+    live && {
       section: "coverage",
       label: "Live on the map",
-      value: formatCount(s.live.total),
-      detail: KIND_ORDER.map((k) => `${formatCount(s.live.byKind[k] ?? 0)} ${KINDS[k].short.toLowerCase()}`).join(" · "),
+      value: formatCount(live.total),
+      detail: KIND_ORDER.map((k) => `${formatCount(live.byKind[k] ?? 0)} ${KINDS[k].short.toLowerCase()}`).join(" · "),
       pill: ["ok", "Serving"],
       admin: true,
     },
-    {
+    sync && {
       section: "jobs",
       label: "Location sync",
-      value: sync.status === "paused" ? "Paused" : sync.status === "never" ? "Not run" : sync.status === "succeeded" ? "Synced" : sync.status === "failed" ? "Failed" : "Running",
+      value: sync.status === "paused" ? "Paused" : sync.status === "never" ? "Not run" : sync.status === "succeeded" ? "Synced" : sync.status === "failed" ? "Failed" : sync.status === "skipped" ? "Skipped" : "Running",
       detail: sync.status === "paused" ? (sync.detail ?? "Paused") : sync.at ? `Last run ${timeAgo(sync.at)}` : "No runs yet",
       pill: sync.status === "paused" ? ["warn", "Manual import only"] : sync.status === "failed" ? ["crit", "Failed"] : sync.status === "succeeded" ? ["ok", "Healthy"] : ["idle", "Waiting"],
       admin: true,
     },
-  ]
+  ].filter((c): c is Card => Boolean(c))
 }
 
 /**
