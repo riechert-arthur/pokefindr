@@ -57,7 +57,7 @@ export async function listJobs(db: Database = getDb()): Promise<JobRow[]> {
   })
 }
 
-/** Pauses a registered job; cron and queue runs skip it until resumed. */
+/** Pauses a registered job; cron runs skip it, and queue messages wait, until resumed. */
 export async function pauseJob(name: string, reason: string, adminId: string, db: Database = getDb()) {
   await db.insert(jobPauses).values({ job: name, reason, pausedBy: adminId }).onConflictDoUpdate({ target: jobPauses.job, set: { reason, pausedBy: adminId, pausedAt: new Date() } })
 }

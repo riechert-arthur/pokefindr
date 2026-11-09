@@ -61,7 +61,7 @@ describe("job run history", () => {
     expect(runs[0].finishedAt).toBeInstanceOf(Date)
   })
 
-  it("skips a paused job from cron and the queue, records why, and still runs it from the CLI", async () => {
+  it("skips a paused job from cron, records why, and still runs it from the CLI", async () => {
     await pauseJob("expire-events", "Checking the event data", ADMIN)
     expect(await runJob("expire-events", null, { trigger: "cron" })).toEqual({ skipped: true, paused: "Checking the event data" })
     await runJob("expire-events", null, { trigger: "cli" })

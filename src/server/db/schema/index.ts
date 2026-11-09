@@ -572,7 +572,7 @@ export const jobRuns = pgTable(
   ],
 )
 
-/** A paused job (#157): cron and queue runs skip it. */
+/** A paused job (#157): cron runs skip it, and queue messages wait until it is resumed. */
 export const jobPauses = pgTable("job_pauses", {
   job: text("job").primaryKey(),
   reason: text("reason").notNull(),
