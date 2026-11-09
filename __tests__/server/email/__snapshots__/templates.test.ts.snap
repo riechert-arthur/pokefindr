@@ -1,0 +1,95 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`email templates > confirmEmailChange 1`] = `
+{
+  "html": "<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"></head>
+<body style="margin:0;padding:24px 16px;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0a0a0a;font-size:15px;line-height:1.5">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border:1px solid #e5e5e5;border-radius:12px">
+<tr><td style="padding:28px 28px 8px;font-size:18px;font-weight:700;letter-spacing:-0.01em">PokeFindr</td></tr>
+<tr><td style="padding:8px 28px 28px"><p style="margin:0 0 12px">Hi Ash,</p><p style="margin:0">Confirm that <strong>ash@new.example</strong> is the new email for your PokeFindr account.</p><p style="margin:24px 0"><a href="https://pokefindr.example/api/identity/verify-email?token=abc&amp;callbackURL=%2Flogin%3Fverified%3D1" style="display:inline-block;background:#2563eb;color:#f8fafc;text-decoration:none;font-weight:600;padding:10px 18px;border-radius:8px">Confirm new email</a></p>
+<p style="margin:0;color:#6b6b6b;font-size:13px">Or paste this link into your browser:<br><span style="word-break:break-all">https://pokefindr.example/api/identity/verify-email?token=abc&amp;callbackURL=%2Flogin%3Fverified%3D1</span></p><p style="margin:20px 0 0;color:#6b6b6b;font-size:13px">Nothing changes until you open the link, which works for 24 hours. If you didn't ask for this, ignore this email.</p></td></tr>
+</table>
+<p style="max-width:480px;margin:16px auto 0;color:#6b6b6b;font-size:12px">You're getting this because of an action on your PokeFindr account.</p>
+</td></tr></table>
+</body></html>",
+  "subject": "Confirm your new PokeFindr email",
+  "text": "Hi Ash,
+
+Confirm that ash@new.example is the new email for your PokeFindr account:
+https://pokefindr.example/api/identity/verify-email?token=abc&callbackURL=%2Flogin%3Fverified%3D1
+
+Nothing changes until you open the link, which works for 24 hours. If you didn't ask for this, ignore this email.",
+}
+`;
+
+exports[`email templates > emailChangeRequested 1`] = `
+{
+  "html": "<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"></head>
+<body style="margin:0;padding:24px 16px;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0a0a0a;font-size:15px;line-height:1.5">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border:1px solid #e5e5e5;border-radius:12px">
+<tr><td style="padding:28px 28px 8px;font-size:18px;font-weight:700;letter-spacing:-0.01em">PokeFindr</td></tr>
+<tr><td style="padding:8px 28px 28px"><p style="margin:0 0 12px">Hi Ash,</p><p style="margin:0">Someone asked to change your PokeFindr account's email to <strong>ash@new.example</strong>. It changes once that address confirms.</p><p style="margin:20px 0 0">If this wasn't you, change your password now and contact us by replying to this email.</p></td></tr>
+</table>
+<p style="max-width:480px;margin:16px auto 0;color:#6b6b6b;font-size:12px">You're getting this because of an action on your PokeFindr account.</p>
+</td></tr></table>
+</body></html>",
+  "subject": "Your PokeFindr email is being changed",
+  "text": "Hi Ash,
+
+Someone asked to change your PokeFindr account's email to ash@new.example. It changes once that address confirms.
+
+If this wasn't you, change your password now and contact us by replying to this email.",
+}
+`;
+
+exports[`email templates > resetPassword 1`] = `
+{
+  "html": "<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"></head>
+<body style="margin:0;padding:24px 16px;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0a0a0a;font-size:15px;line-height:1.5">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border:1px solid #e5e5e5;border-radius:12px">
+<tr><td style="padding:28px 28px 8px;font-size:18px;font-weight:700;letter-spacing:-0.01em">PokeFindr</td></tr>
+<tr><td style="padding:8px 28px 28px"><p style="margin:0 0 12px">Hi Ash,</p><p style="margin:0">Someone asked to reset the password for your PokeFindr account.</p><p style="margin:24px 0"><a href="https://pokefindr.example/api/identity/verify-email?token=abc&amp;callbackURL=%2Flogin%3Fverified%3D1" style="display:inline-block;background:#2563eb;color:#f8fafc;text-decoration:none;font-weight:600;padding:10px 18px;border-radius:8px">Choose a new password</a></p>
+<p style="margin:0;color:#6b6b6b;font-size:13px">Or paste this link into your browser:<br><span style="word-break:break-all">https://pokefindr.example/api/identity/verify-email?token=abc&amp;callbackURL=%2Flogin%3Fverified%3D1</span></p><p style="margin:20px 0 0;color:#6b6b6b;font-size:13px">The link works for 1 hour. If it wasn't you, ignore this email: your password stays the same.</p></td></tr>
+</table>
+<p style="max-width:480px;margin:16px auto 0;color:#6b6b6b;font-size:12px">You're getting this because of an action on your PokeFindr account.</p>
+</td></tr></table>
+</body></html>",
+  "subject": "Reset your PokeFindr password",
+  "text": "Hi Ash,
+
+Someone asked to reset the password for your PokeFindr account. To choose a new one, open:
+https://pokefindr.example/api/identity/verify-email?token=abc&callbackURL=%2Flogin%3Fverified%3D1
+
+The link works for 1 hour. If it wasn't you, ignore this email: your password stays the same.",
+}
+`;
+
+exports[`email templates > verifyEmail 1`] = `
+{
+  "html": "<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"></head>
+<body style="margin:0;padding:24px 16px;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0a0a0a;font-size:15px;line-height:1.5">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border:1px solid #e5e5e5;border-radius:12px">
+<tr><td style="padding:28px 28px 8px;font-size:18px;font-weight:700;letter-spacing:-0.01em">PokeFindr</td></tr>
+<tr><td style="padding:8px 28px 28px"><p style="margin:0 0 12px">Hi Ash,</p><p style="margin:0">Confirm your email to finish creating your PokeFindr account.</p><p style="margin:24px 0"><a href="https://pokefindr.example/api/identity/verify-email?token=abc&amp;callbackURL=%2Flogin%3Fverified%3D1" style="display:inline-block;background:#2563eb;color:#f8fafc;text-decoration:none;font-weight:600;padding:10px 18px;border-radius:8px">Confirm email</a></p>
+<p style="margin:0;color:#6b6b6b;font-size:13px">Or paste this link into your browser:<br><span style="word-break:break-all">https://pokefindr.example/api/identity/verify-email?token=abc&amp;callbackURL=%2Flogin%3Fverified%3D1</span></p><p style="margin:20px 0 0;color:#6b6b6b;font-size:13px">The link works for 24 hours. If you didn't sign up, you can ignore this email.</p></td></tr>
+</table>
+<p style="max-width:480px;margin:16px auto 0;color:#6b6b6b;font-size:12px">You're getting this because of an action on your PokeFindr account.</p>
+</td></tr></table>
+</body></html>",
+  "subject": "Confirm your PokeFindr account",
+  "text": "Hi Ash,
+
+Confirm your email to finish creating your PokeFindr account:
+https://pokefindr.example/api/identity/verify-email?token=abc&callbackURL=%2Flogin%3Fverified%3D1
+
+The link works for 24 hours. If you didn't sign up, you can ignore this email.",
+}
+`;
