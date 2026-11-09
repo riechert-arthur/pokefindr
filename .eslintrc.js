@@ -154,6 +154,7 @@ module.exports = {
         "src/server/site-url.ts",
         "src/config.public.ts",
         "__tests__/**",
+        "e2e/**",
         "*.config.*",
         ".eslintrc.js",
         ".storybook/test-runner.ts",

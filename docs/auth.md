@@ -65,6 +65,18 @@ Every email the app sends goes to Mailpit at http://localhost:8025. Running `npm
 Docker, `MAIL_PROVIDER` defaults to `console`, which prints each email (and its link) in the
 server log.
 
+### End-to-end tests
+
+`e2e/auth.e2e.ts` runs the flows in a browser against a running stack: sign up, confirm from
+Mailpit, log in, post a review, log out, reset the password, and the dev user. CI's `make run`
+job runs it on every pull request.
+
+```bash
+make run
+npx playwright install chromium   # once
+npm run test:e2e
+```
+
 ## Settings per environment
 
 | Variable | Needed | Notes |
