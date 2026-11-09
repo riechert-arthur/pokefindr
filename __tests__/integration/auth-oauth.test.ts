@@ -124,6 +124,16 @@ describe("OAuth providers", () => {
     expect(await getDb().select().from(users).where(eq(users.email, "victim@example.com"))).toEqual([])
   })
 
+  it("still lets in someone whose Discord is linked, while their new Discord email is unconfirmed", async () => {
+    expect((await discordSignIn("ash@example.com", true)).signedIn).toBe(true)
+    // They change their Discord email and haven't confirmed it yet.
+    const { location, signedIn } = await discordSignIn("ash-new@example.com", false)
+    expect(signedIn).toBe(true)
+    expect(location).toBe("/login/callback")
+    const [user] = await getDb().select().from(users)
+    expect(user.email).toBe("ash@example.com")
+  })
+
   it("fails the same way for an unconfirmed email whether or not it has an account", async () => {
     const free = await discordSignIn("nobody@example.com", false)
     await newOAuthUser("taken@example.com")

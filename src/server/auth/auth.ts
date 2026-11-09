@@ -70,11 +70,14 @@ export function mayCreateUser(user: { emailVerified: boolean }, endpoint: { path
 }
 
 /**
- * Drops an email the provider hasn't confirmed before Better Auth looks it
- * up, so the sign-in fails the same way whether or not that address has an
- * account here (email_not_found). Otherwise its error would say which.
+ * Swaps an email the provider hasn't confirmed for one that matches no
+ * account, before Better Auth looks it up. A sign-in then fails the same way
+ * whether or not the real address has an account here (the create hook
+ * refuses it), while someone whose provider account is already linked is
+ * found by that link and still gets in. Better Auth doesn't save it.
  */
-const onlyConfirmedEmail = (confirmed: boolean | undefined) => (confirmed ? {} : { email: undefined })
+const onlyConfirmedEmail = (confirmed: boolean | undefined, providerUserId: string) =>
+  confirmed ? {} : { email: `${providerUserId}@unconfirmed.invalid` }
 
 function socialProviders(config: ServerConfig) {
   return {
@@ -82,14 +85,14 @@ function socialProviders(config: ServerConfig) {
       google: {
         clientId: config.GOOGLE_CLIENT_ID,
         clientSecret: config.GOOGLE_CLIENT_SECRET!,
-        mapProfileToUser: (profile: { email_verified?: boolean }) => onlyConfirmedEmail(profile.email_verified),
+        mapProfileToUser: (profile: { sub: string; email_verified?: boolean }) => onlyConfirmedEmail(profile.email_verified, `google-${profile.sub}`),
       },
     }),
     ...(config.DISCORD_CLIENT_ID && {
       discord: {
         clientId: config.DISCORD_CLIENT_ID,
         clientSecret: config.DISCORD_CLIENT_SECRET!,
-        mapProfileToUser: (profile: { verified?: boolean }) => onlyConfirmedEmail(profile.verified),
+        mapProfileToUser: (profile: { id: string; verified?: boolean }) => onlyConfirmedEmail(profile.verified, `discord-${profile.id}`),
       },
     }),
   }
