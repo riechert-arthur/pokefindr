@@ -91,6 +91,8 @@ describe("POST /api/submissions", () => {
     expect(await bad(shop({ name: "Mile\u0000High" }))).toMatchObject({ field: "name", error: "Remove the hidden or control characters." })
     expect(await bad(shop({ name: "\u200b\u200b\u200b" }))).toMatchObject({ field: "name" })
     expect(await bad(shop({ city: "Den\u202ever" }))).toMatchObject({ field: "city" })
+    expect(await bad(shop({ website: "https://x.example/a\u0000b" }))).toMatchObject({ field: "website" })
+    expect(await bad(event({ link: "https://x.example/\u202egnp.exe" }))).toMatchObject({ field: "link" })
     expect(await bad(shop({ sells: ["pokemon"] }))).toMatchObject({ field: "sells.0" })
     expect(await bad(shop({ lat: 120 }))).toMatchObject({ field: "lat" })
     expect(await bad({ ...shop(), kind: "vending" })).toMatchObject({ field: "kind" })
