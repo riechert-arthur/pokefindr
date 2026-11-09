@@ -2,11 +2,10 @@
  * Sponsored banners (#59): what each says, where it links, and where it may
  * show. Adding or rotating one is an edit here, not new numbered env vars.
  * Links and pixels are public (they're in the page), so a new banner can use
- * literal URLs; the first one keeps reading the env vars it always had, so
- * production needs no change.
- *
- * Each `NEXT_PUBLIC_*` must be referenced literally so Next.js inlines it.
+ * literal URLs; the first one keeps reading the env vars it always had
+ * (through publicConfig), so production needs no change.
  */
+import { publicConfig } from "@/config.public"
 
 /** Where an in-content sponsored slot can appear (#136). */
 export const SPONSOR_PLACEMENTS = ["results", "details", "landing"] as const
@@ -39,9 +38,9 @@ export const BANNERS: readonly Banner[] = [
     title: "Missed the restock? Buy singles online",
     body: "10% off qualifying purchases on TCGplayer.",
     cta: "See the deal",
-    href: process.env.NEXT_PUBLIC_AFFILIATE_LINK_1,
-    pixel: process.env.NEXT_PUBLIC_PIXEL_TRACKING_URL_1,
-    image: process.env.NEXT_PUBLIC_IMAGE_1,
+    href: publicConfig.sponsor.link,
+    pixel: publicConfig.sponsor.pixel,
+    image: publicConfig.sponsor.image,
     weight: 1,
   },
 ]
