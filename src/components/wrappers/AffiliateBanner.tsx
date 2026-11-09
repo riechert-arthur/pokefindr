@@ -3,7 +3,7 @@
 import React, { memo } from "react"
 import { usePathname } from "next/navigation"
 import { useAdContext } from "@/components/providers/AdContextProvider"
-import { publicConfig } from "@/config.public"
+import { BANNERS } from "@/config/banners"
 
 const AffiliateBanner: React.FC = () => {
   const { showBanner, setShowBanner } = useAdContext()
@@ -12,11 +12,10 @@ const AffiliateBanner: React.FC = () => {
   if (!showBanner || pathname === "/home") return null
 
   const isProd = process.env.NODE_ENV === "production"
-  const {
-    pixelTrackingUrl: pixelTrackingURL,
-    link: affiliateLink,
-    image: imageLink,
-  } = publicConfig.affiliate
+  // The floating banner shows the first banner with an image (#59); in-content slots replace it in #136.
+  const banner = BANNERS.find((b) => b.href && b.image)
+  if (!banner) return null
+  const { pixel: pixelTrackingURL, href: affiliateLink, image: imageLink } = banner
 
   return (
     <>
@@ -83,7 +82,7 @@ const AffiliateBanner: React.FC = () => {
         >
           <img
             src={imageLink}
-            alt="Sponsored Ad for TCGPlayer 10% Off Qualifying Purchases"
+            alt={[`Sponsored: ${banner.sponsor}.`, banner.title, banner.body].filter(Boolean).join(" ")}
             width={1500}
             height={300}
             className="

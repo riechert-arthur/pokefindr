@@ -22,11 +22,10 @@ export const publicConfig = {
     /** Plausible or Umami self-hosted: the tracker script's URL. Defaults to their cloud. */
     scriptUrl: process.env.NEXT_PUBLIC_ANALYTICS_SCRIPT_URL,
   },
-  // Left undefined when unset, so the banner omits `src`/`href` instead of
-  // rendering empty strings.
-  affiliate: {
-    pixelTrackingUrl: process.env.NEXT_PUBLIC_PIXEL_TRACKING_URL_1,
+  /** The first sponsored banner's link, impression pixel and image (src/config/banners.ts). Undefined when unset: it doesn't show. */
+  sponsor: {
     link: process.env.NEXT_PUBLIC_AFFILIATE_LINK_1,
+    pixel: process.env.NEXT_PUBLIC_PIXEL_TRACKING_URL_1,
     image: process.env.NEXT_PUBLIC_IMAGE_1,
   },
 } as const
