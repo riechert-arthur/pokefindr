@@ -6,6 +6,7 @@ import { SponsoredSlot } from "@/components/pokefindr/SponsoredSlot"
 import { pickBanner, type SponsorPlacement } from "@/config/banners"
 import { cn } from "@/lib/utils"
 import { track } from "@/lib/analytics"
+import { usePlacementOn } from "./useAdPlacements"
 
 /**
  * Sponsored slots (#136): one labeled, dismissible card per view, in the
@@ -63,10 +64,12 @@ function focusAfter(el: HTMLElement): HTMLElement | null {
  */
 export function SponsoredPlacement({ placement, className, listItem = false }: { placement: SponsorPlacement; className?: string; listItem?: boolean }) {
   const hidden = useAdsHidden()
+  // An admin can switch a placement off (#159).
+  const on = usePlacementOn(placement)
   const ref = useRef<HTMLElement>(null)
   // Picked once per view, in the browser.
   const [banner] = useState(() => (typeof window === "undefined" ? null : pickBanner(placement)))
-  if (hidden || !banner || !banner.href) return null
+  if (hidden || on !== true || !banner || !banner.href) return null
   const strip = placement === "landing"
   const slot = (
     <>
