@@ -4,6 +4,7 @@ import { getAuth, identitySecret, resetAuthForTests } from "@/server/auth/auth"
 import { getDb } from "@/server/db/client"
 import { accounts, profiles, users } from "@/server/db/schema"
 import { closeTestConnection } from "./testDatabase"
+import { GET as identityGet, POST as identityPost } from "@/app/api/identity/[...all]/route"
 
 afterAll(closeTestConnection)
 beforeEach(() => resetAuthForTests())
@@ -37,6 +38,26 @@ describe("Better Auth", () => {
 
   it("refuses short passwords", async () => {
     await expect(getAuth().api.signUpEmail({ body: { email: "brock@example.com", password: "short", name: "Brock" } })).rejects.toThrow()
+  })
+})
+
+describe("the /api/identity route", () => {
+  it("refuses sign-up, login and email changes, which go through our routes", async () => {
+    for (const path of ["/sign-up/email", "/sign-in/email", "/change-email", "/sign-up/email/"]) {
+      const res = await identityPost(
+        new Request(`${base}${path}`, {
+          method: "POST",
+          headers: { "content-type": "application/json", origin: "http://localhost:3000" },
+          body: JSON.stringify({ email: "squat@example.com", password: "a-long-password-1234!", name: "Squatter", newEmail: "x@example.com" }),
+        }),
+      )
+      expect(res.status).toBe(404)
+    }
+    expect(await getDb().select().from(users).where(eq(users.email, "squat@example.com"))).toEqual([])
+  })
+
+  it("passes on the rest", async () => {
+    expect((await identityGet(new Request(`${base}/ok`))).status).toBe(200)
   })
 })
 
