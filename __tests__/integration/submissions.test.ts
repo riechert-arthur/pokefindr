@@ -76,6 +76,10 @@ describe("POST /api/submissions", () => {
     }
     expect(await bad(shop({ name: " " }))).toMatchObject({ field: "name" })
     expect(await bad(shop({ website: "javascript:alert(1)" }))).toMatchObject({ field: "website" })
+    // Control and invisible characters: a NUL would fail in jsonb (a 500); zero-width ones fake a name.
+    expect(await bad(shop({ name: "Mile\u0000High" }))).toMatchObject({ field: "name", error: "Remove the hidden or control characters." })
+    expect(await bad(shop({ name: "\u200b\u200b\u200b" }))).toMatchObject({ field: "name" })
+    expect(await bad(shop({ city: "Den\u202ever" }))).toMatchObject({ field: "city" })
     expect(await bad(shop({ sells: ["pokemon"] }))).toMatchObject({ field: "sells.0" })
     expect(await bad(shop({ lat: 120 }))).toMatchObject({ field: "lat" })
     expect(await bad({ ...shop(), kind: "vending" })).toMatchObject({ field: "kind" })

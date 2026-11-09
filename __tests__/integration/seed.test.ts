@@ -52,6 +52,11 @@ describe("seedSampleHighlights", () => {
     const rows = await sql<{ title: string; starts_at: Date; is_sample: boolean }[]>`select title, starts_at, is_sample from highlights where is_sample order by starts_at`
     expect(rows.map((r) => r.title)).toEqual(["Card show", "League challenge", "Restock weekend"])
     expect(rows.every((r) => r.is_sample && r.starts_at > now)).toBe(true)
+    // Their locations' event_details move with them, since upcoming events read those first.
+    const details = await sql<{ starts_at: Date }[]>`
+      select e.starts_at from event_details e join locations l on l.id = e.location_id where l.source = ${SAMPLE_SOURCE}`
+    expect(details).toHaveLength(SAMPLE_EVENTS.length)
+    expect(details.every((d) => d.starts_at > now)).toBe(true)
   })
 
   it("puts each sample event at an event location, so searching its city finds it", async () => {

@@ -436,8 +436,12 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const addKind = params.add === "shop" || params.add === "event" ? params.add : null
   const [addPin, setAddPin] = useState<Pin | null>(null)
   const [addStep, setAddStep] = useState(0)
-  /** The URL right after startAdding pushed `add=`, so closing goes Back to before it instead of adding an entry. */
-  const pushedAdd = useRef<string | null>(null)
+  /**
+   * The entry startAdding pushed (its URL and the history length then), so
+   * closing goes Back to before it, but only while it's still the current
+   * entry: a search or Locate while adding pushes past it.
+   */
+  const pushedAdd = useRef<{ search: string; length: number } | null>(null)
   // Leaving by any route (Back, a link): start over next time.
   useEffect(() => {
     if (adding) return
@@ -455,17 +459,23 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     }
     dispatch({ type: "closeDetails" })
     void setParams({ add: "1", location: null }, { history: "push" }).then((search) => {
-      pushedAdd.current = search.toString()
+      pushedAdd.current = { search: search.toString(), length: window.history.length }
     })
   }
   const stopAdding = () => {
     setAddPin(null)
-    const current = new URLSearchParams(window.location.search)
-    current.delete("add")
-    const pushed = pushedAdd.current !== null && new URLSearchParams(pushedAdd.current).has("add")
+    const pushed = pushedAdd.current
     pushedAdd.current = null
-    // Opened here with +: go back to the entry before it. Opened from a link: just drop add=.
-    if (pushed) window.history.back()
+    // Camera moves and the kind replace the entry's URL without making a new one.
+    const view = (search: string) => {
+      const p = new URLSearchParams(search)
+      for (const k of ["add", "lat", "lng", "z"]) if (!(k === "lat" || k === "lng") || !p.has("q")) p.delete(k)
+      p.sort()
+      return p.toString()
+    }
+    const stillOnIt = pushed !== null && window.history.length === pushed.length && view(window.location.search) === view(pushed.search)
+    // Opened here with +, and still on that entry: go back to the one before it. Otherwise just drop add=.
+    if (stillOnIt) window.history.back()
     else void setParams({ add: null }, { history: "replace" })
   }
   const moveAddPin = (pin: Pin, fly = false) => {
@@ -681,7 +691,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
                   pin={addPin}
                   onPinChange={(pin) => moveAddPin(pin, true)}
                   onKindChange={(kind) => void setParams({ add: kind }, { history: "replace" }).then((search) => {
-                    if (pushedAdd.current !== null) pushedAdd.current = search.toString()
+                    if (pushedAdd.current !== null) pushedAdd.current = { ...pushedAdd.current, search: search.toString() }
                   })}
                   onStepChange={setAddStep}
                   onCancel={stopAdding}

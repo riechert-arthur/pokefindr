@@ -51,6 +51,11 @@ export async function seedSampleHighlights(sql: postgres.Sql, now = new Date()):
       await tx`
         insert into highlights (kind, title, starts_at, ends_at, location_id, is_sample)
         values ('event', ${e.title}, ${starts}, ${ends}, ${place.id}, true)`
+      // An event location's times live in event_details (migration 0011), which upcoming events read first.
+      await tx`
+        insert into event_details (location_id, starts_at, ends_at)
+        values (${place.id}, ${starts}, ${ends})
+        on conflict (location_id) do update set starts_at = excluded.starts_at, ends_at = excluded.ends_at`
     }
   })
   return SAMPLE_EVENTS.length
