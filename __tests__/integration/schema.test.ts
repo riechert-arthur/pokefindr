@@ -1,7 +1,8 @@
+import { insertProfiles } from "./testDatabase"
 import { describe, it, expect } from "vitest"
 import { eq, sql } from "drizzle-orm"
 import { getDb } from "@/server/db/client"
-import { locationRatings, locations, profiles } from "@/server/db/schema"
+import { locationRatings, locations } from "@/server/db/schema"
 
 describe("schema", () => {
   it("round-trips a geography point", async () => {
@@ -29,10 +30,8 @@ describe("schema", () => {
 
   it("rejects ratings outside 1-5 and cascades deletes", async () => {
     const db = getDb()
-    const [user] = await db
-      .insert(profiles)
-      .values({ id: crypto.randomUUID(), username: "ash" })
-      .returning()
+    const user = { id: crypto.randomUUID() }
+    await insertProfiles(db, { id: user.id, username: "ash" })
     const [loc] = await db.insert(locations).values({ geog: { lng: 0, lat: 0 } }).returning()
 
     await expect(

@@ -1,8 +1,9 @@
+import { insertProfiles } from "./testDatabase"
 import { beforeEach, describe, expect, it } from "vitest"
 import { randomUUID } from "node:crypto"
 import { NextRequest } from "next/server"
 import { getDb } from "@/server/db/client"
-import { locations, profiles, statusReports } from "@/server/db/schema"
+import { locations, statusReports } from "@/server/db/schema"
 import { REPORTS_PER_DAY, addLocationReport, listRecentReports } from "@/server/services/reports"
 import { POST } from "@/app/api/locations/[id]/reports/route"
 
@@ -15,7 +16,7 @@ beforeEach(async () => {
   const db = getDb()
   alice = randomUUID()
   bob = randomUUID()
-  await db.insert(profiles).values([
+  await insertProfiles(db, [
     { id: alice, username: "alice" },
     { id: bob, username: "bob" },
   ])

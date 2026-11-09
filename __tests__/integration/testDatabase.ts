@@ -37,3 +37,17 @@ export async function closeTestConnection() {
   connection = undefined
   truncateStatement = undefined
 }
+
+type ProfileRow = typeof import("@/server/db/schema").profiles.$inferInsert
+type Db = ReturnType<typeof import("@/server/db/client").getDb>
+
+/**
+ * Inserts profiles, each with the user it belongs to (profiles.id references
+ * users.id).
+ */
+export async function insertProfiles(db: Db, rows: ProfileRow | ProfileRow[]) {
+  const { profiles, users } = await import("@/server/db/schema")
+  const list = (Array.isArray(rows) ? rows : [rows]).map((r) => ({ ...r, id: r.id ?? crypto.randomUUID() }))
+  await db.insert(users).values(list.map((r) => ({ id: r.id, name: r.fullName ?? r.username, email: `${r.id}@example.test`, emailVerified: true })))
+  return db.insert(profiles).values(list)
+}
