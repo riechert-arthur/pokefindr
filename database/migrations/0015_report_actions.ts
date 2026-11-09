@@ -9,7 +9,9 @@
  * - `status_reports.resolved_at`, `resolved_by`, `resolution`: a report is
  *   open until someone dismisses it, marks it fixed or hides its location.
  * - `report_actions`: every action on a location's reports (dismiss, fix,
- *   hide, reopen), who and when, so the history stays after a reopen.
+ *   hide, reopen), who and when, so the history stays after a reopen. A hide
+ *   also keeps whether the location was live, so Reopen doesn't put an
+ *   ended event or a machine the import retired back on the map.
  */
 import { sql, type Kysely } from "kysely"
 
@@ -48,6 +50,7 @@ export async function up(db: Db): Promise<void> {
     .addColumn("action", "text", (c) => c.notNull())
     .addColumn("acted_by", "uuid")
     .addColumn("reports", "integer", (c) => c.notNull())
+    .addColumn("was_active", "boolean")
     .addColumn("created_at", "timestamptz", (c) => c.notNull().defaultTo(sql`now()`))
     .addForeignKeyConstraint("report_actions_location_id_locations_id_fk", ["location_id"], "locations", ["id"], (c) => c.onDelete("cascade"))
     .addForeignKeyConstraint("report_actions_acted_by_profiles_id_fk", ["acted_by"], "profiles", ["id"], (c) => c.onDelete("set null"))

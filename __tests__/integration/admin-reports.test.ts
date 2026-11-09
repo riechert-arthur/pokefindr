@@ -112,6 +112,16 @@ describe("admin reports", () => {
     ])
   })
 
+  it("Reopen leaves a location that was already off the map off it", async () => {
+    // An event that ended, or a machine the import retired, before anyone hid it.
+    await getDb().update(locations).set({ isActive: false }).where(eq(locations.id, kroger))
+    await act(kroger, "hide")
+    expect((await act(kroger, "reopen")).status).toBe(200)
+    const [row] = await getDb().select().from(locations).where(eq(locations.id, kroger))
+    expect(row).toMatchObject({ isActive: false, hiddenAt: null })
+    expect(await near()).toEqual([safeway])
+  })
+
   it("only reopens what the last action closed", async () => {
     await act(kroger, "dismiss")
     // A new report after the dismissal is open on its own.

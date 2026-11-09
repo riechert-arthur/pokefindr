@@ -78,12 +78,12 @@ export type ActResult = { status: "done"; reports: number } | { status: "not_fou
  */
 export async function actOnReports(locationId: string, action: ReportAction, actorId: string, db: Database = getDb(), now = new Date()): Promise<ActResult> {
   return db.transaction(async (tx): Promise<ActResult> => {
-    const [location] = await tx.select({ id: locations.id, hiddenAt: locations.hiddenAt }).from(locations).where(eq(locations.id, locationId)).for("update")
+    const [location] = await tx.select({ id: locations.id, hiddenAt: locations.hiddenAt, isActive: locations.isActive }).from(locations).where(eq(locations.id, locationId)).for("update")
     if (!location) return { status: "not_found" }
 
     if (action === "reopen") {
       const [last] = await tx
-        .select({ action: reportActions.action, at: reportActions.createdAt })
+        .select({ action: reportActions.action, at: reportActions.createdAt, wasActive: reportActions.wasActive })
         .from(reportActions)
         .where(and(eq(reportActions.locationId, locationId), ne(reportActions.action, "reopen")))
         .orderBy(desc(reportActions.createdAt))
@@ -103,7 +103,8 @@ export async function actOnReports(locationId: string, action: ReportAction, act
         .where(and(eq(statusReports.locationId, locationId), eq(statusReports.resolvedAt, last.at)))
         .returning({ id: statusReports.id })
       if (last.action === "hide" && location.hiddenAt) {
-        await tx.update(locations).set({ isActive: true, hiddenAt: null, hiddenBy: null, updatedAt: now }).where(eq(locations.id, locationId))
+        // Back to how it was before the hide: one already off the map (an ended event, a retired machine) stays off.
+        await tx.update(locations).set({ isActive: last.wasActive ?? true, hiddenAt: null, hiddenBy: null, updatedAt: now }).where(eq(locations.id, locationId))
       }
       await tx.insert(reportActions).values({ locationId, action, actedBy: actorId, reports: reopened.length, createdAt: now })
       return { status: "done", reports: reopened.length }
@@ -119,7 +120,7 @@ export async function actOnReports(locationId: string, action: ReportAction, act
     if (action === "hide") {
       await tx.update(locations).set({ isActive: false, hiddenAt: now, hiddenBy: actorId, updatedAt: now }).where(eq(locations.id, locationId))
     }
-    await tx.insert(reportActions).values({ locationId, action, actedBy: actorId, reports: closed.length, createdAt: now })
+    await tx.insert(reportActions).values({ locationId, action, actedBy: actorId, reports: closed.length, wasActive: action === "hide" ? location.isActive : null, createdAt: now })
     return { status: "done", reports: closed.length }
   })
 }

@@ -534,6 +534,8 @@ export const reportActions = pgTable(
     actedBy: uuid("acted_by").references(() => profiles.id, { onDelete: "set null" }),
     /** Reports it closed or reopened. */
     reports: integer("reports").notNull(),
+    /** On a hide: whether the location was live before, so Reopen puts back what was there. */
+    wasActive: boolean("was_active"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
