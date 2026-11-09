@@ -7,6 +7,8 @@ import { MapPinIcon } from "lucide-react"
 import { buttonVariants } from "@/components/ui/button"
 import { AdminSidebar, type SectionCount } from "@/components/admin/AdminSidebar"
 import { ReviewQueue } from "@/components/admin/ReviewQueue"
+import { ReportsTable } from "@/components/admin/ReportsTable"
+import { REPORTS_HOT } from "@/lib/admin/reports"
 import { RefreshSummary } from "@/components/admin/useRefreshSummary"
 import { DEFAULT_SECTION, groupsFor, sectionFor } from "@/lib/admin/sections"
 import { queueIsLate, type AdminSummary } from "@/lib/admin/summary"
@@ -38,6 +40,7 @@ function useSummary(): [AdminSummary | null, () => void] {
 /** Each section's body. Later sections (#153–#159) add themselves here and in ADMIN_GROUPS. */
 const SECTIONS: Record<string, () => ReactNode> = {
   queue: () => <ReviewQueue />,
+  reports: () => <ReportsTable />,
 }
 
 /**
@@ -48,7 +51,12 @@ export function AdminApp({ role, username }: { role: StaffRole; username: string
   const [param, setParam] = useQueryState("section", { history: "push" })
   const section = sectionFor(param ?? DEFAULT_SECTION, role)!
   const [summary, refreshSummary] = useSummary()
-  const counts: Record<string, SectionCount> = summary ? { queue: { count: summary.queue.count, hot: queueIsLate(summary.queue) } } : {}
+  const counts: Record<string, SectionCount> = summary
+    ? {
+        queue: { count: summary.queue.count, hot: queueIsLate(summary.queue) },
+        reports: { count: summary.reports.locations, hot: summary.reports.maxOnOne >= REPORTS_HOT },
+      }
+    : {}
 
   useEffect(() => {
     document.title = `${section.label} · Admin · PokeFindr`

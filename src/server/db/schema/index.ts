@@ -20,7 +20,7 @@
  *   replaced by typed queries in services.
  * - The legacy "Vending Machine Locations" table.
  */
-import type { ReportReason } from "@/lib/locations/reports"
+import type { ReportAction, ReportReason, ReportResolution } from "@/lib/locations/reports"
 import {
   bigint,
   boolean,
@@ -402,6 +402,9 @@ export const locations = pgTable(
     ...locationColumns,
     createdBy: uuid("created_by").references(() => profiles.id),
     createdAt: createdAt(),
+    /** An admin took it off the map (#153); also is_active = false. The import keeps it hidden. */
+    hiddenAt: timestamp("hidden_at", { withTimezone: true }),
+    hiddenBy: uuid("hidden_by").references((): AnyPgColumn => profiles.id, { onDelete: "set null" }),
   },
   (t) => [
     uniqueIndex("locations_machine_id_key").on(t.machineId),
@@ -505,12 +508,37 @@ export const statusReports = pgTable(
     reason: text("reason").$type<ReportReason>(),
     comment: text("comment"),
     createdAt: createdAt(),
+    /** Set when someone acted on it (#153): open until then. */
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    resolvedBy: uuid("resolved_by").references(() => profiles.id, { onDelete: "set null" }),
+    resolution: text("resolution").$type<ReportResolution>(),
   },
   (t) => [
     index("status_reports_location_created_idx").on(t.locationId, t.createdAt),
+    index("status_reports_open_location_idx").on(t.locationId).where(sql`${t.resolvedAt} is null`),
+    check("status_reports_resolution_check", sql`${t.resolution} in ('dismissed', 'fixed', 'hidden')`),
+    check("status_reports_resolved_check", sql`(${t.resolvedAt} is null) = (${t.resolution} is null)`),
     index("status_reports_user_created_idx").on(t.userId, t.createdAt),
     check("status_reports_reason_check", sql`${t.reason} in ('gone', 'wrong_location', 'empty', 'other')`),
     check("status_reports_status_or_reason_check", sql`${t.status} is not null or ${t.reason} is not null`),
+  ],
+)
+
+/** What was done with a location's reports (#153), kept as history. */
+export const reportActions = pgTable(
+  "report_actions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    locationId: uuid("location_id").notNull().references(() => locations.id, { onDelete: "cascade" }),
+    action: text("action").$type<ReportAction>().notNull(),
+    actedBy: uuid("acted_by").references(() => profiles.id, { onDelete: "set null" }),
+    /** Reports it closed or reopened. */
+    reports: integer("reports").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("report_actions_location_created_idx").on(t.locationId, t.createdAt),
+    check("report_actions_action_check", sql`${t.action} in ('dismiss', 'fix', 'hide', 'reopen')`),
   ],
 )
 

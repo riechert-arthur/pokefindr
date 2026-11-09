@@ -41,7 +41,7 @@ describe("admin access", () => {
 describe("GET /api/admin/summary", () => {
   it("counts the queue and its oldest submission, for staff only", async () => {
     expect((await summary(req(MEMBER))).status).toBe(404)
-    expect(await (await summary(req(MOD))).json()).toEqual({ queue: { count: 0, oldestAt: null } })
+    expect(await (await summary(req(MOD))).json()).toMatchObject({ queue: { count: 0, oldestAt: null } })
     const old = new Date("2026-11-01T10:00:00Z")
     await getDb()
       .insert(locationSubmissions)
@@ -50,6 +50,6 @@ describe("GET /api/admin/summary", () => {
         { kind: "shop", payload: { name: "B" }, geog: { lng: -104.98, lat: 39.74 }, submittedBy: MEMBER },
         { kind: "shop", payload: { name: "C" }, geog: { lng: -104.97, lat: 39.74 }, submittedBy: MEMBER, status: "rejected", rejectReason: "spam" },
       ])
-    expect(await (await summary(req(ADMIN))).json()).toEqual({ queue: { count: 2, oldestAt: old.toISOString() } })
+    expect(await (await summary(req(ADMIN))).json()).toMatchObject({ queue: { count: 2, oldestAt: old.toISOString() } })
   })
 })

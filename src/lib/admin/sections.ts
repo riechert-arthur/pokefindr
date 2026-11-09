@@ -24,7 +24,10 @@ export const ADMIN_GROUPS: readonly AdminGroup[] = [
   {
     id: "moderation",
     label: "Moderation",
-    sections: [{ id: "queue", label: "Review queue", sub: "New card shops and events wait here before they go on the map.", access: "moderator" }],
+    sections: [
+      { id: "queue", label: "Review queue", sub: "New card shops and events wait here before they go on the map.", access: "moderator" },
+      { id: "reports", label: "Reports", sub: "Problems people reported on live locations.", access: "moderator" },
+    ],
   },
 ]
 

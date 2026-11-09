@@ -28,7 +28,8 @@
  *
  *    While the JSON exists, it wins: every deploy writes the file's values
  *    (active, official, address, position, ...) over any machine without a
- *    database override. To make a database edit stick, such as deactivating a
+ *    database override, except that a machine an admin hid (hidden_at, #153)
+ *    stays inactive. To make a database edit stick, such as deactivating a
  *    closed machine, also set manual_override. Once the JSON is gone (#80) the
  *    import stops and the database is the only source.
  * 4. Verify every machine is present, active, within 1e-6 degrees of the file
@@ -353,14 +354,17 @@ export async function mergeStaging(db: Db): Promise<MergeCounts> {
     `(${DATA_COLUMNS.map((c) => comparable(a, c)).join(", ")}) is distinct from (${DATA_COLUMNS.map((c) => comparable(b, c)).join(", ")})`
   // One pass over the join: `desired` decides each row once, for both the
   // upsert and the kept-override count.
-  const desiredColumns = MERGED_COLUMNS.map(
-    (c) => `case when kept then cur_${c} else s_${c} end as ${q(c)}`,
+  // A machine an admin hid (#153) stays inactive, whatever the file says.
+  const desiredColumns = MERGED_COLUMNS.map((c) =>
+    c === "is_active"
+      ? `case when kept then cur_${c} when hidden then false else s_${c} end as ${q(c)}`
+      : `case when kept then cur_${c} else s_${c} end as ${q(c)}`,
   )
   const {
     rows: [counts],
   } = await sql<Omit<MergeCounts, "unchanged">>`${sql.raw(`
     with joined as (
-      select s."machineID", ${keptOverride("cur", "s")} is true as kept,
+      select s."machineID", ${keptOverride("cur", "s")} is true as kept, cur.hidden_at is not null as hidden,
         ${keptOverride("cur", "s")} is true and ${differs("cur", "s")} as kept_differs,
         ${MERGED_COLUMNS.map((c) => `cur.${q(c)} as ${q(`cur_${c}`)}, s.${q(c)} as ${q(`s_${c}`)}`).join(", ")}
       from location_import s
@@ -412,7 +416,7 @@ export async function verifyImport(db: Db): Promise<VerifyReport> {
       (select count(*)::int from location_import s join locations l using ("machineID")
         where l.is_active and l.geog is not null) as "activeWithPosition",
       array(select s."machineID" from location_import s join locations l using ("machineID")
-        where not ${kept} and not (l.is_active and l.geog is not null)
+        where not ${kept} and l.hidden_at is null and not (l.is_active and l.geog is not null)
         order by 1) as "inactive",
       array(select s."machineID" from location_import s
         where not exists (select 1 from locations l where l."machineID" = s."machineID")
