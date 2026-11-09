@@ -152,6 +152,19 @@ describe("the review queue", () => {
     expect(await undoDecision(id, MOD, getDb(), new Date(at.getTime() + UNDO_MS + 1000))).toEqual({ status: "too_late" })
   })
 
+  it("doesn't let a moderator decide their own submission, but lets an admin", async () => {
+    const own = await createSubmission({ userId: MOD, input: shop, confirmDuplicate: true })
+    const admins = await createSubmission({ userId: MOD2, input: { ...shop, name: "Jenny's" }, confirmDuplicate: true })
+    if (own.status !== "created" || admins.status !== "created") throw new Error("not created")
+    const { queue } = (await (await list(MOD)).json()) as { queue: ModerationItem[] }
+    expect(queue.find((q) => q.id === own.id)?.sentByViewer).toBe(true)
+    const res = await act(own.id, { action: "approve" })
+    expect(res.status).toBe(403)
+    expect((await act(own.id, { action: "reject", reason: "spam" })).status).toBe(403)
+    expect((await act(own.id, { action: "approve" }, MOD2)).status).toBe(200) // someone else
+    expect((await act(admins.id, { action: "approve" }, MOD2)).status).toBe(200) // an admin, their own
+  })
+
   it("answers 404 for an unknown submission", async () => {
     expect((await act(randomUUID(), { action: "approve" })).status).toBe(404)
     expect((await act("not-a-uuid", { action: "approve" })).status).toBe(404)
