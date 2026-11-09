@@ -1,7 +1,8 @@
+import { insertProfiles } from "./testDatabase"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { NextRequest } from "next/server"
 import { getDb } from "@/server/db/client"
-import { assistantFeedback, profiles } from "@/server/db/schema"
+import { assistantFeedback } from "@/server/db/schema"
 import { recordTurn, deleteHistory, purgeAssistantData } from "@/server/assistant/log"
 import { downvotedTurns, feedbackStats } from "@/server/assistant/feedback"
 import { POST } from "@/app/api/assistant/feedback/route"
@@ -17,7 +18,7 @@ const vote = (body: unknown, userId = ME) =>
 
 beforeEach(async () => {
   vi.spyOn(console, "info").mockImplementation(() => {})
-  await getDb().insert(profiles).values([
+  await insertProfiles(getDb(), [
     { id: ME, username: "ash" },
     { id: OTHER, username: "misty" },
   ])

@@ -75,7 +75,8 @@ const EVAL_USER = "00000000-0000-4000-8000-00000000e7a1"
 /** Empties the eval database's data tables and seeds the fixtures, dated from `now`. */
 export async function seedEvalData(sql: postgres.Sql, now: Date): Promise<void> {
   await sql.begin(async (tx) => {
-    await tx`truncate locations, highlights, location_ratings, profiles, assistant_usage, assistant_place_views, assistant_turns cascade`
+    await tx`truncate locations, highlights, location_ratings, profiles, users, assistant_usage, assistant_place_views, assistant_turns cascade`
+    await tx`insert into users (id, name, email, email_verified) values (${EVAL_USER}, 'Eval', 'eval@example.test', true)`
     await tx`insert into profiles (id, username) values (${EVAL_USER}, 'eval')`
     for (const p of FIXTURE_PLACES) {
       await tx`

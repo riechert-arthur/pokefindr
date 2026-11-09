@@ -1,8 +1,9 @@
+import { insertProfiles } from "./testDatabase"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { NextRequest } from "next/server"
 import { eq } from "drizzle-orm"
 import { getDb } from "@/server/db/client"
-import { assistantPlaceViews, assistantTurnTexts, assistantTurns, assistantUsage, locations, profiles } from "@/server/db/schema"
+import { assistantPlaceViews, assistantTurnTexts, assistantTurns, assistantUsage, locations } from "@/server/db/schema"
 import { setClaudeForTests } from "@/server/assistant/run"
 import { resetLimitsForTests, MESSAGES_PER_DAY, utcDay } from "@/server/assistant/limits"
 import { COST_OUTLIER_MICROS, deleteHistory, flagsFor, purgeAssistantData, recordTurn } from "@/server/assistant/log"
@@ -22,7 +23,7 @@ const events = async (res: Response): Promise<AssistantEvent[]> => (await res.te
 beforeEach(async () => {
   resetLimitsForTests()
   vi.spyOn(console, "info").mockImplementation(() => {})
-  await getDb().insert(profiles).values({ id: ME, username: "ash" })
+  await insertProfiles(getDb(), { id: ME, username: "ash" })
   await getDb().insert(locations).values({ machineId: "S1", retailer: "Safeway", city: "Seattle", state: "WA", geog: { lng: -122.34, lat: 47.61 } })
 })
 

@@ -26,6 +26,14 @@ const serverSchema = z.object({
   JWT_SECRET: z.string().min(1),
 
   /**
+   * Better Auth's signing secret (src/server/auth/auth.ts), at least 32
+   * characters. Unset, it's derived from JWT_SECRET.
+   */
+  BETTER_AUTH_SECRET: blankAsUnset(z.string().min(32, "must be at least 32 characters").optional()),
+  /** Better Auth's public URL. Defaults to APP_URL. */
+  BETTER_AUTH_URL: blankAsUnset(z.string().url().optional()),
+
+  /**
    * Pooled Postgres connection string used at runtime. Postgres 15+ with PostGIS.
    * Optional until request handlers use the database, so deploys don't fail at
    * start-up before it is configured. `getDb()` throws if it is missing.

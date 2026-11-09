@@ -1,10 +1,11 @@
+import { insertProfiles } from "./testDatabase"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { NextRequest } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
 import type { BetaMessage, BetaToolResultBlockParam } from "@anthropic-ai/sdk/resources/beta/messages/messages"
 import { fakeClaude } from "./fakeClaude"
 import { getDb } from "@/server/db/client"
-import { locations, profiles } from "@/server/db/schema"
+import { locations } from "@/server/db/schema"
 import { resetLimitsForTests } from "@/server/assistant/limits"
 import { MAX_ROUNDS, setClaudeForTests } from "@/server/assistant/run"
 import { POST } from "@/app/api/assistant/route"
@@ -26,7 +27,7 @@ let safeway: string
 
 beforeEach(async () => {
   resetLimitsForTests()
-  await getDb().insert(profiles).values({ id: USER, username: "ash" })
+  await insertProfiles(getDb(), { id: USER, username: "ash" })
   const [row] = await getDb()
     .insert(locations)
     .values([

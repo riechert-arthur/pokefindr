@@ -15,8 +15,6 @@
  * the database with it first and refuses on any difference.
  *
  * Not modelled here:
- * - Supabase's `auth` schema. In Supabase, `profiles.id` references
- *   `auth.users.id`; that foreign key belongs to the auth migration.
  * - The views `active_subscriptions`, `latest_status_reports`,
  *   `location_rating_summary` and `user_trust_summary`, which are being
  *   replaced by typed queries in services.
@@ -24,6 +22,7 @@
  */
 import type { ReportReason } from "@/lib/locations/reports"
 import {
+  bigint,
   boolean,
   check,
   date,
@@ -54,8 +53,88 @@ export const locationStatus = pgEnum("location_status", [
   "out-of-order",
 ])
 
+/**
+ * Accounts, owned by Better Auth (src/server/auth/auth.ts, migration 0009):
+ * who someone is (`users`), how they sign in (`accounts`: a password, or a
+ * Google or Discord identity), their Better Auth sessions, and one-time
+ * tokens (`verifications`: email confirmation, password reset). PokeFindr's
+ * own data about a person is in `profiles`, which shares the user's id.
+ */
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  emailVerified: boolean("email_verified").notNull().default(false),
+  image: text("image"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    token: text("token").notNull().unique(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("sessions_user_id_idx").on(t.userId)],
+)
+
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    /** "credential" for a password, else the OAuth provider ("google", "discord"). */
+    providerId: text("provider_id").notNull(),
+    /** The provider's id for the person (the user id for "credential"). */
+    accountId: text("account_id").notNull(),
+    /** The password hash (scrypt), for "credential" accounts. */
+    password: text("password"),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", { withTimezone: true }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { withTimezone: true }),
+    scope: text("scope"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("accounts_user_id_idx").on(t.userId),
+    uniqueIndex("accounts_provider_account_key").on(t.providerId, t.accountId),
+  ],
+)
+
+export const verifications = pgTable(
+  "verifications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("verifications_identifier_idx").on(t.identifier)],
+)
+
+/** Better Auth's request counts per IP and endpoint, so its rate limits hold across server instances. */
+export const authRateLimits = pgTable("auth_rate_limits", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  key: text("key").notNull().unique(),
+  count: integer("count").notNull(),
+  /** Milliseconds since the epoch. */
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
+})
+
 export const profiles = pgTable("profiles", {
-  id: uuid("id").primaryKey(),
+  id: uuid("id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
   username: text("username").notNull(),
   fullName: text("full_name"),
   isVerified: boolean("is_verified"),
