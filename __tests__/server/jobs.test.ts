@@ -4,6 +4,9 @@ import type { MessageMetadata } from "@vercel/queue"
 import { z } from "zod/v3"
 
 vi.mock("server-only", () => ({}))
+// Run history needs Postgres; the integration tests cover it.
+const { pause } = vi.hoisted(() => ({ pause: { reason: null as string | null } }))
+vi.mock("@/server/lib/jobs/history", () => ({ pausedReason: async () => pause.reason, startRun: async () => null, finishRun: async () => {}, recordSkipped: async () => {} }))
 const send = vi.fn()
 vi.mock("@vercel/queue", () => ({
   send: (...args: unknown[]) => send(...args),
@@ -14,7 +17,7 @@ import { resetServerConfigForTests } from "@/server/config"
 import { isAuthorizedJobRequest } from "@/server/lib/jobs/auth"
 import { runJob, UnknownJobError, InvalidJobPayloadError } from "@/server/lib/jobs/run"
 import { enqueueJob, JOBS_TOPIC, type JobMessage } from "@/server/lib/jobs/enqueue"
-import { handleJobMessage, retryJobMessage, MAX_DELIVERIES, FIRST_RETRY_SECONDS } from "@/server/lib/jobs/consumer"
+import { handleJobMessage, retryJobMessage, MAX_DELIVERIES, FIRST_RETRY_SECONDS, PAUSED_RECHECK_SECONDS } from "@/server/lib/jobs/consumer"
 import { signJobMessage, verifyJobMessage } from "@/server/lib/jobs/signing"
 import { jobs } from "@/server/lib/jobs/registry"
 import { defineJob } from "@/server/lib/jobs/types"
@@ -71,6 +74,7 @@ beforeEach(() => {
   vi.spyOn(console, "warn").mockImplementation(() => {})
   vi.spyOn(console, "error").mockImplementation(() => {})
   send.mockReset()
+  pause.reason = null
   jobs.typed = typed
 })
 
@@ -282,6 +286,25 @@ describe("queue consumer", () => {
 
   it("retries a signed message for a job this deployment doesn't know", async () => {
     await expect(handleJobMessage(signed("added-later", null), meta(1))).rejects.toBeInstanceOf(UnknownJobError)
+  })
+
+  it("puts a paused job's message back on the queue for later instead of dropping it", async () => {
+    vi.stubEnv("VERCEL", "1")
+    resetServerConfigForTests()
+    pause.reason = "Email provider is down"
+    send.mockResolvedValueOnce({ messageId: "msg_2" })
+    const run = vi.spyOn(jobs.noop, "run")
+    await expect(handleJobMessage(signed("noop", { id: 3 }), meta(8))).resolves.toBeUndefined()
+    expect(run).not.toHaveBeenCalled()
+    expect(send).toHaveBeenCalledWith(JOBS_TOPIC, signed("noop", { id: 3 }), { idempotencyKey: undefined, delaySeconds: PAUSED_RECHECK_SECONDS })
+  })
+
+  it("lets the queue redeliver a paused job's message if putting it back fails", async () => {
+    vi.stubEnv("VERCEL", "1")
+    resetServerConfigForTests()
+    pause.reason = "Paused"
+    send.mockRejectedValueOnce(new Error("queue down"))
+    await expect(handleJobMessage(signed("noop", null), meta(1))).rejects.toThrow("queue down")
   })
 
   it("throws when the job fails, so the queue retries", async () => {

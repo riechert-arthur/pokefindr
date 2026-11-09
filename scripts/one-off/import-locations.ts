@@ -494,6 +494,22 @@ export function summarize(r: ImportReport): string[] {
   ]
 }
 
+/**
+ * Records the import in job_runs (#157), so the admin's Jobs page shows when
+ * it last ran and what it changed. Never fails the import: the table may not
+ * exist yet on an old database.
+ */
+export async function recordImportRun(db: Db, startedAt: Date, outcome: { status: "succeeded" | "failed"; result?: Record<string, unknown>; error?: string }) {
+  try {
+    await sql`
+      insert into job_runs (job, trigger, status, started_at, finished_at, result, error)
+      values ('location-import', 'deploy', ${outcome.status}, ${startedAt}, now(), ${outcome.result ? JSON.stringify(outcome.result) : null}::jsonb, ${outcome.error?.slice(0, 2000) ?? null})
+    `.execute(db)
+  } catch (err) {
+    console.warn("Couldn't record the run in job_runs:", err instanceof Error ? err.message : err)
+  }
+}
+
 // ─── Command line ──────────────────────────────────────────────────────────
 
 function argValue(flag: string): string | undefined {
@@ -520,7 +536,15 @@ async function main() {
   const { db } = createMigrator(client)
   try {
     const run = (trx: Parameters<typeof importLocations>[0]) => importLocations(trx, file)
-    const report = apply ? await db.transaction().execute(run) : await inRolledBackTransaction(db, run)
+    const startedAt = new Date()
+    let report: ImportReport
+    try {
+      report = apply ? await db.transaction().execute(run) : await inRolledBackTransaction(db, run)
+    } catch (err) {
+      if (apply) await recordImportRun(db, startedAt, { status: "failed", error: err instanceof Error ? err.message : String(err) })
+      throw err
+    }
+    if (apply) await recordImportRun(db, startedAt, { status: "succeeded", result: { ...report.counts, extras: report.verify.extras.length } })
     for (const line of summarize(report)) console.log(line)
     if (reportFile) writeFileSync(reportFile, JSON.stringify({ apply, ...report }, null, 2) + "\n")
     if (apply) {

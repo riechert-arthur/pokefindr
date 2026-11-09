@@ -2,7 +2,8 @@ import "server-only"
 import type { MessageMetadata, RetryDirective } from "@vercel/queue"
 import { z } from "zod/v3"
 import { getServerConfig } from "@/server/config"
-import { InvalidJobPayloadError, runJob, UnknownJobError } from "./run"
+import { enqueueJob } from "./enqueue"
+import { InvalidJobPayloadError, JobPausedError, runJob, UnknownJobError } from "./run"
 import { verifyJobMessage } from "./signing"
 
 /**
@@ -13,6 +14,8 @@ import { verifyJobMessage } from "./signing"
  */
 export const MAX_DELIVERIES = 8
 export const FIRST_RETRY_SECONDS = 10
+/** How often a message for a paused job checks again whether the job is back on. */
+export const PAUSED_RECHECK_SECONDS = 10 * 60
 
 const jobMessageSchema = z.object({
   v: z.literal(1),
@@ -28,6 +31,9 @@ const jobMessageSchema = z.object({
  * - an invalid payload is logged and acknowledged for the same reason;
  * - an unknown job name is retried: during a rollout, a message for a newly
  *   added job can reach a deployment that doesn't know it yet;
+ * - a paused job's message goes back on the queue as a new message, delayed
+ *   {@link PAUSED_RECHECK_SECONDS}, so it isn't used up against
+ *   MAX_DELIVERIES and runs once the job is resumed;
  * - a job that throws is retried with backoff by {@link retryJobMessage}.
  */
 export async function handleJobMessage(message: unknown, metadata: MessageMetadata): Promise<void> {
@@ -56,6 +62,12 @@ export async function handleJobMessage(message: unknown, metadata: MessageMetada
   try {
     await runJob(job, payload, { trigger: "queue", ...where })
   } catch (err) {
+    if (err instanceof JobPausedError) {
+      console.info("[jobs] paused; holding the message", { ...where, job, reason: err.reason })
+      // If this send fails, the throw below lets the queue redeliver the original.
+      await enqueueJob(job, payload, { delaySeconds: PAUSED_RECHECK_SECONDS })
+      return
+    }
     if (err instanceof InvalidJobPayloadError) {
       console.error("[jobs] dropping queue message with an invalid payload", { ...where, job, issues: err.issues })
       return
