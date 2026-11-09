@@ -1,7 +1,8 @@
 import "server-only"
-import { McpServer, fromJsonSchema, type CallToolResult, type JsonSchemaType } from "@modelcontextprotocol/server"
-import { ASSISTANT_TOOLS, inputJsonSchema, runTool, type AssistantTool, type ToolContext } from "@/server/assistant/tools"
+import { McpServer, fromJsonSchema, requireScopes, type CallToolResult, type JsonSchemaType } from "@modelcontextprotocol/server"
+import { ASSISTANT_TOOLS, ToolInputError, inputJsonSchema, runTool, type AssistantTool, type ToolContext } from "@/server/assistant/tools"
 import { USER_WRITTEN_NOTE } from "@/server/assistant/untrusted"
+import { ACCOUNT_TOOLS, accountInputJsonSchema, type AccountTool, type AccountToolContext } from "./account-tools"
 
 /**
  * PokeFindr's MCP server (#133): the in-app assistant's tools (A-2), served to
@@ -98,5 +99,44 @@ export function createReadOnlyServer({ ctx, appUrl }: { ctx: () => ToolContext; 
   // No tool takes more than a few dozen values; this bounds what one call can make us parse.
   const server = new McpServer(MCP_SERVER_INFO, { instructions: MCP_INSTRUCTIONS, maxToolInputElements: 200 })
   for (const t of ASSISTANT_TOOLS) registerReadTool(server, t, ctx, appUrl)
+  return server
+}
+
+export const MCP_ACCOUNT_INSTRUCTIONS = [
+  MCP_INSTRUCTIONS,
+  "Signed in, it also acts as the person: my_reviews and my_submissions show their own, and submit_place adds a card shop or event for review.",
+  "Confirm a place's details with the person before submit_place.",
+].join(" ")
+
+/** Registers an account tool: its scope is checked before it runs (a 403 asking for it if missing). */
+function registerAccountTool(server: McpServer, t: AccountTool, ctx: () => AccountToolContext) {
+  server.registerTool(
+    t.name,
+    {
+      title: t.title,
+      description: t.description,
+      inputSchema: fromJsonSchema(accountInputJsonSchema(t) as JsonSchemaType),
+      annotations: { readOnlyHint: t.readOnly, destructiveHint: false, idempotentHint: t.readOnly, openWorldHint: false },
+      scopeChallenge: requireScopes(t.scope),
+    },
+    async (args) => {
+      const parsed = t.input.safeParse(args)
+      if (!parsed.success) return { isError: true, content: [{ type: "text", text: `Invalid input: ${parsed.error.issues.map((i) => `${i.path.join(".") || "input"} ${i.message}`).join("; ")}` }] }
+      try {
+        const data = await t.run(parsed.data, ctx())
+        return { content: [{ type: "text", text: JSON.stringify(data) }], structuredContent: data }
+      } catch (err) {
+        if (err instanceof ToolInputError) return { isError: true, content: [{ type: "text", text: err.message }] }
+        throw err
+      }
+    },
+  )
+}
+
+/** A server for one signed-in request: the read-only tools, and the person's own. */
+export function createAccountServer({ ctx, appUrl, userId }: { ctx: () => ToolContext; appUrl: string; userId: string }): McpServer {
+  const server = new McpServer(MCP_SERVER_INFO, { instructions: MCP_ACCOUNT_INSTRUCTIONS, maxToolInputElements: 200 })
+  for (const t of ASSISTANT_TOOLS) registerReadTool(server, t, ctx, appUrl)
+  for (const t of ACCOUNT_TOOLS) registerAccountTool(server, t, () => ({ tools: ctx(), userId, appUrl }))
   return server
 }
