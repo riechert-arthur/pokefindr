@@ -123,6 +123,18 @@ describe("submission-reviewed", () => {
     expect(outbox[0].text).toContain("The reason: Not a real or public place.")
   })
 
+  it("writes to a submitter in their language, with a link to the map in it (#185)", async () => {
+    await getDb().update(profiles).set({ locale: "es" }).where(eq(profiles.id, ASH))
+    const id = await submit()
+    const at = new Date()
+    await rejectSubmission(id, MOD, "not_real", getDb(), at)
+    await notifySubmissionReviewed(id, at.toISOString())
+    expect(outbox[0].subject).toBe("Mile High Cards no se agregó a PokeFindr")
+    expect(outbox[0].text).toContain("El motivo: No es un lugar real o público.")
+    expect(outbox[0].text).toContain("/es/map?add=shop")
+    expect(outbox[0].html).toContain('<html lang="es">')
+  })
+
   it("sends nothing for a decision that was undone or changed", async () => {
     const id = await submit()
     const first = new Date()

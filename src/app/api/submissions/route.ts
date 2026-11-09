@@ -3,15 +3,21 @@ import { z } from "zod/v3"
 import { eventDateProblem, submissionSchema } from "@/lib/submissions/schemas"
 import { createSubmission, listMySubmissions } from "@/server/services/submissions"
 import { enqueueJob } from "@/server/lib/jobs/enqueue"
+import { apiError } from "@/server/api-error"
 
 export const dynamic = "force-dynamic"
 
 const bodySchema = z.object({ submission: submissionSchema, confirmDuplicate: z.boolean().optional() })
 
-/** The first problem in a failed parse, as `field: message`, for the form to show. */
+/**
+ * The first problem in a failed parse, as `field: message`, for the form to
+ * show: `key` and `values` name its message in the form's language
+ * (addPlace.errors), when the schema gives one.
+ */
 function firstIssue(error: z.ZodError) {
   const issue = error.issues[0]
-  return { error: issue.message, field: issue.path.filter((p) => p !== "submission").join(".") || null }
+  const { key, ...values } = (issue.code === "custom" ? issue.params : undefined) ?? {}
+  return { error: issue.message, field: issue.path.filter((p) => p !== "submission").join(".") || null, ...(key ? { key, values } : {}) }
 }
 
 /**
@@ -23,7 +29,7 @@ function firstIssue(error: z.ZodError) {
  */
 export async function POST(request: NextRequest) {
   const userId = request.headers.get("x-user-id")
-  if (!userId) return NextResponse.json({ error: "Log in to add a place" }, { status: 401 })
+  if (!userId) return apiError("loginRequired", "Log in to add a place", 401)
   const body = bodySchema.safeParse(await request.json().catch(() => null))
   if (!body.success) return NextResponse.json(firstIssue(body.error), { status: 400 })
   const { submission, confirmDuplicate } = body.data
@@ -34,10 +40,10 @@ export async function POST(request: NextRequest) {
   try {
     const result = await createSubmission({ userId, input: submission, confirmDuplicate })
     if (result.status === "rate_limited") {
-      return NextResponse.json({ error: "You've added the most places you can today. Try again tomorrow." }, { status: 429 })
+      return apiError("tooManyPlaces", "You've added the most places you can today. Try again tomorrow.", 429)
     }
     if (result.status === "duplicate") {
-      return NextResponse.json({ error: "This might already be on the map.", duplicates: result.duplicates }, { status: 409 })
+      return apiError("duplicatePlace", "This might already be on the map.", 409, { duplicates: result.duplicates })
     }
     // Moderators hear about it by email; a failure to queue doesn't lose the submission.
     await enqueueJob("submission-created", { submissionId: result.id }, { idempotencyKey: `submission-created:${result.id}` }).catch((err) =>
@@ -46,7 +52,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ id: result.id, status: "pending" }, { status: 201 })
   } catch (err) {
     console.error("[api/submissions] failed to store the submission", err)
-    return NextResponse.json({ error: "Server error" }, { status: 500 })
+    return apiError("serverError", "Server error", 500)
   }
 }
 
@@ -63,6 +69,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ submissions: await listMySubmissions(userId) })
   } catch (err) {
     console.error("[api/submissions] failed to list submissions", err)
-    return NextResponse.json({ error: "Server error" }, { status: 500 })
+    return apiError("serverError", "Server error", 500)
   }
 }

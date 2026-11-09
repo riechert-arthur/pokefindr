@@ -12,7 +12,7 @@ describe("middleware without a session", () => {
   it("answers API calls with a 401 instead of a redirect", async () => {
     const res = await middleware(new NextRequest("http://localhost/api/locations/abc/reports", { method: "POST" }))
     expect(res.status).toBe(401)
-    expect(await res.json()).toEqual({ error: "Log in to continue" })
+    expect(await res.json()).toEqual({ error: "Log in to continue", code: "loginRequired" })
   })
 
   it("sends pages to /login", async () => {

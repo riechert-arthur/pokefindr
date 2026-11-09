@@ -7,7 +7,10 @@ import { getMailer } from "@/server/container"
 import { getServerConfig } from "@/server/config"
 import { submissionApproved, submissionRejected, submissionToReview, type EmailContent } from "@/server/email/templates"
 import { defineJob } from "@/server/lib/jobs/types"
-import { REJECT_REASON_LABELS } from "@/lib/submissions/constants"
+import { hasLocale } from "next-intl"
+import { localizedPath } from "@/i18n/seo"
+import { DEFAULT_LOCALE, routing, type Locale } from "@/i18n/routing"
+import { serverTranslator } from "@/server/i18n"
 import { UNDO_MS } from "@/lib/submissions/moderation"
 
 /** How long after a decision the submitter hears about it: past the undo window, so an undone decision sends nothing. */
@@ -62,7 +65,7 @@ async function sendOnce(key: string, to: string, email: EmailContent, db: Databa
 
 async function loadSubmission(id: string, db: Database) {
   const [row] = await db
-    .select({ s: locationSubmissions, submitter: profiles.username, email: users.email })
+    .select({ s: locationSubmissions, submitter: profiles.username, email: users.email, locale: profiles.locale })
     .from(locationSubmissions)
     .innerJoin(profiles, eq(profiles.id, locationSubmissions.submittedBy))
     .innerJoin(users, eq(users.id, locationSubmissions.submittedBy))
@@ -71,6 +74,9 @@ async function loadSubmission(id: string, db: Database) {
 }
 
 type Payload = { name?: string; city?: string; state?: string }
+
+/** A profile's language, or English when they haven't one. */
+const asLocale = (locale: string | null): Locale => (hasLocale(routing.locales, locale) ? locale : DEFAULT_LOCALE)
 
 /**
  * Tells every moderator and admin about a new submission, once each. Skips
@@ -81,17 +87,20 @@ export async function notifySubmissionCreated(submissionId: string, db: Database
   if (!row || row.s.status !== "pending") return { sent: 0 }
   const p = row.s.payload as Payload
   const moderators = await db
-    .select({ id: users.id, email: users.email })
+    .select({ id: users.id, email: users.email, locale: profiles.locale })
     .from(profiles)
     .innerJoin(users, eq(users.id, profiles.id))
     .where(inArray(profiles.role, ["moderator", "admin"]))
-  const email = submissionToReview({
-    kind: row.s.kind,
-    name: p.name ?? "A new place",
-    place: [p.city, p.state].filter(Boolean).join(", "),
-    submitter: row.submitter,
-    url: `${getServerConfig().APP_URL}/admin`,
-  })
+  // In each moderator's language (#185); the admin page itself is English.
+  const email = (locale: Locale) =>
+    submissionToReview({
+      kind: row.s.kind,
+      name: p.name ?? serverTranslator(locale)("email.toReview.unnamed"),
+      place: [p.city, p.state].filter(Boolean).join(", "),
+      submitter: row.submitter,
+      url: `${getServerConfig().APP_URL}/admin`,
+      locale,
+    })
   // Each moderator on their own: one bad address mustn't stop the rest. The
   // job fails afterwards if any failed, so the retry sends just those.
   let sent = 0
@@ -99,7 +108,7 @@ export async function notifySubmissionCreated(submissionId: string, db: Database
   for (const m of moderators) {
     if (m.id === row.s.submittedBy) continue
     try {
-      if (await sendOnce(`submission-created:${submissionId}:${m.id}`, m.email, email, db)) sent++
+      if (await sendOnce(`submission-created:${submissionId}:${m.id}`, m.email, email(asLocale(m.locale)), db)) sent++
     } catch (err) {
       failed.push(err)
     }
@@ -117,12 +126,20 @@ export async function notifySubmissionReviewed(submissionId: string, reviewedAt:
   const row = await loadSubmission(submissionId, db)
   if (!row || row.s.status === "pending" || !row.s.reviewedAt || row.s.reviewedAt.toISOString() !== new Date(reviewedAt).toISOString()) return { sent: 0 }
   const p = row.s.payload as Payload
-  const name = p.name ?? "Your place"
-  const app = getServerConfig().APP_URL
+  // In the submitter's language, with links to the map in it (#185).
+  const locale = asLocale(row.locale)
+  const t = serverTranslator(locale)
+  const name = p.name ?? t("email.approved.unnamed")
+  const map = `${getServerConfig().APP_URL}${localizedPath("/map", locale)}`
   const email =
     row.s.status === "approved"
-      ? submissionApproved({ name, kind: row.s.kind, url: `${app}/map?location=${row.s.locationId}` })
-      : submissionRejected({ name, reason: row.s.rejectReason ? REJECT_REASON_LABELS[row.s.rejectReason] : "it didn't pass review", url: `${app}/map?add=${row.s.kind}` })
+      ? submissionApproved({ name, kind: row.s.kind, url: `${map}?location=${row.s.locationId}`, locale })
+      : submissionRejected({
+          name,
+          reason: row.s.rejectReason ? t(`map.submissions.rejectReasons.${row.s.rejectReason}`) : t("email.rejected.noReason"),
+          url: `${map}?add=${row.s.kind}`,
+          locale,
+        })
   const sent = await sendOnce(`submission-reviewed:${submissionId}:${row.s.reviewedAt.toISOString()}`, row.email, email, db)
   return { sent: sent ? 1 : 0 }
 }

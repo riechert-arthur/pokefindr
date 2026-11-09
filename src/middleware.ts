@@ -53,7 +53,8 @@ function redirectToLogin(req: NextRequest, locale: Locale | null) {
   // An API call gets a 401 it can act on. A redirect would make fetch follow
   // it (a POST re-sent to /login) and get the login page back.
   if (req.nextUrl.pathname.startsWith('/api/')) {
-    return NextResponse.json({ error: 'Log in to continue' }, { status: 401 })
+    // `code` is the page's message for it (apiErrors in messages/*.yml).
+    return NextResponse.json({ error: 'Log in to continue', code: 'loginRequired' }, { status: 401 })
   }
   const url = req.nextUrl.clone()
   url.pathname = locale && locale !== routing.defaultLocale ? `/${locale}/login` : '/login'

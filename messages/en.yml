@@ -442,6 +442,9 @@ addPlace:
     city: Enter a city.
     endBeforeStart: It has to end after it starts.
     tooManyDays: "An event can last at most {days} days."
+    datePassed: That date has passed.
+    dateTooFar: Pick a date within the next year.
+    alreadyEnded: That event has already ended.
   # Under the form.
   form:
     duplicates: Places like this are close by. Check them, then tick the box to send it anyway.
@@ -1191,3 +1194,98 @@ states:
   WI: Wisconsin
   WV: West Virginia
   WY: Wyoming
+
+# The emails PokeFindr sends. Each has a plain-text and an HTML version: the
+# text one ends a sentence with ":" before a link, the HTML one with "." before
+# a button. <b> marks bold in the HTML version.
+email:
+  # The greeting. {name} is the name on the account.
+  hi: "Hi {name},"
+  hiAnonymous: "Hi,"
+  # Under every email.
+  footer: You're getting this because of an action on your PokeFindr account.
+  # Under each button, before the link written out.
+  pasteLink: "Or paste this link into your browser:"
+  verify:
+    subject: Confirm your PokeFindr account
+    text: "Confirm your email to finish creating your PokeFindr account:"
+    html: Confirm your email to finish creating your PokeFindr account.
+    button: Confirm email
+    note: The link works for 24 hours. If you didn't sign up, you can ignore this email.
+  reset:
+    subject: Reset your PokeFindr password
+    text: "Someone asked to reset the password for your PokeFindr account. To choose a new one, open:"
+    html: Someone asked to reset the password for your PokeFindr account.
+    button: Choose a new password
+    note: "The link works for 1 hour. If it wasn't you, ignore this email: your password stays the same."
+  # To the new address, the second step of an email change. {email} is the new address.
+  confirmChange:
+    subject: Confirm your new PokeFindr email
+    text: "Confirm that {email} is the new email for your PokeFindr account:"
+    html: "Confirm that <b>{email}</b> is the new email for your PokeFindr account."
+    button: Confirm new email
+    note: Nothing changes until you open the link, which works for 24 hours. If you didn't ask for this, ignore this email.
+  # To the current address, the first step of an email change. {email} is the new address.
+  approveChange:
+    subject: Approve your PokeFindr email change
+    text: "Someone asked to change your PokeFindr account's email to {email}. If it was you, approve it here, then confirm the new address from its inbox:"
+    html: "Someone asked to change your PokeFindr account's email to <b>{email}</b>. If it was you, approve it, then confirm the new address from its inbox."
+    button: Approve the change
+    note: "If it wasn't you, ignore this email and change your password: nothing changes unless you approve."
+  # To moderators about a new place. {kind}: shop or event. {place} is ", City, ST" or empty.
+  toReview:
+    subject: "New {kind, select, shop {card shop} other {event}} to review: {name}"
+    body: "{submitter} added a {kind, select, shop {card shop} other {event}}: <b>{name}</b>{place}."
+    text: "Review it here:"
+    button: Open the review queue
+    unnamed: A new place
+  # To the person who added a place, once it's approved.
+  approved:
+    subject: "{name} is on PokeFindr"
+    text: "Thanks for adding {name}. A moderator checked it, and the {kind, select, shop {card shop} other {event}} is now on the map for everyone:"
+    html: "Thanks for adding <b>{name}</b>. A moderator checked it, and the {kind, select, shop {card shop} other {event}} is now on the map for everyone."
+    button: See it on the map
+    unnamed: Your place
+  # To the person who added a place, when it isn't. {reason} is why.
+  rejected:
+    subject: "{name} wasn't added to PokeFindr"
+    thanks: "Thanks for sending <b>{name}</b>. A moderator didn't add it to the map."
+    reason: "The reason: {reason}."
+    text: "If something was wrong, you can add it again with the right details:"
+    html: If something was wrong, add it again with the right details.
+    button: Add it again
+    noReason: it didn't pass review
+
+# Errors from our API that the pages show, by the `code` in the response
+# (#185). The API also sends its own English `error`, shown when a code isn't here.
+apiErrors:
+  loginRequired: Log in to continue
+  wrongPassword: Wrong email or password. If you haven't confirmed your email yet, we've sent you a new link.
+  credentialsMissing: Enter your email and password
+  tooManyAttempts: Too many attempts. Wait a minute and try again.
+  usernameTaken: That username is already taken
+  signupFailed: Couldn't sign you up
+  accountNotFound: Account not found
+  emailUnconfirmed: Confirm your current email before changing it. Logging in again sends a new link.
+  REAUTH: Log in again to change your email.
+  emailSame: That's already your email.
+  emailChangeFailed: Couldn't start the email change
+  tooManyPlaces: You've added the most places you can today. Try again tomorrow.
+  duplicatePlace: This might already be on the map.
+  serverError: Something went wrong on our side. Try again.
+  # The assistant.
+  assistantOff: The assistant isn't available right now.
+  assistantPaused: The assistant is paused for today. The map and search still work.
+  assistantFailed: Something went wrong with the assistant. Try again.
+  assistantBusy: The assistant is busy right now. Try again in a minute.
+  assistantSlow: The assistant took too long. Try again, or ask something narrower.
+  tooFast: You're sending messages quickly. Wait a minute and try again.
+  answerInProgress: Wait for the current answer to finish.
+  # {limit} is a number of messages.
+  dailyMessages: "You've reached today's limit of {limit} messages. It resets at midnight UTC."
+  dailyAllowance: You've used today's assistant allowance. It resets at midnight UTC.
+  # When the server couldn't be reached, or answered without a message.
+  offline: We couldn't reach the server. Please check your connection and try again.
+  # {status} is an HTTP status code, like 502.
+  status: "Request failed with status code {status}"
+  unexpected: An unexpected error occurred

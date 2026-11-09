@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/form"
 import { z } from "zod/v3"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { handleSubmitError } from "@/lib/forms"
+import { useSubmitError } from "@/lib/forms"
 import { LoadingButton } from "@/components/wrappers/LoadingButton"
 import type { AuthSchemas } from "@/lib/schemas"
 import { useTranslations } from "next-intl"
@@ -39,6 +39,7 @@ export function RegistrationForm({
   providers = [],
   ...props
 }: React.ComponentProps<"div"> & { providers?: readonly OAuthProvider[] }) {
+  const handleSubmitError = useSubmitError()
   const router = useRouter()
   const t = useTranslations("auth")
   const { registrationSchema } = useAuthSchemas()

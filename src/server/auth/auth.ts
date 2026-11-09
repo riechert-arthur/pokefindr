@@ -30,6 +30,8 @@ import {
 } from "@/server/db/schema"
 import { getServerConfig, type ServerConfig } from "@/server/config"
 import { MCP_ACCOUNT_PATH, MCP_SCOPES } from "@/lib/mcp/scopes"
+import { requestLocale, userLocale } from "@/server/i18n"
+import type { Locale } from "@/i18n/routing"
 
 /** Where Better Auth's own endpoints live. Not /api/auth, which holds our routes (login, signup, ...). */
 export const IDENTITY_BASE_PATH = "/api/identity"
@@ -105,6 +107,14 @@ async function sendAccountEmail(to: string, email: EmailContent): Promise<void> 
   }
 }
 
+/**
+ * The language of an account email (#185): the one on the person's profile,
+ * else the page they asked from (a new sign-up has no profile yet).
+ */
+function emailLocale(userId: string, request?: Request): Promise<Locale> {
+  return userLocale(userId, request ? requestLocale(request) : undefined)
+}
+
 /** How long a confirmation or email-change link works. */
 const VERIFY_LINK_SECONDS = 60 * 60 * 24
 
@@ -144,7 +154,7 @@ export async function approveChangeToTakenEmail(user: { id: string; name: string
   const { secret, baseURL } = await getAuth().$context
   const token = await createEmailVerificationToken(secret, user.email, newEmail, VERIFY_LINK_SECONDS, { requestType: "change-email-confirmation", userId: user.id })
   const url = `${baseURL}/verify-email?token=${token}&callbackURL=${encodeURIComponent(callbackURL)}`
-  runInBackground(sendAccountEmail(user.email, approveEmailChange({ name: user.name, newEmail, url })))
+  runInBackground(userLocale(user.id).then((locale) => sendAccountEmail(user.email, approveEmailChange({ name: user.name, newEmail, url, locale }))))
 }
 
 /** Test helper: wait for the emails requests so far have started sending. */
@@ -232,7 +242,8 @@ function makeAuth(config: ServerConfig) {
       maxPasswordLength: 128,
       resetPasswordTokenExpiresIn: 60 * 60,
       revokeSessionsOnPasswordReset: true,
-      sendResetPassword: ({ user, url }) => sendAccountEmail(user.email, resetPassword({ name: user.name, url })),
+      sendResetPassword: async ({ user, url }, request) =>
+        sendAccountEmail(user.email, resetPassword({ name: user.name, url, locale: await emailLocale(user.id, request) })),
       // Opening the reset link proves the address is theirs, so it counts as confirmed:
       // someone who signed up with your email and never confirmed can't keep you out.
       onPasswordReset: async ({ user }) => {
@@ -248,19 +259,21 @@ function makeAuth(config: ServerConfig) {
       autoSignInAfterVerification: false,
       expiresIn: VERIFY_LINK_SECONDS,
       // Also the second step of an email change, to the new address (user.email is the new one then).
-      sendVerificationEmail: async ({ user, url }) => {
+      sendVerificationEmail: async ({ user, url }, request) => {
+        const locale = await emailLocale(user.id, request)
         const [current] = await getDb().select({ email: users.email }).from(users).where(eq(users.id, user.id))
         const changing = current && current.email !== user.email
         // Changing to an address another account has: the change can't finish, so its owner gets nothing.
         if (changing && (await emailTakenByOther(user.email, user.id))) return
-        await sendAccountEmail(user.email, changing ? confirmEmailChange({ name: user.name, newEmail: user.email, url }) : verifyEmail({ name: user.name, url }))
+        await sendAccountEmail(user.email, changing ? confirmEmailChange({ name: user.name, newEmail: user.email, url, locale }) : verifyEmail({ name: user.name, url, locale }))
       },
     },
     user: {
       // Two steps: the current address approves, then the new one confirms. Nothing changes before both.
       changeEmail: {
         enabled: true,
-        sendChangeEmailConfirmation: ({ user, newEmail, url }) => sendAccountEmail(user.email, approveEmailChange({ name: user.name, newEmail, url })),
+        sendChangeEmailConfirmation: async ({ user, newEmail, url }, request) =>
+          sendAccountEmail(user.email, approveEmailChange({ name: user.name, newEmail, url, locale: await emailLocale(user.id, request) })),
       },
     },
     // Signing in with Google or Discord links to an existing account with the same

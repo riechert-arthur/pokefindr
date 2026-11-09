@@ -2,7 +2,9 @@ import { NextResponse, type NextRequest } from "next/server"
 import { registrationSchema } from "@/lib/schemas"
 import { VERIFIED_CALLBACK } from "@/lib/auth/paths"
 import { identityRequest, refuseCrossSite } from "@/server/auth/identity"
+import { requestLocale } from "@/server/i18n"
 import { clearExpiredClaim, createProfile, deleteUser, holdUsername, releaseUsername, userExists, usernameTaken, UsernameTakenError } from "@/server/services/users"
+import { apiError } from "@/server/api-error"
 
 /**
  * Email sign-up. Better Auth creates the user and sends the confirmation
@@ -19,27 +21,29 @@ export async function POST(req: NextRequest) {
 
   // Claimed before Better Auth runs, whether the email turns out new or taken, so the
   // username can't show which (and two sign-ups at once can't both get it).
-  if (await usernameTaken(username)) return NextResponse.json({ error: "That username is already taken" }, { status: 409 })
+  if (await usernameTaken(username)) return apiError("usernameTaken", "That username is already taken", 409)
   await clearExpiredClaim(username)
-  if (!(await holdUsername(username))) return NextResponse.json({ error: "That username is already taken" }, { status: 409 })
+  if (!(await holdUsername(username))) return apiError("usernameTaken", "That username is already taken", 409)
 
   const res = await identityRequest(req, "/sign-up/email", { email, password, name, callbackURL: VERIFIED_CALLBACK })
   if (!res.ok) await releaseUsername(username)
-  if (res.status === 429) return NextResponse.json({ error: "Too many attempts. Wait a minute and try again." }, { status: 429 })
+  if (res.status === 429) return apiError("tooManyAttempts", "Too many attempts. Wait a minute and try again.", 429)
   if (!res.ok) {
     const { message } = ((await res.json().catch(() => ({}))) as { message?: string })
-    return NextResponse.json({ error: message ?? "Couldn't sign you up" }, { status: 400 })
+    // Better Auth's own message, in English: the page shows its own.
+    return apiError("signupFailed", message ?? "Couldn't sign you up", 400)
   }
 
   const { user } = (await res.json()) as { user: { id: string } }
   // An email that already has an account gets a made-up user back: nothing to add.
   if (await userExists(user.id)) {
     try {
-      await createProfile({ id: user.id, username, fullName: name, onboarded: true })
+      // The language they signed up in is theirs until they pick another (#182, #185).
+      await createProfile({ id: user.id, username, fullName: name, onboarded: true, locale: requestLocale(req) })
     } catch (err) {
       // Lost a race for the username: undo the account so it can be tried again.
       await deleteUser(user.id)
-      if (err instanceof UsernameTakenError) return NextResponse.json({ error: err.message }, { status: 409 })
+      if (err instanceof UsernameTakenError) return apiError("usernameTaken", err.message, 409)
       throw err
     }
   }

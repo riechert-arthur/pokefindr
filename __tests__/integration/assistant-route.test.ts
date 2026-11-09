@@ -159,7 +159,7 @@ describe("POST /api/assistant", () => {
     vi.spyOn(console, "error").mockImplementation(() => {})
     setClaudeForTests(fakeClaude([new Anthropic.RateLimitError(429, undefined, "rate limited", new Headers())]).claude)
     const out = await events(await post(ask("hi")))
-    expect(out).toEqual([{ type: "error", message: "The assistant is busy right now. Try again in a minute." }])
+    expect(out).toEqual([{ type: "error", message: "The assistant is busy right now. Try again in a minute.", code: "assistantBusy" }])
   })
 
   it("says it's unavailable, not a server error, when federation has no identity here", async () => {

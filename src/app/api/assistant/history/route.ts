@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { deleteHistory } from "@/server/assistant/log"
+import { apiError } from "@/server/api-error"
 
 export const dynamic = "force-dynamic"
 
@@ -15,6 +16,6 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ deleted: await deleteHistory(userId) })
   } catch (err) {
     console.error("[api/assistant/history] couldn't delete", err)
-    return NextResponse.json({ error: "Server error" }, { status: 500 })
+    return apiError("serverError", "Server error", 500)
   }
 }

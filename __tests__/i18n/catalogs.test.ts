@@ -83,16 +83,17 @@ function readsOf(code: string) {
   const namespaces = new Set<string>()
   for (const m of code.matchAll(/(?:useTranslations|getTranslations)(?:<\s*["'`]([\w.-]+)["'`]\s*>|\(\s*["'`]([\w.-]+)["'`])/g)) namespaces.add((m[1] ?? m[2])!)
   for (const m of code.matchAll(/namespace:\s*["'`]([\w.-]+)["'`]/g)) namespaces.add(m[1])
-  if (/(?:useTranslations|getTranslations)\(\s*\)|getTranslations\(\{\s*locale[^}]*\}\)/.test(code)) namespaces.add("")
+  // The whole catalog: useTranslations(), getTranslations({ locale }), and serverTranslator (emails, src/server/i18n.ts).
+  if (/(?:useTranslations|getTranslations)\(\s*\)|getTranslations\(\{\s*locale[^}]*\}\)|serverTranslator\(/.test(code)) namespaces.add("")
   const exact = new Set<string>()
   const patterns: RegExp[] = []
-  for (const m of code.matchAll(/"([\w.-]+)"|'([\w.-]+)'|`([^`]*)`/g)) {
-    if (m[1] ?? m[2]) exact.add((m[1] ?? m[2])!)
-    else if (m[3]?.includes("${")) {
-      const parts = m[3].split(/\$\{[^}]*\}/)
-      if (!parts.every((p) => /^[\w.-]*$/.test(p)) || !parts.some((p) => /[A-Za-z]{2,}/.test(p))) continue
-      patterns.push(new RegExp(`^${parts.map((p) => p.replace(/\./g, "\\.")).join("[\\w-]+")}$`))
-    } else if (m[3]) exact.add(m[3])
+  // Quoted strings anywhere, including inside a template's ${…}.
+  for (const m of code.matchAll(/"([\w.-]+)"|'([\w.-]+)'/g)) exact.add((m[1] ?? m[2])!)
+  // Key-shaped templates, with a word of their own (`kinds.${kind}.name`, not `${a}.${b}`).
+  for (const m of code.matchAll(/`([\w.-]*(?:\$\{[^}`]*\}[\w.-]*)+)`/g)) {
+    const parts = m[1].split(/\$\{[^}]*\}/)
+    if (!parts.some((p) => /[A-Za-z]{2,}/.test(p))) continue
+    patterns.push(new RegExp(`^${parts.map((p) => p.replace(/\./g, "\\.")).join("[\\w-]+")}$`))
   }
   // t(failure), t(kind): a key from a variable holding one of a set of strings.
   const byVariable = /\bt\(\s*[A-Za-z_]\w*(?:\s+as\s+\w+)?\s*[,)]/.test(code)

@@ -9,6 +9,7 @@ import { endTurn, loadPlaceBudget, savePlaceViews, startTurn, warnOnSpend } from
 import { flagsFor, recordTurn, type ToolCall } from "@/server/assistant/log"
 import type { AssistantOutcome } from "@/server/db/schema"
 import type { AssistantEvent } from "@/lib/types/assistant-stream"
+import { apiError } from "@/server/api-error"
 
 export const dynamic = "force-dynamic"
 // A turn can take a few tool rounds.
@@ -37,10 +38,11 @@ const round2 = (n: number) => Math.round(n * 100) / 100
 const TURN_TIMEOUT_MS = 55_000
 
 /** What the viewer sees when the API fails; the details go to the log. */
-function failureMessage(err: unknown, timedOut: boolean): string {
-  if (err instanceof Anthropic.RateLimitError || (err instanceof Anthropic.APIError && err.status === 529)) return "The assistant is busy right now. Try again in a minute."
-  if (timedOut || err instanceof Anthropic.APIConnectionTimeoutError) return "The assistant took too long. Try again, or ask something narrower."
-  return "Something went wrong with the assistant. Try again."
+function failureMessage(err: unknown, timedOut: boolean): { message: string; code: string } {
+  if (err instanceof Anthropic.RateLimitError || (err instanceof Anthropic.APIError && err.status === 529))
+    return { message: "The assistant is busy right now. Try again in a minute.", code: "assistantBusy" }
+  if (timedOut || err instanceof Anthropic.APIConnectionTimeoutError) return { message: "The assistant took too long. Try again, or ask something narrower.", code: "assistantSlow" }
+  return { message: "Something went wrong with the assistant. Try again.", code: "assistantFailed" }
 }
 
 /**
@@ -53,10 +55,10 @@ function failureMessage(err: unknown, timedOut: boolean): string {
  */
 export async function POST(request: NextRequest) {
   const userId = request.headers.get("x-user-id")
-  if (!userId) return NextResponse.json({ error: "Log in to continue" }, { status: 401 })
+  if (!userId) return apiError("loginRequired", "Log in to continue", 401)
   const config = getServerConfig()
   const claude = getClaude()
-  if (!claude || !config.ASSISTANT_ENABLED) return NextResponse.json({ error: "The assistant isn't available right now.", paused: true }, { status: 503 })
+  if (!claude || !config.ASSISTANT_ENABLED) return apiError("assistantOff", "The assistant isn't available right now.", 503, { paused: true })
   const body = bodySchema.safeParse(await request.json().catch(() => null))
   if (!body.success) return NextResponse.json({ error: "Invalid request", issues: body.error.issues.map((i) => i.message) }, { status: 400 })
 
@@ -68,7 +70,7 @@ export async function POST(request: NextRequest) {
     started = await startTurn({ userId, now, dailyBudgetMicros: budgetMicros }, db)
   } catch (err) {
     console.error("[api/assistant] couldn't check the limits", err)
-    return NextResponse.json({ error: "Something went wrong with the assistant. Try again." }, { status: 500 })
+    return apiError("assistantFailed", "Something went wrong with the assistant. Try again.", 500)
   }
   const question = body.data.messages[body.data.messages.length - 1].content
   if (!started.ok) {
@@ -81,8 +83,8 @@ export async function POST(request: NextRequest) {
       db,
     ).catch((err) => console.error("[api/assistant] couldn't log the turn", err))
     return r.kind === "paused"
-      ? NextResponse.json({ error: r.message, paused: true }, { status: 503 })
-      : NextResponse.json({ error: r.message }, { status: 429, headers: { "Retry-After": String(r.retryAfter) } })
+      ? apiError(r.code, r.message, 503, { paused: true })
+      : apiError(r.code, r.message, 429, r.values ? { values: r.values } : {}, { headers: { "Retry-After": String(r.retryAfter) } })
   }
   warnOnSpend(started.spentToday, budgetMicros, now)
   const { ASSISTANT_MODEL, ASSISTANT_EFFORT } = config
@@ -134,7 +136,7 @@ export async function POST(request: NextRequest) {
         if (request.signal.aborted) outcome = "stopped"
         else {
           console.error("[api/assistant] turn failed", err)
-          emit({ type: "error", message: failureMessage(err, signal.aborted) })
+          emit({ type: "error", ...failureMessage(err, signal.aborted) })
         }
       } finally {
         await Promise.all([

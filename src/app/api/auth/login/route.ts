@@ -5,11 +5,12 @@ import { identityCookies, identityRequest, refuseCrossSite } from "@/server/auth
 import { profileLocaleCookie } from "@/server/auth/locale-cookie"
 import { createSessionCookie } from "@/server/auth/session"
 import { getProfile, getSessionTier } from "@/server/services/users"
+import { apiError } from "@/server/api-error"
 
 const body = z.object({ email: z.string().min(1).max(320), password: z.string().min(1).max(256) })
 
 const loginFailed = () =>
-  NextResponse.json({ error: "Wrong email or password. If you haven't confirmed your email yet, we've sent you a new link." }, { status: 401 })
+  apiError("wrongPassword", "Wrong email or password. If you haven't confirmed your email yet, we've sent you a new link.", 401)
 
 /**
  * Email and password login, checked by Better Auth (with its rate limit).
@@ -20,10 +21,10 @@ export async function POST(req: NextRequest) {
   const refused = refuseCrossSite(req)
   if (refused) return refused
   const parsed = body.safeParse(await req.json().catch(() => null))
-  if (!parsed.success) return NextResponse.json({ error: "Enter your email and password" }, { status: 400 })
+  if (!parsed.success) return apiError("credentialsMissing", "Enter your email and password", 400)
 
   const res = await identityRequest(req, "/sign-in/email", { ...parsed.data, callbackURL: VERIFIED_CALLBACK })
-  if (res.status === 429) return NextResponse.json({ error: "Too many attempts. Wait a minute and try again." }, { status: 429 })
+  if (res.status === 429) return apiError("tooManyAttempts", "Too many attempts. Wait a minute and try again.", 429)
   // An unconfirmed email gets the same answer as a wrong password (Better Auth sends it a new
   // link): sign up with any email and a password you pick, and a different answer here would
   // show whether that email already had an account.

@@ -37,4 +37,5 @@ export type AssistantEvent =
       /** The turn's id in the log, for feedback on it. Set by /api/assistant. */
       turnId?: string
     }
-  | { type: "error"; message: string }
+  /** `code` names the page's message for it (apiErrors in messages/*.yml, #185); `message` is the English. */
+  | { type: "error"; message: string; code?: string }

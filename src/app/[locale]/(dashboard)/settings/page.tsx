@@ -13,7 +13,7 @@ import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { LoadSpinner } from '@/components/wrappers/LoadSpinner'
 import { useSessionContext } from '@/components/providers/SessionProvider'
 import { ClearAssistantHistory } from '@/components/assistant/ClearAssistantHistory'
-import { handleSubmitError } from '@/lib/forms'
+import { useSubmitError } from '@/lib/forms'
 import { PUBLIC_LOCALES } from '@/i18n/routing'
 
 interface Settings {
@@ -23,6 +23,7 @@ interface Settings {
 }
 
 export default function SettingsPage() {
+  const handleSubmitError = useSubmitError()
   const t = useTranslations('settings')
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const { session, isLoading } = useSessionContext()
