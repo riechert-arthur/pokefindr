@@ -29,6 +29,18 @@ export const ADMIN_GROUPS: readonly AdminGroup[] = [
       { id: "reports", label: "Reports", sub: "Problems people reported on live locations.", access: "moderator" },
     ],
   },
+  {
+    id: "locations",
+    label: "Locations",
+    sections: [
+      {
+        id: "add-vending",
+        label: "Add vending machine",
+        sub: "Add a machine missing from the official list. Anything that overlaps an existing machine is blocked.",
+        access: "admin",
+      },
+    ],
+  },
 ]
 
 export const ADMIN_SECTIONS: readonly AdminSection[] = ADMIN_GROUPS.flatMap((g) => g.sections)

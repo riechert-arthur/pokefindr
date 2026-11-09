@@ -3,11 +3,12 @@
 import Link from "next/link"
 import { useCallback, useEffect, useState, type ReactNode } from "react"
 import { useQueryState } from "nuqs"
-import { MapPinIcon } from "lucide-react"
-import { buttonVariants } from "@/components/ui/button"
+import { MapPinIcon, PlusIcon } from "lucide-react"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { AdminSidebar, type SectionCount } from "@/components/admin/AdminSidebar"
 import { ReviewQueue } from "@/components/admin/ReviewQueue"
 import { ReportsTable } from "@/components/admin/ReportsTable"
+import { AddVendingForm } from "@/components/admin/AddVendingForm"
 import { REPORTS_HOT } from "@/lib/admin/reports"
 import { RefreshSummary } from "@/components/admin/useRefreshSummary"
 import { DEFAULT_SECTION, groupsFor, sectionFor } from "@/lib/admin/sections"
@@ -41,6 +42,7 @@ function useSummary(): [AdminSummary | null, () => void] {
 const SECTIONS: Record<string, () => ReactNode> = {
   queue: () => <ReviewQueue />,
   reports: () => <ReportsTable />,
+  "add-vending": () => <AddVendingForm />,
 }
 
 /**
@@ -77,6 +79,12 @@ export function AdminApp({ role, username }: { role: StaffRole; username: string
               <MapPinIcon aria-hidden />
               Open map
             </Link>
+            {role === "admin" && section.id !== "add-vending" && (
+              <Button size="sm" onClick={() => void setParam("add-vending")}>
+                <PlusIcon aria-hidden />
+                Add vending machine
+              </Button>
+            )}
           </header>
           {SECTIONS[section.id]?.()}
         </div>
