@@ -4,6 +4,7 @@ import { defineJob, type Job } from "./types"
 import { refreshRegionCountsJob } from "@/server/services/region-counts"
 import { assistantRetentionJob } from "@/server/assistant/log"
 import { submissionCreatedJob, submissionReviewedJob } from "@/server/services/submission-notifications"
+import { expireEventsJob } from "@/server/services/expire-events"
 
 /** Does nothing. Exists so the cron, queue and CLI wiring can be tested on its own. */
 const noop = defineJob({
@@ -27,6 +28,7 @@ export const jobs: Record<string, Job<any>> = {
   "assistant-retention": assistantRetentionJob,
   "submission-created": submissionCreatedJob,
   "submission-reviewed": submissionReviewedJob,
+  "expire-events": expireEventsJob,
 }
 
 export function isJobName(name: string): boolean {

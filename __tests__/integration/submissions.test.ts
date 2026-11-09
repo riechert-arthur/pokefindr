@@ -154,7 +154,7 @@ describe("GET /api/submissions?mine", () => {
     expect(res.status).toBe(200)
     const { submissions } = await res.json()
     expect(submissions.map((s: { name: string }) => s.name)).toEqual(["League night", "Mile High Cards"])
-    expect(submissions[1]).toMatchObject({ kind: "shop", status: "pending", rejectReason: null, city: "Denver", lng: -104.9876, lat: 39.7392, startsAt: null, locationId: null })
+    expect(submissions[1]).toMatchObject({ kind: "shop", status: "pending", rejectReason: null, city: "Denver", lng: -104.9876, lat: 39.7392, startsAt: null, locationId: null, locationActive: null })
     expect(submissions[0].startsAt).toEqual(expect.any(String))
   })
 

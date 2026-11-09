@@ -129,6 +129,8 @@ export type MySubmission = {
   startsAt: string | null
   /** Approved: the location it became. */
   locationId: string | null
+  /** Approved: whether that location is still on the map (an event ends and is hidden, #128). */
+  locationActive: boolean | null
   createdAt: string
   reviewedAt: string | null
 }

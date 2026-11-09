@@ -94,6 +94,8 @@ export function SubmissionRows({ submissions, onOpen }: { submissions: readonly 
                 {s.name}
                 {s.status === "pending" ? (
                   <StatusBadge status="pending" />
+                ) : s.status === "approved" && s.locationActive === false ? (
+                  <StatusBadge status="sample">{s.kind === "event" ? "Ended" : "Off the map"}</StatusBadge>
                 ) : s.status === "approved" ? (
                   <StatusBadge status="live" />
                 ) : (
@@ -103,7 +105,15 @@ export function SubmissionRows({ submissions, onOpen }: { submissions: readonly 
                 )}
               </span>
               <span className="block truncate text-body text-muted-foreground">
-                {s.status === "rejected" ? (s.rejectReason ? REJECT_REASON_LABELS[s.rejectReason] : "Not approved") : STATUS_NOTE[s.status]}
+                {s.status === "rejected"
+                  ? s.rejectReason
+                    ? REJECT_REASON_LABELS[s.rejectReason]
+                    : "Not approved"
+                  : s.status === "approved" && s.locationActive === false
+                    ? s.kind === "event"
+                      ? "It's over, so it's off the map."
+                      : "It isn't on the map anymore."
+                    : STATUS_NOTE[s.status]}
               </span>
             </span>
           </button>

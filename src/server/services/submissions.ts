@@ -86,9 +86,10 @@ export async function listMySubmissions(userId: string, db: Database = getDb(), 
       coalesce(s.payload->>'name', '') as name, coalesce(s.payload->>'address', '') as address,
       coalesce(s.payload->>'city', '') as city, coalesce(s.payload->>'state', '') as state,
       round(ST_X(s.geog::geometry)::numeric, 5)::float8 as lng, round(ST_Y(s.geog::geometry)::numeric, 5)::float8 as lat,
-      s.payload->>'startsAt' as "startsAt", s.location_id as "locationId",
+      s.payload->>'startsAt' as "startsAt", s.location_id as "locationId", l.is_active as "locationActive",
       s.created_at as "createdAt", s.reviewed_at as "reviewedAt"
     from ${locationSubmissions} s
+    left join ${locations} l on l.id = s.location_id
     where s.submitted_by = ${userId}
     order by s.created_at desc, s.id
     limit ${limit}
