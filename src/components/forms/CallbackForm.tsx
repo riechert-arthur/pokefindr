@@ -30,8 +30,9 @@ import { Input } from "@/components/ui/input"
 
 export function CallbackForm({
   className,
+  next = null,
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div"> & { next?: string | null }) {
   const router = useRouter()
   const form = useForm<z.infer<typeof callbackSchema>>({
     resolver: zodResolver(callbackSchema),
@@ -43,7 +44,8 @@ export function CallbackForm({
       await axios.post("/api/auth/onboarding", { username: values.username }, { withCredentials: true })
       broadcastAuth("login")
       toast.success("Welcome aboard!")
-      router.push("/home")
+      if (next) window.location.assign(next)
+      else router.push("/home")
     } catch (err: unknown) {
       handleSubmitError(err)
     }

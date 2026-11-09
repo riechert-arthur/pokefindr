@@ -54,6 +54,41 @@ that sends one answers as fast as one that doesn't.
 - **Linking**: an OAuth sign-in joins an existing account with the same email only when both sides
   have confirmed it.
 
+## MCP clients (OAuth)
+
+MCP clients (Claude, Cursor, VS Code, ...) connect to a person's account through OAuth 2.1, with
+PokeFindr as the authorization server (#134). It's Better Auth's `mcp` plugin (its OAuth Provider),
+with `jwt` signing the access tokens and `cimd` reading Client ID Metadata Documents. Setup is in
+`mcpPlugins` in `src/server/auth/auth.ts`; the tables are migration `0014_mcp_oauth`.
+
+| Piece | Where |
+| --- | --- |
+| Discovery: `/.well-known/oauth-protected-resource/api/mcp/account`, `/.well-known/oauth-authorization-server/api/identity` | `src/server/auth/discovery.ts` |
+| Authorize, token, register, consent, JWKS | Better Auth, at `/api/identity/oauth2/*` and `/api/identity/jwks` |
+| Consent page | `/oauth/consent` |
+| Picking the flow up after logging in | `src/lib/auth/oauth-continue.ts` |
+| Scopes and what the consent page says for each | `src/lib/mcp/scopes.ts` |
+
+1. The client finds the authorization server from the protected-resource document, then registers:
+   a Client ID Metadata Document (the 2026-07-28 way), or dynamic registration (the 2025 way, which
+   most clients still use; at most 5 a minute per IP). Clients are public: PKCE, no secret.
+2. Authorize sends someone without a session to `/login` with the request signed in the query. Our
+   login goes through our own routes, so once it succeeds (email, Google or Discord) the page sends
+   the browser back to the authorize endpoint with the same request (`authorizeContinuation`).
+   That's the only place `next` can lead.
+3. `/oauth/consent` shows the app's name (its own registration, as plain text), the redirect's host
+   (checked by the authorize endpoint) and what it's asking for. Allow or Cancel goes to Better
+   Auth's consent endpoint, which sends the browser back to the app.
+4. The token endpoint issues an access token (a JWT, 1 hour, audience `/api/mcp/account`) and a
+   refresh token (30 days, rotated; reuse within 30 s counts as a retry). Reusing a code revokes
+   what it was exchanged for.
+
+The signing keys (`jwks`) are encrypted with `BETTER_AUTH_SECRET`: changing it means new keys, and
+every connected app has to connect again.
+
+There's no "connected apps" page yet to disconnect an app from PokeFindr's side; people disconnect it
+in the app.
+
 ## Local development
 
 `make run` seeds a confirmed account into local databases only:
