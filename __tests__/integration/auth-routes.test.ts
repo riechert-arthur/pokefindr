@@ -89,6 +89,24 @@ describe("login", () => {
   })
 })
 
+describe("requests from other sites", () => {
+  it("are refused, so another site can't log a visitor into its account", async () => {
+    await post(signup, form)
+    await confirm(form.email)
+    const creds = { email: form.email, password: form.password }
+    for (const headers of [{ origin: "https://evil.example" }, { "sec-fetch-site": "cross-site" }, { "sec-fetch-site": "same-site" }]) {
+      for (const handler of [login, signup, logout]) {
+        const res = await post(handler, handler === signup ? { ...form, email: "x@example.com", username: "x_user" } : creds, headers)
+        expect(res.status).toBe(403)
+        expect(res.headers.getSetCookie()).toEqual([])
+      }
+    }
+    expect(await getDb().select().from(users).where(eq(users.email, "x@example.com"))).toEqual([])
+    const ours = await post(login, creds, { origin: "http://localhost:3000", "sec-fetch-site": "same-origin" })
+    expect(ours.status).toBe(200)
+  })
+})
+
 describe("rate limits", () => {
   it("stop repeated logins from one address, counted in the database", async () => {
     vi.stubEnv("NODE_ENV", "development")
