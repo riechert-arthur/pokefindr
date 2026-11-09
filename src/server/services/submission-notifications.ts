@@ -1,6 +1,6 @@
 import "server-only"
 import { and, eq, inArray, isNull, lt } from "drizzle-orm"
-import { z } from "zod"
+import { z } from "zod/v3"
 import { getDb, type Database } from "@/server/db/client"
 import { locationSubmissions, profiles, sentNotifications, users } from "@/server/db/schema"
 import { getMailer } from "@/server/container"

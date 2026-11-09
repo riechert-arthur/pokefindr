@@ -1,6 +1,6 @@
 import "server-only"
 import { and, eq, inArray, isNotNull, lt, sql } from "drizzle-orm"
-import { z } from "zod"
+import { z } from "zod/v3"
 import { getDb, type Database } from "@/server/db/client"
 import { assistantFeedback, assistantPlaceViews, assistantTurnTexts, assistantTurns, assistantUsage, type AssistantOutcome } from "@/server/db/schema"
 import { defineJob } from "@/server/lib/jobs/types"

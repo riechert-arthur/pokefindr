@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest"
 import type { MessageMetadata } from "@vercel/queue"
-import { z } from "zod"
+import { z } from "zod/v3"
 
 vi.mock("server-only", () => ({}))
 const send = vi.fn()

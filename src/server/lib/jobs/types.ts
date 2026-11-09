@@ -1,4 +1,4 @@
-import type { ZodType } from "zod"
+import type { ZodType } from "zod/v3"
 
 /**
  * How a job run was started: Vercel Cron, Vercel Queues, another HTTP caller

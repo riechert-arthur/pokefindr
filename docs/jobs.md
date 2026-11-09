@@ -30,7 +30,7 @@ scripts/run-job.ts                 npm run job
 1. Define the job next to the service it calls, with a schema for its payload:
 
    ```ts
-   import { z } from "zod"
+   import { z } from "zod/v3"
    import { defineJob } from "@/server/lib/jobs/types"
 
    export const notifyModeratorsJob = defineJob({
