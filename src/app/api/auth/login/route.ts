@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod"
+import { VERIFIED_CALLBACK } from "@/lib/auth/paths"
 import { identityCookies, identityRequest, refuseCrossSite } from "@/server/auth/identity"
 import { createSessionCookie } from "@/server/auth/session"
 import { getProfile, getSessionTier } from "@/server/services/users"
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
   const parsed = body.safeParse(await req.json().catch(() => null))
   if (!parsed.success) return NextResponse.json({ error: "Enter your email and password" }, { status: 400 })
 
-  const res = await identityRequest(req, "/sign-in/email", parsed.data)
+  const res = await identityRequest(req, "/sign-in/email", { ...parsed.data, callbackURL: VERIFIED_CALLBACK })
   if (res.status === 429) return NextResponse.json({ error: "Too many attempts. Wait a minute and try again." }, { status: 429 })
   // An unconfirmed email gets the same answer as a wrong password (Better Auth sends it a new
   // link): sign up with any email and a password you pick, and a different answer here would
