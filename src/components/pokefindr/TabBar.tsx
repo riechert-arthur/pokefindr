@@ -1,7 +1,6 @@
 "use client"
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { Link, usePathname } from "@/i18n/navigation"
 import { useEffect, type ComponentType, type SVGProps } from "react"
 import { CirclePlusIcon, HouseIcon, MapPinIcon, ShieldIcon } from "lucide-react"
 import { cn } from "@/lib/utils"

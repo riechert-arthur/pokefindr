@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "../../helpers/intl"
 import { describe, expect, it, vi } from "vitest"
 
 const setTheme = vi.fn()

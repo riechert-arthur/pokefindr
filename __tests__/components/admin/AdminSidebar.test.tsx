@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "../../helpers/intl"
 import { AdminSidebar } from "@/components/admin/AdminSidebar"
 import type { AdminGroup } from "@/lib/admin/sections"
 

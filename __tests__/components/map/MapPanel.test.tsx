@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "../../helpers/intl"
 import { MapPanel } from "@/components/map/MapPanel"
 
 describe("MapPanel", () => {

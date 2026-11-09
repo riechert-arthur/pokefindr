@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react"
+import { act, fireEvent, render, renderHook, screen, waitFor } from "../../helpers/intl"
 import { useLocationReviews, type Review, type ReviewsState } from "@/components/map/useLocationReviews"
 import { ReviewSummary, ReviewsSection } from "@/components/map/Reviews"
 import { timeAgo } from "@/lib/format/time"

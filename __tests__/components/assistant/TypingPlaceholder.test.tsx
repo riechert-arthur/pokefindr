@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, render } from "@testing-library/react"
+import { act, render } from "../../helpers/intl"
 import { GHOST_PROMPTS, STILL_PLACEHOLDER, TypingPlaceholder } from "@/components/assistant/TypingPlaceholder"
 
 const motion = (reduce: boolean) => vi.stubGlobal("matchMedia", (q: string) => ({ matches: reduce && q.includes("reduce"), addEventListener() {}, removeEventListener() {} }))

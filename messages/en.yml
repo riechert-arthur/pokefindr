@@ -1,0 +1,21 @@
+# PokeFindr's English messages, the source for every other language (docs/i18n.md).
+#
+# Keys are nested by area. Messages are ICU: {name} is a placeholder, and
+# {count, plural, one {# place} other {# places}} picks a form by number.
+# Comments say where a message shows and what its placeholders hold.
+
+errors:
+  # The 404 page, for any address that doesn't exist.
+  notFound:
+    # Small heading above the title.
+    code: "404"
+    title: Page not found
+    body: Sorry, we couldn’t find the page you’re looking for.
+  # The page shown when a page fails to load. The error's own text shows below the title.
+  error:
+    code: Error
+    title: Something went wrong
+  # Buttons on both pages.
+  home: Go back home
+  # Opens our Discord server.
+  support: Contact support

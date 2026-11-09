@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, render, renderHook } from "@testing-library/react"
+import { act, render, renderHook } from "../../helpers/intl"
 import type { LocationFeature, LocationFeatureCollection } from "@/lib/types/locations"
 
 /** A stand-in for a MapLibre map: records layer listeners and serves a style. */

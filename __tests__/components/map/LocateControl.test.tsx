@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { render } from "@testing-library/react"
+import { render } from "../../helpers/intl"
 
 const toast = vi.fn()
 vi.mock("sonner", () => ({ toast: (...args: unknown[]) => toast(...args) }))

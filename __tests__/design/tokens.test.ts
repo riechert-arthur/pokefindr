@@ -8,7 +8,7 @@ import { COLOR_TOKENS, HSL_CHANNELS, channelsToHsl } from "@/lib/design/tokens"
 const ROOT = path.resolve(__dirname, "../..")
 const css = readFileSync(path.join(ROOT, "src/app/globals.css"), "utf8")
 const tailwind = readFileSync(path.join(ROOT, "tailwind.config.ts"), "utf8")
-const layout = readFileSync(path.join(ROOT, "src/app/layout.tsx"), "utf8")
+const layout = readFileSync(path.join(ROOT, "src/app/[locale]/layout.tsx"), "utf8")
 const fontSize = (tailwindConfig.theme?.extend?.fontSize ?? {}) as Record<string, [string, unknown]>
 
 /**

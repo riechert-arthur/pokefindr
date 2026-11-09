@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, waitFor, within } from "../../helpers/intl"
 import { AddVendingForm } from "@/components/admin/AddVendingForm"
 import type { VendingOverlap } from "@/lib/admin/vending"
 

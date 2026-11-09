@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, renderHook, waitFor } from "@testing-library/react"
+import { act, renderHook, waitFor } from "../../helpers/intl"
 import { useNearbyLocations } from "@/components/map/useNearbyLocations"
 
 const body = (total: number) => ({ type: "FeatureCollection", features: [], counts: { vending: total }, total, truncated: false })

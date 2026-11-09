@@ -31,7 +31,9 @@
     "db:import-locations": "tsx scripts/one-off/import-locations.ts",
     "test-storybook": "test-storybook --url http://127.0.0.1:6006",
     "test-storybook:local": "bash scripts/test-storybook-local.sh",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "i18n:build": "node scripts/i18n/build.mjs",
+    "postinstall": "node scripts/i18n/build.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.6.0",
@@ -74,6 +76,7 @@
     "lucide-react": "^0.510.0",
     "maplibre-gl": "^5.24.0",
     "next": "^15.3.2",
+    "next-intl": "^4.14.9",
     "next-themes": "^0.4.6",
     "nodemailer": "^8.0.11",
     "nuqs": "^2.10.2",

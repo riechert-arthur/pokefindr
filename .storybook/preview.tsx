@@ -2,9 +2,17 @@ import { useEffect } from "react"
 import type { Preview } from "@storybook/nextjs-vite"
 import { useGlobals } from "storybook/preview-api"
 import { useTheme } from "next-themes"
+import { NextIntlClientProvider } from "next-intl"
 import "../src/app/globals.css"
 import { ThemeProvider } from "../src/components/providers/ThemeProvider"
 import { TooltipProvider } from "../src/components/ui/tooltip"
+import { merge, type Messages, type Tree } from "../src/i18n/messages"
+import { DEFAULT_LOCALE, LOCALES, type Locale } from "../src/i18n/routing"
+import en from "../src/i18n/generated/en.json"
+import es from "../src/i18n/generated/es.json"
+
+/** Each language's messages, with English under any it's missing, as in the app (src/i18n/messages.ts). */
+const MESSAGES: Record<Locale, Messages> = { en, es: merge(en, es as Tree) as Messages }
 
 /**
  * In stories where the component under test changes the theme (ThemeToggle),
@@ -40,9 +48,15 @@ const preview: Preview = {
       description: "Theme",
       toolbar: { title: "Theme", icon: "mirror", items: ["light", "dark"], dynamicTitle: true },
     },
+    // The language, like the app's /es prefix (docs/i18n.md).
+    locale: {
+      description: "Language",
+      toolbar: { title: "Language", icon: "globe", items: [...LOCALES], dynamicTitle: true },
+    },
   },
   initialGlobals: {
     theme: "light",
+    locale: DEFAULT_LOCALE,
     // Under the a11y test runner (it sets this flag before the page loads), the
     // addon doesn't run axe itself: .storybook/test-runner.ts does, in light and
     // dark, and two runs would share one axe instance.
@@ -51,21 +65,25 @@ const preview: Preview = {
       : {}),
   },
   decorators: [
-    // The same providers as the app: next-themes sets the light/dark class on
-    // <html> (so tokens and theme-aware components like the Toaster agree), and
-    // one TooltipProvider, as in ContextProviders. The toolbar forces the theme,
+    // The same providers as the app: next-intl with the toolbar's language,
+    // next-themes setting the light/dark class on <html> (so tokens and
+    // theme-aware components like the Toaster agree), and one TooltipProvider,
+    // as in ContextProviders. The toolbar forces the theme,
     // except in stories with `parameters.themeToggle`, where the component under
     // test changes it and the toolbar follows.
     (Story, { parameters }) => {
       const [globals, updateGlobals] = useGlobals()
       const toggle = Boolean(parameters.themeToggle)
+      const locale: Locale = LOCALES.includes(globals.locale) ? globals.locale : DEFAULT_LOCALE
       return (
-        <ThemeProvider storageKey="storybook-theme" forcedTheme={toggle ? undefined : globals.theme}>
-          {toggle && <SyncThemeWithToolbar toolbar={globals.theme} setToolbar={(theme) => updateGlobals({ theme })} />}
-          <TooltipProvider>
-            <Story />
-          </TooltipProvider>
-        </ThemeProvider>
+        <NextIntlClientProvider locale={locale} messages={MESSAGES[locale]}>
+          <ThemeProvider storageKey="storybook-theme" forcedTheme={toggle ? undefined : globals.theme}>
+            {toggle && <SyncThemeWithToolbar toolbar={globals.theme} setToolbar={(theme) => updateGlobals({ theme })} />}
+            <TooltipProvider>
+              <Story />
+            </TooltipProvider>
+          </ThemeProvider>
+        </NextIntlClientProvider>
       )
     },
   ],

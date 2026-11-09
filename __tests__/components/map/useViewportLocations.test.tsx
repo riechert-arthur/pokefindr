@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { act, renderHook } from "@testing-library/react"
+import { act, renderHook } from "../../helpers/intl"
 import { useViewportLocations, viewportQuery, VIEWPORT_DEBOUNCE_MS, type ViewportMap } from "@/components/map/useViewportLocations"
 import type { LocationFeatureCollection } from "@/lib/types/locations"
 import { MAX_BBOX_AREA } from "@/lib/locations/bbox"

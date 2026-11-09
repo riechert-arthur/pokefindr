@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
 import { useCallback, useEffect, useState, type ReactNode } from "react"
 import { MenuIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"

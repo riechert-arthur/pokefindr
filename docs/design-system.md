@@ -42,7 +42,7 @@ doesn't go in `COLOR_TOKENS`. Check contrast in both themes.
 ## Type
 
 One family, **Noto Sans** (`font-sans`), plus **JetBrains Mono** (`font-mono`) for IDs and code.
-Both load through `next/font` in `src/app/layout.tsx`. Use the named sizes; each sets line height,
+Both load through `next/font` in `src/app/[locale]/layout.tsx`. Use the named sizes; each sets line height,
 tracking and (for headings) weight. They're defined once in
 [`src/lib/design/type-scale.ts`](../src/lib/design/type-scale.ts), which Tailwind and `cn()` both read:
 

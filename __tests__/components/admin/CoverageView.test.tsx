@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, render, screen, within } from "@testing-library/react"
+import { cleanup, render, screen, within } from "../../helpers/intl"
 import { CoverageView } from "@/components/admin/CoverageView"
 import type { Coverage } from "@/lib/admin/coverage"
 

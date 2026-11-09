@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { render } from "@testing-library/react"
+import { render } from "../helpers/intl"
 
 const { vercelTrack } = vi.hoisted(() => ({ vercelTrack: vi.fn() }))
 vi.mock("@vercel/analytics", () => ({ track: vercelTrack }))

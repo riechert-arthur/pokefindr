@@ -27,7 +27,7 @@ import { registrationSchema } from "@/lib/schemas"
 import axios from "axios"
 import type { OAuthProvider } from "@/lib/auth/providers"
 import { OAuthButtons } from "./OAuthButtons"
-import { useRouter } from "next/navigation"
+import { Link, useRouter } from "@/i18n/navigation"
 
 export function RegistrationForm({
   className,
@@ -169,9 +169,9 @@ export function RegistrationForm({
                 </div>
                 <div className="text-center text-sm">
                   Have an account already?{" "}
-                  <a href="/login" className="underline underline-offset-4">
+                  <Link href="/login" className="underline underline-offset-4">
                     Sign in
-                  </a>
+                  </Link>
                 </div>
               </div>
             </form>
@@ -179,8 +179,8 @@ export function RegistrationForm({
         </CardContent>
       </Card>
       <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-        By clicking continue, you agree to our <a href="/terms-of-service">Terms of Service</a>{" "}
-        and <a href="/privacy-policy">Privacy Policy</a>.
+        By clicking continue, you agree to our <Link href="/terms-of-service">Terms of Service</Link>{" "}
+        and <Link href="/privacy-policy">Privacy Policy</Link>.
       </div>
     </div>
   )

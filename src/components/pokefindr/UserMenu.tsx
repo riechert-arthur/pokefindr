@@ -1,8 +1,7 @@
 "use client"
 
-import Link from "next/link"
+import { Link, useRouter } from "@/i18n/navigation"
 import { useRef, useState } from "react"
-import { useRouter } from "next/navigation"
 import axios from "axios"
 import { toast } from "sonner"
 import { LogOutIcon, SettingsIcon } from "lucide-react"

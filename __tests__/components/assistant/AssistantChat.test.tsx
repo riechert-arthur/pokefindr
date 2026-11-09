@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { act, fireEvent, render, screen, waitFor } from "../../helpers/intl"
 import { AssistantChat } from "@/components/assistant/AssistantChat"
 import type { AssistantEvent } from "@/lib/types/assistant-stream"
 
