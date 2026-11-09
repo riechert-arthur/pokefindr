@@ -58,6 +58,17 @@ export async function settleBackgroundForTests() {
   await Promise.all(pending)
 }
 
+/**
+ * Whether Better Auth may create this user. An unconfirmed email is only
+ * allowed from our email sign-up, which confirms it next. From Google or
+ * Discord it's refused: Discord lets people sign in with an address it
+ * hasn't checked, so someone could take your email, and keep their
+ * Discord login on the account after you reset its password.
+ */
+export function mayCreateUser(user: { emailVerified: boolean }, endpoint: { path: string } | null): boolean {
+  return user.emailVerified || !endpoint || endpoint.path === "/sign-up/email"
+}
+
 function socialProviders(config: ServerConfig) {
   return {
     ...(config.GOOGLE_CLIENT_ID && { google: { clientId: config.GOOGLE_CLIENT_ID, clientSecret: config.GOOGLE_CLIENT_SECRET! } }),
@@ -107,6 +118,7 @@ function makeAuth(config: ServerConfig) {
     // Signing in with Google or Discord links to an existing account with the same
     // email only when both sides have confirmed it (Better Auth's default).
     socialProviders: socialProviders(config),
+    databaseHooks: { user: { create: { before: async (user, endpoint) => (mayCreateUser(user, endpoint) ? undefined : false) } } },
     session: { expiresIn: 60 * 60 * 24 * 7 },
     // In the database, so limits hold across serverless instances. On everywhere but tests.
     rateLimit: { enabled: config.NODE_ENV !== "test", storage: "database", window: 60, max: 100 },

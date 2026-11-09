@@ -80,6 +80,58 @@ describe("OAuth providers", () => {
     }
   })
 
+  /** Signs in through a fake Discord that reports this email and whether it checked it; returns the redirect. */
+  async function discordSignIn(email: string, verified: boolean) {
+    vi.stubEnv("DISCORD_CLIENT_ID", "discord-id")
+    vi.stubEnv("DISCORD_CLIENT_SECRET", "discord-secret")
+    resetServerConfigForTests()
+    resetAuthForTests()
+    const realFetch = globalThis.fetch
+    const discord = vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
+      const url = input instanceof Request ? input.url : String(input)
+      if (url.startsWith("https://discord.com/api/oauth2/token"))
+        return Response.json({ access_token: "at", token_type: "Bearer", expires_in: 3600, scope: "identify email" })
+      if (url.startsWith("https://discord.com/api/users/"))
+        return Response.json({ id: "4242", username: "trainer", email, verified, avatar: null, discriminator: "0" })
+      return realFetch(input, init)
+    })
+    try {
+      const start = await getAuth().handler(
+        new Request(`${APP}/api/identity/sign-in/social`, {
+          method: "POST",
+          headers: { "content-type": "application/json", origin: APP },
+          body: JSON.stringify({ provider: "discord", callbackURL: "/login/callback", errorCallbackURL: "/login?oauth=failed", disableRedirect: true }),
+        }),
+      )
+      const state = new URL(((await start.json()) as { url: string }).url).searchParams.get("state")!
+      const cookie = start.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ")
+      const res = await getAuth().handler(new Request(`${APP}/api/identity/callback/discord?code=c&state=${state}`, { headers: { cookie } }))
+      const signedIn = res.headers.getSetCookie().some((c) => c.includes("session_token=") && !c.includes("Max-Age=0"))
+      return { location: res.headers.get("location"), signedIn }
+    } finally {
+      discord.mockRestore()
+      vi.unstubAllEnvs()
+      resetServerConfigForTests()
+      resetAuthForTests()
+    }
+  }
+
+  it("won't make an account from an email Discord hasn't confirmed", async () => {
+    // Someone signing up as the owner of an address they don't have.
+    const { location, signedIn } = await discordSignIn("victim@example.com", false)
+    expect(location).toMatch(/^\/login\?oauth=failed&error=/)
+    expect(signedIn).toBe(false)
+    expect(await getDb().select().from(users).where(eq(users.email, "victim@example.com"))).toEqual([])
+  })
+
+  it("makes an account from an email Discord has confirmed", async () => {
+    const { location, signedIn } = await discordSignIn("ash@example.com", true)
+    expect(location).toBe("/login/callback")
+    expect(signedIn).toBe(true)
+    const [user] = await getDb().select().from(users).where(eq(users.email, "ash@example.com"))
+    expect(user.emailVerified).toBe(true)
+  })
+
   it("refuses a provider that isn't configured", async () => {
     const res = await getAuth().handler(
       new Request(`${APP}/api/identity/sign-in/social`, {
