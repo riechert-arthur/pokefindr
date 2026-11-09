@@ -74,12 +74,11 @@ describe("sign-up", () => {
     }
   })
 
-  it("a day later, frees the name either way: the hold lapses, and so does the unconfirmed account", async () => {
+  it("a day later, frees the name either way: the hold lapses, and the unconfirmed account's claim with it", async () => {
     await post(signup, form)
     await post(signup, { ...form, username: "probe_1" }) // taken email: only a hold
     await post(signup, { ...form, email: "new@example.com", username: "probe_2" }) // new email: an unconfirmed account
     await sql`update username_holds set expires_at = now() - interval '1 minute'`
-    await sql`update users set created_at = now() - interval '25 hours' where email = 'new@example.com'`
     expect((await post(signup, { ...form, email: "a@example.com", username: "probe_1" })).status).toBe(200)
     expect((await post(signup, { ...form, email: "b@example.com", username: "probe_2" })).status).toBe(200)
     // The expired account made way for the new one.
@@ -87,8 +86,28 @@ describe("sign-up", () => {
     // A confirmed account keeps its name for good.
     await confirm("b@example.com")
     await sql`update username_holds set expires_at = now() - interval '1 minute'`
-    await sql`update users set created_at = now() - interval '25 hours'`
     expect((await post(signup, { ...form, email: "c@example.com", username: "probe_2" })).status).toBe(409)
+  })
+
+  it("clears a lapsed unconfirmed account on any sign-up for its name, new email or taken", async () => {
+    await post(signup, form)
+    await post(signup, { ...form, email: "stale@example.com", username: "stale_1" })
+    await sql`update username_holds set expires_at = now() - interval '1 minute'`
+    // A taken email with that name: the lapsed account goes, the same as for a new email.
+    expect((await post(signup, { ...form, username: "stale_1" })).status).toBe(200)
+    expect(await getDb().select().from(users).where(eq(users.email, "stale@example.com"))).toEqual([])
+  })
+
+  it("keeps names from before our own accounts (profiles with no user row)", async () => {
+    await sql`alter table profiles drop constraint profiles_id_users_id_fk`
+    try {
+      await sql`insert into profiles (id, username, onboarded) values (gen_random_uuid(), 'old_timer', true)`
+      expect((await post(signup, { ...form, username: "Old_Timer" })).status).toBe(409)
+      expect((await post(signup, { ...form, email: "new@example.com", username: "old_timer" })).status).toBe(409)
+    } finally {
+      await sql`delete from profiles where username = 'old_timer'`
+      await sql`alter table profiles add constraint profiles_id_users_id_fk foreign key (id) references users (id) on delete cascade not valid`
+    }
   })
 
   it("lets go of the hold when the sign-up fails", async () => {
