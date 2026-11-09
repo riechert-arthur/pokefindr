@@ -4,6 +4,7 @@ import { useState, useSyncExternalStore } from "react"
 import { SponsoredSlot } from "@/components/pokefindr/SponsoredSlot"
 import { pickBanner, type SponsorPlacement } from "@/config/banners"
 import { cn } from "@/lib/utils"
+import { track } from "@/lib/analytics"
 
 /**
  * Sponsored slots (#136): one labeled, dismissible card per view, in the
@@ -63,7 +64,11 @@ export function SponsoredPlacement({ placement, className }: { placement: Sponso
         cta={banner.cta}
         href={banner.href}
         variant={strip ? "strip" : "compact"}
-        onDismiss={hideAds}
+        onDismiss={() => {
+          track("sponsored_dismiss", { placement, banner: banner.id })
+          hideAds()
+        }}
+        onFollow={() => track("sponsored_click", { placement, banner: banner.id })}
         className={strip ? undefined : className}
       />
     </>

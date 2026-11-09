@@ -3,9 +3,11 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { NavigationIcon } from "lucide-react"
+import { ArrowRightIcon, NavigationIcon } from "lucide-react"
+import { buttonVariants } from "@/components/ui/button"
 import { PlaceSearch, type PlacePick } from "@/components/search/PlaceSearch"
 import { DEFAULT_RADIUS, mapUrl, roundPlace } from "@/lib/map/url-state"
+import { track } from "@/lib/analytics"
 
 /** The map URL a pick opens: a place with the default radius, a state, or a location's details. */
 export function pickUrl(pick: PlacePick): string {
@@ -41,22 +43,34 @@ export function HeroSearch() {
           placement="below"
           query={query}
           onQueryChange={setQuery}
-          onPick={(pick) => router.push(pickUrl(pick))}
+          onPick={(pick) => {
+            track("open_map_from_landing", { via: "search" })
+            router.push(pickUrl(pick))
+          }}
           placeholder="City or address, like Denver, CO"
         />
       </div>
       <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-body text-muted-foreground">
         <span>Try</span>
         {QUICK_PICKS.map((p) => (
-          <Link key={p.label} href={mapUrl("/map", { q: p.label, lat: p.lat, lng: p.lng, r: DEFAULT_RADIUS })} className={chip}>
+          <Link key={p.label} href={mapUrl("/map", { q: p.label, lat: p.lat, lng: p.lng, r: DEFAULT_RADIUS })} className={chip} onClick={() => track("open_map_from_landing", { via: "quick_pick" })}>
             {p.label}
           </Link>
         ))}
-        <Link href={mapUrl("/map", { near: "me", r: DEFAULT_RADIUS })} className={chip}>
+        <Link href={mapUrl("/map", { near: "me", r: DEFAULT_RADIUS })} className={chip} onClick={() => track("open_map_from_landing", { via: "my_location" })}>
           <NavigationIcon className="size-3.5" aria-hidden />
           Use my location
         </Link>
       </div>
     </>
+  )
+}
+
+/** "View full map" under the search, counted as leaving the landing page for the map. */
+export function ViewMapLink() {
+  return (
+    <Link href="/map" className={buttonVariants({ variant: "outline" })} onClick={() => track("open_map_from_landing", { via: "button" })}>
+      View full map <ArrowRightIcon className="size-4" aria-hidden />
+    </Link>
   )
 }

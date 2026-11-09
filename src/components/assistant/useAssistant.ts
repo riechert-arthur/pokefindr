@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import type { AssistantCard } from "@/lib/types/assistant"
 import type { AssistantEvent, AssistantTurn } from "@/lib/types/assistant-stream"
 import { clipHistory, memoryOf } from "@/lib/assistant/memory"
+import { track } from "@/lib/analytics"
 
 export type ChatMessage =
   | { id: number; role: "user"; text: string }
@@ -89,6 +90,7 @@ export function useAssistant() {
     const update = (fn: (m: Extract<ChatMessage, { role: "assistant" }>) => Partial<Extract<ChatMessage, { role: "assistant" }>>) =>
       setMessages((ms) => ms.map((m) => (m.id === answerId && m.role === "assistant" ? { ...m, ...fn(m) } : m)))
     setMessages((ms) => [...ms, user, { id: answerId, role: "assistant", text: "", cards: [], status: "Thinking…", note: null, memory: null, turnId: null, done: false }])
+    track("assistant_query", { turn: history.filter((m) => m.role === "user").length })
     const abort = new AbortController()
     ctl.current = abort
     setBusy(true)

@@ -41,5 +41,29 @@ export function sendEvent(provider: AnalyticsProvider, event: string, props?: Ev
   }
 }
 
+/**
+ * The product events (#137) and their properties. Kinds and where something
+ * happened only: no ids, coordinates or typed text.
+ */
+export interface ProductEvents {
+  /** A search result picked: an area's kind ("city", "state", ...) or "location"; on the landing page or the map. */
+  search: { result: string; from: "landing" | "map" }
+  /** Leaving the landing page for the map. */
+  open_map_from_landing: { via: "search" | "quick_pick" | "my_location" | "button" }
+  /** A kind chip, the retailer filter or the radius. `value` is what's now on: kinds or retailers joined by commas ("all" when none filtered), or the miles. */
+  filter_change: { filter: "kinds" | "retailers" | "radius"; value: string }
+  /** A place's details opened: from the results list, a search, the map, or "Also nearby". */
+  details_open: { kind: string; from: "list" | "search" | "map" | "nearby" }
+  directions_click: { kind: string }
+  /** Add a place sent: stored, or held back as a possible duplicate. */
+  add_place_submit: { kind: string; outcome: "sent" | "duplicate" | "error" }
+  /** A question to the assistant; `turn` counts the conversation's questions. */
+  assistant_query: { turn: number }
+  sponsored_click: { placement: string; banner: string }
+  sponsored_dismiss: { placement: string; banner: string }
+}
+
 /** Records a product event with the configured provider. */
-export const track = (event: string, props?: EventProps) => sendEvent(publicConfig.analytics.provider, event, props)
+export function track<K extends keyof ProductEvents>(event: K, props: ProductEvents[K]): void {
+  sendEvent(publicConfig.analytics.provider, event, props)
+}
