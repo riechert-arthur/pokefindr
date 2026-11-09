@@ -1,8 +1,9 @@
+import { insertProfiles } from "./testDatabase"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { NextRequest } from "next/server"
 import { eq } from "drizzle-orm"
 import { getDb } from "@/server/db/client"
-import { assistantPlaceViews, assistantUsage, locations, profiles } from "@/server/db/schema"
+import { assistantPlaceViews, assistantUsage, locations } from "@/server/db/schema"
 import { resetServerConfigForTests } from "@/server/config"
 import { FakeGeocoder } from "@/server/adapters/geocoder/fake"
 import { setClaudeForTests } from "@/server/assistant/run"
@@ -20,7 +21,7 @@ const post = () =>
 
 beforeEach(async () => {
   resetLimitsForTests()
-  await getDb().insert(profiles).values([
+  await insertProfiles(getDb(), [
     { id: ME, username: "ash" },
     { id: OTHER, username: "misty" },
   ])
