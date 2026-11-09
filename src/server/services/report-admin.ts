@@ -1,7 +1,7 @@
 import "server-only"
 import { and, desc, eq, isNotNull, isNull, ne, sql } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
-import { locations, profiles, reportActions, statusReports } from "@/server/db/schema"
+import { eventDetails, locations, profiles, reportActions, statusReports } from "@/server/db/schema"
 import { RESOLUTION_OF, type ReportAction, type ReportReason, type ReportResolution } from "@/lib/locations/reports"
 import type { ReportedLocation } from "@/lib/admin/reports"
 
@@ -105,6 +105,12 @@ export async function actOnReports(locationId: string, action: ReportAction, act
       if (last.action === "hide" && location.hiddenAt) {
         // Back to how it was before the hide: one already off the map (an ended event, a retired machine) stays off.
         await tx.update(locations).set({ isActive: last.wasActive ?? true, hiddenAt: null, hiddenBy: null, updatedAt: now }).where(eq(locations.id, locationId))
+        // An event that ended while hidden: expire-events skipped it (it was inactive), so apply its rule here.
+        await tx.execute(sql`
+          update ${locations} l set is_active = false
+          from ${eventDetails} e
+          where e.location_id = l.id and l.id = ${locationId} and l.kind = 'event' and l.is_active
+            and coalesce(e.ends_at, e.starts_at + interval '1 day') < ${now.toISOString()}::timestamptz`)
       }
       await tx.insert(reportActions).values({ locationId, action, actedBy: actorId, reports: reopened.length, createdAt: now })
       return { status: "done", reports: reopened.length }

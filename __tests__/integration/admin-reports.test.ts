@@ -11,7 +11,7 @@ vi.mock("@/server/lib/jobs/enqueue", () => ({
 
 import { eq } from "drizzle-orm"
 import { getDb } from "@/server/db/client"
-import { locations, reportActions, statusReports } from "@/server/db/schema"
+import { eventDetails, locations, reportActions, statusReports } from "@/server/db/schema"
 import { GET as listRoute } from "@/app/api/admin/reports/route"
 import { POST as actRoute } from "@/app/api/admin/reports/[locationId]/route"
 import { GET as summaryRoute } from "@/app/api/admin/summary/route"
@@ -120,6 +120,19 @@ describe("admin reports", () => {
     const [row] = await getDb().select().from(locations).where(eq(locations.id, kroger))
     expect(row).toMatchObject({ isActive: false, hiddenAt: null })
     expect(await near()).toEqual([safeway])
+  })
+
+  it("Reopen leaves an event that ended while it was hidden off the map", async () => {
+    const [show] = await getDb().insert(locations).values({ name: "Card show", kind: "event", city: "Denver", state: "CO", geog: { lng: -104.99, lat: 39.74 } }).returning()
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000)
+    await getDb().insert(eventDetails).values({ locationId: show.id, startsAt: new Date(Date.now() - 60 * 60 * 1000), endsAt: tomorrow })
+    await getDb().insert(statusReports).values({ locationId: show.id, userId: MEMBER, reason: "gone" })
+    await act(show.id, "hide")
+    // It ends while hidden; expire-events skips it then, since it's already inactive.
+    await getDb().update(eventDetails).set({ endsAt: new Date(Date.now() - 60 * 1000) }).where(eq(eventDetails.locationId, show.id))
+    expect((await act(show.id, "reopen")).status).toBe(200)
+    const [row] = await getDb().select().from(locations).where(eq(locations.id, show.id))
+    expect(row).toMatchObject({ isActive: false, hiddenAt: null })
   })
 
   it("only reopens what the last action closed", async () => {
