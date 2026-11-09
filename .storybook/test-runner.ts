@@ -26,36 +26,44 @@ type A11yParameters = {
   options?: RunOptions
 }
 
+type Theme = "light" | "dark"
+/** Every story is checked in each language (#186). */
+const LOCALES = ["en", "es"] as const
+type Locale = (typeof LOCALES)[number]
+
 /**
- * Switches the theme the way the toolbar does (the `theme` global in
- * .storybook/preview.tsx), so next-themes, color-scheme and theme-aware
- * components like the Toaster all follow, then waits for the class.
+ * Switches the theme and language the way the toolbar does (the `theme` and
+ * `locale` globals in .storybook/preview.tsx), so next-themes, color-scheme,
+ * theme-aware components like the Toaster and next-intl all follow, then
+ * waits for the theme class and <html lang>.
  */
-async function setTheme(page: Page, theme: "light" | "dark") {
+async function setGlobals(page: Page, theme: Theme, locale: Locale) {
   // Resolves once the story has re-rendered for the new globals (or right away
-  // if the theme is already set and nothing re-renders).
+  // if they're already set and nothing re-renders).
   const outcome = await page.evaluate(
-    (t) =>
+    ({ t, l }) =>
       new Promise<string>((resolve) => {
-        if (document.documentElement.classList.contains(t)) return resolve("rendered")
+        const html = document.documentElement
+        if (html.classList.contains(t) && html.lang === l) return resolve("rendered")
         const channel = (window as unknown as {
           __STORYBOOK_ADDONS_CHANNEL__: { emit: (e: string, p: unknown) => void; once: (e: string, cb: () => void) => void }
         }).__STORYBOOK_ADDONS_CHANNEL__
         // Settle on whichever comes first: the re-render, a render error, or a timeout.
         for (const event of ["storyRendered", "storyErrored", "storyThrewException"]) channel.once(event, () => resolve(event))
         setTimeout(() => resolve("timeout"), 5000)
-        channel.emit("updateGlobals", { globals: { theme: t } })
+        channel.emit("updateGlobals", { globals: { theme: t, locale: l } })
       }),
-    theme,
+    { t: theme, l: locale },
   )
   if (outcome !== "rendered" && outcome !== "storyRendered") {
-    throw new Error(`Switching the story to the ${theme} theme failed (${outcome}); see the story's own error above.`)
+    throw new Error(`Switching the story to ${theme}, ${locale} failed (${outcome}); see the story's own error above.`)
   }
-  await page.waitForFunction((t) => document.documentElement.classList.contains(t), theme)
+  await page.waitForFunction(({ t, l }) => document.documentElement.classList.contains(t) && document.documentElement.lang === l, { t: theme, l: locale })
 }
 
 /**
- * Runs axe on every story after it renders, in light and dark.
+ * Runs axe on every story after it renders, in light and dark, in each
+ * language (longer Spanish labels can overflow or overlap).
  *
  * Waivers are per story, through the same parameters the a11y panel reads:
  *   parameters: { a11y: { config: { rules: [{ id: "color-contrast", enabled: false }] } } }
@@ -101,8 +109,8 @@ const config: TestRunnerConfig = {
 
     const failures: string[] = []
     try {
-      for (const theme of ["light", "dark"] as const) {
-        await setTheme(page, theme)
+      for (const [locale, theme] of LOCALES.flatMap((l) => (["light", "dark"] as const).map((t) => [l, t] as const))) {
+        await setGlobals(page, theme, locale)
         const args = { spec: a11y.config, options: a11y.options, rules, context: a11y.context ?? DEFAULT_CONTEXT }
         const results = (await page.evaluate(async (a: typeof args) => {
           // The addon's own runs are off under the runner (see prepare above), so it
@@ -115,15 +123,15 @@ const config: TestRunnerConfig = {
         }, args as never)) as AxeResults
 
         for (const v of results.violations) {
-          const line = `[${theme}] ${v.impact} ${v.id}: ${v.help}\n    ${v.nodes.map((n) => `${n.target.join(" ")} — ${n.any[0]?.message ?? n.failureSummary}`).join("\n    ")}`
+          const line = `[${locale}, ${theme}] ${v.impact} ${v.id}: ${v.help}\n    ${v.nodes.map((n) => `${n.target.join(" ")} — ${n.any[0]?.message ?? n.failureSummary}`).join("\n    ")}`
           if (v.impact && FAILING.includes(v.impact)) failures.push(line)
           else console.warn(`${context.title} › ${context.name}\n  ${line}`)
         }
       }
     } finally {
       // The page is reused for the next story in the file: leave it on the
-      // default theme. A failure here mustn't hide the error above.
-      await setTheme(page, "light").catch((error) => console.warn(`Couldn't restore the light theme: ${error}`))
+      // default theme and language. A failure here mustn't hide the error above.
+      await setGlobals(page, "light", "en").catch((error) => console.warn(`Couldn't restore the light theme in English: ${error}`))
       // Stories with parameters.themeToggle store their theme (next-themes): clear
       // it so the next story on the page starts from the default, whatever ran before.
       await page.evaluate(() => localStorage.removeItem("storybook-theme")).catch(() => {})

@@ -93,7 +93,8 @@ export function AppRail({ signedIn = false, isAdmin = false, className, ref }: A
       <div className="mt-auto flex flex-col items-center gap-2">
         <RailLink item={DISCORD} current={false} />
         {signedIn && <RailLink item={SETTINGS} current={isCurrent(SETTINGS.href)} />}
-        <LanguageSwitcher variant="compact" className="px-1.5" />
+        {/* The rail is narrow: no chevron. */}
+        <LanguageSwitcher variant="compact" className="px-1.5 [&>svg:last-child]:hidden" />
         <ThemeToggle variant="toggle" className={cn(itemClass, "p-0 [&_svg]:size-5")} />
       </div>
     </nav>

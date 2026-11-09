@@ -75,6 +75,8 @@ const preview: Preview = {
       const [globals, updateGlobals] = useGlobals()
       const toggle = Boolean(parameters.themeToggle)
       const locale: Locale = LOCALES.includes(globals.locale) ? globals.locale : DEFAULT_LOCALE
+      // As the app's layout sets it, so screen readers (and axe) know the language.
+      if (typeof document !== "undefined") document.documentElement.lang = locale
       return (
         <NextIntlClientProvider locale={locale} messages={MESSAGES[locale]}>
           <ThemeProvider storageKey="storybook-theme" forcedTheme={toggle ? undefined : globals.theme}>

@@ -698,7 +698,7 @@ landing:
       states: "{count, plural, one {estado} other {estados}}"
       countries: país, pronto más
   search:
-    placeholder: Ciudad o dirección, como Denver, CO
+    placeholder: Ciudad o dirección, ej. Denver
     try: Prueba
     myLocation: Usar mi ubicación
     viewMap: Ver el mapa completo
@@ -728,7 +728,7 @@ faq:
   items:
     what:
       question: ¿Qué es una máquina expendedora de Pokémon?
-      answer: Una máquina de venta automática que vende productos oficiales del Juego de Cartas Coleccionables Pokémon, como sobres y Cajas de Entrenador Élite. Las surte The Pokémon Company International, así que todo lo que contienen es auténtico.
+      answer: Una máquina expendedora que vende productos oficiales del Juego de Cartas Coleccionables Pokémon, como sobres y Cajas de Entrenador Élite. Las surte The Pokémon Company International, así que todo lo que contienen es auténtico.
     map:
       question: ¿Cómo uso el mapa?
       answer: Busca una ciudad o dirección desde la página de inicio o el mapa. El mapa se abre en esa zona y muestra cada lugar dentro de tu radio, primero el más cercano. Aleja el mapa para ver todo el país, o elige un estado para explorarlo.
