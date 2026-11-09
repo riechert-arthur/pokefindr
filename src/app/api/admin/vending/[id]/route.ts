@@ -6,14 +6,14 @@ import { undoVendingMachine } from "@/server/services/vending"
 
 export const dynamic = "force-dynamic"
 
-/** DELETE /api/admin/vending/:id: undoes adding a machine by hand (#155), a soft delete. Admins only. */
+/** DELETE /api/admin/vending/:id: undoes adding a machine by hand (#155), deleting the row. Admins only. */
 export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const staff = await requireStaff(request, "admin")
   if (staff instanceof NextResponse) return staff
   const id = z.string().uuid().safeParse((await context.params).id)
   if (!id.success) return NextResponse.json({ error: "Machine not found" }, { status: 404 })
   try {
-    if (!(await undoVendingMachine(id.data, staff.userId))) return NextResponse.json({ error: "Only a machine added here, still on the map, can be undone." }, { status: 404 })
+    if (!(await undoVendingMachine(id.data))) return NextResponse.json({ error: "Only a machine added here can be undone." }, { status: 404 })
     await enqueueJob("refresh-region-counts", {}).catch((err) => console.error("[api/admin/vending] couldn't queue the counts refresh", err))
     return NextResponse.json({ ok: true })
   } catch (err) {

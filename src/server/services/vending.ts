@@ -103,14 +103,14 @@ export async function addVendingMachine(input: NewVendingMachine, adminId: strin
 }
 
 /**
- * Undo for a machine added by hand (#155): a soft delete (off the map, like a
- * hidden location), so its history stays. Only manual rows.
+ * Undo for a machine added by hand (#155): the add was a mistake, so the row
+ * is deleted, which frees its machine ID to be entered again. Only manual
+ * rows the import hasn't taken over. Whoever undoes it isn't recorded.
  */
-export async function undoVendingMachine(id: string, adminId: string, db: Database = getDb()): Promise<boolean> {
+export async function undoVendingMachine(id: string, db: Database = getDb()): Promise<boolean> {
   const done = await db
-    .update(locations)
-    .set({ isActive: false, hiddenAt: new Date(), hiddenBy: adminId, updatedAt: new Date() })
-    .where(and(eq(locations.id, id), eq(locations.source, "manual"), eq(locations.kind, "vending"), eq(locations.isActive, true)))
+    .delete(locations)
+    .where(and(eq(locations.id, id), eq(locations.source, "manual"), eq(locations.kind, "vending")))
     .returning({ id: locations.id })
   return done.length > 0
 }

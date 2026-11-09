@@ -76,16 +76,21 @@ describe("POST /api/admin/vending", () => {
 })
 
 describe("DELETE /api/admin/vending/:id (Undo)", () => {
-  it("takes a machine added here off the map, and only those", async () => {
+  it("removes a machine added here, and only those", async () => {
     const { id } = await (await add(machine())).json()
     expect((await undo(id)).status).toBe(200)
     expect(await near()).not.toContain(id)
-    const [row] = await getDb().select().from(locations).where(eq(locations.id, id))
-    expect(row).toMatchObject({ isActive: false, hiddenBy: ADMIN })
+    expect(await getDb().select().from(locations).where(eq(locations.id, id))).toEqual([])
     // Already undone, and an official machine can't be undone.
     expect((await undo(id)).status).toBe(404)
     const [official] = await getDb().select().from(locations).where(eq(locations.machineId, "Q00014"))
     expect((await undo(official.id)).status).toBe(404)
+  })
+
+  it("lets the machine be entered again after an undo", async () => {
+    const { id } = await (await add(machine({ address: "1 Wrong St" }))).json()
+    await undo(id)
+    expect((await add(machine())).status).toBe(201)
   })
 })
 
