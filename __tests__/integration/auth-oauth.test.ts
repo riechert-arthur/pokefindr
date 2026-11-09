@@ -124,6 +124,14 @@ describe("OAuth providers", () => {
     expect(await getDb().select().from(users).where(eq(users.email, "victim@example.com"))).toEqual([])
   })
 
+  it("fails the same way for an unconfirmed email whether or not it has an account", async () => {
+    const free = await discordSignIn("nobody@example.com", false)
+    await newOAuthUser("taken@example.com")
+    const taken = await discordSignIn("taken@example.com", false)
+    expect(taken.location).toBe(free.location)
+    expect(taken.signedIn).toBe(false)
+  })
+
   it("makes an account from an email Discord has confirmed", async () => {
     const { location, signedIn } = await discordSignIn("ash@example.com", true)
     expect(location).toBe("/login/callback")

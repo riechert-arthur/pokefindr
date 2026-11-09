@@ -69,10 +69,29 @@ export function mayCreateUser(user: { emailVerified: boolean }, endpoint: { path
   return user.emailVerified || !endpoint || endpoint.path === "/sign-up/email"
 }
 
+/**
+ * Drops an email the provider hasn't confirmed before Better Auth looks it
+ * up, so the sign-in fails the same way whether or not that address has an
+ * account here (email_not_found). Otherwise its error would say which.
+ */
+const onlyConfirmedEmail = (confirmed: boolean | undefined) => (confirmed ? {} : { email: undefined })
+
 function socialProviders(config: ServerConfig) {
   return {
-    ...(config.GOOGLE_CLIENT_ID && { google: { clientId: config.GOOGLE_CLIENT_ID, clientSecret: config.GOOGLE_CLIENT_SECRET! } }),
-    ...(config.DISCORD_CLIENT_ID && { discord: { clientId: config.DISCORD_CLIENT_ID, clientSecret: config.DISCORD_CLIENT_SECRET! } }),
+    ...(config.GOOGLE_CLIENT_ID && {
+      google: {
+        clientId: config.GOOGLE_CLIENT_ID,
+        clientSecret: config.GOOGLE_CLIENT_SECRET!,
+        mapProfileToUser: (profile: { email_verified?: boolean }) => onlyConfirmedEmail(profile.email_verified),
+      },
+    }),
+    ...(config.DISCORD_CLIENT_ID && {
+      discord: {
+        clientId: config.DISCORD_CLIENT_ID,
+        clientSecret: config.DISCORD_CLIENT_SECRET!,
+        mapProfileToUser: (profile: { verified?: boolean }) => onlyConfirmedEmail(profile.verified),
+      },
+    }),
   }
 }
 
