@@ -4,7 +4,24 @@
  * Each variable must be referenced literally (`process.env.NEXT_PUBLIC_X`)
  * so Next.js can inline it into the client bundle at build time.
  */
+/** Where analytics events go (#53). */
+export const ANALYTICS_PROVIDERS = ["none", "vercel", "plausible", "umami"] as const
+export type AnalyticsProvider = (typeof ANALYTICS_PROVIDERS)[number]
+
+/** The configured provider; anything unset or unknown is "none", so local dev and CI send nothing. */
+export function analyticsProviderOf(value: string | undefined): AnalyticsProvider {
+  const v = value?.trim().toLowerCase()
+  return (ANALYTICS_PROVIDERS as readonly string[]).includes(v ?? "") ? (v as AnalyticsProvider) : "none"
+}
+
 export const publicConfig = {
+  analytics: {
+    provider: analyticsProviderOf(process.env.NEXT_PUBLIC_ANALYTICS_PROVIDER),
+    /** Plausible: the site's domain. Umami: the website id. */
+    site: process.env.NEXT_PUBLIC_ANALYTICS_SITE,
+    /** Plausible or Umami self-hosted: the tracker script's URL. Defaults to their cloud. */
+    scriptUrl: process.env.NEXT_PUBLIC_ANALYTICS_SCRIPT_URL,
+  },
   // Left undefined when unset, so the banner omits `src`/`href` instead of
   // rendering empty strings.
   affiliate: {
