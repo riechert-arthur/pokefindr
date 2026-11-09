@@ -1,5 +1,6 @@
 import "server-only"
 import { isJobName, jobs } from "./registry"
+import { finishRun, pausedReason, recordSkipped, startRun } from "./history"
 import type { JobContext, JobResult } from "./types"
 
 export class UnknownJobError extends Error {
@@ -24,8 +25,10 @@ export class InvalidJobPayloadError extends Error {
  * validated: callers map {@link UnknownJobError} and
  * {@link InvalidJobPayloadError} to their own responses (404/400, retry or ack).
  *
- * Logs one line per run (name, trigger, duration, outcome) and rethrows
- * failures so the caller can report them or let the queue retry.
+ * Logs one line per run (name, trigger, duration, outcome), records it in
+ * job_runs for the admin's Jobs page (#157), and rethrows failures so the
+ * caller can report them or let the queue retry. A paused job is recorded
+ * as skipped instead (except from the CLI).
  */
 export async function runJob(name: string, payload: unknown, ctx: JobContext): Promise<JobResult> {
   if (!isJobName(name)) throw new UnknownJobError(name)
@@ -40,14 +43,27 @@ export async function runJob(name: string, payload: unknown, ctx: JobContext): P
     input = parsed.data
   }
 
-  const started = performance.now()
   const where = { job: name, trigger: ctx.trigger, messageId: ctx.messageId, deliveryCount: ctx.deliveryCount }
+  // A paused job (#157) doesn't run from cron or the queue; the CLI still runs it, on purpose.
+  if (ctx.trigger !== "cli") {
+    const paused = await pausedReason(name)
+    if (paused) {
+      console.info("[jobs] skipped: paused", { ...where, reason: paused })
+      await recordSkipped(name, ctx.trigger, paused)
+      return { skipped: true, paused }
+    }
+  }
+
+  const started = performance.now()
+  const runId = await startRun(name, ctx.trigger)
   try {
     const result = (await job.run(input, ctx)) ?? {}
     console.info("[jobs] ok", { ...where, ms: Math.round(performance.now() - started) })
+    await finishRun(runId, "succeeded", { result })
     return result
   } catch (err) {
     console.error("[jobs] failed", { ...where, ms: Math.round(performance.now() - started) }, err)
+    await finishRun(runId, "failed", { error: err instanceof Error ? err.message : String(err) })
     throw err
   }
 }

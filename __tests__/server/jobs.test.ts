@@ -4,6 +4,8 @@ import type { MessageMetadata } from "@vercel/queue"
 import { z } from "zod/v3"
 
 vi.mock("server-only", () => ({}))
+// Run history needs Postgres; the integration tests cover it.
+vi.mock("@/server/lib/jobs/history", () => ({ pausedReason: async () => null, startRun: async () => null, finishRun: async () => {}, recordSkipped: async () => {} }))
 const send = vi.fn()
 vi.mock("@vercel/queue", () => ({
   send: (...args: unknown[]) => send(...args),

@@ -547,6 +547,39 @@ export const reportActions = pgTable(
   ],
 )
 
+/** How a job run ended (#157). */
+export const JOB_RUN_STATUSES = ["running", "succeeded", "failed", "skipped"] as const
+export type JobRunStatus = (typeof JOB_RUN_STATUSES)[number]
+
+/** One row per job run (#157): written by runJob and the location import. */
+export const jobRuns = pgTable(
+  "job_runs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    job: text("job").notNull(),
+    /** cron, queue, http, inline, cli, or deploy (the location import). */
+    trigger: text("trigger").notNull(),
+    status: text("status").$type<JobRunStatus>().notNull(),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+    /** The job's counts. */
+    result: jsonb("result").$type<Record<string, unknown>>(),
+    error: text("error"),
+  },
+  (t) => [
+    index("job_runs_job_started_idx").on(t.job, t.startedAt),
+    check("job_runs_status_check", sql`${t.status} in ('running', 'succeeded', 'failed', 'skipped')`),
+  ],
+)
+
+/** A paused job (#157): cron and queue runs skip it. */
+export const jobPauses = pgTable("job_pauses", {
+  job: text("job").primaryKey(),
+  reason: text("reason").notNull(),
+  pausedBy: uuid("paused_by").references(() => profiles.id, { onDelete: "set null" }),
+  pausedAt: timestamp("paused_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
 export const subscriptions = pgTable(
   "subscriptions",
   {

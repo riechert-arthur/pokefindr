@@ -42,6 +42,11 @@ export const ADMIN_GROUPS: readonly AdminGroup[] = [
       },
     ],
   },
+  {
+    id: "system",
+    label: "System",
+    sections: [{ id: "jobs", label: "Jobs", sub: "Background jobs that keep locations up to date.", access: "admin" }],
+  },
 ]
 
 export const ADMIN_SECTIONS: readonly AdminSection[] = ADMIN_GROUPS.flatMap((g) => g.sections)

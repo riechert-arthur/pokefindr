@@ -10,6 +10,7 @@ import { ReviewQueue } from "@/components/admin/ReviewQueue"
 import { ReportsTable } from "@/components/admin/ReportsTable"
 import { AddVendingForm } from "@/components/admin/AddVendingForm"
 import { CoverageView } from "@/components/admin/CoverageView"
+import { JobsTable } from "@/components/admin/JobsTable"
 import { REPORTS_HOT } from "@/lib/admin/reports"
 import { RefreshSummary } from "@/components/admin/useRefreshSummary"
 import { DEFAULT_SECTION, groupsFor, sectionFor } from "@/lib/admin/sections"
@@ -45,6 +46,7 @@ const SECTIONS: Record<string, () => ReactNode> = {
   reports: () => <ReportsTable />,
   coverage: () => <CoverageView />,
   "add-vending": () => <AddVendingForm />,
+  jobs: () => <JobsTable />,
 }
 
 /**
