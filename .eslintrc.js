@@ -132,10 +132,12 @@ module.exports = {
       rules: { "no-restricted-syntax": ["error", ...ENV_RULES, ...COLOR_RULES] },
     },
     {
-      // Illustrations, generated images (which can't read CSS variables) and the
-      // token runtime, which turns token channels into color strings.
+      // Illustrations, generated images and emails (which can't read CSS
+      // variables) and the token runtime, which turns token channels into
+      // color strings. Email colors are tested against the tokens.
       files: [
         "src/components/icons/**",
+        "src/server/email/**",
         "src/app/**/{opengraph-image,twitter-image,icon,apple-icon}.{tsx,ts,jsx,js}",
         "src/lib/design/**",
       ],
