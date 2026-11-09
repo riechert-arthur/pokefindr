@@ -1,5 +1,5 @@
 import "server-only"
-import { eq, inArray } from "drizzle-orm"
+import { and, eq, inArray, isNull, lt } from "drizzle-orm"
 import { z } from "zod"
 import { getDb, type Database } from "@/server/db/client"
 import { locationSubmissions, profiles, sentNotifications, users } from "@/server/db/schema"
@@ -8,25 +8,39 @@ import { getServerConfig } from "@/server/config"
 import { submissionApproved, submissionRejected, submissionToReview, type EmailContent } from "@/server/email/templates"
 import { defineJob } from "@/server/lib/jobs/types"
 import { REJECT_REASON_LABELS } from "@/lib/submissions/constants"
+import { UNDO_MS } from "@/lib/submissions/moderation"
 
-/** How long after a decision the submitter hears about it, so an undo (within the hour) usually comes first. */
-export const REVIEWED_EMAIL_DELAY_SECONDS = 10 * 60
+/** How long after a decision the submitter hears about it: past the undo window, so an undone decision sends nothing. */
+export const REVIEWED_EMAIL_DELAY_SECONDS = UNDO_MS / 1000 + 5 * 60
+/** A claim this old with no `sent_at` is from a run that died mid-send; the next run may take it. Longer than any send can take. */
+export const STALE_CLAIM_MS = 10 * 60 * 1000
 
 /**
- * Sends one email at most once for `key`: claims the key, sends, and gives
- * the key back if the send fails, so the job's retry sends it. Returns
- * whether it sent now.
+ * Sends one email at most once for `key`: claims the key, sends, marks it
+ * sent. If the send fails it gives the key back, so the job's retry sends
+ * it; if the run dies mid-send, the claim goes stale and a later run takes
+ * it. Returns whether it sent now.
  */
-async function sendOnce(key: string, to: string, email: EmailContent, db: Database): Promise<boolean> {
-  const claimed = await db.insert(sentNotifications).values({ key }).onConflictDoNothing().returning({ key: sentNotifications.key })
+async function sendOnce(key: string, to: string, email: EmailContent, db: Database, now = new Date()): Promise<boolean> {
+  const staleBefore = new Date(now.getTime() - STALE_CLAIM_MS)
+  const claimed = await db
+    .insert(sentNotifications)
+    .values({ key, claimedAt: now })
+    .onConflictDoUpdate({
+      target: sentNotifications.key,
+      set: { claimedAt: now },
+      setWhere: and(isNull(sentNotifications.sentAt), lt(sentNotifications.claimedAt, staleBefore)),
+    })
+    .returning({ key: sentNotifications.key })
   if (!claimed.length) return false
   try {
     await getMailer().send({ to, ...email })
-    return true
   } catch (err) {
-    await db.delete(sentNotifications).where(eq(sentNotifications.key, key))
+    await db.delete(sentNotifications).where(and(eq(sentNotifications.key, key), isNull(sentNotifications.sentAt)))
     throw err
   }
+  await db.update(sentNotifications).set({ sentAt: new Date() }).where(eq(sentNotifications.key, key))
+  return true
 }
 
 async function loadSubmission(id: string, db: Database) {
@@ -61,11 +75,19 @@ export async function notifySubmissionCreated(submissionId: string, db: Database
     submitter: row.submitter,
     url: `${getServerConfig().APP_URL}/admin/review`,
   })
+  // Each moderator on their own: one bad address mustn't stop the rest. The
+  // job fails afterwards if any failed, so the retry sends just those.
   let sent = 0
+  const failed: unknown[] = []
   for (const m of moderators) {
     if (m.id === row.s.submittedBy) continue
-    if (await sendOnce(`submission-created:${submissionId}:${m.id}`, m.email, email, db)) sent++
+    try {
+      if (await sendOnce(`submission-created:${submissionId}:${m.id}`, m.email, email, db)) sent++
+    } catch (err) {
+      failed.push(err)
+    }
   }
+  if (failed.length) throw new AggregateError(failed, `${failed.length} of the moderator emails failed`)
   return { sent }
 }
 

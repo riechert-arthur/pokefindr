@@ -532,12 +532,16 @@ export const eventDetails = pgTable(
   ],
 )
 
-/** Emails sent for an event, keyed by event and recipient, so a retried job sends each once (migration 0013). */
+/**
+ * Emails for an event, keyed by event and recipient, so a retried job sends
+ * each once (migration 0013): claimed, then `sent_at` once the mailer took it.
+ */
 export const sentNotifications = pgTable(
   "sent_notifications",
   {
     key: text("key").primaryKey(),
-    sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
+    claimedAt: timestamp("claimed_at", { withTimezone: true }).notNull().defaultNow(),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
   },
-  (t) => [index("sent_notifications_sent_at_idx").on(t.sentAt)],
+  (t) => [index("sent_notifications_claimed_at_idx").on(t.claimedAt)],
 )

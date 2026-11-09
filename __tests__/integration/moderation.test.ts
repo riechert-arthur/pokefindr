@@ -127,8 +127,8 @@ describe("the review queue", () => {
     expect((await act(id, { action: "reject" })).status).toBe(400)
     expect((await act(id, { action: "reject", reason: "spam" })).status).toBe(200)
     expect((await listMySubmissions(ASH))[0]).toMatchObject({ status: "rejected", rejectReason: "spam" })
-    // The submitter hears in a few minutes, keyed to this decision.
-    expect(enqueued).toMatchObject([{ job: "submission-reviewed", payload: { submissionId: id }, options: { delaySeconds: 600 } }])
+    // The submitter hears once the undo hour is over, keyed to this decision.
+    expect(enqueued).toMatchObject([{ job: "submission-reviewed", payload: { submissionId: id }, options: { delaySeconds: 3900 } }])
     expect(await getDb().select().from(locations)).toEqual([])
     const { queue, decided } = await (await list(MOD)).json()
     expect(queue).toEqual([])

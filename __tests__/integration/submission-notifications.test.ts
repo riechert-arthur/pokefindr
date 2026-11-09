@@ -3,19 +3,19 @@ import { randomUUID } from "node:crypto"
 import { eq } from "drizzle-orm"
 import type { MailMessage } from "@/server/ports/mailer"
 
-const { outbox, mail } = vi.hoisted(() => ({ outbox: [] as MailMessage[], mail: { down: false } }))
+const { outbox, mail } = vi.hoisted(() => ({ outbox: [] as MailMessage[], mail: { down: false, bounce: "" } }))
 vi.mock("@/server/container", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/server/container")>()),
   getMailer: () => ({
     send: async (m: MailMessage) => {
-      if (mail.down) throw new Error("smtp down")
+      if (mail.down || m.to === mail.bounce) throw new Error("smtp down")
       outbox.push(m)
     },
   }),
 }))
 
 import { getDb } from "@/server/db/client"
-import { profiles } from "@/server/db/schema"
+import { profiles, sentNotifications } from "@/server/db/schema"
 import { createSubmission } from "@/server/services/submissions"
 import { approveSubmission, rejectSubmission, undoDecision } from "@/server/services/moderation"
 import { notifySubmissionCreated, notifySubmissionReviewed } from "@/server/services/submission-notifications"
@@ -30,6 +30,7 @@ const ADMIN = randomUUID()
 beforeEach(async () => {
   outbox.length = 0
   mail.down = false
+  mail.bounce = ""
   await insertProfiles(getDb(), [
     { id: ASH, username: "ash" },
     { id: MOD, username: "brock" },
@@ -60,9 +61,31 @@ describe("submission-created", () => {
   it("sends again on the retry when the mailer failed", async () => {
     const id = await submit()
     mail.down = true
-    await expect(notifySubmissionCreated(id)).rejects.toThrow("smtp down")
+    await expect(notifySubmissionCreated(id)).rejects.toThrow("2 of the moderator emails failed")
     mail.down = false
     expect(await notifySubmissionCreated(id)).toEqual({ sent: 2 })
+  })
+
+  it("still reaches the other moderators when one address fails, and retries only that one", async () => {
+    const id = await submit()
+    mail.bounce = `${MOD}@example.test`
+    await expect(notifySubmissionCreated(id)).rejects.toThrow("1 of the moderator emails failed")
+    expect(outbox.map((m) => m.to)).toEqual([`${ADMIN}@example.test`])
+    mail.bounce = ""
+    expect(await notifySubmissionCreated(id)).toEqual({ sent: 1 })
+    expect(outbox.map((m) => m.to).sort()).toEqual([`${ADMIN}@example.test`, `${MOD}@example.test`].sort())
+  })
+
+  it("sends one whose run died mid-send, once its claim is stale, and not before", async () => {
+    const id = await submit()
+    // A run claimed both and died before sending.
+    const claimedAt = new Date(Date.now() - 60_000)
+    await getDb().insert(sentNotifications).values([MOD, ADMIN].map((m) => ({ key: `submission-created:${id}:${m}`, claimedAt })))
+    expect(await notifySubmissionCreated(id)).toEqual({ sent: 0 })
+    await getDb().update(sentNotifications).set({ claimedAt: new Date(Date.now() - 11 * 60_000) })
+    expect(await notifySubmissionCreated(id)).toEqual({ sent: 2 })
+    expect(await notifySubmissionCreated(id)).toEqual({ sent: 0 })
+    expect((await getDb().select().from(sentNotifications)).every((r) => r.sentAt)).toBe(true)
   })
 
   it("sends nothing once someone decided it", async () => {
