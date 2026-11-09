@@ -5,6 +5,9 @@
  *
  * Fails with the duplicates listed, rather than picking a winner, if the
  * database already has any.
+ *
+ * Also `username_holds`: a sign-up holds its username for a day whether its
+ * email is new or taken, so the username can't be used to find out which.
  */
 import { sql, type Kysely } from "kysely"
 
@@ -13,8 +16,10 @@ export async function up(db: Kysely<unknown>): Promise<void> {
     select lower(username) as name, count(*)::int as n from profiles group by 1 having count(*) > 1 order by 1 limit 20`.execute(db)
   if (rows.length) throw new Error(`Usernames used more than once (rename all but one, then rerun): ${rows.map((r) => `${r.name} (${r.n})`).join(", ")}`)
   await sql`create unique index profiles_username_lower_key on profiles (lower(username))`.execute(db)
+  await sql`create table username_holds (username text primary key, expires_at timestamp with time zone not null)`.execute(db)
 }
 
 export async function down(db: Kysely<unknown>): Promise<void> {
+  await db.schema.dropTable("username_holds").execute()
   await db.schema.dropIndex("profiles_username_lower_key").execute()
 }

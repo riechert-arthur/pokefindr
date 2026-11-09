@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { registrationSchema } from "@/lib/schemas"
 import { VERIFIED_CALLBACK } from "@/lib/auth/paths"
 import { identityRequest, refuseCrossSite } from "@/server/auth/identity"
-import { createProfile, deleteUser, userExists, usernameTaken, UsernameTakenError } from "@/server/services/users"
+import { createProfile, deleteUser, holdUsername, userExists, usernameTaken, UsernameTakenError } from "@/server/services/users"
 
 /**
  * Email sign-up. Better Auth creates the user and sends the confirmation
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const parsed = registrationSchema.safeParse(await req.json().catch(() => null))
   if (!parsed.success) return NextResponse.json({ error: parsed.error.errors.map((e) => e.message).join(", ") }, { status: 400 })
   const { email, password, name } = parsed.data
-  const username = parsed.data.username.trim()
+  const username = parsed.data.username
 
   if (await usernameTaken(username)) return NextResponse.json({ error: "That username is already taken" }, { status: 409 })
 
@@ -27,6 +27,8 @@ export async function POST(req: NextRequest) {
   }
 
   const { user } = (await res.json()) as { user: { id: string } }
+  // Held either way, so the username can't show whether the email was new.
+  await holdUsername(username)
   // An email that already has an account gets a made-up user back: nothing to add.
   if (await userExists(user.id)) {
     try {

@@ -16,6 +16,7 @@ export const registrationSchema = z
       .regex(/^[\p{L} ]+$/u, { message: "Only letters are allowed." }),
     username: z
       .string()
+      .trim()
       .nonempty({ message: "Please enter a username." }),
     email: z
       .string()
