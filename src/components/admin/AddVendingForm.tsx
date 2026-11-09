@@ -180,13 +180,13 @@ export function AddVendingForm() {
             <p className="text-body text-muted-foreground">For machines missing from the official list. It goes live as soon as you add it.</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="grid gap-1.5">
+            <div className="grid content-start gap-1.5">
               <Label htmlFor={field("retailer")}>
                 Retailer <span aria-hidden className="text-destructive">*</span>
               </Label>
               <Input id={field("retailer")} required list={`${ids}-retailers`} autoComplete="off" value={draft.retailer} onChange={set("retailer")} placeholder="Fred Meyer" />
             </div>
-            <div className="grid gap-1.5">
+            <div className="grid content-start gap-1.5">
               <Label htmlFor={field("machineId")}>
                 Machine ID <span aria-hidden className="text-destructive">*</span>
               </Label>
@@ -206,19 +206,19 @@ export function AddVendingForm() {
               </p>
             </div>
           </div>
-          <div className="grid gap-1.5">
+          <div className="grid content-start gap-1.5">
             <Label htmlFor={field("address")}>
               Street address <span aria-hidden className="text-destructive">*</span>
             </Label>
             <Input id={field("address")} required autoComplete="off" value={draft.address} onChange={set("address")} placeholder="12221 120th Ave NE" />
           </div>
-          <div className="grid gap-1.5">
+          <div className="grid content-start gap-1.5">
             <Label htmlFor={field("cityState")}>
               City and state <span aria-hidden className="text-destructive">*</span>
             </Label>
             <Input id={field("cityState")} required list={`${ids}-cities`} autoComplete="off" value={draft.cityState} onChange={set("cityState")} placeholder="Kirkland, WA" />
           </div>
-          <div className="grid gap-1.5">
+          <div className="grid content-start gap-1.5">
             <Label htmlFor={field("pin")}>
               Pin <span aria-hidden className="text-destructive">*</span>
             </Label>
