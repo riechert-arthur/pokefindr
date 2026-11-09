@@ -95,21 +95,23 @@ function readsOf(code: string) {
     } else if (m[3]) exact.add(m[3])
   }
   // t(failure), t(kind): a key from a variable holding one of a set of strings.
-  const byVariable = /\bt\(\s*[A-Za-z_]\w*\s*[,)]/.test(code)
-  return { namespaces, exact, patterns, byVariable }
+  const byVariable = /\bt\(\s*[A-Za-z_]\w*(?:\s+as\s+\w+)?\s*[,)]/.test(code)
+  // Object keys (`AK: { name: "Alaska" }`): where such a variable's values often come from.
+  const keys = new Set([...code.matchAll(/^\s*(\w+):\s/gm)].map((m) => m[1]))
+  return { namespaces, exact, patterns, byVariable, keys }
 }
 
 describe("unused messages", () => {
   it("every English message is read somewhere in src/", () => {
     const files = sources().map(readsOf)
-    const anywhere = new Set(files.flatMap((f) => [...f.exact]))
+    const anywhere = new Set(files.flatMap((f) => [...f.exact, ...f.keys]))
     const used = (key: string) =>
       files.some(({ namespaces, exact, patterns, byVariable }) =>
         [...namespaces].some((ns) => {
           if (ns && !key.startsWith(`${ns}.`)) return false
           const rest = ns ? key.slice(ns.length + 1) : key
           if (exact.has(rest) || patterns.some((p) => p.test(rest))) return true
-          // A last segment read through a variable that holds it ("webgl", "shop").
+          // A last segment read through a variable that holds it ("webgl", "shop", a state's code).
           return byVariable && !rest.includes(".") && anywhere.has(rest)
         }),
       )

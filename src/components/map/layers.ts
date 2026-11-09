@@ -273,7 +273,8 @@ export function basemapOverlays(layers: readonly LayerSpecification[]): LayerSpe
 }
 
 /** What's under the pointer, for the "Not on PokeFindr yet" tooltip. */
-export type CountryHit = { kind: "none" } | { kind: "country"; id: string | number; name: string } | { kind: "unnamed" }
+/** `iso` is the outline's ISO 3166 numeric code; `name` its English name. */
+export type CountryHit = { kind: "none" } | { kind: "country"; id: string | number; name: string; iso: string } | { kind: "unnamed" }
 
 /**
  * Decides the tooltip from one queryRenderedFeatures over the location dots,
@@ -289,7 +290,31 @@ export function countryAtPoint(
   const quiet = new Set<string>([LAYERS.supportedHit, LAYERS.placeDots, LAYERS.selectedRing])
   if (features.some((f) => quiet.has(f.layer.id) || waterIds.has(f.layer.id))) return { kind: "none" }
   const country = features.find((f) => f.layer.id === LAYERS.worldHit)
-  if (country && country.id !== undefined) return { kind: "country", id: country.id, name: String(country.properties.name) }
+  if (country && country.id !== undefined) return { kind: "country", id: country.id, name: String(country.properties.name), iso: String(country.properties.iso ?? "") }
   if (features.some((f) => f.layer.id === LAYERS.worldFill)) return { kind: "unnamed" }
   return { kind: "none" }
+}
+
+/**
+ * A basemap label's text in `locale` (#184): the place's name in that
+ * language, else its name in Latin script, else its local name. The vector
+ * tiles carry `name:xx` for many languages.
+ */
+export function localizedTextField(locale: string): ExpressionSpecification {
+  return ["coalesce", ["get", `name:${locale}`], ["get", "name:latin"], ["get", "name"]]
+}
+
+/**
+ * The basemap's labels that show a place's name (countries, states, cities,
+ * water, roads), not a number like a highway shield. Our own layers and our
+ * copies of basemap layers are skipped.
+ */
+export function nameLabelIds(
+  layers: readonly { id: string; type: string; layout?: Record<string, unknown> }[],
+  own: ReadonlySet<string> = new Set(Object.values(LAYERS)),
+): string[] {
+  return layers
+    .filter((l) => l.type === "symbol" && !own.has(l.id) && !l.id.startsWith(OVERLAY_PREFIX))
+    .filter((l) => /\["get","name(?:[_:][\w:-]+)?"\]/.test(JSON.stringify(l.layout?.["text-field"] ?? "")))
+    .map((l) => l.id)
 }

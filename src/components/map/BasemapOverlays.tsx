@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useLocale } from "next-intl"
 import { Layer, useMap, type LayerProps, type LayerSpecification } from "./engine"
-import { basemapOverlays, shadingBeforeId } from "./layers"
+import { basemapOverlays, localizedTextField, nameLabelIds, shadingBeforeId } from "./layers"
 
 export interface BasemapStack {
   /** The basemap label our overlays go under (see shadingBeforeId). */
@@ -45,6 +46,36 @@ export function useBasemapStack(): BasemapStack {
   }, [map])
 
   return stack
+}
+
+/**
+ * Puts the basemap's place names in the page's language (#184): "Estados
+ * Unidos" and "México" in Spanish, "Russia" rather than "Россия" in English.
+ * Again after every style change, since switching the theme loads a new
+ * style with the tiles' default labels.
+ */
+export function useLocalizedLabels() {
+  const { current: map } = useMap()
+  const locale = useLocale()
+
+  useEffect(() => {
+    if (!map) return
+    const field = localizedTextField(locale)
+    const wanted = JSON.stringify(field)
+    const apply = () => {
+      const layers = map.getStyle()?.layers
+      if (!layers?.length) return
+      for (const id of nameLabelIds(layers)) {
+        // Setting it fires styledata again: only when it isn't set yet.
+        if (JSON.stringify(map.getLayoutProperty(id, "text-field")) !== wanted) map.getMap().setLayoutProperty(id, "text-field", field)
+      }
+    }
+    apply()
+    map.on("styledata", apply)
+    return () => {
+      map.off("styledata", apply)
+    }
+  }, [map, locale])
 }
 
 /**

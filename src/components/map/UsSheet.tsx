@@ -12,6 +12,7 @@ import { SubmissionRows } from "./MySubmissions"
 import { useFormat } from "@/i18n/format"
 import { useDistance } from "@/i18n/useDistance"
 import { useTranslations } from "next-intl"
+import { useStateName } from "./useStateName"
 
 /** A state and its count for the shown kinds. */
 export interface StateTotal {
@@ -78,6 +79,7 @@ export function UsSheet({ highlights, states, kinds, onHotspot, onEvent, onState
   const f = useFormat()
   const { radius: radiusText } = useDistance()
   const t = useTranslations("map.us")
+  const stateName = useStateName()
   const hotspots = kinds.includes("vending") ? (highlights?.hotspots ?? []) : []
   const events = kinds.includes("event") ? (highlights?.events ?? []) : []
   const top = states.filter((s) => s.count > 0).slice(0, 5)
@@ -139,7 +141,7 @@ export function UsSheet({ highlights, states, kinds, onHotspot, onEvent, onState
                     <MapIcon className="size-4 text-foreground" aria-hidden />
                   </span>
                 }
-                title={s.name}
+                title={stateName(s.code)}
                 sub={f.places(s.count, kinds)}
                 onClick={() => onState(s.code)}
               />
