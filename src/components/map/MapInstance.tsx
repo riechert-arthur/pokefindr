@@ -18,7 +18,8 @@ import {
 import { useViewportLocations, type ViewportMap } from "./useViewportLocations"
 import { MapStatusPill } from "./MapStatusPill"
 import { LocateControl } from "./LocateControl"
-import { MenuIcon } from "lucide-react"
+import { MenuIcon, PlusIcon } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { PlaceSearch, type PlacePick } from "@/components/search/PlaceSearch"
 import { APP_NAV_ID } from "@/components/pokefindr/AppRail"
 import { Button } from "@/components/ui/button"
@@ -49,6 +50,9 @@ import { useHighlights } from "./useHighlights"
 import { HighlightMarkers } from "./HighlightMarkers"
 import { RouteOverlay } from "./RouteOverlay"
 import { UsSheet, type StateTotal } from "./UsSheet"
+import { AddPlaceSheet, type Pin } from "./AddPlaceSheet"
+import { AddPin, PendingMarkers, useMySubmissions } from "./MySubmissions"
+import type { MySubmission } from "@/lib/submissions/schemas"
 import type { Hotspot, UpcomingEvent } from "@/lib/types/highlights"
 import { cn } from "@/lib/utils"
 import { boundsOfRadius, milesBetween, radiusCircle, US_BOUNDS } from "@/lib/map/geo"
@@ -97,7 +101,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     (initial): Selection<SelectedLocation> => (initial ? { selected: initial, popup: false, details: initial } : NO_SELECTION),
   )
   const { isSidebarOpen, toggleSidebar } = useSidebar()
-  const { session } = useSessionContext()
+  const { session, isLoading: sessionLoading } = useSessionContext()
+  const router = useRouter()
   // MapInstance is client-only (MapLoader uses ssr: false), so this is right on first render.
   const isDark = useIsDark()
   const themeKey = useThemeKey()
@@ -332,6 +337,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
 
   /** A dot was clicked: popup and ring, without moving the map. */
   const handleDotSelect = select
+  const ignoreSelect = useCallback(() => {}, [])
 
   /**
    * Opens a location's details from a list (search or results), as a new
@@ -423,6 +429,67 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     writeView({ q: null, lat: null, lng: null, r: null, z: null, state: null, near: null, location: null, route: null }, { history: "push" })
     mapRef.current?.fitBounds(US_BOUNDS, { padding: pad(true), duration: 1400 })
   }
+
+  // Add a place (#125): open while `add=` is in the URL (the tab bar links to
+  // /map?add=1). The pin stays out of the URL.
+  const adding = params.add !== null
+  const addKind = params.add === "shop" || params.add === "event" ? params.add : null
+  const [addPin, setAddPin] = useState<Pin | null>(null)
+  const [addStep, setAddStep] = useState(0)
+  /**
+   * The entry startAdding pushed (its URL and the history length then), so
+   * closing goes Back to before it, but only while it's still the current
+   * entry: a search or Locate while adding pushes past it.
+   */
+  const pushedAdd = useRef<{ search: string; length: number } | null>(null)
+  // Leaving by any route (Back, a link): start over next time.
+  useEffect(() => {
+    if (adding) return
+    setAddPin(null)
+    setAddStep(0)
+  }, [adding])
+  const { submissions, refresh: refreshSubmissions } = useMySubmissions(Boolean(session))
+  const startAdding = () => {
+    if (!session) {
+      toast("Log in to add a place", {
+        description: "Adding a card shop or event needs an account, so a moderator can check it.",
+        action: { label: "Log in", onClick: () => router.push("/login") },
+      })
+      return
+    }
+    dispatch({ type: "closeDetails" })
+    void setParams({ add: "1", location: null }, { history: "push" }).then((search) => {
+      pushedAdd.current = { search: search.toString(), length: window.history.length }
+    })
+  }
+  /**
+   * Closes Add a place. Cancel goes Back to before + (when that entry is still
+   * current); after sending (`stay`), it stays where the person put the pin,
+   * so their new pending marker is in view.
+   */
+  const stopAdding = ({ stay = false }: { stay?: boolean } = {}) => {
+    setAddPin(null)
+    const pushed = pushedAdd.current
+    pushedAdd.current = null
+    // Camera moves and the kind replace the entry's URL without making a new one.
+    const view = (search: string) => {
+      const p = new URLSearchParams(search)
+      for (const k of ["add", "lat", "lng", "z"]) if (!(k === "lat" || k === "lng") || !p.has("q")) p.delete(k)
+      p.sort()
+      return p.toString()
+    }
+    const stillOnIt = pushed !== null && window.history.length === pushed.length && view(window.location.search) === view(pushed.search)
+    // Opened here with +, and still on that entry: go back to the one before it. Otherwise just drop add=.
+    if (stillOnIt && !stay) window.history.back()
+    else void setParams({ add: null }, { history: "replace" })
+  }
+  const moveAddPin = (pin: Pin, fly = false) => {
+    setAddPin(pin)
+    const map = mapRef.current
+    if (fly && map) map.flyTo({ center: [pin.lng, pin.lat], zoom: Math.max(map.getZoom(), 15), padding: pad(true), duration: 1200 })
+  }
+  const openSubmission = (s: MySubmission) =>
+    mapRef.current?.flyTo({ center: [s.lng, s.lat], zoom: Math.max(mapRef.current.getZoom(), 14), padding: pad(true), duration: 1200 })
 
   /** Details are a new view: a new history entry, so Back closes them. */
   const openDetails = () => {
@@ -545,18 +612,27 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         }}
         onClick={(e) => {
           if (isSidebarOpen) toggleSidebar()
+          // Adding a place: on the location step, a click on the map (not on a marker) drops the pin there.
+          if (adding) {
+            const onMarker = (e.originalEvent.target as Element | null)?.closest?.(".maplibregl-marker")
+            if (session && addStep === 1 && !onMarker) setAddPin({ lng: e.lngLat.lng, lat: e.lngLat.lat })
+            return
+          }
           // A click off the dots closes the popup, as MapLibre popups do by default.
           const hit = e.target.getLayer(LAYERS.placeDots) && e.target.queryRenderedFeatures(e.point, { layers: [LAYERS.placeDots] }).length
           if (!hit) dispatch({ type: "closePopup" })
         }}
       >
-        <MapShading colors={colors} states={states} max={max} bounds={bounds} onStateSelect={handleStateSelect} />
+        {/* While adding a place, clicks place the pin: states and dots don't open. */}
+        <MapShading colors={colors} states={states} max={max} bounds={bounds} onStateSelect={adding ? undefined : handleStateSelect} />
         <Source id={SOURCES.radius} type="geojson" data={area}>
           <Layer {...radius.fill} />
           <Layer {...radius.line} />
         </Source>
         {highlights && zoomedOut && <HighlightMarkers highlights={highlights} kinds={kinds} onHotspot={openHotspot} onEvent={openEvent} />}
-        <LocationLayers collection={inView} selected={selected} colors={colors} onSelect={handleDotSelect} />
+        <LocationLayers collection={inView} selected={selected} colors={colors} onSelect={adding ? ignoreSelect : handleDotSelect} />
+        {submissions && <PendingMarkers submissions={submissions} onOpen={openSubmission} />}
+        {adding && addPin && <AddPin pin={addPin} kind={addKind} onMove={moveAddPin} />}
         {params.route && params.route.length >= 2 && <RouteOverlay ids={params.route} colors={colors} onClear={() => void setParams({ route: null })} />}
         <FullscreenControl position="bottom-right" />
         <LocateControl onLocate={handleLocate} onError={handleLocateError} autoLocate={view.nearMe} />
@@ -591,13 +667,58 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
               }
             />
           }
-          filter={<RetailerFilter selected={retailers ?? []} onChange={handleRetailersChange} vendingShown={kindSet.has("vending")} />}
+          filter={
+            <>
+              <RetailerFilter selected={retailers ?? []} onChange={handleRetailersChange} vendingShown={kindSet.has("vending")} />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={adding ? () => stopAdding() : startAdding}
+                aria-pressed={adding}
+                aria-label="Add a card shop or event"
+                title="Add a card shop or event"
+                className="size-[42px] shrink-0 rounded-xl bg-card shadow-md aria-pressed:bg-muted"
+              >
+                <PlusIcon className="size-5" aria-hidden />
+              </Button>
+            </>
+          }
           kinds={kinds}
           kindTotals={kindTotals}
           onKindsChange={handleKindsChange}
-          sheetLabel={details ? details.retailer : place ? "Results" : stateFocus ? STATES[stateFocus].name : "Across the US"}
+          sheetLabel={adding ? "Add a place" : details ? details.retailer : place ? "Results" : stateFocus ? STATES[stateFocus].name : "Across the US"}
           sheet={
-            details ? (
+            adding ? (
+              session ? (
+                <AddPlaceSheet
+                  initialKind={addKind}
+                  pin={addPin}
+                  onPinChange={(pin) => moveAddPin(pin, true)}
+                  onKindChange={(kind) => void setParams({ add: kind }, { history: "replace" }).then((search) => {
+                    if (pushedAdd.current !== null) pushedAdd.current = { ...pushedAdd.current, search: search.toString() }
+                  })}
+                  onStepChange={setAddStep}
+                  onCancel={() => stopAdding()}
+                  onSubmitted={({ name }) => {
+                    toast.success("Sent for review", { description: `${name} shows as Pending review to you until a moderator checks it.` })
+                    stopAdding({ stay: true })
+                    refreshSubmissions()
+                  }}
+                />
+              ) : (
+                !sessionLoading && (
+                  <div className="flex flex-col gap-3 p-4">
+                    <h2 className="text-heading text-foreground">Add a place</h2>
+                    <p className="text-body text-muted-foreground">Log in to add a card shop or event. A moderator checks each one before it goes on the map.</p>
+                    <div className="flex gap-2">
+                      <Button type="button" onClick={() => router.push("/login")}>Log in</Button>
+                      <Button type="button" variant="ghost" onClick={() => stopAdding()}>Cancel</Button>
+                    </div>
+                  </div>
+                )
+              )
+            ) : details ? (
               <LocationDetails
                 key={details.id}
                 location={details}
@@ -619,6 +740,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
                 onHotspot={openHotspot}
                 onEvent={openEvent}
                 onState={openState}
+                submissions={submissions}
+                onSubmission={openSubmission}
               />
             ) : stateFocus ? (
               <StateSheet

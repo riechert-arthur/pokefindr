@@ -38,7 +38,7 @@ interface MapLoaderProps {
 }
 
 const DEFAULT_VIEW = initialMapView({
-  q: null, lat: null, lng: null, r: null, z: null, state: null, types: null, retailer: null, location: null, near: null, route: null,
+  q: null, lat: null, lng: null, r: null, z: null, state: null, types: null, retailer: null, location: null, near: null, route: null, add: null,
 })
 
 export const MapLoader: FC<MapLoaderProps> = ({ view = DEFAULT_VIEW, location = null }) => {
