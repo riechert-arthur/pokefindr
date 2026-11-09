@@ -110,7 +110,7 @@ export function JobsTable() {
                     {j.paused && run && <div className="mt-1 text-caption text-muted-foreground">{j.paused}</div>}
                   </td>
                   <td className={cn(td, "text-right")}>
-                    <div className="flex flex-wrap justify-end gap-1.5">
+                    <div className="flex justify-end gap-1.5 whitespace-nowrap">
                       {j.pausedHere ? (
                         <Button size="sm" variant="outline" disabled={busy !== null} onClick={() => void act(j, "resume")}>
                           Resume
