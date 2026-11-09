@@ -153,6 +153,14 @@ describe("admin reports", () => {
     expect((await (await summaryRoute(req("/api/admin/summary", MOD))).json()).reports).toEqual({ locations: 1, reports: 1, maxOnOne: 1 })
   })
 
+  it("the summary's live counts drop as soon as a location is hidden, and sync shows as paused", async () => {
+    const before = await (await summaryRoute(req("/api/admin/summary", MOD))).json()
+    expect(before.live).toEqual({ total: 2, byKind: { vending: 2 } })
+    expect(before.sync).toEqual({ status: "paused", detail: "Waiting on an approved data source (#85)", at: null })
+    await act(kroger, "hide")
+    expect((await (await summaryRoute(req("/api/admin/summary", MOD))).json()).live).toEqual({ total: 1, byKind: { vending: 1 } })
+  })
+
   it("refuses a bad action or an unknown location", async () => {
     expect((await act(kroger, "delete")).status).toBe(400)
     expect((await act(randomUUID(), "dismiss")).status).toBe(404)

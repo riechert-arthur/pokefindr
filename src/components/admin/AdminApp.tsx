@@ -11,6 +11,7 @@ import { ReportsTable } from "@/components/admin/ReportsTable"
 import { AddVendingForm } from "@/components/admin/AddVendingForm"
 import { CoverageView } from "@/components/admin/CoverageView"
 import { JobsTable } from "@/components/admin/JobsTable"
+import { SummaryCards } from "@/components/admin/SummaryCards"
 import { REPORTS_HOT } from "@/lib/admin/reports"
 import { RefreshSummary } from "@/components/admin/useRefreshSummary"
 import { DEFAULT_SECTION, groupsFor, sectionFor } from "@/lib/admin/sections"
@@ -90,6 +91,7 @@ export function AdminApp({ role, username }: { role: StaffRole; username: string
               </Button>
             )}
           </header>
+          <SummaryCards summary={summary} role={role} onOpen={(id) => void setParam(id === DEFAULT_SECTION ? null : id)} />
           {SECTIONS[section.id]?.()}
         </div>
       </div>

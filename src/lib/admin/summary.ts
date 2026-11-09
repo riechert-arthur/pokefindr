@@ -1,3 +1,5 @@
+import type { LocationKind } from "@/lib/types/locations"
+
 /** GET /api/admin/summary (#152, #158): what the sidebar counts and the summary cards show. */
 export interface AdminSummary {
   queue: {
@@ -7,6 +9,10 @@ export interface AdminSummary {
   }
   /** Open reports (#153): the locations with any, how many in all, and the most on one location. */
   reports: { locations: number; reports: number; maxOnOne: number }
+  /** Active locations by kind, counted live (#158). */
+  live: { total: number; byKind: Partial<Record<LocationKind, number>> }
+  /** The location sync job (#157): paused, its last run's outcome, or never ran. */
+  sync: { status: "paused" | "succeeded" | "failed" | "running" | "skipped" | "never"; detail: string | null; at: string | null }
 }
 
 /** A submission waiting longer than this is late: its count turns red. */
