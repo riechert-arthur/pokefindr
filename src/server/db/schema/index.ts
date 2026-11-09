@@ -133,19 +133,35 @@ export const authRateLimits = pgTable("auth_rate_limits", {
   lastRequest: bigint("last_request", { mode: "number" }).notNull(),
 })
 
-export const profiles = pgTable("profiles", {
-  id: uuid("id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
-  username: text("username").notNull(),
-  fullName: text("full_name"),
-  isVerified: boolean("is_verified"),
-  onboarded: boolean("onboarded").notNull().default(false),
-  rating: doublePrecision("rating"),
-  metadata: jsonb("metadata"),
-  createdAt: createdAt(),
-  // Set by the ORM on every update; there is no database trigger for it.
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .$onUpdate(() => new Date()),
+export const profiles = pgTable(
+  "profiles",
+  {
+    id: uuid("id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+    username: text("username").notNull(),
+    fullName: text("full_name"),
+    isVerified: boolean("is_verified"),
+    onboarded: boolean("onboarded").notNull().default(false),
+    rating: doublePrecision("rating"),
+    metadata: jsonb("metadata"),
+    createdAt: createdAt(),
+    // Set by the ORM on every update; there is no database trigger for it.
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  // One username per person, in any case (migration 0010).
+  (t) => [uniqueIndex("profiles_username_lower_key").on(sql`lower(${t.username})`)],
+)
+
+/**
+ * Usernames held by a sign-up for a day (migration 0010), new email or taken.
+ * Only a new email gets a profile, so without the hold, trying the same
+ * username again would show whether the email already had an account.
+ */
+export const usernameHolds = pgTable("username_holds", {
+  /** Lowercased. */
+  username: text("username").primaryKey(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
 })
 
 /** Mapbox's per-field match result for a geocoded address, plus its overall `confidence`. */

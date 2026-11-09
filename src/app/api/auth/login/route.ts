@@ -1,31 +1,37 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { verifyUserCredentials } from '@/lib/supabase/auth'
-import { getAdminClient } from '@/lib/supabase/db'
-import { createSessionCookie, tierFromPlanName } from '@/server/auth/session'
+import { NextResponse, type NextRequest } from "next/server"
+import { z } from "zod"
+import { identityCookies, identityRequest, refuseCrossSite } from "@/server/auth/identity"
+import { createSessionCookie } from "@/server/auth/session"
+import { getProfile, getSessionTier } from "@/server/services/users"
 
+const body = z.object({ email: z.string().min(1).max(320), password: z.string().min(1).max(256) })
+
+const loginFailed = () =>
+  NextResponse.json({ error: "Wrong email or password. If you haven't confirmed your email yet, we've sent you a new link." }, { status: 401 })
+
+/**
+ * Email and password login, checked by Better Auth (with its rate limit).
+ * Signs the app's own `app_session` cookie, which middleware reads, and
+ * passes on Better Auth's session cookie, which logout revokes.
+ */
 export async function POST(req: NextRequest) {
-  const { email, password } = await req.json()
+  const refused = refuseCrossSite(req)
+  if (refused) return refused
+  const parsed = body.safeParse(await req.json().catch(() => null))
+  if (!parsed.success) return NextResponse.json({ error: "Enter your email and password" }, { status: 400 })
 
-  const user = await verifyUserCredentials(email, password)
-  if (!user) {
-    return NextResponse.json({ error: 'Invalid credentials or email needs to be verified' }, { status: 401 })
-  }
+  const res = await identityRequest(req, "/sign-in/email", parsed.data)
+  if (res.status === 429) return NextResponse.json({ error: "Too many attempts. Wait a minute and try again." }, { status: 429 })
+  // An unconfirmed email gets the same answer as a wrong password (Better Auth sends it a new
+  // link): sign up with any email and a password you pick, and a different answer here would
+  // show whether that email already had an account.
+  if (!res.ok) return loginFailed()
 
-  const { data: sub } = await getAdminClient()
-    .from('subscriptions')
-    .select('plan_name')
-    .eq('user_id', user.id)
-    .single()
+  const { user } = (await res.json()) as { user: { id: string; email: string } }
+  if (!(await getProfile(user.id))) return loginFailed()
 
-  const cookie = createSessionCookie({
-    sub: user.id,
-    email: user.email,
-    tier: tierFromPlanName(sub?.plan_name),
-  })
-
-  return NextResponse.json({ ok: true }, {
-    status: 200,
-    headers: { 'Set-Cookie': cookie },
-  })
+  const response = NextResponse.json({ ok: true })
+  for (const cookie of identityCookies(res)) response.headers.append("Set-Cookie", cookie)
+  response.headers.append("Set-Cookie", createSessionCookie({ sub: user.id, email: user.email, tier: await getSessionTier(user.id) }))
+  return response
 }
