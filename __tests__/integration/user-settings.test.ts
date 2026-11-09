@@ -13,7 +13,7 @@ import { GET, PATCH } from "@/app/api/user-settings/route"
 import { POST as login } from "@/app/api/auth/login/route"
 import { getAuth, resetAuthForTests, settleBackgroundForTests } from "@/server/auth/auth"
 import { getDb } from "@/server/db/client"
-import { profiles, users } from "@/server/db/schema"
+import { profiles, usernameHolds, users } from "@/server/db/schema"
 import { closeTestConnection, insertProfiles } from "./testDatabase"
 
 afterAll(closeTestConnection)
@@ -98,6 +98,21 @@ describe("changing the email", () => {
     const res = await patch(id, { email: "ash@new.example" })
     expect(res.status).toBe(401)
     expect(await res.json()).toMatchObject({ code: "REAUTH" })
+  })
+
+  it("counts a sign-up's username hold, but not against the name you already have", async () => {
+    const { id } = await signedInUser()
+    await getDb().insert(usernameHolds).values({ username: "held_name", expiresAt: new Date(Date.now() + 60_000) })
+    expect((await patch(id, { username: "Held_Name" })).status).toBe(409)
+    expect((await patch(id, { username: "ash" })).status).toBe(200)
+  })
+
+  it("refuses a request from another site", async () => {
+    const { id, cookie } = await signedInUser()
+    const res = await PATCH(
+      new NextRequest(`${APP}/api/user-settings`, { method: "PATCH", body: JSON.stringify({ fullName: "Hacked" }), headers: { "x-user-id": id, cookie, origin: "https://evil.example" } }),
+    )
+    expect(res.status).toBe(403)
   })
 
   it("won't change an email that isn't confirmed yet", async () => {

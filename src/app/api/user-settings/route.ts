@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm"
 import { z } from "zod"
 import { usernameField } from "@/lib/schemas"
 import { EMAIL_CHANGE_CALLBACK } from "@/lib/auth/paths"
-import { identityRequest } from "@/server/auth/identity"
+import { identityRequest, refuseCrossSite } from "@/server/auth/identity"
 import { getDb } from "@/server/db/client"
 import { profiles, users } from "@/server/db/schema"
 import { updateProfile, usernameTaken, UsernameTakenError } from "@/server/services/users"
@@ -36,6 +36,8 @@ export async function GET(req: NextRequest) {
  * confirm it, and the email changes after both (Better Auth's change-email).
  */
 export async function PATCH(req: NextRequest) {
+  const refused = refuseCrossSite(req)
+  if (refused) return refused
   const userId = req.headers.get("x-user-id")
   if (!userId) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 })
   const parsed = changes.safeParse(await req.json().catch(() => null))
