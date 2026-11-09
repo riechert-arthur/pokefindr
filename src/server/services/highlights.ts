@@ -1,7 +1,7 @@
 import "server-only"
 import { sql } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
-import { highlights, locations } from "@/server/db/schema"
+import { eventDetails, highlights, locations } from "@/server/db/schema"
 import { milesBetween } from "@/lib/map/geo"
 import type { Highlights, Hotspot, UpcomingEvent } from "@/lib/types/highlights"
 import { HOTSPOT_RADIUS_MILES } from "@/lib/highlights/constants"
@@ -56,20 +56,41 @@ export async function getHotspots(db: Database = getDb(), limit = HOTSPOT_LIMIT)
   return picked
 }
 
-/** Published events that haven't ended, soonest first, at their location or their own point. */
+/**
+ * Events that haven't ended, soonest first: published event highlights, at
+ * their location or their own point, and approved event locations (#123)
+ * that no highlight features. An event's times come from `event_details`
+ * when it has a location there; a highlight with its own point keeps its own.
+ * An event without an end lasts a day, so a card show stays listed while it runs.
+ */
 export async function getUpcomingEvents(db: Database = getDb(), now = new Date(), limit = EVENT_LIMIT): Promise<UpcomingEvent[]> {
+  const at = sql`${now.toISOString()}::timestamptz`
   const rows = await db.execute<UpcomingEvent>(sql`
-    select h.id, h.title, h.starts_at as "startsAt", h.ends_at as "endsAt",
-      coalesce(h.city, l.city, '') as city, coalesce(h.state, l.state, '') as state,
-      round(ST_X(coalesce(h.geog, l.geog)::geometry)::numeric, 4)::float8 as lng,
-      round(ST_Y(coalesce(h.geog, l.geog)::geometry)::numeric, 4)::float8 as lat,
-      h.is_sample as "isSample"
-    from ${highlights} h
-    left join ${locations} l on l.id = h.location_id
-    where h.kind = 'event' and h.is_published and coalesce(h.geog, l.geog) is not null
-      -- An event without an end lasts a day: a card show stays listed while it runs.
-      and coalesce(h.ends_at, h.starts_at + interval '1 day') > ${now.toISOString()}::timestamptz
-    order by h.starts_at, h.id
+    select * from (
+      select h.id, h.title,
+        coalesce(e.starts_at, h.starts_at) as "startsAt",
+        case when e.location_id is not null then e.ends_at else h.ends_at end as "endsAt",
+        coalesce(h.city, l.city, '') as city, coalesce(h.state, l.state, '') as state,
+        round(ST_X(coalesce(h.geog, l.geog)::geometry)::numeric, 4)::float8 as lng,
+        round(ST_Y(coalesce(h.geog, l.geog)::geometry)::numeric, 4)::float8 as lat,
+        h.is_sample as "isSample"
+      from ${highlights} h
+      left join ${locations} l on l.id = h.location_id
+      left join ${eventDetails} e on e.location_id = h.location_id
+      where h.kind = 'event' and h.is_published and coalesce(h.geog, l.geog) is not null
+        and case when e.location_id is not null then coalesce(e.ends_at, e.starts_at + interval '1 day')
+          else coalesce(h.ends_at, h.starts_at + interval '1 day') end > ${at}
+      union all
+      select l.id, coalesce(l.name, ''), e.starts_at, e.ends_at, coalesce(l.city, ''), coalesce(l.state, ''),
+        round(ST_X(l.geog::geometry)::numeric, 4)::float8, round(ST_Y(l.geog::geometry)::numeric, 4)::float8,
+        false
+      from ${locations} l
+      join ${eventDetails} e on e.location_id = l.id
+      where l.is_active and l.geog is not null
+        and coalesce(e.ends_at, e.starts_at + interval '1 day') > ${at}
+        and not exists (select 1 from ${highlights} h where h.location_id = l.id and h.kind = 'event' and h.is_published)
+    ) events
+    order by "startsAt", id
     limit ${limit}
   `)
   return rows.map((r) => ({ ...r, startsAt: new Date(r.startsAt).toISOString(), endsAt: r.endsAt && new Date(r.endsAt).toISOString() }))
