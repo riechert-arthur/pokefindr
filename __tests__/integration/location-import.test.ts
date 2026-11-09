@@ -142,6 +142,15 @@ describe("location import (npm run db:import-locations)", () => {
     expect(await machine("Q1")).toMatchObject({ is_active: false, manual_override: true })
   })
 
+  it("keeps a machine an admin hid hidden, while still updating its details (#153)", async () => {
+    await importRows(rows(feature("Q1", -112, 33)))
+    await sql`update locations set is_active = false, hidden_at = now() where "machineID" = 'Q1'`
+    const { verify } = await importRows(rows(feature("Q1", -112, 33, { address: "2 New St" })))
+    expect(verify.problems).toEqual([])
+    const [r] = await sql<{ is_active: boolean; address: string; hidden: boolean }[]>`select is_active, address, hidden_at is not null as hidden from locations where "machineID" = 'Q1'`
+    expect(r).toEqual({ is_active: false, address: "2 New St", hidden: true })
+  })
+
   it("reports a machine left inactive that isn't a kept override", async () => {
     await expect(
       db.transaction().execute(async (trx) => {

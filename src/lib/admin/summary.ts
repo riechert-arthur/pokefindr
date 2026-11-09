@@ -5,6 +5,8 @@ export interface AdminSummary {
     /** The oldest pending submission's time, or null when the queue is clear. */
     oldestAt: string | null
   }
+  /** Open reports (#153): the locations with any, how many in all, and the most on one location. */
+  reports: { locations: number; reports: number; maxOnOne: number }
 }
 
 /** A submission waiting longer than this is late: its count turns red. */

@@ -9,3 +9,13 @@ export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
   empty: "Empty for a long time",
   other: "Something else",
 }
+
+/** How an admin closed a report (#153). */
+export const REPORT_RESOLUTIONS = ["dismissed", "fixed", "hidden"] as const
+export type ReportResolution = (typeof REPORT_RESOLUTIONS)[number]
+
+/** What an admin can do with a location's reports (#153). Reopen undoes the last one (and unhides). */
+export const REPORT_ACTIONS = ["dismiss", "fix", "hide", "reopen"] as const
+export type ReportAction = (typeof REPORT_ACTIONS)[number]
+
+export const RESOLUTION_OF: Record<Exclude<ReportAction, "reopen">, ReportResolution> = { dismiss: "dismissed", fix: "fixed", hide: "hidden" }
