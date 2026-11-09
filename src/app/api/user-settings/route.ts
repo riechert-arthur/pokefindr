@@ -1,90 +1,78 @@
+import { NextResponse, type NextRequest } from "next/server"
+import { eq } from "drizzle-orm"
+import { z } from "zod"
+import { usernameField } from "@/lib/schemas"
+import { EMAIL_CHANGE_CALLBACK } from "@/lib/auth/paths"
+import { approveChangeToTakenEmail } from "@/server/auth/auth"
+import { identityRequest, refuseCrossSite } from "@/server/auth/identity"
+import { getDb } from "@/server/db/client"
+import { profiles, users } from "@/server/db/schema"
+import { updateProfile, usernameTaken, UsernameTakenError } from "@/server/services/users"
 
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { getAdminClient } from '@/lib/supabase/db'
+const changes = z
+  .object({
+    fullName: z.string().trim().min(1, "Enter a name").max(100),
+    username: usernameField,
+    email: z.string().trim().email("Enter a valid email").max(320),
+  })
+  .partial()
+  .strict()
 
-interface UpdateRequest {
-  fullName?: string
-  username?: string
-  email?: string
-}
-
-interface ProfileUpdates {
-  full_name?: string
-  username?: string
-}
-
+/** The signed-in user's name, username and email (middleware sets x-user-id). */
 export async function GET(req: NextRequest) {
   const userId = req.headers.get("x-user-id")
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthenticated" }, { status: 401 })
-  }
-
-  const { data: profile, error } = await getAdminClient()
-    .from('profiles')
-    .select('id, username, full_name, metadata')
-    .eq('id', userId)
-    .single()
-
-  if (error || !profile) {
-    return NextResponse.json({ error: "Account not found" }, { status: 404 })
-  }
-
-  const { data: authUser, error: authError } =
-    await getAdminClient().auth.admin.getUserById(userId)
-
-  if (authError || !authUser?.user) {
-    console.error('Auth user load error', authError)
-    return NextResponse.json({}, { status: 500 })
-  }
-
-  return NextResponse.json({
-    fullName: profile.full_name,
-    email:    authUser.user.email,
-    username: profile.username,
-  })
-
+  if (!userId) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 })
+  const [row] = await getDb()
+    .select({ fullName: profiles.fullName, username: profiles.username, email: users.email })
+    .from(profiles)
+    .innerJoin(users, eq(users.id, profiles.id))
+    .where(eq(profiles.id, userId))
+  if (!row) return NextResponse.json({ error: "Account not found" }, { status: 404 })
+  return NextResponse.json({ fullName: row.fullName ?? "", username: row.username, email: row.email })
 }
 
+/**
+ * Changes the name or username at once. An email change only starts here:
+ * the current address gets a link to approve it, then the new one a link to
+ * confirm it, and the email changes after both (Better Auth's change-email).
+ */
 export async function PATCH(req: NextRequest) {
+  const refused = refuseCrossSite(req)
+  if (refused) return refused
   const userId = req.headers.get("x-user-id")
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthenticated" }, { status: 401 })
+  if (!userId) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 })
+  const parsed = changes.safeParse(await req.json().catch(() => null))
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.errors.map((e) => e.message).join(", ") }, { status: 400 })
+  const { fullName, username, email } = parsed.data
+
+  // Better Auth asks the current address to approve a change only once it's confirmed:
+  // without this, a stolen session could move an unconfirmed account to a new address in one step.
+  if (email) {
+    const [user] = await getDb().select({ emailVerified: users.emailVerified }).from(users).where(eq(users.id, userId))
+    if (!user?.emailVerified)
+      return NextResponse.json({ error: "Confirm your current email before changing it. Logging in again sends a new link." }, { status: 403 })
   }
 
-  const updates = (await req.json()) as UpdateRequest
-
-  const dbUpdates: ProfileUpdates = {}
-
-  if (updates.fullName !== undefined) {
-    dbUpdates.full_name = updates.fullName
-  }
-  if (updates.username !== undefined) {
-    dbUpdates.username = updates.username
+  if (username && (await usernameTaken(username, userId))) return NextResponse.json({ error: "That username is already taken" }, { status: 409 })
+  try {
+    if (!(await updateProfile(userId, { fullName, username }))) return NextResponse.json({ error: "Account not found" }, { status: 404 })
+  } catch (err) {
+    if (err instanceof UsernameTakenError) return NextResponse.json({ error: err.message }, { status: 409 })
+    throw err
   }
 
-  if (updates.email !== undefined) {
-    const { error: authError } = await getAdminClient().auth.admin.updateUserById(
-      userId,
-      { email: updates.email }
-    )
-    if (authError) {
-      console.error('Auth email update failed', authError)
-      return NextResponse.json({ error: authError.message }, { status: 500 })
+  if (email) {
+    const res = await identityRequest(req, "/change-email", { newEmail: email, callbackURL: EMAIL_CHANGE_CALLBACK })
+    if (res.status === 401) return NextResponse.json({ error: "Log in again to change your email.", code: "REAUTH" }, { status: 401 })
+    if (res.status === 429) return NextResponse.json({ error: "Too many attempts. Wait a minute and try again." }, { status: 429 })
+    if (!res.ok) {
+      const { message } = (await res.json().catch(() => ({}))) as { message?: string }
+      return NextResponse.json({ error: message === "Email is the same" ? "That's already your email." : "Couldn't start the email change" }, { status: 400 })
     }
+    // Better Auth sends no approval email for an address another account has; send the same one.
+    const [current] = await getDb().select({ id: users.id, name: users.name, email: users.email }).from(users).where(eq(users.id, userId))
+    if (current) await approveChangeToTakenEmail(current, email, EMAIL_CHANGE_CALLBACK)
+    return NextResponse.json({ ok: true, emailPending: true })
   }
-
-  if (Object.keys(dbUpdates).length > 0) {
-    const { error: profileError } = await getAdminClient()
-      .from('profiles')
-      .update(dbUpdates)
-      .eq('id', userId)
-
-    if (profileError) {
-      console.error('Profile update failed', profileError)
-      return NextResponse.json({ error: profileError.message }, { status: 500 })
-    }
-  }
-
   return NextResponse.json({ ok: true })
 }

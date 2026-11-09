@@ -78,13 +78,17 @@ export function confirmEmailChange({ name, newEmail, url }: { name: string; newE
   }
 }
 
-/** To the old address, when someone asks to move the account to a new one. */
-export function emailChangeRequested({ name, newEmail }: { name: string; newEmail: string }): EmailContent {
+/**
+ * To the current address, first, when someone asks to move the account to a
+ * new one: nothing changes unless it's approved here, so a stolen session
+ * alone can't take the account.
+ */
+export function approveEmailChange({ name, newEmail, url }: { name: string; newEmail: string; url: string }): EmailContent {
   return {
-    subject: "Your PokeFindr email is being changed",
-    text: `${hi(name)}\n\nSomeone asked to change your PokeFindr account's email to ${newEmail}. It changes once that address confirms.\n\nIf this wasn't you, change your password now and contact us by replying to this email.`,
+    subject: "Approve your PokeFindr email change",
+    text: `${hi(name)}\n\nSomeone asked to change your PokeFindr account's email to ${newEmail}. If it was you, approve it here, then confirm the new address from its inbox:\n${url}\n\nIf it wasn't you, ignore this email and change your password: nothing changes unless you approve.`,
     html: layout(
-      `<p style="margin:0 0 12px">${escapeHtml(hi(name))}</p><p style="margin:0">Someone asked to change your PokeFindr account's email to <strong>${escapeHtml(newEmail)}</strong>. It changes once that address confirms.</p><p style="margin:20px 0 0">If this wasn't you, change your password now and contact us by replying to this email.</p>`,
+      `<p style="margin:0 0 12px">${escapeHtml(hi(name))}</p><p style="margin:0">Someone asked to change your PokeFindr account's email to <strong>${escapeHtml(newEmail)}</strong>. If it was you, approve it, then confirm the new address from its inbox.</p>${button(url, "Approve the change")}<p style="margin:20px 0 0;color:${EMAIL_COLORS.muted};font-size:13px">If it wasn't you, ignore this email and change your password: nothing changes unless you approve.</p>`,
     ),
   }
 }

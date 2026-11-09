@@ -11,6 +11,7 @@ import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { LoadSpinner } from '@/components/wrappers/LoadSpinner'
 import { useSessionContext } from '@/components/providers/SessionProvider'
 import { ClearAssistantHistory } from '@/components/assistant/ClearAssistantHistory'
+import { handleSubmitError } from '@/lib/forms'
 
 interface Settings {
   fullName: string
@@ -26,8 +27,18 @@ export default function SettingsPage() {
   const [loading, setLoading]       = useState(true)
   const [editing, setEditing]       = useState<keyof Settings | null>(null)
   const [inputValue, setInputValue] = useState('')
+  /** What's happening with an email change: sent for approval, or back from one of its links. */
+  const [emailNote, setEmailNote] = useState<string | null>(null)
 
-  
+  useEffect(() => {
+    // Both email-change links land on /settings?email=link.
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('email') === 'link' && params.get('error')) {
+      setEmailNote("That link has expired or was already used. Start the change again below.")
+    } else if (params.get('email') === 'link') {
+      setEmailNote("Thanks. If you approved the change from your old address, confirm it from the new one's inbox. Your email below is the current one.")
+    }
+  }, [])
 
   useEffect(() => {
     ;(async () => {
@@ -51,15 +62,20 @@ export default function SettingsPage() {
 
   async function saveEdit(field: keyof Settings) {
     try {
-      await axios.patch(
+      const { data } = await axios.patch<{ emailPending?: boolean }>(
         '/api/user-settings',
         { [field]: inputValue },
         { withCredentials: true }
       )
-      setSettings((s) => ({ ...s, [field]: inputValue }))
+      if (data.emailPending) {
+        // Nothing changes until both addresses have answered.
+        setEmailNote(`We've emailed ${settings.email} a link to approve the change to ${inputValue}. Then confirm it from that inbox.`)
+      } else {
+        setSettings((s) => ({ ...s, [field]: inputValue }))
+      }
       setEditing(null)
     } catch (err) {
-      console.error('Failed to save', err)
+      handleSubmitError(err)
     }
   }
 
@@ -100,6 +116,11 @@ export default function SettingsPage() {
                 This information will be displayed publicly so be careful what you share.
               </p>
 
+              {emailNote && (
+                <p role="status" className="mt-4 rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground">
+                  {emailNote}
+                </p>
+              )}
               {loading ? (
                 <LoadSpinner text="Loading settings..." fullScreen={false} /> 
               ) : (
@@ -121,7 +142,8 @@ export default function SettingsPage() {
                           {editing === field ? (
                             <div className="flex w-full gap-x-2">
                               <input
-                                type="text"
+                                type={field === 'email' ? 'email' : 'text'}
+                                aria-label={label}
                                 value={inputValue}
                                 onChange={(e) => setInputValue(e.target.value)}
                                 className="flex-grow rounded-md border p-2"
