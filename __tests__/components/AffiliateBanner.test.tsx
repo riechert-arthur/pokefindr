@@ -44,7 +44,8 @@ describe("AffiliateBanner Component", () => {
     const closeBtn = screen.getByLabelText("Close ad")
     expect(closeBtn).toBeTruthy()
 
-    const link = screen.getByRole("link", { name: /Sponsored: TCGplayer/i })
+    // The image is the link's only content: its alt carries the offer too.
+    const link = screen.getByRole("link", { name: /Sponsored: TCGplayer\..*10% off qualifying purchases/i })
     expect(link).toBeInTheDocument()
   })
 

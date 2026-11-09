@@ -82,7 +82,7 @@ const AffiliateBanner: React.FC = () => {
         >
           <img
             src={imageLink}
-            alt={`Sponsored: ${banner.sponsor}. ${banner.title}`}
+            alt={[`Sponsored: ${banner.sponsor}.`, banner.title, banner.body].filter(Boolean).join(" ")}
             width={1500}
             height={300}
             className="
