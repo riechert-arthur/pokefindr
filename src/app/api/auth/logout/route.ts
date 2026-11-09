@@ -1,9 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { identityCookies, identityRequest } from "@/server/auth/identity"
+import { identityCookies, identityRequest, refuseCrossSite } from "@/server/auth/identity"
 import { clearSessionCookie } from "@/server/auth/session"
 
 /** Signs out: revokes the Better Auth session and clears both cookies. */
 export async function POST(req: NextRequest) {
+  const refused = refuseCrossSite(req)
+  if (refused) return refused
   const response = NextResponse.json({ ok: true })
   try {
     const res = await identityRequest(req, "/sign-out")

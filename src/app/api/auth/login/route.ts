@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod"
-import { identityCookies, identityRequest } from "@/server/auth/identity"
+import { identityCookies, identityRequest, refuseCrossSite } from "@/server/auth/identity"
 import { createSessionCookie } from "@/server/auth/session"
 import { getProfile, getSessionTier } from "@/server/services/users"
 
@@ -12,6 +12,8 @@ const body = z.object({ email: z.string().min(1).max(320), password: z.string().
  * passes on Better Auth's session cookie, which logout revokes.
  */
 export async function POST(req: NextRequest) {
+  const refused = refuseCrossSite(req)
+  if (refused) return refused
   const parsed = body.safeParse(await req.json().catch(() => null))
   if (!parsed.success) return NextResponse.json({ error: "Enter your email and password" }, { status: 400 })
 
