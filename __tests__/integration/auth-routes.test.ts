@@ -98,11 +98,9 @@ describe("sign-up", () => {
     expect(await getDb().select().from(users).where(eq(users.email, "stale@example.com"))).toEqual([])
   })
 
-  it("lowercases names one way (Postgres's), so a held name can't be matched by a different case", async () => {
-    // JavaScript lowercases "ΜΑΣ" to "μας", Postgres to "μασ".
-    expect((await post(signup, { ...form, email: "greek@example.com", username: "ΜΑΣ" })).status).toBe(200)
-    expect((await post(signup, { ...form, email: "other@example.com", username: "μασ" })).status).toBe(409)
-    expect(await getDb().select().from(users).where(eq(users.email, "greek@example.com"))).toHaveLength(1)
+  it("takes only ASCII usernames, so JavaScript and Postgres lowercase them the same", async () => {
+    // JavaScript lowercases "ΜΑΣ" to "μας", Postgres to "μασ": names like it could miss a live hold.
+    expect((await post(signup, { ...form, email: "greek@example.com", username: "ΜΑΣ" })).status).toBe(400)
   })
 
   it("keeps names from before our own accounts (profiles with no user row)", async () => {

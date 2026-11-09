@@ -106,6 +106,14 @@ describe("getServerConfig", () => {
     expect(getServerConfig().SMTP_URL).toBe("smtp://localhost:1025")
   })
 
+  it("needs both halves of an OAuth provider's credentials", () => {
+    vi.stubEnv("GOOGLE_CLIENT_ID", "id")
+    expect(() => getServerConfig()).toThrowError(/GOOGLE_CLIENT_SECRET: google sign-in needs both/)
+    resetServerConfigForTests()
+    vi.stubEnv("GOOGLE_CLIENT_SECRET", "secret")
+    expect(getServerConfig().GOOGLE_CLIENT_ID).toBe("id")
+  })
+
   it("needs MAIL_FROM to send email in production", () => {
     vi.stubEnv("MAIL_PROVIDER", "smtp")
     vi.stubEnv("SMTP_URL", "smtp://localhost:1025")

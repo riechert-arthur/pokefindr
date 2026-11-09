@@ -1,94 +1,24 @@
+import { NextResponse, type NextRequest } from "next/server"
+import { callbackSchema } from "@/lib/schemas"
+import { identitySession, signedIn } from "@/server/auth/finish"
+import { createProfile, getProfile, usernameTaken, UsernameTakenError } from "@/server/services/users"
 
-import { NextRequest, NextResponse } from 'next/server'
-import { getAdminClient } from '@/lib/supabase/db'
-import { createSessionCookie, tierFromPlanName } from '@/server/auth/session'
-
-interface OnboardBody {
-  access_token: string
-  username:     string
-}
-
+/** A new OAuth user picks a username: creates their profile, then signs them in. */
 export async function POST(req: NextRequest) {
-  let body: OnboardBody
+  const parsed = callbackSchema.safeParse(await req.json().catch(() => null))
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.errors.map((e) => e.message).join(", ") }, { status: 422 })
+
+  const session = await identitySession(req.headers)
+  if (!session) return NextResponse.json({ error: "Not signed in" }, { status: 401 })
+  if (await getProfile(session.user.id)) return signedIn(session.user)
+
+  const { username } = parsed.data
+  if (await usernameTaken(username)) return NextResponse.json({ error: "That username is already taken" }, { status: 409 })
   try {
-    body = await req.json()
-  } catch {
-    return NextResponse.json(
-      { error: 'Invalid JSON' },
-      { status: 400 }
-    )
+    await createProfile({ id: session.user.id, username, fullName: session.user.name || null, onboarded: true })
+  } catch (err) {
+    if (err instanceof UsernameTakenError) return NextResponse.json({ error: err.message }, { status: 409 })
+    throw err
   }
-
-  const { access_token, username } = body
-
-  if (!access_token) {
-    return NextResponse.json(
-      { error: 'Missing access_token' },
-      { status: 400 }
-    )
-  }
-  if (!username) {
-    return NextResponse.json(
-      { error: 'username is required' },
-      { status: 422 }
-    )
-  }
-
-  const {
-    data: { user },
-    error: authError
-  } = await getAdminClient().auth.getUser(access_token)
-
-  if (authError || !user) {
-    console.error('Auth callback error', authError)
-    return NextResponse.json(
-      { error: 'Failed to fetch user' },
-      { status: 401 }
-    )
-  }
-
-  const { error: profileError } = await getAdminClient()
-    .from('profiles')
-    .update({
-      username,
-      full_name: user.user_metadata.full_name,
-      onboarded: true,
-    })
-    .eq('id', user.id)
-
-  if (profileError) {
-    console.error('Onboarding update failed', profileError)
-    return NextResponse.json(
-      { error: profileError.message },
-      { status: 500 }
-    )
-  }
-
-  const { data: subData, error: subError } = await getAdminClient()
-    .from('subscriptions')
-    .select('plan_name')
-    .eq('user_id', user.id)
-    .limit(1)
-    .single()
-
-  if (subError && subError.code !== 'PGRST116') { 
-    console.error('Subscription lookup failed', subError)
-    return NextResponse.json(
-      { error: 'Subscription lookup error' },
-      { status: 500 }
-    )
-  }
-
-  const tier = tierFromPlanName(subData?.plan_name)
-
-  const cookie = createSessionCookie({ sub: user.id, email: user.email, tier })
-
-  return NextResponse.json(
-    { ok: true },
-    {
-      status: 200,
-      headers: { 'Set-Cookie': cookie },
-    }
-  )
+  return signedIn(session.user)
 }
-

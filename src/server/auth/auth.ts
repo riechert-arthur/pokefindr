@@ -58,6 +58,46 @@ export async function settleBackgroundForTests() {
   await Promise.all(pending)
 }
 
+/**
+ * Whether Better Auth may create this user. An unconfirmed email is only
+ * allowed from our email sign-up, which confirms it next. From Google or
+ * Discord it's refused: Discord lets people sign in with an address it
+ * hasn't checked, so someone could take your email, and keep their
+ * Discord login on the account after you reset its password.
+ */
+export function mayCreateUser(user: { emailVerified: boolean }, endpoint: { path: string } | null): boolean {
+  return user.emailVerified || !endpoint || endpoint.path === "/sign-up/email"
+}
+
+/**
+ * Swaps an email the provider hasn't confirmed for one that matches no
+ * account, before Better Auth looks it up. A sign-in then fails the same way
+ * whether or not the real address has an account here (the create hook
+ * refuses it), while someone whose provider account is already linked is
+ * found by that link and still gets in. Better Auth doesn't save it.
+ */
+const onlyConfirmedEmail = (confirmed: boolean | undefined, providerUserId: string) =>
+  confirmed ? {} : { email: `${providerUserId}@unconfirmed.invalid` }
+
+function socialProviders(config: ServerConfig) {
+  return {
+    ...(config.GOOGLE_CLIENT_ID && {
+      google: {
+        clientId: config.GOOGLE_CLIENT_ID,
+        clientSecret: config.GOOGLE_CLIENT_SECRET!,
+        mapProfileToUser: (profile: { sub: string; email_verified?: boolean }) => onlyConfirmedEmail(profile.email_verified, `google-${profile.sub}`),
+      },
+    }),
+    ...(config.DISCORD_CLIENT_ID && {
+      discord: {
+        clientId: config.DISCORD_CLIENT_ID,
+        clientSecret: config.DISCORD_CLIENT_SECRET!,
+        mapProfileToUser: (profile: { id: string; verified?: boolean }) => onlyConfirmedEmail(profile.verified, `discord-${profile.id}`),
+      },
+    }),
+  }
+}
+
 function makeAuth(config: ServerConfig) {
   return betterAuth({
     appName: "PokeFindr",
@@ -97,6 +137,10 @@ function makeAuth(config: ServerConfig) {
       expiresIn: 60 * 60 * 24,
       sendVerificationEmail: ({ user, url }) => sendAccountEmail(user.email, verifyEmail({ name: user.name, url })),
     },
+    // Signing in with Google or Discord links to an existing account with the same
+    // email only when both sides have confirmed it (Better Auth's default).
+    socialProviders: socialProviders(config),
+    databaseHooks: { user: { create: { before: async (user, endpoint) => (mayCreateUser(user, endpoint) ? undefined : false) } } },
     session: { expiresIn: 60 * 60 * 24 * 7 },
     // In the database, so limits hold across serverless instances. On everywhere but tests.
     rateLimit: { enabled: config.NODE_ENV !== "test", storage: "database", window: 60, max: 100 },

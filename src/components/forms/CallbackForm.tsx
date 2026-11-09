@@ -25,6 +25,8 @@ import { useRouter } from "next/navigation"
 import { callbackSchema } from "@/lib/schemas"
 import { z } from "zod"
 import { broadcastAuth } from "@/lib/auth/broadcast"
+import { handleSubmitError } from "@/lib/forms"
+import { Input } from "@/components/ui/input"
 
 export function CallbackForm({
   className,
@@ -38,23 +40,12 @@ export function CallbackForm({
 
   async function onSubmit(values: z.infer<typeof callbackSchema>) {
     try {
-      const hash = window.location.hash.substring(1)
-      const params = new URLSearchParams(hash)
-      const accessToken = params.get("access_token")
-      if (!accessToken) throw new Error("No access token in URL")
-
-      await axios.post(
-        "/api/auth/onboarding",
-        { access_token: accessToken, username: values.username },
-        { withCredentials: true }
-      )
-
+      await axios.post("/api/auth/onboarding", { username: values.username }, { withCredentials: true })
       broadcastAuth("login")
       toast.success("Welcome aboard!")
-      router.push("/")
+      router.push("/home")
     } catch (err: unknown) {
-      console.error(err)
-      toast.error("Something went wrong")
+      handleSubmitError(err)
     }
   }
 
@@ -64,7 +55,7 @@ export function CallbackForm({
         <CardHeader className="text-center">
           <CardTitle>Almost done…</CardTitle>
           <CardDescription>
-            Pick a unique username to finish signing in
+            Pick a username. It&apos;s what others see on your reviews.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -77,11 +68,7 @@ export function CallbackForm({
                   <FormItem>
                     <FormLabel>Username</FormLabel>
                     <FormControl>
-                      <input
-                        className="w-full rounded border px-3 py-2"
-                        placeholder="your-handle"
-                        {...field}
-                      />
+                      <Input placeholder="your-handle" autoComplete="username" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -95,7 +82,7 @@ export function CallbackForm({
               >
                 {form.formState.isSubmitting
                   ? "Finishing up…"
-                  : "Complete Sign-in"}
+                  : "Finish signing in"}
               </Button>
             </form>
           </Form>
