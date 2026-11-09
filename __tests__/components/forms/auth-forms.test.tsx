@@ -59,3 +59,11 @@ describe("ForgotPasswordForm", () => {
     expect(screen.getByRole("button", { name: "Send reset link" })).toBeInTheDocument()
   })
 })
+
+describe("RegistrationForm", () => {
+  it("labels every field", async () => {
+    const { RegistrationForm } = await import("@/components/forms/SignupForm")
+    render(<RegistrationForm />)
+    for (const label of ["Name", "Username", "Email", "Password", "Verify Password"]) expect(screen.getByLabelText(label)).toBeInTheDocument()
+  })
+})

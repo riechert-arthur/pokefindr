@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -119,9 +120,9 @@ export function LoginForm({
                         <div className="grid gap-3">
                           <div className="flex items-center">
                             <FormLabel>Password</FormLabel>
-                            <a href="/forgot-password" className="ml-auto text-sm underline-offset-4 hover:underline">
+                            <Link href="/forgot-password" className="ml-auto text-sm underline-offset-4 hover:underline">
                               Forgot your password?
-                            </a>
+                            </Link>
                           </div>
                           <FormControl>
                             <Input type="password" {...field} />

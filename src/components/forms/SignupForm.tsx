@@ -11,12 +11,12 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
+  FormLabel,
   FormMessage,
 } from "@/components/ui/form"
 import { z } from "zod"
@@ -86,12 +86,12 @@ export function RegistrationForm({
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormControl>
-                          <div className="grid gap-3">
-                            <Label>Name</Label>
-                            <Input placeholder="Jane Doe" {...field} />
-                          </div>
-                        </FormControl>
+                        <div className="grid gap-3">
+                          <FormLabel>Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Jane Doe" autoComplete="name" {...field} />
+                          </FormControl>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -101,12 +101,12 @@ export function RegistrationForm({
                     name="username"
                     render={({ field }) => (
                       <FormItem>
-                        <FormControl>
-                          <div className="grid gap-3">
-                            <Label>Username</Label>
-                            <Input placeholder="jdoe1234" {...field} />
-                          </div>
-                        </FormControl>
+                        <div className="grid gap-3">
+                          <FormLabel>Username</FormLabel>
+                          <FormControl>
+                            <Input placeholder="jdoe1234" autoComplete="username" {...field} />
+                          </FormControl>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -116,12 +116,12 @@ export function RegistrationForm({
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormControl>
-                          <div className="grid gap-3">
-                            <Label htmlFor="email">Email</Label>
-                            <Input placeholder="m@example.com" {...field} />
-                          </div>
-                        </FormControl>
+                        <div className="grid gap-3">
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="m@example.com" autoComplete="email" {...field} />
+                          </FormControl>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -131,14 +131,12 @@ export function RegistrationForm({
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormControl>
-                          <div className="grid gap-3">
-                            <div className="flex items-center">
-                              <Label htmlFor="password">Password</Label>
-                            </div>
-                            <Input type="password" {...field} />
-                          </div>
-                        </FormControl>
+                        <div className="grid gap-3">
+                          <FormLabel>Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" autoComplete="new-password" {...field} />
+                          </FormControl>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -148,14 +146,12 @@ export function RegistrationForm({
                     name="passwordVerification"
                     render={({ field }) => (
                       <FormItem>
-                        <FormControl>
-                          <div className="grid gap-3">
-                            <div className="flex items-center">
-                              <Label htmlFor="password">Verify Password</Label>
-                            </div>
-                            <Input type="password" {...field} />
-                          </div>
-                        </FormControl>
+                        <div className="grid gap-3">
+                          <FormLabel>Verify Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" autoComplete="new-password" {...field} />
+                          </FormControl>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}

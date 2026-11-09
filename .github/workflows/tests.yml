@@ -143,6 +143,23 @@ jobs:
           make run
           test -f .env.local
           curl -fsS -o /dev/null http://localhost:3000/map
+      # Sign-up, email confirmation, login, a review, logout, password reset and
+      # the dev user, through the browser, with Mailpit catching the emails.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Account flows end to end
+        run: npx playwright test
+      - name: Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7
       - name: Second run changes nothing
         run: |
           env_before=$(sha256sum .env.local)
