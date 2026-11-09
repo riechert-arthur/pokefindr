@@ -4,9 +4,9 @@ import { cn } from "@/lib/utils"
 export type PillTone = "ok" | "warn" | "crit" | "idle"
 
 const TONES: Record<PillTone, string> = {
-  ok: "bg-success/12 text-success",
-  warn: "bg-warning/14 text-warning",
-  crit: "bg-destructive/12 text-destructive",
+  ok: "bg-success/10 text-success",
+  warn: "bg-warning/15 text-warning",
+  crit: "bg-destructive/10 text-destructive",
   idle: "bg-muted text-muted-foreground",
 }
 
