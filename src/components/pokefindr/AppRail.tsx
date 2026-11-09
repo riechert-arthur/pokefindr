@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import type { ComponentType, Ref, SVGProps } from "react"
-import { BookOpenIcon, HouseIcon, MapPinIcon, SettingsIcon } from "lucide-react"
+import { BookOpenIcon, HouseIcon, MapPinIcon, SettingsIcon, ShieldIcon } from "lucide-react"
 import { Logo } from "@/components/brand/Logo"
 import { DiscordIcon } from "@/components/icons/DiscordIcon"
 import { ThemeToggle } from "@/components/pokefindr/ThemeToggle"
@@ -25,6 +25,7 @@ const MAIN: RailItem[] = [
 
 const DISCORD: RailItem = { href: "https://discord.gg/f2uUR5bAZU", label: "Discord", icon: DiscordIcon, external: true }
 const SETTINGS: RailItem = { href: "/settings", label: "Settings", icon: SettingsIcon }
+const ADMIN: RailItem = { href: "/admin", label: "Admin", icon: ShieldIcon }
 
 /** A 40px rounded icon button, as in the prototype's `.rail button`. */
 const itemClass =
@@ -52,6 +53,8 @@ export const APP_NAV_ID = "app-navigation"
 interface AppRailProps {
   /** Shows Settings. */
   signedIn?: boolean
+  /** Shows Admin, for moderators and admins. */
+  isAdmin?: boolean
   ref?: Ref<HTMLElement>
   className?: string
 }
@@ -62,7 +65,7 @@ interface AppRailProps {
  * the current page shaded. Discord, Settings and the theme toggle sit at the
  * bottom; the prototype leaves them out, but the app needs them somewhere.
  */
-export function AppRail({ signedIn = false, className, ref }: AppRailProps) {
+export function AppRail({ signedIn = false, isAdmin = false, className, ref }: AppRailProps) {
   const pathname = usePathname()
   const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
 
@@ -79,6 +82,7 @@ export function AppRail({ signedIn = false, className, ref }: AppRailProps) {
       {MAIN.map((item) => (
         <RailLink key={item.href} item={item} current={isCurrent(item.href)} />
       ))}
+      {isAdmin && <RailLink item={ADMIN} current={isCurrent(ADMIN.href)} />}
       <div className="mt-auto flex flex-col items-center gap-2">
         <RailLink item={DISCORD} current={false} />
         {signedIn && <RailLink item={SETTINGS} current={isCurrent(SETTINGS.href)} />}

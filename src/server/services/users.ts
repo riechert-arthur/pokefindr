@@ -1,4 +1,5 @@
 import "server-only"
+import type { Role } from "@/lib/auth/roles"
 import { and, eq, gt, ne, sql, type SQLWrapper } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
 import { profiles, subscriptions, usernameHolds, users } from "@/server/db/schema"
@@ -10,6 +11,8 @@ export interface PublicProfile {
   username: string
   full_name: string | null
   metadata: unknown
+  /** member, moderator or admin: what the app shows (an Admin link); the API checks it again. */
+  role: Role
 }
 
 export class UsernameTakenError extends Error {
@@ -27,7 +30,7 @@ function isUniqueViolation(err: unknown): boolean {
 
 export async function getProfile(userId: string, db: Database = getDb()): Promise<PublicProfile | null> {
   const [row] = await db
-    .select({ id: profiles.id, username: profiles.username, full_name: profiles.fullName, metadata: profiles.metadata })
+    .select({ id: profiles.id, username: profiles.username, full_name: profiles.fullName, metadata: profiles.metadata, role: profiles.role })
     .from(profiles)
     .where(eq(profiles.id, userId))
   return row ?? null

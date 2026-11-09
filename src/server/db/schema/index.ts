@@ -47,6 +47,7 @@ import { sql } from "drizzle-orm"
 import { geographyPoint } from "../geography"
 import type { LocationKind } from "@/lib/types/locations"
 import type { RejectReason, ShopSells, SubmissionKind, SubmissionStatus } from "@/lib/submissions/constants"
+import type { Role } from "@/lib/auth/roles"
 
 const createdAt = () => timestamp("created_at", { withTimezone: true }).defaultNow()
 
@@ -146,14 +147,19 @@ export const profiles = pgTable(
     onboarded: boolean("onboarded").notNull().default(false),
     rating: doublePrecision("rating"),
     metadata: jsonb("metadata"),
+    /** member, moderator (reviews submissions) or admin (migration 0012). */
+    role: text("role").$type<Role>().notNull().default("member"),
     createdAt: createdAt(),
     // Set by the ORM on every update; there is no database trigger for it.
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .$onUpdate(() => new Date()),
   },
-  // One username per person, in any case (migration 0010).
-  (t) => [uniqueIndex("profiles_username_lower_key").on(sql`lower(${t.username})`)],
+  (t) => [
+    // One username per person, in any case (migration 0010).
+    uniqueIndex("profiles_username_lower_key").on(sql`lower(${t.username})`),
+    check("profiles_role_check", sql`${t.role} in ('member', 'moderator', 'admin')`),
+  ],
 )
 
 /**
