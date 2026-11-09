@@ -33,6 +33,7 @@ export const ADMIN_GROUPS: readonly AdminGroup[] = [
     id: "locations",
     label: "Locations",
     sections: [
+      { id: "coverage", label: "Coverage", sub: "Where the map has locations today.", access: "admin" },
       {
         id: "add-vending",
         label: "Add vending machine",
