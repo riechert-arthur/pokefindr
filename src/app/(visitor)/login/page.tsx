@@ -15,7 +15,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const query = await searchParams
   const { verified, error, oauth } = query
   const next = authorizeContinuation(query)
-  const notice: LoginNotice | null = next ? "connect-app" : oauth ? "oauth-failed" : error ? "link-expired" : verified ? "verified" : null
+  const notice: LoginNotice | null = oauth ? "oauth-failed" : next ? "connect-app" : error ? "link-expired" : verified ? "verified" : null
   return (
     <AuthPage>
       <LoginForm notice={notice} providers={oauthProviders(getServerConfig())} next={next} />

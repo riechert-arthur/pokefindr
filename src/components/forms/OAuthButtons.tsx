@@ -27,6 +27,18 @@ const ICONS: Record<OAuthProvider, () => React.ReactNode> = {
  * The provider sends people back to /login/callback (or /login?oauth=failed),
  * with `next` when they were connecting an MCP client.
  */
+/**
+ * Where a failed or cancelled provider sign-in lands: /login, or, while
+ * connecting an MCP client, this same login page (its signed request
+ * intact), so trying again still finishes connecting.
+ */
+function failedUrl(next: string | null): string {
+  if (!next) return "/login?oauth=failed"
+  const here = new URLSearchParams(window.location.search)
+  here.set("oauth", "failed")
+  return `/login?${here}`
+}
+
 export function OAuthButtons({ providers, next = null }: { providers: readonly OAuthProvider[]; next?: string | null }) {
   const [going, setGoing] = useState<OAuthProvider | null>(null)
   if (providers.length === 0) return null
@@ -37,7 +49,7 @@ export function OAuthButtons({ providers, next = null }: { providers: readonly O
       const res = await fetch("/api/identity/sign-in/social", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider, callbackURL: callbackWithNext(next), newUserCallbackURL: callbackWithNext(next), errorCallbackURL: "/login?oauth=failed", disableRedirect: true }),
+        body: JSON.stringify({ provider, callbackURL: callbackWithNext(next), newUserCallbackURL: callbackWithNext(next), errorCallbackURL: failedUrl(next), disableRedirect: true }),
       })
       const { url } = (await res.json()) as { url?: string }
       if (!res.ok || !url) throw new Error(`sign-in/social answered ${res.status}`)

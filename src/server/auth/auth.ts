@@ -37,6 +37,20 @@ export const IDENTITY_BASE_PATH = "/api/identity"
 /** Where MCP clients are sent to approve access (#134). */
 export const MCP_CONSENT_PAGE = "/oauth/consent"
 
+/**
+ * Disconnects every MCP client from the account: its refresh tokens, access
+ * token rows and approvals go. Revoking sessions doesn't reach them (the
+ * refresh grant needs no session). An access token already issued is a JWT
+ * and still works until it expires, within the hour.
+ */
+export async function revokeConnectedApps(userId: string, db = getDb()): Promise<void> {
+  await db.transaction(async (tx) => {
+    await tx.delete(oauthAccessTokens).where(eq(oauthAccessTokens.userId, userId))
+    await tx.delete(oauthRefreshTokens).where(eq(oauthRefreshTokens.userId, userId))
+    await tx.delete(oauthConsents).where(eq(oauthConsents.userId, userId))
+  })
+}
+
 /** The MCP endpoint OAuth tokens are for: their audience. */
 export const mcpResource = (config: Pick<ServerConfig, "APP_URL">) => new URL(MCP_ACCOUNT_PATH, config.APP_URL).toString()
 
@@ -223,6 +237,8 @@ function makeAuth(config: ServerConfig) {
       // someone who signed up with your email and never confirmed can't keep you out.
       onPasswordReset: async ({ user }) => {
         await getDb().update(users).set({ emailVerified: true }).where(eq(users.id, user.id))
+        // Whoever reset it may be taking the account back: apps connected before lose access too.
+        await revokeConnectedApps(user.id)
       },
     },
     emailVerification: {

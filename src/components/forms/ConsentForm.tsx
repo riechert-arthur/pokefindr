@@ -13,7 +13,7 @@ import { LoadingButton } from "@/components/wrappers/LoadingButton"
  * request from this page's query; it answers with where to go next (back
  * to the app, with a code or with access_denied).
  */
-export function ConsentForm({ client, username, permissions }: { client: { name: string; redirectHost: string | null; uri: string | null }; username: string; permissions: string[] }) {
+export function ConsentForm({ client, username, permissions }: { client: { name: string; redirectHost: string }; username: string; permissions: string[] }) {
   const [sending, setSending] = useState<"allow" | "deny" | null>(null)
 
   async function answer(accept: boolean) {
@@ -55,13 +55,7 @@ export function ConsentForm({ client, username, permissions }: { client: { name:
           </ul>
         </div>
         <p className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
-          {client.redirectHost ? (
-            <>
-              Allowing sends you back to <span className="font-medium text-foreground">{client.redirectHost}</span>. Only allow it if you just asked an app to connect.
-            </>
-          ) : (
-            "Only allow it if you just asked an app to connect."
-          )}{" "}
+          Allowing sends you back to <span className="font-medium text-foreground">{client.redirectHost}</span>. Only allow it if you just asked an app to connect.{" "}
           It can never see your password. Disconnect it any time from the app.
         </p>
         <div className="grid gap-3">
@@ -76,14 +70,6 @@ export function ConsentForm({ client, username, permissions }: { client: { name:
             {sending === "deny" ? "Cancelling…" : "Cancel"}
           </Button>
         </div>
-        {client.uri && (
-          <p className="text-center text-sm text-muted-foreground">
-            About this app:{" "}
-            <a href={client.uri} target="_blank" rel="noopener noreferrer nofollow" className="underline underline-offset-4">
-              {new URL(client.uri).host}
-            </a>
-          </p>
-        )}
       </CardContent>
     </Card>
   )
