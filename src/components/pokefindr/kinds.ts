@@ -14,6 +14,11 @@ export const VendingMachineIcon = createLucideIcon("VendingMachine", [
 ])
 
 
+/**
+ * A kind's look, and its English names. Pages show the names from the
+ * catalog (`kinds` in messages/*.yml); these English ones are for what stays
+ * English: emails to moderators, the assistant's tools and the admin pages.
+ */
 export interface KindMeta {
   /** Plural label for chips and filters. */
   label: string
@@ -55,6 +60,3 @@ export function toKind(value: unknown): LocationKind {
   }
   return "vending"
 }
-
-/** "Vending machine": one of a kind, capitalized, for labels. */
-export const kindName = (kind: LocationKind) => KINDS[kind].one.charAt(0).toUpperCase() + KINDS[kind].one.slice(1)

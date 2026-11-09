@@ -1,12 +1,13 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 import type { Feature, FeatureCollection, MultiPolygon, Polygon } from "geojson"
 import { Layer, Popup, Source, useMap, type MapMouseEvent } from "./engine"
 import { countryAtPoint, LAYERS, SOURCES, worldLayers, type CountryHit, type MapColors } from "./layers"
-import { COUNTRIES_URL, SUPPORTED_COUNTRIES, UNSUPPORTED } from "@/lib/map/countries"
+import { COUNTRIES_URL, SUPPORTED_COUNTRIES } from "@/lib/map/countries"
 import { worldWithHoles } from "@/lib/map/geo"
+import { useTranslations } from "next-intl"
 
 type Outline = Feature<Polygon | MultiPolygon, { name: string; iso: string }>
 type CountryCollection = FeatureCollection<Polygon | MultiPolygon, { name: string; iso: string }>
@@ -45,6 +46,10 @@ export function CountryLayers({ colors, beforeId, waterIds }: CountryLayersProps
   const { current: map } = useMap()
   const [geo, setGeo] = useState<Geo | null>(null)
   const [tip, setTip] = useState<{ lng: number; lat: number; name: string | null } | null>(null)
+  const t = useTranslations("map.country")
+  // The click handler below is set up once per map; it reads the messages here.
+  const messages = useRef({ t })
+  messages.current = { t }
 
   useEffect(() => {
     const controller = new AbortController()
@@ -113,7 +118,9 @@ export function CountryLayers({ colors, beforeId, waterIds }: CountryLayersProps
     const onClick = (e: MapMouseEvent) => {
       const hit = hitAt(e.point)
       if (hit.kind !== "none") {
-        toast(UNSUPPORTED.toastTitle(hit.kind === "country" ? hit.name : null), { description: UNSUPPORTED.toastBody })
+        // Names the country when the outlines know it (small ones, like Malta, aren't in the 110m set).
+        const { t } = messages.current
+        toast(hit.kind === "country" ? t("unsupported", { name: hit.name }) : t("unsupportedUnnamed"), { description: t("coverage") })
       }
     }
     map.on("mousemove", onMove)
@@ -154,7 +161,7 @@ export function CountryLayers({ colors, beforeId, waterIds }: CountryLayersProps
           className="country-tip"
         >
           {tip.name && <b className="block text-[13px] font-semibold">{tip.name}</b>}
-          <span className="text-muted-foreground">{UNSUPPORTED.tooltip}</span>
+          <span className="text-muted-foreground">{t("tooltip")}</span>
         </Popup>
       )}
     </>

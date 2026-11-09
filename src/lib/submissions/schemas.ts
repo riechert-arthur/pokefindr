@@ -12,12 +12,19 @@ export const MAX_EVENT_DAYS = 14
  */
 const HIDDEN = /[\p{Cc}\p{Cf}]/u
 
+/**
+ * Each message also names its catalog message in `params.key` (with its
+ * values), so the form can show it in the page's language (addPlace.errors).
+ * The English here is what the API and the MCP tools return.
+ */
+const say = (message: string, key: string, values: Record<string, number> = {}) => ({ message, params: { key, ...values } })
+
 /** Text people type: NFC-normalized and trimmed, without control or invisible characters. */
 const text = () =>
   z
     .string()
     .transform((v) => v.normalize("NFC").trim())
-    .refine((v) => !HIDDEN.test(v), { message: "Remove the hidden or control characters." })
+    .refine((v) => !HIDDEN.test(v), say("Remove the hidden or control characters.", "hidden"))
 
 /**
  * A link people can open: http or https only (no javascript: or data: links
@@ -25,15 +32,15 @@ const text = () =>
  * characters (a right-to-left override could disguise where it goes).
  */
 const webLink = text()
-  .refine((v) => v.length <= 300, { message: "Use a shorter link." })
+  .refine((v) => v.length <= 300, say("Use a shorter link.", "linkTooLong"))
   .optional()
   .transform((v) => v || undefined)
-  .refine((v) => v === undefined || /^https?:\/\/[^\s/$.?#][^\s]*$/i.test(v), { message: "Enter a link starting with https://" })
+  .refine((v) => v === undefined || /^https?:\/\/[^\s/$.?#][^\s]*$/i.test(v), say("Enter a link starting with https://", "link"))
 
 /** Optional text: empty becomes undefined. */
 const optionalText = (max: number) =>
   text()
-    .refine((v) => v.length <= max, { message: `Use at most ${max} characters.` })
+    .refine((v) => v.length <= max, say(`Use at most ${max} characters.`, "tooLong", { max }))
     .optional()
     .transform((v) => v || undefined)
 
@@ -42,14 +49,14 @@ const optionalText = (max: number) =>
 /** What every kind has: a name and where it is. */
 const place = {
   name: text()
-    .refine((v) => v.length >= 2, { message: "Enter a name." })
-    .refine((v) => v.length <= 100, { message: "Use at most 100 characters." }),
+    .refine((v) => v.length >= 2, say("Enter a name.", "name"))
+    .refine((v) => v.length <= 100, say("Use at most 100 characters.", "tooLong", { max: 100 })),
   lng: z.number().min(-180).max(180),
   lat: z.number().min(-90).max(90),
   address: optionalText(200),
   city: text()
-    .refine((v) => v.length >= 1, { message: "Enter a city." })
-    .refine((v) => v.length <= 80, { message: "Use at most 80 characters." }),
+    .refine((v) => v.length >= 1, say("Enter a city.", "city"))
+    .refine((v) => v.length <= 80, say("Use at most 80 characters.", "tooLong", { max: 80 })),
   /** Two-letter code in the US; the region's name elsewhere. */
   state: optionalText(80),
   countryCode: z.string().regex(/^[A-Z]{2}$/).default("US"),
@@ -81,8 +88,8 @@ export const eventSubmissionSchema = z.object({
 export const submissionSchema = z.discriminatedUnion("kind", [shopSubmissionSchema, eventSubmissionSchema]).superRefine((s, ctx) => {
   if (s.kind !== "event" || !s.endsAt) return
   const length = Date.parse(s.endsAt) - Date.parse(s.startsAt)
-  if (length < 0) ctx.addIssue({ code: "custom", message: "It has to end after it starts.", path: ["endsAt"] })
-  else if (length > MAX_EVENT_DAYS * DAY_MS) ctx.addIssue({ code: "custom", message: `An event can last at most ${MAX_EVENT_DAYS} days.`, path: ["endsAt"] })
+  if (length < 0) ctx.addIssue({ code: "custom", ...say("It has to end after it starts.", "endBeforeStart"), path: ["endsAt"] })
+  else if (length > MAX_EVENT_DAYS * DAY_MS) ctx.addIssue({ code: "custom", ...say(`An event can last at most ${MAX_EVENT_DAYS} days.`, "tooManyDays", { days: MAX_EVENT_DAYS }), path: ["endsAt"] })
 })
 export type SubmissionInput = z.infer<typeof submissionSchema>
 export type ShopSubmission = z.infer<typeof shopSubmissionSchema>

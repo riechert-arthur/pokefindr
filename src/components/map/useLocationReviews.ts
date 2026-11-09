@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 
 export interface Review {
   id: string
@@ -35,13 +36,15 @@ async function send(url: string, method: string, body?: unknown): Promise<Respon
   return res
 }
 
+type ReviewMessages = ReturnType<typeof useTranslations<"reviews">>
+
 /** "Check your connection", or "Log in again" when the session ran out. */
-function failed(title: string, err: unknown) {
+function failed(t: ReviewMessages, title: "postFailed" | "editFailed" | "deleteFailed", err: unknown) {
   if (err instanceof SignedOutError) {
-    toast.error(title, { description: "Your session ended. Log in again and retry." })
+    toast.error(t(title), { description: t("sessionEnded") })
   } else {
     console.error(`[map] ${title}`, err)
-    toast.error(title, { description: "Check your connection and try again." })
+    toast.error(t(title), { description: t("connection") })
   }
 }
 
@@ -51,6 +54,7 @@ function failed(title: string, err: unknown) {
  * rolls back if the server says no.
  */
 export function useLocationReviews(locationId: string): ReviewsState {
+  const t = useTranslations("reviews")
   const [status, setStatus] = useState<ReviewsState["status"]>("loading")
   const [reviews, setReviews] = useState<Review[]>([])
   // The list as last rendered, to roll back from (a state updater may not have run yet).
@@ -93,15 +97,15 @@ export function useLocationReviews(locationId: string): ReviewsState {
         saved.current.add(id)
         // A reload during the post may already list it under its id.
         setReviews((rs) => rs.filter((r) => r.id !== id).map((r) => (r.id === temp.id ? { ...r, id } : r)))
-        toast.success("Review posted", { description: "It shows at the top of the reviews." })
+        toast.success(t("posted"), { description: t("postedBody") })
         return true
       } catch (err) {
         setReviews((rs) => rs.filter((r) => r.id !== temp.id))
-        failed("Couldn't post your review", err)
+        failed(t, "postFailed", err)
         return false
       }
     },
-    [locationId],
+    [locationId, t],
   )
 
   const edit = useCallback(async (id: string, input: { rating: number; text: string }) => {
@@ -112,10 +116,10 @@ export function useLocationReviews(locationId: string): ReviewsState {
       return true
     } catch (err) {
       if (before) setReviews((rs) => rs.map((r) => (r.id === id ? before : r)))
-      failed("Couldn't save your changes", err)
+      failed(t, "editFailed", err)
       return false
     }
-  }, [])
+  }, [t])
 
   const remove = useCallback(async (id: string) => {
     const index = current.current.findIndex((r) => r.id === id)
@@ -127,10 +131,10 @@ export function useLocationReviews(locationId: string): ReviewsState {
       return true
     } catch (err) {
       if (removed) setReviews((rs) => [...rs.slice(0, index), removed, ...rs.slice(index)])
-      failed("Couldn't delete your review", err)
+      failed(t, "deleteFailed", err)
       return false
     }
-  }, [])
+  }, [t])
 
   const count = reviews.length
   const average = count ? reviews.reduce((n, r) => n + r.rating, 0) / count : 0

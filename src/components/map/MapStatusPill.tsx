@@ -1,16 +1,18 @@
+import { useTranslations } from "next-intl"
 import { useFormat, type Format } from "@/i18n/format"
 import type { LocationKind } from "@/lib/types/locations"
 import { cn } from "@/lib/utils"
 import type { ViewportStatus } from "./useViewportLocations"
 
+type StatusMessages = ReturnType<typeof useTranslations<"map.status">>
+
 /** What the pill says, as plain text: also what screen readers hear once the view settles. */
-export function statusText({ zoomedOut, total, inView, status, truncated, kinds }: Omit<MapStatusPillProps, "className">, f: Format): string | null {
-  const placesLabel = f.places
-  if (zoomedOut) return total === null ? null : `${placesLabel(total, kinds)} in the US · Zoom in or pick a state to see them`
-  if (status === "error") return "Couldn't load this area · Move the map to try again"
-  if (status === "idle" || (status === "loading" && inView === 0)) return "Loading this area…"
-  if (status === "loading") return `${placesLabel(inView, kinds)} in view · updating…`
-  return `${placesLabel(inView, kinds, truncated)} in view · ${truncated ? "zoom in to see them all" : "loaded for this area"}`
+export function statusText({ zoomedOut, total, inView, status, truncated, kinds }: Omit<MapStatusPillProps, "className">, f: Format, t: StatusMessages): string | null {
+  if (zoomedOut) return total === null ? null : `${t("inUs", { places: f.places(total, kinds) })} · ${t("zoomIn")}`
+  if (status === "error") return `${t("error")} · ${t("errorHint")}`
+  if (status === "idle" || (status === "loading" && inView === 0)) return t("loadingArea")
+  if (status === "loading") return `${t("inView", { places: f.places(inView, kinds) })} · ${t("updating")}`
+  return `${t("inView", { places: f.places(inView, kinds, truncated) })} · ${truncated ? t("zoomForAll") : t("loaded")}`
 }
 
 interface MapStatusPillProps {
@@ -32,33 +34,33 @@ interface MapStatusPillProps {
 export function MapStatusPill(props: MapStatusPillProps) {
   const { zoomedOut, total, inView, status, truncated, kinds, className } = props
   const f = useFormat()
-  const placesLabel = f.places
+  const t = useTranslations("map.status")
   let content: React.ReactNode
   if (zoomedOut) {
     if (total === null) return null
     content = (
       <>
-        <span className="text-muted-foreground">{placesLabel(total, kinds)} in the US</span> · Zoom in or pick a state to see them
+        <span className="text-muted-foreground">{t("inUs", { places: f.places(total, kinds) })}</span> · {t("zoomIn")}
       </>
     )
   } else if (status === "error") {
     content = (
       <>
         <span className="size-2 rounded-full bg-destructive" aria-hidden />
-        Couldn&apos;t load this area <span className="text-muted-foreground">· Move the map to try again</span>
+        {t("error")} <span className="text-muted-foreground">· {t("errorHint")}</span>
       </>
     )
   } else if (status === "idle" || (status === "loading" && inView === 0)) {
     // Zoomed in but this view hasn't loaded yet (the hook waits for the map to settle).
-    content = <span className="text-muted-foreground">Loading this area…</span>
+    content = <span className="text-muted-foreground">{t("loadingArea")}</span>
   } else {
     const loading = status === "loading"
     content = (
       <>
         <span className={cn("size-2 rounded-full", loading ? "bg-muted-foreground" : "bg-success")} aria-hidden />
-        {placesLabel(inView, kinds, truncated && !loading)} in view{" "}
+        {t("inView", { places: f.places(inView, kinds, truncated && !loading) })}{" "}
         <span className="text-muted-foreground">
-          · {loading ? "updating…" : truncated ? "zoom in to see them all" : "loaded for this area"}
+          · {loading ? t("updating") : truncated ? t("zoomForAll") : t("loaded")}
         </span>
       </>
     )
@@ -81,7 +83,7 @@ export function MapStatusPill(props: MapStatusPillProps) {
         {content}
       </div>
       <span role="status" className="sr-only">
-        {settled ? statusText(props, f) : ""}
+        {settled ? statusText(props, f, t) : ""}
       </span>
     </>
   )

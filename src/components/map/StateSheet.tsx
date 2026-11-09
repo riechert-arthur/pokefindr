@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { breakdown } from "./ResultsSheet"
 import type { StateCitiesState } from "./useStateCities"
 import { useFormat } from "@/i18n/format"
+import { useTranslations } from "next-intl"
 
 interface StateSheetProps {
   /** Two-letter code, e.g. "WA". */
@@ -24,6 +25,8 @@ interface StateSheetProps {
 /** A state's view, as in the prototype: back to the US, the state's counts, and its busiest cities. */
 export function StateSheet({ code, name, kinds, data, onBack, onCity }: StateSheetProps) {
   const f = useFormat()
+  const t = useTranslations("map.state")
+  const tm = useTranslations("map")
   const { status } = data
   // Another state's cities would be wrong under this name: placeholders until this one's arrive.
   const current = data.state === code ? data.cities : null
@@ -31,23 +34,23 @@ export function StateSheet({ code, name, kinds, data, onBack, onCity }: StateShe
   return (
     <>
       <div className="flex items-center gap-2 border-b border-border px-4 pb-2.5 pt-3.5">
-        <Button type="button" variant="ghost" size="icon" className="-ml-2 size-8 shrink-0" onClick={onBack} aria-label="Back to the US">
+        <Button type="button" variant="ghost" size="icon" className="-ml-2 size-8 shrink-0" onClick={onBack} aria-label={t("backToUs")}>
           <ChevronLeftIcon className="size-4" aria-hidden />
         </Button>
         <div className="min-w-0 flex-1" aria-live="polite" aria-atomic>
           <h2 className="text-subheading text-foreground">{name}</h2>
           <p className="text-body text-muted-foreground">
-            {current ? (current.total ? breakdown(current.counts, kinds, f) : "Nothing here for the selected types") : " "}
+            {current ? (current.total ? breakdown(current.counts, kinds, f) : t("nothingForTypes")) : " "}
           </p>
         </div>
       </div>
       <div className={cn("min-h-0 overflow-y-auto p-1.5", status === "loading" && current && "opacity-60 transition-opacity")}>
         {status === "error" ? (
-          <EmptyState title="Couldn't load this state's cities" className="m-1.5" action={<Button size="sm" variant="outline" onClick={data.reload}>Try again</Button>}>
-            Check your connection and try again.
+          <EmptyState title={t("failed")} className="m-1.5" action={<Button size="sm" variant="outline" onClick={data.reload}>{tm("results.tryAgain")}</Button>}>
+            {tm("connection")}
           </EmptyState>
         ) : !current ? (
-          <div aria-label="Loading cities" className="flex flex-col gap-1 p-1">
+          <div aria-label={t("loading")} className="flex flex-col gap-1 p-1">
             {[0, 1, 2, 3].map((i) => (
               <div key={i} className="flex items-center gap-2.5 p-2.5">
                 <Skeleton className="size-8 rounded-lg" />
@@ -59,11 +62,11 @@ export function StateSheet({ code, name, kinds, data, onBack, onCity }: StateShe
             ))}
           </div>
         ) : current.cities.length === 0 ? (
-          <EmptyState title={`Nothing in ${name} yet`} className="m-1.5">
-            Turn on more types above, or search a city.
+          <EmptyState title={t("empty", { name })} className="m-1.5">
+            {t("emptyHint")}
           </EmptyState>
         ) : (
-          <ul aria-label={`Cities in ${name} with the most places`}>
+          <ul aria-label={t("listLabel", { name })}>
             {current.cities.map((c) => (
               <li key={c.city}>
                 <button

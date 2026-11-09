@@ -4,19 +4,12 @@ import { useEffect, useRef } from "react"
 import { toast } from "sonner"
 import { LOCATE_GIVE_UP_MS } from "@/lib/map/locate"
 import { useControl, type GeolocateControlInstance, type GeolocateErrorEvent, type GeolocateResultEvent } from "./engine"
-
-/** Wording from the redesign prototype. */
-export const LOCATION_DENIED = {
-  title: "Location is off",
-  description: "Search a city or address to see what's nearby.",
-}
-
-export const LOCATION_UNAVAILABLE = {
-  title: "Couldn't find your location",
-  description: "Search a city or address to see what's nearby.",
-}
+import { useTranslations } from "next-intl"
 
 const PERMISSION_DENIED = 1
+
+/** Why locating failed: picks the toast (map.locate in the catalog, worded as in the redesign prototype). */
+type LocateFailure = "denied" | "unavailable"
 
 /** How long to wait for an answer before giving up (see src/lib/map/locate.ts). */
 export { LOCATE_GIVE_UP_MS }
@@ -51,8 +44,9 @@ interface LocateControlProps {
  * rest of the visit, so search stays the way in.
  */
 export function LocateControl({ onLocate, onError, autoLocate = false }: LocateControlProps) {
-  const handlers = useRef({ onLocate, onError })
-  handlers.current = { onLocate, onError }
+  const t = useTranslations("map.locate")
+  const handlers = useRef({ onLocate, onError, t })
+  handlers.current = { onLocate, onError, t }
 
   const control = useControl(
     ({ mapLib }) => {
@@ -79,10 +73,11 @@ export function LocateControl({ onLocate, onError, autoLocate = false }: LocateC
         clearTimeout(giveUp)
         delete gc._container.dataset.locating
       }
-      const fail = (message: { title: string; description: string }) => {
+      const fail = (failure: LocateFailure) => {
         settle()
         delete gc._container.dataset.located
-        toast(message.title, { description: message.description })
+        const { t } = handlers.current
+        toast(t(failure), { description: t("hint") })
         handlers.current.onError?.()
       }
 
@@ -98,13 +93,13 @@ export function LocateControl({ onLocate, onError, autoLocate = false }: LocateC
             gc._container.dataset.locating = "true"
             clearTimeout(giveUp)
             giveUp = setTimeout(() => {
-              if (gc._container.dataset.locating) fail(LOCATION_UNAVAILABLE)
+              if (gc._container.dataset.locating) fail("unavailable")
             }, LOCATE_GIVE_UP_MS)
           }
           return started
         } catch (err) {
           console.error("[map] couldn't start locating", err)
-          fail(LOCATION_UNAVAILABLE)
+          fail("unavailable")
           return true
         }
       }
@@ -115,7 +110,7 @@ export function LocateControl({ onLocate, onError, autoLocate = false }: LocateC
         handlers.current.onLocate({ lng: e.coords.longitude, lat: e.coords.latitude })
       })
       gc.on("error", (e: GeolocateErrorEvent) => {
-        fail(e.code === PERMISSION_DENIED ? LOCATION_DENIED : LOCATION_UNAVAILABLE)
+        fail(e.code === PERMISSION_DENIED ? "denied" : "unavailable")
       })
       return gc
     },

@@ -22,3 +22,335 @@ format:
     minutes: "hace {count} min"
     hours: "hace {count} h"
     days: "{count, plural, one {hace # día} other {hace # días}}"
+
+kinds:
+  vending:
+    label: Máquinas expendedoras
+    short: Máquinas
+    name: Máquina expendedora
+  shop:
+    label: Tiendas de cartas
+    short: Tiendas
+    name: Tienda de cartas
+  event:
+    label: Eventos
+    short: Eventos
+    name: Evento
+
+map:
+  meta:
+    title: Encuentra todas las máquinas expendedoras de Pokémon cerca de ti - Mapa gratis | PokeFindr
+    description: Mira un mapa interactivo con todas las máquinas expendedoras de Pokémon cerca de ti. Envía la ruta a Google Maps y lee las reseñas de otros.
+    keywords: máquinas expendedoras Pokémon, mapa Pokémon, ubicaciones de máquinas expendedoras, mapa de productos Pokémon, PokeFindr, máquinas expendedoras Pokémon cerca de mí, mapa de máquinas expendedoras Pokémon, máquina expendedora Pokémon más cercana
+    ogTitle: Encuentra todas las máquinas expendedoras de Pokémon cerca de ti | PokeFindr
+    ogDescription: Explora un mapa completo de máquinas expendedoras de Pokémon. ¡Encuentra fácilmente cómo llegar a la más cercana!
+  loading: Cargando el mapa…
+  reload: Recargar
+  failure:
+    library: No se cargó la biblioteca del mapa. Revisa tu conexión y recarga.
+    webgl: Este navegador no pudo iniciar el mapa (WebGL está desactivado o no disponible).
+    crash: El mapa dejó de funcionar. Recarga para intentarlo de nuevo.
+  status:
+    inUs: "{places} en EE. UU."
+    zoomIn: Acércate o elige un estado para verlos
+    error: No se pudo cargar esta zona
+    errorHint: Mueve el mapa para intentarlo de nuevo
+    loadingArea: Cargando esta zona…
+    inView: "{places} a la vista"
+    updating: actualizando…
+    zoomForAll: acércate para verlos todos
+    loaded: cargados para esta zona
+  legend: Lugares por estado
+  kindsGroup: Qué mostrar en el mapa
+  search:
+    placeholder: Busca una ciudad o dirección
+    yourLocation: Tu ubicación
+    openNavigation: Abrir navegación
+    areaWithin: "{places} a menos de {radius}"
+  add: Agregar una tienda de cartas o un evento
+  panel:
+    add: Agregar un lugar
+    results: Resultados
+    us: En todo EE. UU.
+  back:
+    nearYou: Volver a los resultados cerca de ti
+    to: "Volver a {place}"
+    results: Volver a los resultados
+    plain: Volver
+  popup:
+    machine: "Máquina {id}"
+    details: Ver detalles
+    directions: Cómo llegar
+  locate:
+    denied: La ubicación está desactivada
+    unavailable: No pudimos encontrar tu ubicación
+    hint: Busca una ciudad o dirección para ver qué hay cerca.
+  country:
+    tooltip: Aún no está en PokeFindr
+    unsupported: "{name} aún no está disponible"
+    unsupportedUnnamed: Este país aún no está disponible
+    coverage: Por ahora, PokeFindr cubre EE. UU. Pronto habrá más países.
+  attribution: "Contornos: Natural Earth, US Census"
+  loadPlaceFailed: No se pudo cargar este lugar
+  loadLocationsFailed: No se pudieron cargar las máquinas expendedoras. Recarga la página para intentarlo de nuevo.
+  connection: Revisa tu conexión e inténtalo de nuevo.
+  addSignedOut:
+    title: Inicia sesión para agregar un lugar
+    body: Para agregar una tienda de cartas o un evento necesitas una cuenta, así un moderador puede revisarlo.
+    panelBody: Inicia sesión para agregar una tienda de cartas o un evento. Un moderador revisa cada uno antes de que aparezca en el mapa.
+    login: Iniciar sesión
+    cancel: Cancelar
+  sent:
+    title: Enviado para revisión
+    body: "Verás {name} como Pendiente de revisión hasta que un moderador lo revise."
+  route:
+    failed: No se pudo mostrar la ruta
+    gone: Sus lugares ya no están en el mapa.
+    someGone: Algunas paradas ya no existen
+    someGoneBody: Ya no están en el mapa, así que la ruta las omite.
+    shown: Ruta en el mapa
+    shownBody: "{count, plural, one {# parada, en el orden de visita.} other {# paradas, en el orden de visita.}}"
+    clear: Quitar
+    stop: "Parada {n}: {name}"
+  controls:
+    zoomIn: Acercar
+    zoomOut: Alejar
+    resetNorth: Arrastra para girar el mapa; haz clic para volver al norte
+    findMyLocation: Buscar mi ubicación
+    locationNotAvailable: Ubicación no disponible
+    enterFullscreen: Pantalla completa
+    exitFullscreen: Salir de pantalla completa
+    toggleAttribution: Mostrar u ocultar créditos
+    mapFeedback: Comentarios sobre el mapa
+    closePopup: Cerrar ventana emergente
+    map: Mapa
+    marker: Marcador del mapa
+  filters:
+    button: Filtros
+    buttonCount: "{count, plural, one {Filtros, # comercio} other {Filtros, # comercios}}"
+    vendingTitle: Máquinas expendedoras · comercio
+    vendingOff: Activa las máquinas expendedoras para filtrar por comercio.
+    failed: No se pudieron cargar los comercios. Inténtalo de nuevo en un momento.
+    loading: Cargando comercios…
+    shopsTitle: Tiendas de cartas
+    shopsSoon: Abiertas ahora, venden cartas sueltas, organizan eventos. Estos filtros llegarán con datos reales de tiendas.
+    eventsTitle: Eventos
+    eventsSoon: Esta semana, este mes, tipo de evento. Llegarán cuando los eventos sean reales.
+    clear: Borrar
+    done: Listo
+  results:
+    title: "{places} cerca de {place}"
+    titlePending: "Lugares cerca de {place}"
+    you: ti
+    sortedFromCenter: Ordenados por distancia desde el centro
+    sortedFromYou: Ordenados por distancia desde ti
+    within: A menos de
+    failed: No se pudieron cargar estos resultados
+    tryAgain: Intentar de nuevo
+    loading: Cargando resultados
+    nothingWithin: "Nada a menos de {radius}"
+    widen: "Ampliar a {radius}"
+    widenHint: Prueba con un radio mayor o activa más tipos.
+    listLabel: "Lugares cerca de {place}, del más cercano al más lejano"
+    truncated: "Se muestran los {shown} más cercanos de {total}."
+  state:
+    backToUs: Volver a EE. UU.
+    nothingForTypes: No hay nada aquí para los tipos elegidos
+    failed: No se pudieron cargar las ciudades de este estado
+    loading: Cargando ciudades
+    empty: "Todavía no hay nada en {name}"
+    emptyHint: Activa más tipos arriba o busca una ciudad.
+    listLabel: "Ciudades de {name} con más lugares"
+  us:
+    title: En todo EE. UU.
+    subtitle: Busca una ciudad o empieza por algo destacado.
+    submissions: Tus aportes
+    hotspots: Zonas con más máquinas
+    hotspotSub: "{count} a menos de {radius}"
+    events: Próximos eventos
+    sample: Datos de ejemplo
+    mostLocations: Con más lugares
+  submissions:
+    pinLabel: Marcador del nuevo lugar. Arrástralo para moverlo.
+    pendingLabel: "{name}, pendiente de revisión"
+    pendingTitle: "{name} · Pendiente de revisión"
+    pending: Solo tú puedes verlo hasta que un moderador lo revise.
+    approved: En el mapa para todos.
+    ended: Terminó
+    offMap: Fuera del mapa
+    notApproved: No aprobado
+    over: Ya terminó, así que salió del mapa.
+    gone: Ya no está en el mapa.
+    rejectReasons:
+      duplicate: Repite un lugar que ya existe
+      not_real: No es un lugar real o público
+      wrong_details: Los datos son incorrectos
+      spam: Spam
+
+details:
+  directions: Cómo llegar
+  copyLink: Copiar enlace
+  linkCopied: Enlace copiado
+  copyThis: Copia este enlace
+  reportProblem: Reportar un problema
+  alsoNearby: También cerca
+  facts:
+    retailer: Comercio
+    address: Dirección
+    machineId: ID de la máquina
+    notListed: No figura
+    source: Fuente
+    sourceValue: Lista de comercios de Pokémon Center
+    where: Dónde
+    location: Ubicación
+    fromYou: Desde ti
+    distance: Distancia
+    distanceFrom: "{distance} desde {place}"
+
+reviews:
+  title: Reseñas
+  summary: "{average} · {count, plural, one {# reseña} other {# reseñas}}"
+  none: Todavía no hay reseñas
+  failed: No se pudieron cargar las reseñas.
+  tryAgain: Intentar de nuevo
+  loading: Cargando reseñas
+  first: "Sé el primero en reseñar {kind, select, vending {esta máquina expendedora} shop {esta tienda de cartas} other {este evento}}. ¿Tenía producto? ¿Fue fácil de encontrar?"
+  edit: Editar
+  delete: Eliminar
+  writeTitle: Escribir una reseña
+  editTitle: Editar tu reseña
+  yourRating: Tu calificación
+  yourReview: Tu reseña
+  placeholder: ¿Qué encontraste? Producto, día de reposición, dónde está la máquina en la tienda…
+  pickRating: Elige una calificación para publicar.
+  cancel: Cancelar
+  save: Guardar cambios
+  post: Publicar reseña
+  login: "<link>Inicia sesión</link> para escribir una reseña."
+  deleteTitle: ¿Eliminar esta reseña?
+  deleteBody: "Se eliminará tu calificación de {place}. Esto no se puede deshacer."
+  deleteBodyUnnamed: Se eliminará tu calificación. Esto no se puede deshacer.
+  posted: Reseña publicada
+  postedBody: Aparece al principio de las reseñas.
+  postFailed: No se pudo publicar tu reseña
+  editFailed: No se pudieron guardar tus cambios
+  deleteFailed: No se pudo eliminar tu reseña
+  sessionEnded: Tu sesión terminó. Vuelve a iniciar sesión e inténtalo de nuevo.
+  connection: Revisa tu conexión e inténtalo de nuevo.
+
+report:
+  title: Reportar un problema
+  signedOut: "<link>Inicia sesión</link> para reportar un problema con {kind, select, vending {esta máquina expendedora} shop {esta tienda de cartas} other {este evento}}."
+  question: "¿Qué pasa con {kind, select, vending {esta máquina expendedora} shop {esta tienda de cartas} other {este evento}}?"
+  reasons:
+    gone: Ya no está o la quitaron
+    wrong_location: Dirección o marcador incorrecto
+    empty: Vacía desde hace mucho
+    other: Otra cosa
+  comment: ¿Qué pasa? (opcional)
+  cancel: Cancelar
+  send: Enviar reporte
+  failed: No se pudo enviar tu reporte
+  sessionEnded: Tu sesión terminó. Vuelve a iniciar sesión e inténtalo de nuevo.
+  tooMany: Demasiados reportes hoy
+  tooManyBody: Gracias por ayudar. Inténtalo de nuevo mañana.
+  already: Ya lo reportaste
+  alreadyBody: "Hoy ya reportaste {kind, select, vending {esta máquina expendedora} shop {esta tienda de cartas} other {este evento}}. Gracias."
+  sent: Reporte enviado
+  sentBody: 'Gracias. Revisaremos "{reason}" en {kind, select, vending {esta máquina expendedora} shop {esta tienda de cartas} other {este evento}}.'
+  connection: Revisa tu conexión e inténtalo de nuevo.
+
+addPlace:
+  cancel: Cancelar
+  back: Atrás
+  cancelAdding: Dejar de agregar un lugar
+  title: Agregar un lugar
+  titleKind: "{kind, select, shop {Agregar una tienda de cartas} other {Agregar un evento}}"
+  steps:
+    label: Pasos
+    position: "Paso {n} de {total}: "
+    type: Tipo
+    location: Ubicación
+    details: Datos
+    review: Revisión
+  type:
+    question: ¿Qué vas a agregar?
+    shop: Tienda de cartas
+    shopBody: "Una tienda que vende cartas: sueltas, producto sellado o accesorios."
+    event: Evento
+    eventBody: Un torneo, una noche de liga, un prelanzamiento, una feria de cartas o una noche de intercambio.
+  location:
+    hint: O haz clic en el mapa para poner el marcador ahí. Arrástralo hasta la entrada.
+    pin: "Marcador en {lat}, {lng}"
+    search: Busca una dirección
+    searchPlaceholder: 1450 Grant St, Denver
+    searchFailed: La búsqueda no funciona en este momento. Haz clic en el mapa.
+    results: Direcciones
+    noMatch: Sin resultados. Prueba con una calle y una ciudad, o haz clic en el mapa.
+  fields:
+    optional: " (opcional)"
+    name: Nombre
+    namePlaceholderShop: Mile High Cards
+    namePlaceholderEvent: Noche de liga
+    venue: Lugar
+    venueHint: Dónde se hace, si tiene nombre.
+    localTime: "En la hora local del evento: {zone}"
+    localTimeYours: ", la tuya. Completa el estado abajo para usar la del evento."
+    starts: Empieza
+    ends: Termina
+    address: Calle y número
+    addressHintShop: Los moderadores verifican que las tiendas tengan una.
+    city: Ciudad
+    state: Estado
+    website: Sitio web
+    hours: Horario
+    hoursHint: "Por ejemplo: lun–sáb 11 a. m.–8 p. m."
+    sells: Vende
+    link: Enlace
+    linkHint: La página del organizador o de inscripción.
+    entry: Entrada
+    free: Gratis
+    paid: De pago
+  sells:
+    singles: Cartas sueltas
+    sealed: Producto sellado
+    supplies: Accesorios
+    events: Organiza eventos
+  review:
+    name: Nombre
+    venue: Lugar
+    when: Cuándo
+    address: Dirección
+    website: Sitio web
+    hours: Horario
+    sells: Vende
+    link: Enlace
+    entry: Entrada
+    notGiven: Sin datos
+    confirm: Ya los revisé. Este es un lugar distinto.
+    moderated: Un moderador lo revisa antes de que aparezca en el mapa. Hasta entonces, solo tú puedes verlo, marcado como Pendiente de revisión.
+  duplicates:
+    title: Puede que ya esté en el mapa
+    unnamed: "{kind, select, shop {Una tienda de cartas} other {Un evento}}"
+    yours: " (tuyo, esperando revisión)"
+    away: "a {meters} m"
+  continue: Continuar
+  placePin: Pon el marcador para continuar
+  send: Enviar para revisión
+  sending: Enviando…
+  errors:
+    check: Revisa este campo.
+    startsAt: Elige cuándo empieza.
+    hidden: Quita los caracteres ocultos o de control.
+    linkTooLong: Usa un enlace más corto.
+    link: Escribe un enlace que empiece con https://
+    tooLong: "Usa como máximo {max} caracteres."
+    name: Escribe un nombre.
+    city: Escribe una ciudad.
+    endBeforeStart: Tiene que terminar después de empezar.
+    tooManyDays: "Un evento puede durar como máximo {days} días."
+  form:
+    duplicates: Hay lugares parecidos cerca. Revísalos y marca la casilla para enviarlo de todos modos.
+    sessionEnded: Tu sesión terminó. Vuelve a iniciar sesión para enviarlo.
+    failed: No se pudo enviar. Inténtalo de nuevo.
+    offline: No pudimos conectar con PokeFindr. Revisa tu conexión e inténtalo de nuevo.

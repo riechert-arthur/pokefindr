@@ -2,7 +2,8 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 import { describe, expect, it } from "vitest"
 import type { MultiPolygon, Polygon } from "geojson"
-import { SUPPORTED_COUNTRIES, SUPPORTED_COUNTRY_NUMERIC, UNSUPPORTED } from "@/lib/map/countries"
+import { SUPPORTED_COUNTRIES, SUPPORTED_COUNTRY_NUMERIC } from "@/lib/map/countries"
+import { message } from "../helpers/intl"
 import { worldWithHoles } from "@/lib/map/geo"
 import { worldLayers, type MapColors } from "@/components/map/layers"
 
@@ -80,8 +81,10 @@ describe("the grey's cut-out", () => {
   })
 
   it("names the covered countries in the toast", () => {
-    expect(UNSUPPORTED.toastBody).toBe("PokeFindr covers the US for now. More countries are on the way.")
-    expect(UNSUPPORTED.toastTitle("Mexico")).toBe("Mexico isn't supported yet")
-    expect(UNSUPPORTED.toastTitle(null)).toBe("This country isn't supported yet")
+    // One supported country: the catalog's coverage line names it.
+    expect(SUPPORTED_COUNTRIES.map((c) => c.alpha2)).toEqual(["US"])
+    expect(message()("map.country.coverage")).toBe("PokeFindr covers the US for now. More countries are on the way.")
+    expect(message()("map.country.unsupported", { name: "Mexico" })).toBe("Mexico isn't supported yet")
+    expect(message("es")("map.country.unsupported", { name: "México" })).toBe("México aún no está disponible")
   })
 })

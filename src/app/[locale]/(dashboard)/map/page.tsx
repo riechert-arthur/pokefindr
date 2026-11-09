@@ -1,5 +1,8 @@
 import type { SearchParams } from "nuqs/server"
-import { getLocale } from "next-intl/server"
+import type { Metadata } from "next"
+import { getLocale, getTranslations } from "next-intl/server"
+import type { Locale } from "@/i18n/routing"
+import type { LocaleParams } from "@/i18n/static"
 import { redirect } from "@/i18n/navigation"
 import { MapLoader } from "@/components/map/MapLoader"
 import { loadMapSearchParams, mapUrl, roundPlace, type MapSearchParams } from "@/lib/map/url-state"
@@ -8,23 +11,13 @@ import { initialMapView } from "@/lib/map/initial-view"
 import { getLocationFeature } from "@/server/services/locations"
 import type { LocationFeature } from "@/lib/types/locations"
 
-export const metadata = {
-  "title": "Find all Pokemon Vending Machine Locations Near You - Free Map | PokeFindr",
-  "description": "See an interactive map with all the Pokemon Vending Machine locations near you. Easily send the directions to Google Maps and see reviews from others.",
-  "keywords": [
-    "Pokemon vending machines",
-    "Pokemon map",
-    "vending machine locations",
-    "Pokemon merchandise map",
-    "PokeFindr",
-    "pokemon vending machines near me",
-    "pokemon vending machine map",
-    "nearest pokemon vending machines"
-  ],
-  "author": "PokeFindr Developer",
-  "openGraph": {
-    "title": "Find all Pokemon Vending Machine Locations Near You | PokeFindr",
-    "description": "Explore a comprehensive map of Pokemon Vending Machine Locations. Easily find directions to your nearest vending machine!"
+export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
+  const t = await getTranslations({ locale: (await params).locale as Locale, namespace: "map.meta" })
+  return {
+    title: t("title"),
+    description: t("description"),
+    keywords: t("keywords").split(",").map((k) => k.trim()),
+    openGraph: { title: t("ogTitle"), description: t("ogDescription") },
   }
 }
 

@@ -12,6 +12,7 @@ import { ReviewSummary, ReviewsSection } from "./Reviews"
 import { useLocationReviews } from "./useLocationReviews"
 import { AlsoNearby, useAlsoNearby } from "./AlsoNearby"
 import type { LocationFeature, LocationKind } from "@/lib/types/locations"
+import { useTranslations } from "next-intl"
 
 type LocationDetailsProps = Omit<ComponentProps<typeof DetailsSheet>, "summary" | "actions" | "top" | "children"> & {
   /** The map's filters, which "Also nearby" follows. */
@@ -28,6 +29,7 @@ type LocationDetailsProps = Omit<ComponentProps<typeof DetailsSheet>, "summary" 
  */
 export function LocationDetails({ kinds, retailers, onOpen, ...props }: LocationDetailsProps) {
   const reviews = useLocationReviews(props.location.id)
+  const t = useTranslations("details")
   const { session } = useSessionContext()
   const [reporting, setReporting] = useState(false)
   const reportButton = useRef<HTMLButtonElement>(null)
@@ -45,7 +47,7 @@ export function LocationDetails({ kinds, retailers, onOpen, ...props }: Location
       actions={
         <Button ref={reportButton} type="button" variant="ghost" size="sm" aria-expanded={reporting} onClick={() => setReporting((on) => !on)}>
           <FlagIcon aria-hidden />
-          Report a problem
+          {t("reportProblem")}
         </Button>
       }
       top={reporting && <ReportForm locationId={props.location.id} kind={kind} signedIn={!!session} onClose={closeReport} />}

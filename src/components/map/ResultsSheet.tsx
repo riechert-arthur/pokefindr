@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils"
 import type { NearbyState } from "./useNearbyLocations"
 import { LocationRow } from "./LocationRow"
 import { SponsoredPlacement } from "@/components/ads/SponsoredPlacement"
+import { useTranslations } from "next-intl"
 
 type Radius = (typeof RADII)[number]
 
@@ -45,7 +46,9 @@ export function ResultsSheet({ label, radius, onRadiusChange, kinds, nearby, sel
   const { results, status, stale = false } = nearby
   // Counts only for results that match the radius and filters shown.
   const fresh = results && !stale ? results : null
-  const near = label ?? "you"
+  const t = useTranslations("map.results")
+  const tm = useTranslations("map")
+  const near = label ?? t("you")
   const wider = RADII.find((r) => r > radius)
   const f = useFormat()
   const { radius: radiusText } = useDistance()
@@ -55,17 +58,17 @@ export function ResultsSheet({ label, radius, onRadiusChange, kinds, nearby, sel
       <div className="flex flex-col gap-2.5 border-b border-border px-4 pb-2.5 pt-3.5">
         <div aria-live="polite" aria-atomic>
           <h2 className="text-subheading text-foreground">
-            {fresh ? `${f.places(fresh.total, kinds)} near ${near}` : `Places near ${near}`}
+            {fresh ? t("title", { places: f.places(fresh.total, kinds), place: near }) : t("titlePending", { place: near })}
           </h2>
           <p className="text-body text-muted-foreground">
             {fresh && fresh.total > 0
               ? breakdown(fresh.counts, kinds, f)
-              : `Sorted by distance from ${label ? "the center" : "you"}`}
+              : label ? t("sortedFromCenter") : t("sortedFromYou")}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-body text-muted-foreground" id="results-radius">
-            Within
+            {t("within")}
           </span>
           <ToggleGroup
             type="single"
@@ -90,11 +93,11 @@ export function ResultsSheet({ label, radius, onRadiusChange, kinds, nearby, sel
 
       <div className={cn("min-h-0 overflow-y-auto p-1.5", status === "loading" && results && "opacity-60 transition-opacity")}>
         {status === "error" ? (
-          <EmptyState title="Couldn't load these results" className="m-1.5" action={<Button size="sm" variant="outline" onClick={nearby.reload}>Try again</Button>}>
-            Check your connection and try again.
+          <EmptyState title={t("failed")} className="m-1.5" action={<Button size="sm" variant="outline" onClick={nearby.reload}>{t("tryAgain")}</Button>}>
+            {tm("connection")}
           </EmptyState>
         ) : !results || (stale && results.features.length === 0) ? (
-          <div aria-label="Loading results" className="flex flex-col gap-1 p-1">
+          <div aria-label={t("loading")} className="flex flex-col gap-1 p-1">
             {[0, 1, 2, 3].map((i) => (
               <div key={i} className="flex gap-2.5 p-2.5">
                 <Skeleton className="size-[1.375rem] rounded-full" />
@@ -107,14 +110,14 @@ export function ResultsSheet({ label, radius, onRadiusChange, kinds, nearby, sel
           </div>
         ) : results.features.length === 0 ? (
           <EmptyState
-            title={`Nothing within ${radiusText(radius)}`}
+            title={t("nothingWithin", { radius: radiusText(radius) })}
             className="m-1.5"
-            action={wider && <Button size="sm" variant="outline" onClick={() => onRadiusChange(wider)}>Widen to {radiusText(wider)}</Button>}
+            action={wider && <Button size="sm" variant="outline" onClick={() => onRadiusChange(wider)}>{t("widen", { radius: radiusText(wider) })}</Button>}
           >
-            Try a wider radius or turn on more types.
+            {t("widenHint")}
           </EmptyState>
         ) : (
-          <ul aria-label={`Places near ${near}, closest first`}>
+          <ul aria-label={t("listLabel", { place: near })}>
             {results.features.map((f, i) => (
               <Fragment key={f.properties.id}>
                 <li>
@@ -126,7 +129,7 @@ export function ResultsSheet({ label, radius, onRadiusChange, kinds, nearby, sel
             ))}
             {results.truncated && (
               <li className="px-2.5 py-3 text-caption text-muted-foreground">
-                Showing the closest {f.count(results.features.length)} of {f.count(results.total)}.
+                {t("truncated", { shown: f.count(results.features.length), total: f.count(results.total) })}
               </li>
             )}
           </ul>

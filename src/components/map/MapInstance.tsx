@@ -30,8 +30,7 @@ import { useSidebar } from "../providers/SidebarContextProvider"
 import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { useSessionContext } from "../providers/SessionProvider"
 import { useIsDark, useThemeKey } from "@/lib/design/useThemeKey"
-import { MapStatus } from "./MapStatus"
-import { MAP_FAILURE_MESSAGES } from "./MapErrorBoundary"
+import { MapFailed, MapLoading } from "./MapStatus"
 import { LAYERS, POINT_ZOOM, SOURCES, radiusLayers, readMapColors } from "./layers"
 import { LocationLayers } from "./LocationLayers"
 import { NO_SELECTION, selectionReducer, type Selection } from "./selection"
@@ -61,6 +60,7 @@ import { DEFAULT_RADIUS, RADII, loadMapSearchParams, mapSearchParams, nearMePara
 import { initialMapView, shownKinds, viewKey, type InitialMapView } from "@/lib/map/initial-view"
 import { INITIAL_LOAD_STATE, nextLoadState, type MapLoadState } from "./mapLoadState"
 import { track } from "@/lib/analytics"
+import { useTranslations } from "next-intl"
 
 type SelectedLocation = Omit<LocationPopupProps, "onClose" | "onDetails">
 
@@ -70,9 +70,9 @@ const toSelected = (feat: LocationFeature): SelectedLocation => {
   return { longitude, latitude, id, retailer, address, city, state, machineID, kind }
 }
 
-/** What the search box shows for the URL's view: the place, the state, or "Your location". */
-const searchLabel = (params: MapSearchParams): string =>
-  params.near === "me" ? "Your location" : params.q ? params.q : params.state && Object.hasOwn(STATES, params.state) ? STATES[params.state].name : ""
+/** What the search box shows for the URL's view: the place, the state, or "Your location" (`yourLocation`). */
+const searchLabel = (params: MapSearchParams, yourLocation: string): string =>
+  params.near === "me" ? yourLocation : params.q ? params.q : params.state && Object.hasOwn(STATES, params.state) ? STATES[params.state].name : ""
 
 type Box = readonly [readonly [number, number], readonly [number, number]]
 const overlaps = ([[w1, s1], [e1, n1]]: Box, [[w2, s2], [e2, n2]]: Box) => w1 <= e2 && w2 <= e1 && s1 <= n2 && s2 <= n1
@@ -104,8 +104,28 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const { session, isLoading: sessionLoading } = useSessionContext()
   const router = useRouter()
+  const t = useTranslations("map")
   // MapInstance is client-only (MapLoader uses ssr: false), so this is right on first render.
   const isDark = useIsDark()
+  // MapLibre's own controls in the page's language. It reads these when the map
+  // is created; switching language loads a new page.
+  const mapLocale = useMemo(
+    () => ({
+      "NavigationControl.ZoomIn": t("controls.zoomIn"),
+      "NavigationControl.ZoomOut": t("controls.zoomOut"),
+      "NavigationControl.ResetBearing": t("controls.resetNorth"),
+      "GeolocateControl.FindMyLocation": t("controls.findMyLocation"),
+      "GeolocateControl.LocationNotAvailable": t("controls.locationNotAvailable"),
+      "FullscreenControl.Enter": t("controls.enterFullscreen"),
+      "FullscreenControl.Exit": t("controls.exitFullscreen"),
+      "AttributionControl.ToggleAttribution": t("controls.toggleAttribution"),
+      "AttributionControl.MapFeedback": t("controls.mapFeedback"),
+      "Popup.Close": t("controls.closePopup"),
+      "Map.Title": t("controls.map"),
+      "Marker.Title": t("controls.marker"),
+    }),
+    [t],
+  )
   const themeKey = useThemeKey()
   // Re-read the token colors only when the theme changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -179,7 +199,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   }, [viewport.features, retailers, place])
 
   // The search box's text: the view's label, until the viewer types.
-  const [query, setQuery] = useState(() => searchLabel(params))
+  const [query, setQuery] = useState(() => searchLabel(params, t("search.yourLocation")))
   // Where search ranks nearby results first: the map's center once zoomed in, to ~10 km.
   const [searchNear, setSearchNear] = useState<[number, number] | undefined>()
 
@@ -227,18 +247,18 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
       .catch((err: unknown) => {
         if (controller.signal.aborted) return
         console.error("[map] couldn't load the location", err)
-        toast.error("Couldn't load this place", { description: "Check your connection and try again." })
+        toast.error(t("loadPlaceFailed"), { description: t("connection") })
         void setParams({ location: null }, { history: "replace" })
       })
     return () => controller.abort()
-  }, [params.location, knownLocations, setParams])
+  }, [params.location, knownLocations, setParams, t])
 
   // A new view (a pick, Back or Forward) puts its label in the search box.
   // Keyed on the label, so a pan (a camera-only URL write) keeps what the
   // viewer typed.
   // A pan that drops `state=` changes the label too, but the viewer may be
   // typing: then keep their text.
-  const viewLabel = searchLabel(params)
+  const viewLabel = searchLabel(params, t("search.yourLocation"))
   const shownLabel = useRef(viewLabel)
   const leftStateByPan = useRef(false)
   useEffect(() => {
@@ -456,9 +476,9 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const { submissions, refresh: refreshSubmissions } = useMySubmissions(Boolean(session))
   const startAdding = () => {
     if (!session) {
-      toast("Log in to add a place", {
-        description: "Adding a card shop or event needs an account, so a moderator can check it.",
-        action: { label: "Log in", onClick: () => router.push("/login") },
+      toast(t("addSignedOut.title"), {
+        description: t("addSignedOut.body"),
+        action: { label: t("addSignedOut.login"), onClick: () => router.push("/login") },
       })
       return
     }
@@ -585,7 +605,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         dragRotate={false}
         touchPitch={false}
         renderWorldCopies={false}
-        attributionControl={{ compact: true, customAttribution: "Outlines: Natural Earth, US Census" }}
+        attributionControl={{ compact: true, customAttribution: t("attribution") }}
+        locale={mapLocale}
         style={{
           width: "100%",
           height: "100%",
@@ -651,7 +672,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
               onQueryChange={setQuery}
               onPick={handleSearchPick}
               onClear={handleSearchClear}
-              placeholder="Search city or address"
+              placeholder={t("search.placeholder")}
               kinds={kinds}
               retailers={retailers ?? undefined}
               radius={placeRadius}
@@ -664,7 +685,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
                   size="icon"
                   onClick={toggleSidebar}
                   className="-ml-1.5 size-8 shrink-0 sm:hidden"
-                  aria-label="Open navigation"
+                  aria-label={t("search.openNavigation")}
                   aria-controls={APP_NAV_ID}
                   aria-expanded={isSidebarOpen}
                 >
@@ -682,8 +703,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
                 size="icon"
                 onClick={adding ? () => stopAdding() : startAdding}
                 aria-pressed={adding}
-                aria-label="Add a card shop or event"
-                title="Add a card shop or event"
+                aria-label={t("add")}
+                title={t("add")}
                 className="size-[42px] shrink-0 rounded-xl bg-card shadow-md aria-pressed:bg-muted"
               >
                 <PlusIcon className="size-5" aria-hidden />
@@ -693,7 +714,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
           kinds={kinds}
           kindTotals={kindTotals}
           onKindsChange={handleKindsChange}
-          sheetLabel={adding ? "Add a place" : details ? details.retailer : place ? "Results" : stateFocus ? STATES[stateFocus].name : "Across the US"}
+          sheetLabel={adding ? t("panel.add") : details ? details.retailer : place ? t("panel.results") : stateFocus ? STATES[stateFocus].name : t("panel.us")}
           sheet={
             adding ? (
               session ? (
@@ -707,7 +728,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
                   onStepChange={setAddStep}
                   onCancel={() => stopAdding()}
                   onSubmitted={({ name }) => {
-                    toast.success("Sent for review", { description: `${name} shows as Pending review to you until a moderator checks it.` })
+                    toast.success(t("sent.title"), { description: t("sent.body", { name }) })
                     stopAdding({ stay: true })
                     refreshSubmissions()
                   }}
@@ -715,11 +736,11 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
               ) : (
                 !sessionLoading && (
                   <div className="flex flex-col gap-3 p-4">
-                    <h2 className="text-heading text-foreground">Add a place</h2>
-                    <p className="text-body text-muted-foreground">Log in to add a card shop or event. A moderator checks each one before it goes on the map.</p>
+                    <h2 className="text-heading text-foreground">{t("panel.add")}</h2>
+                    <p className="text-body text-muted-foreground">{t("addSignedOut.panelBody")}</p>
                     <div className="flex gap-2">
-                      <Button type="button" onClick={() => router.push("/login")}>Log in</Button>
-                      <Button type="button" variant="ghost" onClick={() => stopAdding()}>Cancel</Button>
+                      <Button type="button" onClick={() => router.push("/login")}>{t("addSignedOut.login")}</Button>
+                      <Button type="button" variant="ghost" onClick={() => stopAdding()}>{t("addSignedOut.cancel")}</Button>
                     </div>
                   </div>
                 )
@@ -729,7 +750,15 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
                 key={details.id}
                 location={details}
                 backLabel={
-                  place ? (nearMe ? "Back to results near you" : `Back to ${urlView.place?.label ?? "results"}`) : stateFocus ? `Back to ${STATES[stateFocus].name}` : "Back"
+                  place
+                    ? nearMe
+                      ? t("back.nearYou")
+                      : urlView.place
+                        ? t("back.to", { place: urlView.place.label })
+                        : t("back.results")
+                    : stateFocus
+                      ? t("back.to", { place: STATES[stateFocus].name })
+                      : t("back.plain")
                 }
                 onBack={closeDetails}
                 me={me}
@@ -802,11 +831,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
           </div>
         )}
       </Map>
-      {loadState.status !== "loaded" && (
-        <MapStatus kind={loadState.status === "failed" ? "error" : "loading"} className="absolute inset-0 z-10">
-          {loadState.status === "failed" ? MAP_FAILURE_MESSAGES[loadState.failure] : "Loading the map…"}
-        </MapStatus>
-      )}
+      {loadState.status === "loading" && <MapLoading className="absolute inset-0 z-10" />}
+      {loadState.status === "failed" && <MapFailed failure={loadState.failure} className="absolute inset-0 z-10" />}
     </>
   )
 }

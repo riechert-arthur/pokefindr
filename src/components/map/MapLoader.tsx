@@ -2,14 +2,14 @@
 
 import { useSyncExternalStore, type FC } from "react"
 import dynamic from "next/dynamic"
-import { MapErrorBoundary, MAP_FAILURE_MESSAGES } from "./MapErrorBoundary"
-import { MapStatus } from "./MapStatus"
+import { MapErrorBoundary } from "./MapErrorBoundary"
+import { MapFailed, MapLoading } from "./MapStatus"
 import type { MapInstanceProps } from "./MapInstance"
 import { initialMapView, type InitialMapView } from "@/lib/map/initial-view"
 import type { LocationFeature } from "@/lib/types/locations"
 
 const MapInstance = dynamic<MapInstanceProps>(() => import("./MapInstance"), {
-  loading: () => <MapStatus kind="loading">Loading the map…</MapStatus>,
+  loading: () => <MapLoading />,
   ssr: false,
 })
 
@@ -48,10 +48,10 @@ export const MapLoader: FC<MapLoaderProps> = ({ view = DEFAULT_VIEW, location = 
   return (
     <div className="relative h-full">
       {webgl === false ? (
-        <MapStatus kind="error">{MAP_FAILURE_MESSAGES.webgl}</MapStatus>
+        <MapFailed failure="webgl" />
       ) : (
         <MapErrorBoundary>
-          {webgl ? <MapInstance view={view} location={location} /> : <MapStatus kind="loading">Loading the map…</MapStatus>}
+          {webgl ? <MapInstance view={view} location={location} /> : <MapLoading />}
         </MapErrorBoundary>
       )}
     </div>

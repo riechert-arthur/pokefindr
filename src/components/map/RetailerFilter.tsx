@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { useFormat } from "@/i18n/format"
+import { useTranslations } from "next-intl"
 
 export interface RetailerOption {
   retailer: string
@@ -74,6 +75,7 @@ export function RetailerFilter({ selected, onChange, vendingShown }: RetailerFil
   const shown = list ? [...list, ...selected.filter((r) => !list.some((o) => o.retailer === r)).map((retailer) => ({ retailer, count: -1 }))] : []
   const toggle = (retailer: string, on: boolean) => onChange(on ? [...selected, retailer] : selected.filter((r) => r !== retailer))
   const n = selected.length
+  const t = useTranslations("map.filters")
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -82,7 +84,7 @@ export function RetailerFilter({ selected, onChange, vendingShown }: RetailerFil
           type="button"
           variant="outline"
           size="icon"
-          aria-label={n ? `Filters, ${n} retailer${n === 1 ? "" : "s"}` : "Filters"}
+          aria-label={n ? t("buttonCount", { count: n }) : t("button")}
           className="relative size-[42px] shrink-0 rounded-xl bg-card shadow-md"
         >
           <SlidersHorizontalIcon aria-hidden />
@@ -98,18 +100,18 @@ export function RetailerFilter({ selected, onChange, vendingShown }: RetailerFil
         align="end"
         sideOffset={6}
         collisionPadding={8}
-        aria-label="Filters"
+        aria-label={t("button")}
         className="flex max-h-[var(--radix-popover-content-available-height)] w-[280px] flex-col rounded-xl p-3"
       >
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div>
-            <h3 className="mb-2 text-body font-semibold">Vending machines · retailer</h3>
+            <h3 className="mb-2 text-body font-semibold">{t("vendingTitle")}</h3>
             {!vendingShown ? (
-              <p className="px-1 py-0.5 text-caption text-muted-foreground">Turn on vending machines to filter by retailer.</p>
+              <p className="px-1 py-0.5 text-caption text-muted-foreground">{t("vendingOff")}</p>
             ) : failed ? (
-              <p className="px-1 py-0.5 text-caption text-muted-foreground">Couldn&apos;t load retailers. Try again in a moment.</p>
+              <p className="px-1 py-0.5 text-caption text-muted-foreground">{t("failed")}</p>
             ) : !list ? (
-              <p className="px-1 py-0.5 text-caption text-muted-foreground">Loading retailers…</p>
+              <p className="px-1 py-0.5 text-caption text-muted-foreground">{t("loading")}</p>
             ) : (
               <div>
                 {shown.map(({ retailer, count }) => {
@@ -126,20 +128,20 @@ export function RetailerFilter({ selected, onChange, vendingShown }: RetailerFil
             )}
           </div>
           <div className="mt-2 border-t border-border pt-2">
-            <h3 className="mb-1 text-body font-semibold">Card shops</h3>
-            <p className="px-1 py-0.5 text-caption text-muted-foreground">Open now, sells singles, hosts events. These filters arrive with real shop data.</p>
+            <h3 className="mb-1 text-body font-semibold">{t("shopsTitle")}</h3>
+            <p className="px-1 py-0.5 text-caption text-muted-foreground">{t("shopsSoon")}</p>
           </div>
           <div className="mt-2 border-t border-border pt-2">
-            <h3 className="mb-1 text-body font-semibold">Events</h3>
-            <p className="px-1 py-0.5 text-caption text-muted-foreground">This week, this month, event type. Coming once events are real.</p>
+            <h3 className="mb-1 text-body font-semibold">{t("eventsTitle")}</h3>
+            <p className="px-1 py-0.5 text-caption text-muted-foreground">{t("eventsSoon")}</p>
           </div>
         </div>
         <div className={cn("mt-2 flex justify-between border-t border-border pt-2.5")}>
           <Button type="button" variant="ghost" size="sm" onClick={() => onChange([])} disabled={!n}>
-            Clear
+            {t("clear")}
           </Button>
           <Button type="button" size="sm" onClick={() => setOpen(false)}>
-            Done
+            {t("done")}
           </Button>
         </div>
       </PopoverContent>

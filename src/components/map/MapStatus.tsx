@@ -1,7 +1,9 @@
 import type { ReactNode } from "react"
 import { LoaderCircleIcon } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import type { MapFailure } from "./MapErrorBoundary"
 
 interface MapStatusProps {
   /** "loading" while the map starts; "error" when it can't. */
@@ -15,6 +17,7 @@ interface MapStatusProps {
  * centered text on the map's land color, as in the redesign prototype.
  */
 export function MapStatus({ kind, children, className }: MapStatusProps) {
+  const t = useTranslations("map")
   return (
     <div
       role={kind === "error" ? "alert" : "status"}
@@ -28,10 +31,30 @@ export function MapStatus({ kind, children, className }: MapStatusProps) {
         <p>{children}</p>
         {kind === "error" && (
           <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
-            Reload
+            {t("reload")}
           </Button>
         )}
       </div>
     </div>
+  )
+}
+
+/** "Loading the map…" while the map starts. */
+export function MapLoading({ className }: { className?: string }) {
+  const t = useTranslations("map")
+  return (
+    <MapStatus kind="loading" className={className}>
+      {t("loading")}
+    </MapStatus>
+  )
+}
+
+/** Why the map couldn't start, worded as in the redesign prototype, with Reload. */
+export function MapFailed({ failure, className }: { failure: MapFailure; className?: string }) {
+  const t = useTranslations("map.failure")
+  return (
+    <MapStatus kind="error" className={className}>
+      {t(failure)}
+    </MapStatus>
   )
 }

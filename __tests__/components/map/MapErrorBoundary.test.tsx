@@ -1,7 +1,9 @@
 import React from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { render, screen } from "../../helpers/intl"
-import { classifyMapError, MapErrorBoundary, MAP_FAILURE_MESSAGES } from "@/components/map/MapErrorBoundary"
+import { message, render, screen } from "../../helpers/intl"
+import { classifyMapError, MapErrorBoundary } from "@/components/map/MapErrorBoundary"
+
+const failure = (key: "library" | "webgl" | "crash") => message()(`map.failure.${key}`)
 
 vi.mock("next/dynamic", () => ({
   default: () => () => <div>map</div>,
@@ -38,7 +40,7 @@ describe("MapErrorBoundary", () => {
         <Throws error={new Error("Failed to initialize WebGL")} />
       </MapErrorBoundary>,
     )
-    expect(screen.getByRole("alert").textContent).toContain(MAP_FAILURE_MESSAGES.webgl)
+    expect(screen.getByRole("alert").textContent).toContain(failure("webgl"))
     expect(screen.getByRole("button", { name: "Reload" })).toBeTruthy()
   })
 })
@@ -53,7 +55,7 @@ describe("MapLoader", () => {
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null)
     const { MapLoader } = await import("@/components/map/MapLoader")
     render(<MapLoader />)
-    expect(screen.getByRole("alert").textContent).toContain(MAP_FAILURE_MESSAGES.webgl)
+    expect(screen.getByRole("alert").textContent).toContain(failure("webgl"))
     expect(screen.queryByText("map")).toBeNull()
   })
 
