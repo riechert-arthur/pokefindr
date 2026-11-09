@@ -7,6 +7,7 @@ import { getAuth } from "@/server/auth/auth"
 import { getConsentClient } from "@/server/services/oauth-clients"
 import { getProfile } from "@/server/services/users"
 import { SCOPE_LABELS } from "@/lib/mcp/scopes"
+import { authorizeContinuation } from "@/lib/auth/oauth-continue"
 
 export const metadata: Metadata = { title: "Connect an app", robots: { index: false } }
 export const dynamic = "force-dynamic"
@@ -20,13 +21,14 @@ const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
  */
 export default async function ConsentPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const query = await searchParams
-  const clientId = one(query.client_id)
+  const params = new URLSearchParams()
+  for (const [k, v] of Object.entries(query)) for (const x of Array.isArray(v) ? v : v === undefined ? [] : [v]) params.append(k, x)
   const session = await getAuth()
     .api.getSession({ headers: await headers() })
     .catch(() => null)
-  // Without a session there's nothing to approve for; login brings them back through authorize.
-  if (!session) redirect("/login")
-  const [client, profile] = await Promise.all([clientId && one(query.sig) ? getConsentClient(clientId, one(query.redirect_uri) ?? null) : null, getProfile(session.user.id)])
+  // Without a session there's nothing to approve for: back through authorize, which sends them to log in and returns here.
+  if (!session) redirect(authorizeContinuation(params) ?? "/login")
+  const [client, profile] = await Promise.all([getConsentClient(params), getProfile(session.user.id)])
   if (!client || !profile) {
     return (
       <AuthPage>

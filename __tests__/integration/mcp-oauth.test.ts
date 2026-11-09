@@ -8,16 +8,16 @@ import { POST as signup } from "@/app/api/auth/signup/route"
 import { POST as login } from "@/app/api/auth/login/route"
 import { GET as resourceMetadata } from "@/app/.well-known/oauth-protected-resource/[[...path]]/route"
 import { GET as serverMetadata } from "@/app/.well-known/oauth-authorization-server/[[...path]]/route"
-import { resetAuthForTests } from "@/server/auth/auth"
+import { resetAuthForTests, revokeConnectedApps } from "@/server/auth/auth"
 import { getDb } from "@/server/db/client"
-import { oauthClients, users } from "@/server/db/schema"
+import { oauthClients, oauthConsents, users } from "@/server/db/schema"
 import { getConsentClient } from "@/server/services/oauth-clients"
 import { authorizeContinuation, safeNext } from "@/lib/auth/oauth-continue"
 
 const BASE = "http://localhost:3000"
 const RESOURCE = `${BASE}/api/mcp/account`
 const REDIRECT = "http://127.0.0.1:43123/callback"
-const SCOPE = "openid profile offline_access account:read places:submit"
+const SCOPE = "openid offline_access account:read places:submit"
 
 beforeEach(() => resetAuthForTests())
 
@@ -158,12 +158,31 @@ describe("MCP OAuth", () => {
     expect(back.searchParams.get("code")).toBeNull()
   })
 
-  it("shows the consent page the app's name as text, and the redirect's host", async () => {
-    const { client_id } = await registerClient("Claude‮ (official)")
-    expect(await getConsentClient(client_id, REDIRECT)).toEqual({ name: "Claude (official)", redirectHost: "127.0.0.1:43123", uri: null })
-    expect(await getConsentClient("nope", REDIRECT)).toBeNull()
+  it("shows the consent page the app's name as text and the requested redirect's host, only for a signed request", async () => {
+    const { client_id } = await registerClient("Claude\u202e (official)")
+    const { consentUrl } = await authorize(client_id, false)
+    const signed = consentUrl.searchParams
+    expect(await getConsentClient(signed)).toEqual({ name: "Claude (official)", redirectHost: "127.0.0.1:43123" })
+    // Anything changed after signing (another client, another redirect) isn't trusted.
+    const tampered = new URLSearchParams(signed)
+    tampered.set("redirect_uri", "https://evil.example/cb")
+    expect(await getConsentClient(tampered)).toBeNull()
+    const unsigned = new URLSearchParams(signed)
+    unsigned.delete("sig")
+    expect(await getConsentClient(unsigned)).toBeNull()
     await getDb().update(oauthClients).set({ disabled: true }).where(eq(oauthClients.clientId, client_id))
-    expect(await getConsentClient(client_id, REDIRECT)).toBeNull()
+    expect(await getConsentClient(signed)).toBeNull()
+  })
+
+  it("disconnects every app on a password reset: refresh tokens stop working", async () => {
+    const { client_id } = await registerClient()
+    const { back, verifier } = await authorize(client_id)
+    const res = await token({ grant_type: "authorization_code", code: back.searchParams.get("code")!, redirect_uri: REDIRECT, code_verifier: verifier, client_id, resource: RESOURCE })
+    const { refresh_token } = (await res.json()) as { refresh_token: string }
+    const [user] = await getDb().select().from(users)
+    await revokeConnectedApps(user.id)
+    expect((await token({ grant_type: "refresh_token", refresh_token, client_id, resource: RESOURCE })).status).toBe(400)
+    expect(await getDb().select().from(oauthConsents)).toEqual([])
   })
 })
 
