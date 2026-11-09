@@ -45,6 +45,8 @@ export const mapSearchParams = {
   near: parseAsStringLiteral(["me"] as const),
   /** Location ids of an assistant route, in visiting order: drawn as a line with numbered stops. */
   route: parseAsArrayOf(parseAsString),
+  /** Add a place is open (#125): "1" from the tab bar, then the kind once picked. */
+  add: parseAsStringLiteral(["1", "shop", "event"] as const),
 }
 
 export type MapSearchParams = inferParserType<typeof mapSearchParams>

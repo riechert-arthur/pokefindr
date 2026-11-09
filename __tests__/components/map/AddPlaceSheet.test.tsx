@@ -1,0 +1,134 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { AddPlaceSheet, type Pin } from "@/components/map/AddPlaceSheet"
+
+const PIN: Pin = { lng: -104.9876, lat: 39.7392 }
+const DUPE = { id: "d1", name: "Grant Street Games", source: "location", address: "1460 Grant St", city: "Denver", state: "CO", meters: 85 }
+
+/** Answers the API: duplicates for the location step, and the POST's status and body. */
+function mockApi({ duplicates = [] as unknown[], post = { status: 201, body: { id: "s1", status: "pending" } as Record<string, unknown> } } = {}) {
+  const calls: { url: string; body?: unknown }[] = []
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string, init?: RequestInit) => {
+      calls.push({ url, body: init?.body ? JSON.parse(String(init.body)) : undefined })
+      if (url.startsWith("/api/submissions/duplicates")) return new Response(JSON.stringify({ duplicates }))
+      if (url === "/api/submissions") return new Response(JSON.stringify(post.body), { status: post.status })
+      return new Response(JSON.stringify({ results: [] }))
+    }),
+  )
+  return calls
+}
+
+beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }))
+afterEach(() => {
+  vi.useRealTimers()
+  vi.unstubAllGlobals()
+})
+
+const next = () => fireEvent.click(screen.getByRole("button", { name: "Continue" }))
+const type = (label: string | RegExp, value: string) => fireEvent.change(screen.getByLabelText(label), { target: { value } })
+/** Lets the debounced duplicate check run and its fetch settle. */
+const settle = async () => {
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(400)
+  })
+}
+
+function setup(props: Partial<Parameters<typeof AddPlaceSheet>[0]> = {}) {
+  const handlers = { onPinChange: vi.fn(), onCancel: vi.fn(), onSubmitted: vi.fn(), onKindChange: vi.fn() }
+  const view = render(<AddPlaceSheet pin={null} {...handlers} {...props} />)
+  return { ...handlers, ...view }
+}
+
+describe("AddPlaceSheet", () => {
+  it("goes type → location → details → review, and sends a card shop", async () => {
+    const calls = mockApi()
+    const { onKindChange, onSubmitted, rerender, onPinChange, onCancel } = setup()
+    expect(screen.getByRole("button", { name: "Continue" })).toBeDisabled()
+    fireEvent.click(screen.getByRole("radio", { name: /Card shop/ }))
+    expect(onKindChange).toHaveBeenCalledWith("shop")
+    next()
+
+    // Location: can't continue until the pin is placed (a map click, outside this component).
+    expect(screen.getByRole("button", { name: "Place the pin to continue" })).toBeDisabled()
+    rerender(<AddPlaceSheet pin={PIN} onPinChange={onPinChange} onCancel={onCancel} onSubmitted={onSubmitted} onKindChange={onKindChange} />)
+    await settle()
+    next()
+
+    // Details: required fields are checked here, next to the field.
+    next()
+    expect(screen.getByText("Enter a name.")).toBeInTheDocument()
+    expect(screen.getByLabelText("Name")).toHaveAttribute("aria-invalid", "true")
+    type("Name", "Mile High Cards")
+    type(/City/, "Denver")
+    type(/Website/, "milehighcards.example")
+    next()
+    expect(screen.getByText("Enter a link starting with https://")).toBeInTheDocument()
+    type(/Website/, "https://milehighcards.example")
+    fireEvent.click(screen.getByRole("checkbox", { name: "Singles" }))
+    next()
+
+    // Review, then send.
+    expect(screen.getByText("Mile High Cards")).toBeInTheDocument()
+    expect(screen.getByText("Singles")).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Send for review" }))
+    await waitFor(() => expect(onSubmitted).toHaveBeenCalledWith({ id: "s1", name: "Mile High Cards" }))
+    expect(calls.find((c) => c.url === "/api/submissions")?.body).toEqual({
+      submission: { kind: "shop", name: "Mile High Cards", lng: PIN.lng, lat: PIN.lat, address: "", city: "Denver", state: "", countryCode: "US", website: "https://milehighcards.example", hours: "", sells: ["singles"] },
+      confirmDuplicate: false,
+    })
+  })
+
+  it("warns about places nearby, and needs a tick to send anyway", async () => {
+    const calls = mockApi({ duplicates: [DUPE] })
+    setup({ pin: PIN, initialKind: "shop" })
+    await settle()
+    expect(screen.getByText("This might already be on the map")).toBeInTheDocument()
+    expect(screen.getByText("Grant Street Games")).toBeInTheDocument()
+    next()
+    type("Name", "Mile High Cards")
+    type(/City/, "Denver")
+    next()
+    const send = screen.getByRole("button", { name: "Send for review" })
+    expect(send).toBeDisabled()
+    fireEvent.click(screen.getByRole("checkbox", { name: /This is a different place/ }))
+    fireEvent.click(send)
+    await waitFor(() => expect(calls.find((c) => c.url === "/api/submissions")?.body).toMatchObject({ confirmDuplicate: true }))
+  })
+
+  it("asks for an event's start, and shows the server's field error on the details step", async () => {
+    mockApi({ post: { status: 400, body: { error: "That date has passed.", field: "startsAt" } } })
+    setup({ pin: PIN, initialKind: "event" })
+    await settle()
+    next()
+    type("Name", "League night")
+    type(/City/, "Denver")
+    next()
+    expect(screen.getByText("Pick when it starts.")).toBeInTheDocument()
+    type("Starts", "2026-11-20T18:00")
+    next()
+    fireEvent.click(screen.getByRole("button", { name: "Send for review" }))
+    expect(await screen.findByText("That date has passed.")).toBeInTheDocument()
+    expect(screen.getByLabelText("Starts")).toHaveAttribute("aria-invalid", "true")
+  })
+
+  it("says when the daily limit is reached", async () => {
+    mockApi({ post: { status: 429, body: { error: "You've added the most places you can today. Try again tomorrow." } } })
+    setup({ pin: PIN, initialKind: "shop" })
+    await settle()
+    next()
+    type("Name", "Mile High Cards")
+    type(/City/, "Denver")
+    next()
+    fireEvent.click(screen.getByRole("button", { name: "Send for review" }))
+    expect(await screen.findByRole("alert")).toHaveTextContent("Try again tomorrow")
+  })
+
+  it("cancels from the first step", () => {
+    mockApi()
+    const { onCancel } = setup()
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
+    expect(onCancel).toHaveBeenCalled()
+  })
+})

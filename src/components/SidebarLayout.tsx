@@ -70,7 +70,7 @@ export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
         {/* relative: pages' absolute headers start at the rail's edge, not under it. */}
         <main className="relative z-10 min-w-0 flex-1 overflow-auto bg-muted/50 dark:bg-background">{children}</main>
       </div>
-      <TabBar className="sm:hidden" />
+      <TabBar canAdd className="sm:hidden" />
     </div>
   )
 }
