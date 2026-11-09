@@ -1,0 +1,154 @@
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest"
+import { NextRequest } from "next/server"
+import { eq } from "drizzle-orm"
+import postgres from "postgres"
+import { POST as signup } from "@/app/api/auth/signup/route"
+import { POST as login } from "@/app/api/auth/login/route"
+import { POST as logout } from "@/app/api/auth/logout/route"
+import { GET as currentUser } from "@/app/api/auth/user/route"
+import { resetAuthForTests } from "@/server/auth/auth"
+import { resetServerConfigForTests } from "@/server/config"
+import { getDb } from "@/server/db/client"
+import { profiles, sessions, subscriptions, users } from "@/server/db/schema"
+import { DEV_USER, isLocalDatabase, seedDevUser } from "../../scripts/db/seedDevUser"
+import { closeTestConnection, testDatabaseUrl } from "./testDatabase"
+
+const sql = postgres(testDatabaseUrl(), { max: 1, onnotice: () => {} })
+afterAll(async () => {
+  await sql.end({ timeout: 5 })
+  await closeTestConnection()
+})
+beforeEach(() => resetAuthForTests())
+
+const post = (handler: (r: NextRequest) => Promise<Response>, body: unknown, headers: Record<string, string> = {}) =>
+  handler(new NextRequest("http://localhost:3000/api/auth/x", { method: "POST", body: JSON.stringify(body), headers }))
+
+const form = { name: "Ash Ketchum", username: "ash", email: "ash@example.com", password: "pallet-town-forever!", passwordVerification: "pallet-town-forever!" }
+const cookieHeader = (res: Response) => res.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ")
+const confirm = (email: string) => getDb().update(users).set({ emailVerified: true }).where(eq(users.email, email))
+
+describe("sign-up", () => {
+  it("creates the user and the profile, onboarded", async () => {
+    const res = await post(signup, form)
+    expect(res.status).toBe(200)
+    const [user] = await getDb().select().from(users)
+    expect(user).toMatchObject({ email: "ash@example.com", name: "Ash Ketchum", emailVerified: false })
+    expect(await getDb().select().from(profiles)).toMatchObject([{ id: user.id, username: "ash", fullName: "Ash Ketchum", onboarded: true }])
+  })
+
+  it("rejects bad input, and a taken username in any case", async () => {
+    expect((await post(signup, { ...form, password: "short" })).status).toBe(400)
+    await post(signup, form)
+    const res = await post(signup, { ...form, email: "other@example.com", username: "ASH" })
+    expect(res.status).toBe(409)
+    expect(await res.json()).toEqual({ error: "That username is already taken" })
+    expect(await getDb().select().from(users)).toHaveLength(1)
+  })
+
+  it("answers a taken email the same as a new one, and adds nothing", async () => {
+    await post(signup, form)
+    const res = await post(signup, { ...form, username: "ash2" })
+    expect(res.status).toBe(200)
+    expect(await getDb().select().from(profiles)).toHaveLength(1)
+  })
+})
+
+describe("login", () => {
+  it("refuses an unconfirmed email, then signs in once it's confirmed", async () => {
+    await post(signup, form)
+    const unconfirmed = await post(login, { email: form.email, password: form.password })
+    expect(unconfirmed.status).toBe(401)
+    expect(await unconfirmed.json()).toMatchObject({ code: "EMAIL_NOT_VERIFIED" })
+
+    await confirm(form.email)
+    const res = await post(login, { email: form.email, password: form.password })
+    expect(res.status).toBe(200)
+    const names = res.headers.getSetCookie().map((c) => c.split("=")[0])
+    expect(names).toContain("app_session")
+    expect(names.some((n) => n.endsWith("session_token"))).toBe(true)
+    expect(await getDb().select().from(sessions)).toHaveLength(1)
+  })
+
+  it("says the same for a wrong password and an unknown email", async () => {
+    await post(signup, form)
+    await confirm(form.email)
+    const wrong = await post(login, { email: form.email, password: "not-the-password!!" })
+    const unknown = await post(login, { email: "nobody@example.com", password: form.password })
+    expect([wrong.status, unknown.status]).toEqual([401, 401])
+    expect(await wrong.json()).toEqual(await unknown.json())
+  })
+
+  it("puts a paid tier in the session for a subscriber", async () => {
+    await post(signup, form)
+    await confirm(form.email)
+    const [user] = await getDb().select().from(users)
+    await getDb().insert(subscriptions).values({ userId: user.id, planName: "pro", price: 5, endDate: new Date("2099-01-01") })
+    const res = await post(login, { email: form.email, password: form.password })
+    const token = res.headers.getSetCookie().find((c) => c.startsWith("app_session="))!.split(";")[0].split("=")[1]
+    expect(JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString())).toMatchObject({ sub: user.id, tier: "paid" })
+  })
+})
+
+describe("rate limits", () => {
+  it("stop repeated logins from one address, counted in the database", async () => {
+    vi.stubEnv("NODE_ENV", "development")
+    resetServerConfigForTests()
+    resetAuthForTests()
+    try {
+      const attempt = (ip: string) => post(login, { email: "ash@example.com", password: "guess-guess-guess!" }, { "x-real-ip": ip })
+      const statuses = []
+      for (let i = 0; i < 4; i++) statuses.push((await attempt("203.0.113.7")).status)
+      expect(statuses).toEqual([401, 401, 401, 429])
+      expect((await attempt("203.0.113.8")).status).toBe(401)
+      const [{ n }] = await sql<{ n: number }[]>`select count(*)::int as n from auth_rate_limits`
+      expect(n).toBeGreaterThan(0)
+    } finally {
+      vi.unstubAllEnvs()
+      resetServerConfigForTests()
+      resetAuthForTests()
+    }
+  })
+})
+
+describe("logout", () => {
+  it("revokes the Better Auth session and clears both cookies", async () => {
+    await post(signup, form)
+    await confirm(form.email)
+    const signedIn = await post(login, { email: form.email, password: form.password })
+    const res = await post(logout, {}, { cookie: cookieHeader(signedIn) })
+    expect(res.status).toBe(200)
+    expect(await getDb().select().from(sessions)).toHaveLength(0)
+    expect(res.headers.getSetCookie().find((c) => c.startsWith("app_session="))).toMatch(/Expires=Thu, 01 Jan 1970/)
+  })
+
+  it("still signs out of the app without a Better Auth session", async () => {
+    const res = await post(logout, {})
+    expect(res.status).toBe(200)
+    expect(res.headers.getSetCookie().some((c) => c.startsWith("app_session=;"))).toBe(true)
+  })
+})
+
+describe("current user", () => {
+  it("returns the profile from our database", async () => {
+    await post(signup, form)
+    const [user] = await getDb().select().from(users)
+    const res = await currentUser(new NextRequest("http://localhost:3000/api/auth/user", { headers: { "x-user-id": user.id } }))
+    expect(await res.json()).toEqual({ user: { id: user.id, username: "ash", full_name: "Ash Ketchum", metadata: null } })
+  })
+})
+
+describe("the dev user", () => {
+  it("is only for local databases", () => {
+    expect(isLocalDatabase("postgres://u:p@localhost:5433/pokefindr")).toBe(true)
+    expect(isLocalDatabase("postgres://u:p@db:5432/pokefindr")).toBe(true)
+    expect(isLocalDatabase("postgres://u:p@ep-cool-frog.us-east-2.aws.neon.tech/neondb")).toBe(false)
+    expect(isLocalDatabase(undefined)).toBe(false)
+  })
+
+  it("is added once, and can log in", async () => {
+    expect(await seedDevUser(sql)).toBe(true)
+    expect(await seedDevUser(sql)).toBe(false)
+    const res = await post(login, { email: DEV_USER.email, password: DEV_USER.password })
+    expect(res.status).toBe(200)
+  })
+})
