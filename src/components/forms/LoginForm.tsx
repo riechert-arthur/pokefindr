@@ -33,20 +33,27 @@ import type { OAuthProvider } from "@/lib/auth/providers"
 import { OAuthButtons } from "./OAuthButtons"
 
 /** A message to show above the form: why the visitor landed on /login. */
-export type LoginNotice = "verified" | "link-expired" | "oauth-failed"
+export type LoginNotice = "verified" | "link-expired" | "oauth-failed" | "connect-app"
 
 const NOTICES: Record<LoginNotice, { text: string; tone: "ok" | "warn" }> = {
   verified: { text: "Your email is confirmed. Log in to get started.", tone: "ok" },
   "link-expired": { text: "That link has expired or was already used. Log in and we'll send a new one.", tone: "warn" },
   "oauth-failed": { text: "That sign-in didn't go through. Try again, or use your email.", tone: "warn" },
+  "connect-app": { text: "Log in to connect an app to your PokeFindr account. You'll see what it's asking for next.", tone: "ok" },
 }
 
 export function LoginForm({
   className,
   notice = null,
   providers = [],
+  next = null,
   ...props
-}: React.ComponentProps<"div"> & { notice?: LoginNotice | null; providers?: readonly OAuthProvider[] }) {
+}: React.ComponentProps<"div"> & {
+  notice?: LoginNotice | null
+  providers?: readonly OAuthProvider[]
+  /** Where to go once logged in: an MCP client's authorization (#134). */
+  next?: string | null
+}) {
   const router = useRouter()
 
   const form = useForm<z.infer<typeof loginSchema>>({
@@ -62,6 +69,8 @@ export function LoginForm({
       await axios.post("/api/auth/login", values, { withCredentials: true })
       toast.success("Logged in!")
       broadcastAuth("login")
+      // An API route, not a page: a full navigation, so its redirects reach the app that asked.
+      if (next) return window.location.assign(next)
       router.refresh()
       router.push("/")
     } catch (err: unknown) {
@@ -95,7 +104,7 @@ export function LoginForm({
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
               <div className="grid gap-6">
-                <OAuthButtons providers={providers} />
+                <OAuthButtons providers={providers} next={next} />
                 <div className="grid gap-6">
                   <FormField
                     control={form.control}

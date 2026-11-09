@@ -3,17 +3,85 @@ import { createHmac } from "node:crypto"
 import { betterAuth } from "better-auth"
 import { createEmailVerificationToken } from "better-auth/api"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
+import { jwt } from "better-auth/plugins"
+import { cimd } from "@better-auth/cimd"
+import { fetchClientMetadataResource } from "@better-auth/cimd/node"
+import { mcp } from "@better-auth/mcp"
 import { eq, sql } from "drizzle-orm"
 import { after } from "next/server"
 import { getMailer } from "@/server/container"
 import { getDb } from "@/server/db/client"
 import { approveEmailChange, confirmEmailChange, resetPassword, verifyEmail } from "@/server/email/templates"
 import type { EmailContent } from "@/server/email/templates"
-import { accounts, authRateLimits, sessions, users, verifications } from "@/server/db/schema"
+import {
+  accounts,
+  authRateLimits,
+  jwks,
+  oauthAccessTokens,
+  oauthClientAssertions,
+  oauthClientResources,
+  oauthClients,
+  oauthConsents,
+  oauthRefreshTokens,
+  oauthResources,
+  sessions,
+  users,
+  verifications,
+} from "@/server/db/schema"
 import { getServerConfig, type ServerConfig } from "@/server/config"
+import { MCP_ACCOUNT_PATH, MCP_SCOPES } from "@/lib/mcp/scopes"
 
 /** Where Better Auth's own endpoints live. Not /api/auth, which holds our routes (login, signup, ...). */
 export const IDENTITY_BASE_PATH = "/api/identity"
+
+/** Where MCP clients are sent to approve access (#134). */
+export const MCP_CONSENT_PAGE = "/oauth/consent"
+
+/**
+ * Disconnects every MCP client from the account: its refresh tokens, access
+ * token rows and approvals go. Revoking sessions doesn't reach them (the
+ * refresh grant needs no session). An access token already issued is a JWT
+ * and still works until it expires, within the hour.
+ */
+export async function revokeConnectedApps(userId: string, db = getDb()): Promise<void> {
+  await db.transaction(async (tx) => {
+    await tx.delete(oauthAccessTokens).where(eq(oauthAccessTokens.userId, userId))
+    await tx.delete(oauthRefreshTokens).where(eq(oauthRefreshTokens.userId, userId))
+    await tx.delete(oauthConsents).where(eq(oauthConsents.userId, userId))
+  })
+}
+
+/** The MCP endpoint OAuth tokens are for: their audience. */
+export const mcpResource = (config: Pick<ServerConfig, "APP_URL">) => new URL(MCP_ACCOUNT_PATH, config.APP_URL).toString()
+
+/**
+ * PokeFindr as an OAuth 2.1 authorization server for MCP clients (#134).
+ * Clients identify themselves with a Client ID Metadata Document (the
+ * 2026-07-28 way: Claude, VS Code) or register dynamically (the 2025 way,
+ * which Cursor and others still use). Either way they're public clients:
+ * PKCE, no secret, and each person approves them on the consent page.
+ * Access tokens are JWTs for /api/mcp/account, an hour long; refresh tokens
+ * last 30 days.
+ */
+function mcpPlugins(config: ServerConfig) {
+  return [
+    // Signs the access tokens. Its own /token route is off (disabledPaths): MCP uses /oauth2/token.
+    jwt({ disableSettingJwtHeader: true }),
+    mcp({
+      resource: mcpResource(config),
+      loginPage: "/login",
+      consentPage: MCP_CONSENT_PAGE,
+      scopes: [...MCP_SCOPES],
+      allowDynamicClientRegistration: true,
+      allowUnauthenticatedClientRegistration: true,
+      clientRegistrationDefaultScopes: [...MCP_SCOPES],
+      clientRegistrationDefaultApplicationType: "infer",
+      // A refresh token used twice within 30 s is a client retrying; past that it's replay.
+      refreshTokenReuseInterval: 30,
+    }),
+    cimd({ fetchClientMetadataResource, metadataProfile: "mcp-2026-07-28" }),
+  ]
+}
 
 /**
  * Better Auth's signing secret: BETTER_AUTH_SECRET, or one derived from
@@ -133,8 +201,24 @@ function makeAuth(config: ServerConfig) {
     trustedOrigins: [config.APP_URL],
     database: drizzleAdapter(getDb(), {
       provider: "pg",
-      schema: { user: users, session: sessions, account: accounts, verification: verifications, rateLimit: authRateLimits },
+      schema: {
+        user: users,
+        session: sessions,
+        account: accounts,
+        verification: verifications,
+        rateLimit: authRateLimits,
+        jwks,
+        oauthClient: oauthClients,
+        oauthResource: oauthResources,
+        oauthClientResource: oauthClientResources,
+        oauthRefreshToken: oauthRefreshTokens,
+        oauthAccessToken: oauthAccessTokens,
+        oauthConsent: oauthConsents,
+        oauthClientAssertion: oauthClientAssertions,
+      },
     }),
+    plugins: mcpPlugins(config),
+    disabledPaths: ["/token"],
     // Ids are UUIDs, made by Postgres, so they match profiles.id.
     advanced: {
       database: { generateId: "uuid" },
@@ -153,6 +237,8 @@ function makeAuth(config: ServerConfig) {
       // someone who signed up with your email and never confirmed can't keep you out.
       onPasswordReset: async ({ user }) => {
         await getDb().update(users).set({ emailVerified: true }).where(eq(users.id, user.id))
+        // Whoever reset it may be taking the account back: apps connected before lose access too.
+        await revokeConnectedApps(user.id)
       },
     },
     emailVerification: {
