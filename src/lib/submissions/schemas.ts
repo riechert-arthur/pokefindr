@@ -19,6 +19,17 @@ const text = () =>
     .transform((v) => v.normalize("NFC").trim())
     .refine((v) => !HIDDEN.test(v), { message: "Remove the hidden or control characters." })
 
+/**
+ * A link people can open: http or https only (no javascript: or data: links
+ * in a moderator's queue), and like other text, no hidden or control
+ * characters (a right-to-left override could disguise where it goes).
+ */
+const webLink = text()
+  .refine((v) => v.length <= 300, { message: "Use a shorter link." })
+  .optional()
+  .transform((v) => v || undefined)
+  .refine((v) => v === undefined || /^https?:\/\/[^\s/$.?#][^\s]*$/i.test(v), { message: "Enter a link starting with https://" })
+
 /** Optional text: empty becomes undefined. */
 const optionalText = (max: number) =>
   text()
@@ -26,14 +37,7 @@ const optionalText = (max: number) =>
     .optional()
     .transform((v) => v || undefined)
 
-/** A link people can open: http or https only (no javascript: or data: links in a moderator's queue). */
-const webLink = z
-  .string()
-  .trim()
-  .max(300, { message: "Use a shorter link." })
-  .optional()
-  .transform((v) => v || undefined)
-  .refine((v) => v === undefined || /^https?:\/\/[^\s/$.?#][^\s]*$/i.test(v), { message: "Enter a link starting with https://" })
+
 
 /** What every kind has: a name and where it is. */
 const place = {
