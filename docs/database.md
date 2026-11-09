@@ -60,9 +60,9 @@ again.
 
 Notes:
 - `.env.local` is created from `.env.template` with a random `JWT_SECRET`, and
-  never edited after that. `make run` stops with a list of the variables the
-  app needs at start-up that are still empty. Placeholder Supabase values are
-  enough to use the map.
+  never edited after that, so a fresh clone runs with no keys at all. `make run`
+  stops with a list of the variables the app needs at start-up if any are
+  empty. Log in as the seeded dev user (see the README); emails go to Mailpit.
 - The containers always use the stack's own database, whatever `DATABASE_URL`
   in `.env.local` says. `.env.local`'s `DATABASE_URL` is for host tools such as
   `npm run db:studio` or running `npm run dev` outside Docker.

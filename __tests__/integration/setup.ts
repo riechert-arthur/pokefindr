@@ -11,9 +11,6 @@ vi.mock("next/cache", () => ({
 process.env.DATABASE_URL = testDatabaseUrl()
 process.env.APP_URL ??= "http://localhost:3000"
 process.env.JWT_SECRET ??= "integration-test-secret"
-process.env.NEXT_PUBLIC_SUPABASE_URL ??= "http://127.0.0.1:9"
-process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??= "unused"
-process.env.SUPABASE_SERVICE_ROLE_KEY ??= "unused"
 
 beforeEach(async () => {
   await truncateAll()

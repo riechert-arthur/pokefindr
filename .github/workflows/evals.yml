@@ -62,9 +62,6 @@ jobs:
       # The app's config needs these to load; the eval doesn't use them.
       APP_URL: http://localhost:3000
       JWT_SECRET: eval-only-secret
-      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:9
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: unused
-      SUPABASE_SERVICE_ROLE_KEY: unused
     steps:
       - name: Check for eval credentials
         id: key

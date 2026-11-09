@@ -137,21 +137,11 @@ jobs:
       COMPOSE_PROGRESS: plain
     steps:
       - uses: actions/checkout@v4
-      - name: Fresh clone without keys stops with a clear message
-        run: |
-          if make run 2>err.log; then echo "::error::expected make run to fail without keys"; exit 1; fi
-          cat err.log
-          grep -q NEXT_PUBLIC_SUPABASE_URL err.log
-          test -f .env.local
-      - name: Add placeholder keys (as a developer would)
-        run: |
-          sed -i -e 's#^NEXT_PUBLIC_SUPABASE_URL=$#NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321#' \
-                 -e 's#^NEXT_PUBLIC_SUPABASE_ANON_KEY=$#NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder#' \
-                 -e 's#^SUPABASE_SERVICE_ROLE_KEY=$#SUPABASE_SERVICE_ROLE_KEY=placeholder#' .env.local
-      - name: First run
+      - name: First run, from a fresh clone with no keys
         run: |
           docker compose version
           make run
+          test -f .env.local
           curl -fsS -o /dev/null http://localhost:3000/map
       - name: Second run changes nothing
         run: |
