@@ -40,7 +40,7 @@ function Count({ count, hot, label }: SectionCount & { label: string }) {
       aria-label={`${count} ${label}`}
       className={cn(
         "ml-auto min-w-5 rounded-full px-1.5 text-center text-caption font-semibold tabular-nums",
-        hot ? "bg-destructive/12 text-destructive" : "bg-muted text-muted-foreground",
+        hot ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground",
       )}
     >
       {count.toLocaleString("en-US")}
