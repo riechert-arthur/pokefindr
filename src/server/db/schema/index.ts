@@ -27,6 +27,7 @@ import {
   check,
   date,
   doublePrecision,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -37,6 +38,7 @@ import {
   smallint,
   text,
   timestamp,
+  unique,
   uniqueIndex,
   uuid,
   type AnyPgColumn,
@@ -44,6 +46,7 @@ import {
 import { sql } from "drizzle-orm"
 import { geographyPoint } from "../geography"
 import type { LocationKind } from "@/lib/types/locations"
+import type { RejectReason, ShopSells, SubmissionKind, SubmissionStatus } from "@/lib/submissions/constants"
 
 const createdAt = () => timestamp("created_at", { withTimezone: true }).defaultNow()
 
@@ -225,6 +228,8 @@ export const locations = pgTable(
     index("locations_geog_gist").using("gist", t.geog),
     // The viewport query (getLocationsInBbox) filters on planar boxes (migration 0002).
     index("locations_geog_geometry_gist").using("gist", sql`(${t.geog}::geometry)`),
+    // What each kind's details table points at, so its rows match the location's kind (migration 0011).
+    unique("locations_id_kind_key").on(t.id, t.kind),
     ...locationChecks("locations", t),
   ],
 )
@@ -446,5 +451,77 @@ export const assistantFeedback = pgTable(
     index("assistant_feedback_created_idx").on(t.createdAt),
     check("assistant_feedback_vote_check", sql`${t.vote} in (-1, 1)`),
     check("assistant_feedback_reason_check", sql`${t.reason} in ('wrong_place', 'outdated', 'misunderstood', 'other')`),
+  ],
+)
+
+/**
+ * A card shop or event someone sent in (migration 0011), waiting for a
+ * moderator. `payload` is what they filled in, checked per kind by the API
+ * (src/lib/submissions/schemas.ts). Approving one creates the location and
+ * sets `location_id`; rejecting one needs a `reject_reason`.
+ */
+export const locationSubmissions = pgTable(
+  "location_submissions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    kind: text("kind").$type<SubmissionKind>().notNull(),
+    payload: jsonb("payload").notNull(),
+    geog: geographyPoint("geog").notNull(),
+    submittedBy: uuid("submitted_by").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+    status: text("status").$type<SubmissionStatus>().notNull().default("pending"),
+    rejectReason: text("reject_reason").$type<RejectReason>(),
+    reviewedBy: uuid("reviewed_by").references(() => profiles.id, { onDelete: "set null" }),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    locationId: uuid("location_id").references(() => locations.id, { onDelete: "set null" }),
+    createdAt: createdAt().notNull(),
+  },
+  (t) => [
+    index("location_submissions_submitted_by_created_idx").on(t.submittedBy, t.createdAt),
+    index("location_submissions_status_created_idx").on(t.status, t.createdAt),
+    index("location_submissions_geog_gist").using("gist", t.geog),
+    check("location_submissions_kind_check", sql`${t.kind} in ('shop', 'event')`),
+    check("location_submissions_status_check", sql`${t.status} in ('pending', 'approved', 'rejected')`),
+    check("location_submissions_reject_reason_check", sql`${t.rejectReason} in ('duplicate', 'not_real', 'wrong_details', 'spam')`),
+    check("location_submissions_rejected_reason_check", sql`(${t.status} = 'rejected') = (${t.rejectReason} is not null)`),
+  ],
+)
+
+/** A card shop's own fields (migration 0011). `kind` is always 'shop', so the row can only belong to a shop. */
+export const cardShopDetails = pgTable(
+  "card_shop_details",
+  {
+    locationId: uuid("location_id").primaryKey(),
+    kind: text("kind").$type<"shop">().notNull().default("shop"),
+    website: text("website"),
+    hours: text("hours"),
+    sells: text("sells").array().$type<ShopSells[]>().notNull(),
+  },
+  (t) => [
+    foreignKey({ name: "card_shop_details_location_fk", columns: [t.locationId, t.kind], foreignColumns: [locations.id, locations.kind] }).onDelete("cascade"),
+    check("card_shop_details_kind_check", sql`${t.kind} = 'shop'`),
+  ],
+)
+
+/**
+ * An event's own fields (migration 0011): the one place its times live.
+ * Without `ends_at`, an event lasts a day.
+ */
+export const eventDetails = pgTable(
+  "event_details",
+  {
+    locationId: uuid("location_id").primaryKey(),
+    kind: text("kind").$type<"event">().notNull().default("event"),
+    startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+    endsAt: timestamp("ends_at", { withTimezone: true }),
+    venue: text("venue"),
+    link: text("link"),
+    isFree: boolean("is_free"),
+  },
+  (t) => [
+    index("event_details_starts_at_idx").on(t.startsAt),
+    index("event_details_ends_at_idx").on(t.endsAt),
+    foreignKey({ name: "event_details_location_fk", columns: [t.locationId, t.kind], foreignColumns: [locations.id, locations.kind] }).onDelete("cascade"),
+    check("event_details_kind_check", sql`${t.kind} = 'event'`),
+    check("event_details_dates_check", sql`${t.endsAt} is null or ${t.endsAt} >= ${t.startsAt}`),
   ],
 )

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { getDb } from "@/server/db/client"
-import { highlights, locations } from "@/server/db/schema"
+import { eventDetails, highlights, locations } from "@/server/db/schema"
 import { getHotspots, getUpcomingEvents } from "@/server/services/highlights"
 
 /** `n` vending machines in a city, spread a little around a point. */
@@ -84,6 +84,38 @@ describe("getUpcomingEvents", () => {
     expect(events[2]).toMatchObject({ city: "Boulder", state: "CO", lng: -105.27, lat: 40.01, isSample: false, endsAt: null })
     expect(events[3]).toMatchObject({ startsAt: "2026-11-13T18:00:00.000Z", isSample: true })
     expect(await getUpcomingEvents(db, now, 1)).toHaveLength(1)
+  })
+
+  it("takes an event location's times from event_details, and lists approved events no highlight features", async () => {
+    const db = getDb()
+    const now = new Date("2026-11-07T12:00:00Z")
+    const [featured, plain, over] = await db
+      .insert(locations)
+      .values([
+        { name: "Prerelease", kind: "event", city: "Phoenix", state: "AZ", geog: { lng: -112.07, lat: 33.45 } },
+        { name: "Swap meet", kind: "event", city: "Tucson", state: "AZ", geog: { lng: -110.97, lat: 32.22 } },
+        { name: "Last week's show", kind: "event", city: "Mesa", state: "AZ", geog: { lng: -111.83, lat: 33.42 } },
+      ])
+      .returning()
+    await db.insert(eventDetails).values([
+      { locationId: featured.id, startsAt: new Date("2026-11-14T17:00:00Z"), endsAt: new Date("2026-11-14T22:00:00Z") },
+      { locationId: plain.id, startsAt: new Date("2026-11-09T17:00:00Z") },
+      { locationId: over.id, startsAt: new Date("2026-11-01T17:00:00Z") },
+    ])
+    // The highlight's own time is stale; event_details wins.
+    await db.insert(highlights).values({ kind: "event", title: "Prerelease at the mall", startsAt: new Date("2026-11-01T17:00:00Z"), locationId: featured.id })
+    const events = await getUpcomingEvents(db, now, 5)
+    expect(events.map((e) => [e.title, e.startsAt])).toEqual([
+      ["Swap meet", "2026-11-09T17:00:00.000Z"],
+      ["Prerelease at the mall", "2026-11-14T17:00:00.000Z"],
+    ])
+    expect(events[1].endsAt).toBe("2026-11-14T22:00:00.000Z")
+  })
+
+  it("keeps a details row to a location of its own kind", async () => {
+    const db = getDb()
+    const [shop] = await db.insert(locations).values({ name: "Den of Cards", kind: "shop", geog: { lng: -105.27, lat: 40.01 } }).returning()
+    await expect(db.insert(eventDetails).values({ locationId: shop.id, startsAt: new Date() })).rejects.toThrow()
   })
 
   it("goes with its location when the location is deleted", async () => {
