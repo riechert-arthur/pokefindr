@@ -337,6 +337,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
 
   /** A dot was clicked: popup and ring, without moving the map. */
   const handleDotSelect = select
+  const ignoreSelect = useCallback(() => {}, [])
 
   /**
    * Opens a location's details from a list (search or results), as a new
@@ -434,6 +435,15 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const adding = params.add !== null
   const addKind = params.add === "shop" || params.add === "event" ? params.add : null
   const [addPin, setAddPin] = useState<Pin | null>(null)
+  const [addStep, setAddStep] = useState(0)
+  /** The URL right after startAdding pushed `add=`, so closing goes Back to before it instead of adding an entry. */
+  const pushedAdd = useRef<string | null>(null)
+  // Leaving by any route (Back, a link): start over next time.
+  useEffect(() => {
+    if (adding) return
+    setAddPin(null)
+    setAddStep(0)
+  }, [adding])
   const { submissions, refresh: refreshSubmissions } = useMySubmissions(Boolean(session))
   const startAdding = () => {
     if (!session) {
@@ -444,11 +454,19 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
       return
     }
     dispatch({ type: "closeDetails" })
-    void setParams({ add: "1", location: null }, { history: "push" })
+    void setParams({ add: "1", location: null }, { history: "push" }).then((search) => {
+      pushedAdd.current = search.toString()
+    })
   }
   const stopAdding = () => {
     setAddPin(null)
-    void setParams({ add: null }, { history: "replace" })
+    const current = new URLSearchParams(window.location.search)
+    current.delete("add")
+    const pushed = pushedAdd.current !== null && new URLSearchParams(pushedAdd.current).has("add")
+    pushedAdd.current = null
+    // Opened here with +: go back to the entry before it. Opened from a link: just drop add=.
+    if (pushed) window.history.back()
+    else void setParams({ add: null }, { history: "replace" })
   }
   const moveAddPin = (pin: Pin, fly = false) => {
     setAddPin(pin)
@@ -579,9 +597,10 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         }}
         onClick={(e) => {
           if (isSidebarOpen) toggleSidebar()
-          // Adding a place: a click drops the pin there.
-          if (adding && session) {
-            setAddPin({ lng: e.lngLat.lng, lat: e.lngLat.lat })
+          // Adding a place: on the location step, a click on the map (not on a marker) drops the pin there.
+          if (adding) {
+            const onMarker = (e.originalEvent.target as Element | null)?.closest?.(".maplibregl-marker")
+            if (session && addStep === 1 && !onMarker) setAddPin({ lng: e.lngLat.lng, lat: e.lngLat.lat })
             return
           }
           // A click off the dots closes the popup, as MapLibre popups do by default.
@@ -589,13 +608,14 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
           if (!hit) dispatch({ type: "closePopup" })
         }}
       >
-        <MapShading colors={colors} states={states} max={max} bounds={bounds} onStateSelect={handleStateSelect} />
+        {/* While adding a place, clicks place the pin: states and dots don't open. */}
+        <MapShading colors={colors} states={states} max={max} bounds={bounds} onStateSelect={adding ? undefined : handleStateSelect} />
         <Source id={SOURCES.radius} type="geojson" data={area}>
           <Layer {...radius.fill} />
           <Layer {...radius.line} />
         </Source>
         {highlights && zoomedOut && <HighlightMarkers highlights={highlights} kinds={kinds} onHotspot={openHotspot} onEvent={openEvent} />}
-        <LocationLayers collection={inView} selected={selected} colors={colors} onSelect={handleDotSelect} />
+        <LocationLayers collection={inView} selected={selected} colors={colors} onSelect={adding ? ignoreSelect : handleDotSelect} />
         {submissions && <PendingMarkers submissions={submissions} onOpen={openSubmission} />}
         {adding && addPin && <AddPin pin={addPin} kind={addKind} onMove={moveAddPin} />}
         {params.route && params.route.length >= 2 && <RouteOverlay ids={params.route} colors={colors} onClear={() => void setParams({ route: null })} />}
@@ -660,7 +680,10 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
                   initialKind={addKind}
                   pin={addPin}
                   onPinChange={(pin) => moveAddPin(pin, true)}
-                  onKindChange={(kind) => void setParams({ add: kind }, { history: "replace" })}
+                  onKindChange={(kind) => void setParams({ add: kind }, { history: "replace" }).then((search) => {
+                    if (pushedAdd.current !== null) pushedAdd.current = search.toString()
+                  })}
+                  onStepChange={setAddStep}
                   onCancel={stopAdding}
                   onSubmitted={({ name }) => {
                     toast.success("Sent for review", { description: `${name} shows as Pending review to you until a moderator checks it.` })

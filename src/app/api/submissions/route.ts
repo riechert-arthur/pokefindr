@@ -28,8 +28,8 @@ export async function POST(request: NextRequest) {
   if (!body.success) return NextResponse.json(firstIssue(body.error), { status: 400 })
   const { submission, confirmDuplicate } = body.data
   if (submission.kind === "event") {
-    const problem = eventDateProblem(submission.startsAt)
-    if (problem) return NextResponse.json({ error: problem, field: "startsAt" }, { status: 400 })
+    const problem = eventDateProblem(submission.startsAt, submission.endsAt)
+    if (problem) return NextResponse.json(problem, { status: 400 })
   }
   try {
     const result = await createSubmission({ userId, input: submission, confirmDuplicate })

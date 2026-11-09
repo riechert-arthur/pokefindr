@@ -94,6 +94,9 @@ describe("POST /api/submissions", () => {
     expect(await bad(event({ endsAt: inDays(2) }))).toMatchObject({ field: "endsAt" })
     expect(await bad(event({ startsAt: inDays(-3) }))).toMatchObject({ field: "startsAt", error: "That date has passed." })
     expect(await bad(event({ startsAt: inDays(400) }))).toMatchObject({ field: "startsAt" })
+    // An end far off would keep it listed for good; one already past means it's over.
+    expect(await bad(event({ endsAt: "9999-12-31T00:00:00Z" }))).toMatchObject({ field: "endsAt", error: "An event can last at most 14 days." })
+    expect(await bad(event({ startsAt: inDays(-0.9), endsAt: inDays(-0.5) }))).toMatchObject({ field: "endsAt", error: "That event has already ended." })
     expect(await getDb().select().from(locationSubmissions)).toEqual([])
   })
 

@@ -15,7 +15,8 @@ interface MapShadingProps {
   states: StateCollection | null
   max: number
   bounds: ReadonlyMap<string, LngLatBounds>
-  onStateSelect: (code: string) => void
+  /** Without it, clicking a state does nothing. */
+  onStateSelect?: (code: string) => void
 }
 
 /**

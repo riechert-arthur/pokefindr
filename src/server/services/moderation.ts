@@ -1,18 +1,17 @@
 import "server-only"
 import { and, eq, sql } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
-import { cardShopDetails, eventDetails, locationSubmissions, locations, profiles } from "@/server/db/schema"
+import { cardShopDetails, eventDetails, highlights, locationRatings, locationSubmissions, locations, profiles, statusReports } from "@/server/db/schema"
 import { canModerate, type Role } from "@/lib/auth/roles"
 import type { RejectReason } from "@/lib/submissions/constants"
 import type { EventSubmission, ShopSubmission } from "@/lib/submissions/schemas"
-import type { ModerationCheck, ModerationItem } from "@/lib/submissions/moderation"
+import { UNDO_MS, type ModerationCheck, type ModerationItem } from "@/lib/submissions/moderation"
+export { UNDO_MS }
 import { regionAt } from "@/server/geo/regions"
 import { METERS_PER_MILE, pointOf } from "./locations"
 
 /** Moderators see places of the same kind this close as possible duplicates (the prototype's 0.25 mi). */
 export const MODERATION_DUPLICATE_MILES = 0.25
-/** A decision can be undone this long after it was made, by the moderator who made it. */
-export const UNDO_MS = 60 * 60 * 1000
 const DAY_MS = 24 * 60 * 60 * 1000
 
 export async function getRole(userId: string, db: Database = getDb()): Promise<Role | null> {
@@ -126,7 +125,7 @@ export async function listDecided(reviewerId: string, db: Database = getDb(), no
   return toItems([...rows], db, now)
 }
 
-export type DecisionResult = { status: "done"; locationId?: string; reviewedAt?: Date } | { status: "not_found" } | { status: "not_pending" } | { status: "too_late" }
+export type DecisionResult = { status: "done"; locationId?: string; reviewedAt?: Date } | { status: "not_found" } | { status: "not_pending" } | { status: "too_late" } | { status: "in_use" }
 
 type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0]
 
@@ -197,7 +196,10 @@ export async function rejectSubmission(id: string, reviewerId: string, reason: R
 
 /**
  * Puts a decision back to pending, for the moderator who made it, within an
- * hour: an approval's location (and its details) is deleted again.
+ * hour: an approval's location (and its details) is deleted again. Not once
+ * people have rated, reported or featured the place: deleting it would take
+ * their posts with it (`in_use`). The location row is locked first, so none
+ * can be added while this runs.
  */
 export async function undoDecision(id: string, reviewerId: string, db: Database = getDb(), now = new Date()): Promise<DecisionResult> {
   return db.transaction(async (tx): Promise<DecisionResult> => {
@@ -205,13 +207,20 @@ export async function undoDecision(id: string, reviewerId: string, db: Database 
     if (!sub) return { status: "not_found" }
     if (sub.status === "pending") return { status: "not_pending" }
     if (sub.reviewedBy !== reviewerId || !sub.reviewedAt || now.getTime() - sub.reviewedAt.getTime() > UNDO_MS) return { status: "too_late" }
+    const locationId = sub.status === "approved" ? sub.locationId : null
+    if (locationId) {
+      await tx.select({ id: locations.id }).from(locations).where(eq(locations.id, locationId)).for("update")
+      const [{ used }] = await tx.execute<{ used: boolean }>(sql`
+        select exists (select 1 from ${locationRatings} where location_id = ${locationId})
+          or exists (select 1 from ${statusReports} where location_id = ${locationId})
+          or exists (select 1 from ${highlights} where location_id = ${locationId}) as used`)
+      if (used) return { status: "in_use" }
+    }
     await tx
       .update(locationSubmissions)
       .set({ status: "pending", rejectReason: null, reviewedBy: null, reviewedAt: null, locationId: null })
       .where(eq(locationSubmissions.id, id))
-    if (sub.status === "approved" && sub.locationId) {
-      await tx.delete(locations).where(and(eq(locations.id, sub.locationId), eq(locations.source, "submission")))
-    }
+    if (locationId) await tx.delete(locations).where(and(eq(locations.id, locationId), eq(locations.source, "submission")))
     return { status: "done" }
   })
 }
