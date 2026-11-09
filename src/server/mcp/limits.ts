@@ -22,8 +22,15 @@ const budgets = new Map<string, { day: string; budget: PlaceBudget }>()
 /** The client a request comes from, for its limits. */
 export const clientKeyFor = (headers: Headers) => `ip:${rateLimitKey(clientIp(headers))}`
 
-/** Takes one request from the client's bucket; false when it's sending too fast. */
-export const takeRequest = (key: string) => perMinute.take(key)
+/**
+ * Takes `messages` requests from the client's bucket; false when it's
+ * sending too fast. A 2025-era JSON-RPC batch carries several messages in
+ * one POST, and each one counts.
+ */
+export function takeRequests(key: string, messages = 1): boolean {
+  for (let i = 0; i < messages; i++) if (!perMinute.take(key)) return false
+  return true
+}
 
 /**
  * The places the client may still be shown today. The same object is kept

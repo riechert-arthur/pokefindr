@@ -1,6 +1,6 @@
 import "server-only"
 import { createMcpHandler, type AuthInfo, type McpHttpHandler, type McpServerFactory } from "@modelcontextprotocol/server"
-import { takeRequest } from "./limits"
+import { takeRequests } from "./limits"
 
 /** Largest MCP request body read: tool inputs are a few hundred bytes. */
 export const MAX_BODY_BYTES = 64 * 1024
@@ -45,11 +45,36 @@ export function mcpEndpoint(factory: McpServerFactory): McpHttpHandler {
   })
 }
 
-/** Serves one request for the client `key`, after its rate limit. `authInfo` reaches the server factory and the scope checks. */
-export async function serveMcp(handler: McpHttpHandler, request: Request, key: string, authInfo?: AuthInfo): Promise<Response> {
-  if (!takeRequest(key)) return rpcError(429, "Too many requests. Wait a minute and try again.", { "Retry-After": "60" })
+/** How many JSON-RPC messages a POST body carries: a 2025-era batch is an array of them. */
+function messageCount(body: string): number {
   try {
-    return withCors(await handler.fetch(request, authInfo ? { authInfo } : undefined))
+    const parsed: unknown = JSON.parse(body)
+    return Array.isArray(parsed) ? Math.max(1, parsed.length) : 1
+  } catch {
+    return 1
+  }
+}
+
+/**
+ * Serves one request for the client `key`, after its rate limit: one token
+ * per message, so a batch of tool calls costs what sending them one by one
+ * would. The body is read here (within the size cap) and handed on.
+ * `authInfo` reaches the server factory and the scope checks.
+ */
+export async function serveMcp(handler: McpHttpHandler, request: Request, key: string, authInfo?: AuthInfo): Promise<Response> {
+  let forward = request
+  let messages = 1
+  if (request.method === "POST") {
+    const length = Number(request.headers.get("content-length") ?? 0)
+    if (length > MAX_BODY_BYTES) return rpcError(413, "Request too large.")
+    const body = await request.text()
+    if (body.length > MAX_BODY_BYTES) return rpcError(413, "Request too large.")
+    messages = messageCount(body)
+    forward = new Request(request.url, { method: "POST", headers: request.headers, body })
+  }
+  if (!takeRequests(key, messages)) return rpcError(429, "Too many requests. Wait a minute and try again.", { "Retry-After": "60" })
+  try {
+    return withCors(await handler.fetch(forward, authInfo ? { authInfo } : undefined))
   } catch (err) {
     console.error("[mcp] request failed", err)
     return rpcError(500, "Something went wrong. Try again.")
