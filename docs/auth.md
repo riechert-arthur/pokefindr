@@ -22,7 +22,10 @@ the email needs it.
 Our routes call Better Auth through its HTTP handler (`src/server/auth/identity.ts`), not `auth.api`,
 because its rate limits only run on requests. They're keyed by the client IP, which Vercel puts in
 `x-real-ip` and `x-forwarded-for`. Self-hosted, the proxy in front of the app must set those and
-overwrite anything the client sent.
+overwrite anything the client sent. Since those calls come from our server, Better Auth can't
+see whether another site's page made the browser send them, so our routes refuse those requests
+themselves (`refuseCrossSite`). Its emails go out after the response (Next's `after()`), so a request
+that sends one answers as fast as one that doesn't.
 
 ### The flows
 
@@ -31,12 +34,13 @@ overwrite anything the client sent.
 - **Confirm**: the link (24 hours) lands on `/login?verified=1`. Logging in before confirming sends a
   new link.
 - **Log in** (`/login`): email and password, or Google or Discord. A new OAuth user picks a username
-  on `/login/callback` first.
+  on `/login/callback` first. Google or Discord can only make an account from an email they have
+  confirmed (Discord allows unconfirmed ones), so nobody can sign up as an address's owner.
 - **Forgot password** (`/forgot-password`): emails a link (1 hour, single use) to `/reset-password`.
   A reset ends every other session and also confirms the email. Opening the link proves the
   address belongs to them, so someone who signed up with that email can't keep its owner out.
 - **Change email** (`/settings`): the current address approves, then the new one confirms. Nothing
-  changes before both.
+  changes before both, and only a confirmed email can be changed.
 - **Linking**: an OAuth sign-in joins an existing account with the same email only when both sides
   have confirmed it.
 
@@ -68,8 +72,9 @@ a redirect URI. Preview deployments have changing URLs, so leave the OAuth varia
 the buttons don't show, and email sign-in still works.
 
 The Supabase variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-`SUPABASE_SERVICE_ROLE_KEY`) are no longer read and can be removed. `SUPABASE_URL` and
-`SUPABASE_KEY` are still used by the Python location scripts (#51).
+`SUPABASE_SERVICE_ROLE_KEY`) are no longer read. Keep them in Vercel until the rollback window
+below ends: the build before this one needs them to start. `SUPABASE_URL` and `SUPABASE_KEY` are
+still used by the Python location scripts (#51).
 
 ## Cutover from Supabase
 
@@ -88,8 +93,10 @@ foreign key is added `NOT VALID`, so those old rows stay as they are, and every 
    - reset the password
    - sign in with each OAuth provider
 4. Watch the logs for `[auth]` errors, which include emails that failed to send.
-5. **Rollback:** redeploy the previous build. Keep the Supabase project, read-only, for two weeks
-   before deleting it.
+5. **Rollback:** use Vercel's Instant Rollback to the previous deployment, which keeps that
+   deployment's build and settings. Don't redeploy an older commit instead: that rebuilds it with
+   today's variables. Keep the Supabase project, read-only, and its variables for two weeks, then
+   delete both.
 
 ## Known limits
 
