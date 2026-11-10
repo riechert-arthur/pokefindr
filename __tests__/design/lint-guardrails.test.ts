@@ -18,7 +18,8 @@ async function colorErrors(code: string, file = "src/components/Example.tsx") {
   // A parse error or an ignored file has a null ruleId; fail instead of reading it as "no violations".
   expect(result.fatalErrorCount, `${file} parses`).toBe(0)
   expect(result.messages.filter((m) => m.ruleId === null).map((m) => m.message), `${file} is linted`).toEqual([])
-  return result.messages.filter((m) => m.ruleId === "no-restricted-syntax").map((m) => m.message)
+  // The copy rule (docs/i18n.md) has its own tests in __tests__/i18n/catalogs.test.ts.
+  return result.messages.filter((m) => m.ruleId === "no-restricted-syntax" && !m.message.includes("messages/en.yml")).map((m) => m.message)
 }
 
 describe("design-system lint guardrails", () => {

@@ -99,6 +99,7 @@
     "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
+    "@formatjs/icu-messageformat-parser": "3.5.18",
     "@modelcontextprotocol/client": "^2.4.0",
     "@next/env": "^15.3.2",
     "@playwright/test": "^1.65.0",
