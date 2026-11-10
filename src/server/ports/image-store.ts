@@ -12,3 +12,12 @@ export interface ImageStore {
   /** Whether `url` is one of this store's (and not, say, a Google or Discord picture). */
   owns(url: string): boolean
 }
+
+/**
+ * Deletes `url` from `store` if it's one of ours. A failure is logged, not thrown:
+ * the row has already moved on, so the worst case is an orphaned file.
+ */
+export async function deleteOwnedImage(store: ImageStore | null, url: string | null | undefined): Promise<void> {
+  if (!store || !url || !store.owns(url)) return
+  await store.delete(url).catch((err) => console.error("[image-store] couldn't delete", url, err))
+}

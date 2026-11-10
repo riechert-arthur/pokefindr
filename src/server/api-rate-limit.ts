@@ -17,6 +17,8 @@ export const RATE_RULES = {
   geocode: { name: "geocode", perMinute: 60, burst: 20 },
   /** Uploading or removing a profile picture (#290), per account: a few tries, not a stream of files. */
   avatar: { name: "avatar", perMinute: 4, burst: 6 },
+  /** A moderator removing pictures (#290), per staff member: a handful of reviews, not a sweep of every account. */
+  avatarModeration: { name: "avatarModeration", perMinute: 10, burst: 10 },
 } as const satisfies Record<string, RateRule>
 
 /** How long a request waits on the limiter before going through without it. */

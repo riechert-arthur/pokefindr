@@ -104,8 +104,8 @@ export function ReviewsSection({ kind, reviews, username, image = null, moderate
   const removePhoto = async (r: Review) => {
     setBusy(true)
     try {
-      const res = await fetch(`/api/admin/avatars/${encodeURIComponent(r.username)}`, { method: "DELETE" })
-      if (!res.ok) throw new Error(`DELETE /api/admin/avatars failed (${res.status})`)
+      const res = await fetch(`/api/admin/reviews/${encodeURIComponent(r.id)}/avatar`, { method: "DELETE" })
+      if (!res.ok) throw new Error(`DELETE /api/admin/reviews/:id/avatar failed (${res.status})`)
       toast.success(t("photoRemoved", { name: r.username }))
       reviews.reload()
     } catch (err) {

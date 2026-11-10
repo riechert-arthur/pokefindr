@@ -5,7 +5,7 @@ import { getDb, type Database } from "@/server/db/client"
 import { profiles, subscriptions, usernameHolds, users } from "@/server/db/schema"
 import type { SessionTier } from "@/server/auth/session"
 import { getImageStore } from "@/server/container"
-import type { ImageStore } from "@/server/ports/image-store"
+import { deleteOwnedImage, type ImageStore } from "@/server/ports/image-store"
 import type { Locale } from "@/i18n/routing"
 
 /** What the client's session context gets (the shape /api/auth/user has always returned). */
@@ -54,8 +54,7 @@ export async function userExists(userId: string, db: Database = getDb()): Promis
 /** Deletes a user and, by cascade, their accounts, sessions and profile, and the profile picture we stored for them. */
 export async function deleteUser(userId: string, db: Database = getDb(), store: ImageStore | null = getImageStore()): Promise<void> {
   const [deleted] = await db.delete(users).where(eq(users.id, userId)).returning({ image: users.image })
-  if (deleted?.image && store?.owns(deleted.image))
-    await store.delete(deleted.image).catch((err) => console.error("[users] couldn't delete the profile picture", deleted.image, err))
+  await deleteOwnedImage(store, deleted?.image)
 }
 
 /**

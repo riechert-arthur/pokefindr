@@ -128,7 +128,8 @@ when someone signs up with them; an upload replaces it. With none, `UserAvatar` 
   Unset, it's `vercel-blob` when the token is set, else `local`, or `none` in production.
   The old file is deleted when a picture is replaced or removed, or the account is deleted.
 - **Moderation:** moderators and admins (`moderation.avatars`) can remove someone's picture from
-  their review on the map (`DELETE /api/admin/avatars/:username`).
+  their review on the map (`DELETE /api/admin/reviews/:id/avatar`, by review so a rename can't
+  point it at someone else; rate limited per staff member, `RATE_RULES.avatarModeration`).
 
 ## Local development
 

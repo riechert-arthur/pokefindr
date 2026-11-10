@@ -4,7 +4,7 @@ import { limitClient, RATE_RULES } from "@/server/api-rate-limit"
 import { refuseCrossSite } from "@/server/auth/identity"
 import { getImageStore } from "@/server/container"
 import type { ImageStore } from "@/server/ports/image-store"
-import { AvatarError, removeAvatar, setAvatar, type AvatarRefusal } from "@/server/services/avatars"
+import { AvatarError, removeAvatar, setAvatar, tooLarge, type AvatarRefusal } from "@/server/services/avatars"
 import { AVATAR_MAX_BYTES } from "@/lib/avatars"
 
 export const dynamic = "force-dynamic"
@@ -14,6 +14,35 @@ export const runtime = "nodejs"
 const REFUSED: Record<AvatarRefusal, number> = { avatarTooLarge: 413, avatarWrongType: 415, avatarRejected: 422 }
 /** Room for the multipart boundaries and headers around the file. */
 const FORM_OVERHEAD = 16 * 1024
+const MAX_BODY = AVATAR_MAX_BYTES + FORM_OVERHEAD
+
+/**
+ * The request body, or null once it passes `limit` bytes. Read here, not by
+ * req.formData(), which would buffer a chunked body (no Content-Length) of any size.
+ */
+async function readBody(req: NextRequest, limit: number): Promise<Uint8Array | null> {
+  if (!req.body) return new Uint8Array()
+  const reader = req.body.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) break
+    total += value.byteLength
+    if (total > limit) {
+      await reader.cancel().catch(() => {})
+      return null
+    }
+    chunks.push(value)
+  }
+  const body = new Uint8Array(total)
+  let at = 0
+  for (const c of chunks) {
+    body.set(c, at)
+    at += c.byteLength
+  }
+  return body
+}
 
 /** The checks both methods run first: same site, signed in, under the rate limit, uploads on. */
 async function guard(req: NextRequest): Promise<{ response: Response } | { userId: string; store: ImageStore | null }> {
@@ -37,15 +66,15 @@ export async function POST(req: NextRequest): Promise<Response> {
   if ("response" in g) return g.response
   if (!g.store) return apiError("avatarsUnavailable", "Profile pictures aren't available right now.", 503)
 
-  // Refuse an oversized body before reading it.
-  if (Number(req.headers.get("content-length") ?? 0) > AVATAR_MAX_BYTES + FORM_OVERHEAD)
-    return apiError("avatarTooLarge", "That file is over 2 MB. Choose a smaller photo.", 413)
-  const form = await req.formData().catch(() => null)
-  const file = form?.get("file")
-  if (!(file instanceof Blob)) return apiError("invalidInput", "Attach a photo as `file`.", 400)
-  if (file.size > AVATAR_MAX_BYTES) return apiError("avatarTooLarge", "That file is over 2 MB. Choose a smaller photo.", 413)
-
   try {
+    // Refuse an oversized body without reading it when it says its size, and stop reading when it doesn't.
+    if (Number(req.headers.get("content-length") ?? 0) > MAX_BODY) throw tooLarge()
+    const body = await readBody(req, MAX_BODY)
+    if (!body) throw tooLarge()
+    const form = await new Response(body, { headers: { "content-type": req.headers.get("content-type") ?? "" } }).formData().catch(() => null)
+    const file = form?.get("file")
+    if (!(file instanceof Blob)) return apiError("invalidInput", "Attach a photo as `file`.", 400)
+
     const image = await setAvatar(g.userId, new Uint8Array(await file.arrayBuffer()), g.store)
     if (!image) return apiError("accountNotFound", "Account not found", 404)
     return NextResponse.json({ image })

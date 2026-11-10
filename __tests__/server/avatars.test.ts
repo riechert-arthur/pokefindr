@@ -65,6 +65,15 @@ describe("processAvatar", () => {
     expect(await refusal(processAvatar(new TextEncoder().encode("<svg/>")))).toBe("avatarWrongType")
     expect(await refusal(processAvatar(new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3])))).toBe("avatarRejected")
   })
+
+  it("refuses a small PNG that decodes to more than 4096² pixels, but not a big JPEG", async () => {
+    const bomb = await sharp({ create: { width: 5000, height: 4000, channels: 3, background: { r: 0, g: 0, b: 0 } } }).png({ compressionLevel: 9 }).toBuffer()
+    expect(bomb.byteLength).toBeLessThan(2 * 1024 * 1024)
+    expect(await refusal(processAvatar(bomb))).toBe("avatarRejected")
+    // JPEG decodes straight to a smaller size, so a 20 MP phone photo is fine.
+    const big = await sharp({ create: { width: 5000, height: 4000, channels: 3, background: { r: 0, g: 0, b: 0 } } }).jpeg().toBuffer()
+    expect((await sharp(await processAvatar(big)).metadata()).width).toBe(256)
+  })
 })
 
 describe("LocalImageStore", () => {
