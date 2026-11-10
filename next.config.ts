@@ -9,6 +9,15 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts")
 const nextConfig: NextConfig = {
   // next lint's default folders, plus Storybook's config.
   eslint: { dirs: ["src", "app", "pages", "components", "lib", ".storybook"] },
+  // The blog posts' hero images (public/blog/*/metadata.json), resized by next/image (#298).
+  // A new post with a hero from another host adds it here.
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "rarecandy.com", pathname: "/_next/image" },
+      { protocol: "https", hostname: "tse1.mm.bing.net", pathname: "/th" },
+    ],
+  },
 }
 
 export default function config(phase: string) {

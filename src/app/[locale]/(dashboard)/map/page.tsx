@@ -1,4 +1,5 @@
 import type { SearchParams } from "nuqs/server"
+import { preconnect } from "react-dom"
 import type { Metadata } from "next"
 import { getLocale, getTranslations } from "next-intl/server"
 import type { Locale } from "@/i18n/routing"
@@ -11,6 +12,7 @@ import { initialMapView } from "@/lib/map/initial-view"
 import { getLocationFeature } from "@/server/services/locations"
 import type { LocationFeature } from "@/lib/types/locations"
 import { pageMetadata } from "@/i18n/seo"
+import { TILE_ORIGIN } from "@/lib/map/tiles"
 
 export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
   const locale = (await params).locale as Locale
@@ -61,11 +63,22 @@ async function resolvePlace(params: MapSearchParams): Promise<string | null> {
  * on the same place, state or location with no flash of the US view.
  */
 export default async function MapPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  // The basemap's host, connected while MapLibre downloads (#298). Its requests are CORS fetches.
+  preconnect(TILE_ORIGIN, { crossOrigin: "anonymous" })
   const params = await loadMapSearchParams(searchParams)
   const resolved = await resolvePlace(params)
   if (resolved) redirect({ href: resolved, locale: await getLocale() })
-  const location = await sharedLocation(params.location)
+  const [t, location] = await Promise.all([getTranslations("map.meta"), sharedLocation(params.location)])
   const [longitude, latitude] = location?.geometry.coordinates ?? []
   const view = initialMapView(params, location ? { longitude, latitude } : null)
-  return <MapLoader view={view} location={location} />
+  return (
+    <>
+      {/* Text to index without JavaScript (#255): the pins come from bot-checked APIs, so this is all a crawler reads. No location data. */}
+      <header className="sr-only">
+        <h1>{t("heading")}</h1>
+        <p>{t("intro")}</p>
+      </header>
+      <MapLoader view={view} location={location} />
+    </>
+  )
 }

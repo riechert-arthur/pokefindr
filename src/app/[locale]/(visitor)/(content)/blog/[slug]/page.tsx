@@ -8,7 +8,10 @@ import { BlogPostHero } from "@/components/BlogPostHero"
 import type { Metadata } from "next"
 import type { Plugin } from "unified"
 import { setPageLocale } from "@/i18n/static"
-import { englishOnlyMetadata } from "@/i18n/seo"
+import { englishOnlyMetadata, localizedPath } from "@/i18n/seo"
+import { DEFAULT_LOCALE } from "@/i18n/routing"
+import { blogPostingJsonLd, jsonLd } from "@/lib/json-ld"
+import { PRODUCTION_URL } from "@/server/site-url"
 
 interface BlogPostPageProps {
   params: Promise<{
@@ -40,8 +43,15 @@ const BlogPostPage: FC<BlogPostPageProps> = async ({ params }) => {
   const markdown: string = await readBlogPostMarkdownFile(slug)
   const metadata: BlogPostMetadata = await readBlogPostMetadata(slug)
 
+  const posting = blogPostingJsonLd(PRODUCTION_URL, {
+    ...metadata,
+    // The English page is the canonical one (englishOnlyMetadata).
+    url: new URL(localizedPath(`/blog/${slug}`, DEFAULT_LOCALE), PRODUCTION_URL).toString(),
+  })
+
   return (
     <div className="flex flex-col items-center">
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(posting)} />
       <BlogPostHero metadata={metadata} />
       <Markdown
         className="px-8 relative top-20 text-xl max-w-prose prose dark:prose-invert"
@@ -54,7 +64,8 @@ const BlogPostPage: FC<BlogPostPageProps> = async ({ params }) => {
           ),
           img: ({ src, alt }) => (
             <div className="flex justify-center">
-              <img src={src} alt={alt} className="w-auto max-w-full mx-auto my-4" />
+              {/* Below the hero, from hosts that don't all allow resizing: lazy, so they don't compete with it (#298). */}
+              <img src={src} alt={alt} loading="lazy" decoding="async" className="w-auto max-w-full mx-auto my-4" />
             </div>
           )
         }}

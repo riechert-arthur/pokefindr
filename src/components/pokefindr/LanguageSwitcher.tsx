@@ -24,6 +24,8 @@ interface LanguageSwitcherProps {
   locales?: readonly Locale[]
   /** The trigger's down arrow; off in the narrow app rail. */
   chevron?: boolean
+  /** When the list opens or closes (the app rail stays expanded while it's open). */
+  onOpenChange?: (open: boolean) => void
   className?: string
 }
 
@@ -37,7 +39,7 @@ export function LanguageSwitcher({ locales = PUBLIC_LOCALES, ...props }: Languag
   return locales.length < 2 ? null : <Switcher locales={locales} {...props} />
 }
 
-function Switcher({ variant = "full", locales, chevron = true, className }: LanguageSwitcherProps & { locales: readonly Locale[] }) {
+function Switcher({ variant = "full", locales, chevron = true, onOpenChange, className }: LanguageSwitcherProps & { locales: readonly Locale[] }) {
   const locale = useLocale()
   const t = useTranslations("ui.language")
   const router = useRouter()
@@ -74,7 +76,7 @@ function Switcher({ variant = "full", locales, chevron = true, className }: Lang
   }
 
   return (
-    <Select value={locale} onValueChange={choose} disabled={pending}>
+    <Select value={locale} onValueChange={choose} onOpenChange={onOpenChange} disabled={pending}>
       <SelectTrigger
         chevron={chevron}
         aria-label={t("label")}

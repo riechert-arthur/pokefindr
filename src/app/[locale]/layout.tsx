@@ -10,14 +10,16 @@ import { fontVariables } from "@/app/fonts"
 import { ContextProviders } from "@/components/providers/ContextProviders"
 import { ThemeProvider } from "@/components/providers/ThemeProvider"
 import { Analytics } from "@/components/Analytics"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner"
 import { getSiteUrl, PRODUCTION_URL } from "@/server/site-url"
+import { onVercelProduction } from "@/server/edge-config"
 
 const site = getSiteUrl() ?? new URL(PRODUCTION_URL)
 
+// No viewport or charset here: Next writes both on every page, and warns
+// ("Unsupported metadata viewport") when they're in metadata (#255).
 const metadata = {
-  "viewport": "width=device-width, initial-scale=1",
-  "charset": "UTF-8",
   "other": {
     "google-adsense-account": "ca-pub-5624613492216779",
     "impact-site-verification": "34eb1c2e-8a9b-4082-9f19-211558caebd7",
@@ -53,6 +55,8 @@ export default async function LocaleLayout({ children, params }: { children: Rea
               <main>{children}</main>
               <Toaster />
               <Analytics />
+              {/* Real visitors' Core Web Vitals (#298, docs/analytics.md). Only on Vercel, which serves its script. */}
+              {onVercelProduction() && <SpeedInsights />}
             </ContextProviders>
           </ThemeProvider>
         </NextIntlClientProvider>

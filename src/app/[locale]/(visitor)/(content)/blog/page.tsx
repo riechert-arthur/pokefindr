@@ -1,3 +1,4 @@
+import Image from "next/image"
 import type { FC } from "react"
 import type { BlogPostMetadata } from "@/lib/blog-utils"
 import { readAllBlogPostMetadata } from "@/lib/blog-utils"
@@ -41,10 +42,14 @@ const BlogPage: FC<LocaleParams> = async ({ params }) => {
               key={index}
               className="relative isolate flex flex-col justify-end overflow-hidden rounded-2xl bg-black px-8 pb-8 pt-80 sm:pt-48 lg:pt-80"
             >
-              <img
+              <Image
                 alt=""
                 src={post.heroImageURL}
-                className="absolute inset-0 -z-10 size-full object-cover"
+                fill
+                // The first card is above the fold on phones.
+                priority={index === 0}
+                sizes="(min-width: 1024px) 22rem, (min-width: 720px) 42rem, 100vw"
+                className="-z-10 object-cover"
               />
               <div className="absolute inset-0 -z-10 bg-gradient-to-t from-black/90 via-black/40" />
               <div className="absolute inset-0 -z-10 rounded-2xl ring-1 ring-inset ring-black/10" />
