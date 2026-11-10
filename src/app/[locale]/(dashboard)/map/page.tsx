@@ -65,11 +65,10 @@ async function resolvePlace(params: MapSearchParams): Promise<string | null> {
 export default async function MapPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   // The basemap's host, connected while MapLibre downloads (#298). Its requests are CORS fetches.
   preconnect(TILE_ORIGIN, { crossOrigin: "anonymous" })
-  const t = await getTranslations("map.meta")
   const params = await loadMapSearchParams(searchParams)
   const resolved = await resolvePlace(params)
   if (resolved) redirect({ href: resolved, locale: await getLocale() })
-  const location = await sharedLocation(params.location)
+  const [t, location] = await Promise.all([getTranslations("map.meta"), sharedLocation(params.location)])
   const [longitude, latitude] = location?.geometry.coordinates ?? []
   const view = initialMapView(params, location ? { longitude, latitude } : null)
   return (

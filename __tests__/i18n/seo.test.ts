@@ -39,10 +39,11 @@ describe("each language's address for search engines (#183)", () => {
     expect(entries.map((e) => e.url).filter((u) => /\/(home|settings|admin)/.test(u))).toEqual([])
   })
 
-  it("dates the posts and the changelog, and leaves out /login and /signup (#255)", async () => {
+  it("dates the posts, the blog and the changelog, and leaves out /login and /signup (#255)", async () => {
     const entries = await sitemap()
     expect(entries.find((e) => e.url === "https://pokefindr.app/es/changelog")?.lastModified).toBe(CHANGELOG_UPDATED)
     expect(entries.find((e) => e.url === "https://pokefindr.app/map")?.lastModified).toBeUndefined()
+    expect(entries.find((e) => e.url === "https://pokefindr.app/blog")?.lastModified).toBe("2025-01-02")
     expect(entries.map((e) => e.url).filter((u) => /\/(login|signup)/.test(u))).toEqual([])
   })
 

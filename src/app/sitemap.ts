@@ -26,9 +26,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getSiteUrl() ?? new URL(PRODUCTION_URL)
   const absolute = (path: string) => new URL(path, base).toString()
   const posts = await readAllBlogPostMetadata()
-  // Dates are known for the posts (their publish date) and the changelog (its newest release), not the other pages.
+  // Dates are known for the posts (their publish date; posts carry no edit date), the blog (its newest post)
+  // and the changelog (its newest release), not the other pages.
   const lastModified: Record<string, string> = { "/changelog": CHANGELOG_UPDATED }
   for (const post of posts) lastModified[`/blog/${post.slug}`] = post.published
+  const newestPost = posts.map((p) => p.published).sort().at(-1)
+  if (newestPost) lastModified["/blog"] = newestPost
   const dated = (path: string) => (lastModified[path] ? { lastModified: lastModified[path] } : {})
   const englishOnly = [...posts.map((p) => `/blog/${p.slug}`), ...INDEXED_PAGES.filter((path) => ENGLISH_ONLY.has(path))].map((path) => ({
     url: absolute(localizedPath(path, DEFAULT_LOCALE)),
