@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { eq } from "drizzle-orm"
 import { z } from "zod/v3"
-import { usernameField } from "@/lib/schemas"
+import { usernameField } from "@/server/auth/schemas"
 import { EMAIL_CHANGE_CALLBACK } from "@/lib/auth/paths"
 import { approveChangeToTakenEmail } from "@/server/auth/auth"
 import { identityRequest, refuseCrossSite } from "@/server/auth/identity"

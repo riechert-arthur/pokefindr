@@ -7,6 +7,7 @@ import { BookOpenIcon, HouseIcon, MapPinIcon, SettingsIcon, ShieldIcon } from "l
 import { Logo } from "@/components/brand/Logo"
 import { DiscordIcon } from "@/components/icons/DiscordIcon"
 import { ThemeToggle } from "@/components/pokefindr/ThemeToggle"
+import { SUPPORT_URL } from "@/lib/links"
 import { cn } from "@/lib/utils"
 
 type NavLabel = "home" | "blog" | "map" | "discord" | "settings" | "admin"
@@ -26,7 +27,7 @@ const MAIN: RailItem[] = [
   { href: "/map", label: "map", icon: MapPinIcon },
 ]
 
-const DISCORD: RailItem = { href: "https://discord.gg/f2uUR5bAZU", label: "discord", icon: DiscordIcon, external: true }
+const DISCORD: RailItem = { href: SUPPORT_URL, label: "discord", icon: DiscordIcon, external: true }
 const SETTINGS: RailItem = { href: "/settings", label: "settings", icon: SettingsIcon }
 const ADMIN: RailItem = { href: "/admin", label: "admin", icon: ShieldIcon }
 

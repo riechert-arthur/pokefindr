@@ -524,6 +524,13 @@ assistant:
     topRetailers: Tiendas con más máquinas
     event: Evento
     noEvents: No hay eventos próximos.
+    titles:
+      placesInState: "{count, number} en {area}"
+      placesNear: "{count, number} a menos de {radius} {area, select, you {de ti} other {de {area}}}"
+      statsNear: "A menos de {radius} {area, select, you {de ti} other {de {area}}}"
+      events: Próximos eventos
+      eventsInState: "Eventos en {area}"
+      eventsNear: "Eventos a menos de {radius} {area, select, you {de ti} other {de {area}}}"
   clearHistory:
     button: Borrar historial del asistente
     clearing: Borrando…

@@ -1,7 +1,5 @@
 import { z } from "zod/v3"
-import { createTranslator } from "next-intl"
 import type { Messages } from "@/i18n/messages"
-import en from "@/i18n/generated/en.json"
 
 /** A key in the catalog's `auth.validation` (messages/en.yml). */
 export type ValidationKey = keyof Messages["auth"]["validation"]
@@ -12,7 +10,7 @@ export type ValidationMessages = (key: ValidationKey) => string
 /**
  * The auth forms' schemas, with their messages in the language `m` gives.
  * The forms use useAuthSchemas() (the page's language); the API routes use
- * the English ones below.
+ * English ones in src/server/auth/schemas.ts.
  */
 export function authSchemas(m: ValidationMessages) {
   const email = z
@@ -65,8 +63,3 @@ export function authSchemas(m: ValidationMessages) {
 }
 
 export type AuthSchemas = ReturnType<typeof authSchemas>
-
-// English, for the API routes: their errors are translated later (#185).
-const english = authSchemas(createTranslator({ locale: "en", messages: en as Messages, namespace: "auth.validation" }))
-
-export const { usernameField, loginSchema, forgotPasswordSchema, resetPasswordSchema, registrationSchema, callbackSchema } = english
