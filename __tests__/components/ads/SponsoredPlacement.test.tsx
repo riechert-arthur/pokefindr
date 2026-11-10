@@ -123,3 +123,27 @@ describe("the results slot", () => {
     expect(screen.queryByRole("complementary")).toBeNull()
   })
 })
+
+describe("the landing strip's reserved space (#298)", () => {
+  it("is in the server's HTML when the placement is on, at the strip's height, and empty otherwise", async () => {
+    const { renderToString } = await import("react-dom/server")
+    const { NextIntlClientProvider } = await import("next-intl")
+    const { MESSAGES } = await import("../../helpers/intl")
+    const html = (reserve: boolean) =>
+      renderToString(
+        <NextIntlClientProvider locale="en" messages={MESSAGES.en} timeZone="UTC">
+          <SponsoredPlacement placement="landing" reserve={reserve} />
+        </NextIntlClientProvider>,
+      )
+    expect(html(true)).toMatch(/<div aria-hidden="true" data-placement="landing" class="[^"]*min-h-/)
+    expect(html(true)).not.toContain("Sponsored")
+    expect(html(false)).toBe("")
+  })
+
+  it("gives the band the same height once the banner shows", () => {
+    const { container } = render(<SponsoredPlacement placement="landing" reserve />)
+    const band = container.querySelector('[data-placement="landing"]')
+    expect(band?.className).toMatch(/min-h-\S+ /)
+    expect(screen.getByRole("complementary")).toBeInTheDocument()
+  })
+})

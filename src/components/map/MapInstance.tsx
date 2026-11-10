@@ -830,7 +830,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         />
         {session && (
           <div className="absolute top-4 right-5 z-50">
-            <UserMenu size={45} userName={session.username} />
+            <UserMenu userName={session.username} />
           </div>
         )}
       </Map>

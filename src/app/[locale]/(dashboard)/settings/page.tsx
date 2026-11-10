@@ -105,7 +105,7 @@ export default function SettingsPage() {
               <span className="sr-only">View notifications</span>
               <BellIcon className="size-6" />
             </button>*/}
-            <UserMenu userName={session?.username || "Pokefindr"} size={40} />
+            <UserMenu userName={session?.username || "Pokefindr"} />
           </div>
         </div>
       </header>
