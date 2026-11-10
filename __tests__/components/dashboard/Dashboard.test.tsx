@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { act, fireEvent, render, screen, waitFor } from "../../helpers/intl"
+import { act, fireEvent, message, render, screen, waitFor } from "../../helpers/intl"
 import { Dashboard, SUGGESTIONS } from "@/components/dashboard/Dashboard"
 
 vi.mock("@/i18n/navigation", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/i18n/navigation")>()), usePathname: () => "/home", useRouter: () => ({ push: vi.fn() }) }))
@@ -37,8 +37,9 @@ describe("Dashboard", () => {
     const getCurrentPosition = vi.fn((ok: PositionCallback) => ok({ coords: { longitude: -122.33789, latitude: 47.61234 } } as GeolocationPosition))
     vi.stubGlobal("navigator", { ...navigator, geolocation: { getCurrentPosition } })
     render(<Dashboard assistant={(p) => (seen.push({ suggestion: p.suggestion, viewer: p.viewer }), <div>composer</div>)} />)
-    fireEvent.click(screen.getByRole("button", { name: SUGGESTIONS[1] }))
-    expect(seen.at(-1)?.suggestion).toBe(SUGGESTIONS[1])
+    const denver = message()(`dashboard.suggestions.${SUGGESTIONS[1]}`)
+    fireEvent.click(screen.getByRole("button", { name: denver }))
+    expect(seen.at(-1)?.suggestion).toBe(denver)
 
     fireEvent.click(screen.getByRole("button", { name: "Use my location" }))
     expect(await screen.findByText("42")).toBeInTheDocument()
@@ -86,5 +87,14 @@ describe("Dashboard", () => {
     expect(await screen.findByText(/Couldn.t load your reviews/)).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Manage your reviews" })).toHaveAttribute("href", "/home/reviews")
     expect(await screen.findByText(/Couldn.t load events/)).toBeInTheDocument()
+  })
+
+  it("is in Spanish on a Spanish page, with the count formatted for it", async () => {
+    render(<Dashboard assistant={() => null} />, { locale: "es" })
+    expect(screen.getByRole("heading", { level: 1, name: message("es")("dashboard.greeting") })).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText(/Pregunta por cualquiera de las 1457 máquinas expendedoras/)).toBeInTheDocument())
+    expect(screen.getByRole("button", { name: message("es")("dashboard.suggestions.denver") })).toBeInTheDocument()
+    expect(screen.getByRole("region", { name: "Tus reseñas" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Usar mi ubicación" })).toBeInTheDocument()
   })
 })

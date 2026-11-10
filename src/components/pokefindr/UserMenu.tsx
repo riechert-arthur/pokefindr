@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { Link, useRouter } from "@/i18n/navigation"
 import { useRef, useState } from "react"
 import axios from "axios"
@@ -46,6 +47,7 @@ function UserAvatar({ size, userName, imageUrl }: Pick<UserMenuProps, "size" | "
 
 /** The signed-in user's avatar with Settings and Log out. */
 export function UserMenu({ size, userName, imageUrl, className, variant = "dropdown", itemClassName }: UserMenuProps) {
+  const t = useTranslations("nav.userMenu")
   const router = useRouter()
   // One logout at a time: a second click would fail (no session) and show a false
   // error. The ref blocks a second call in the same tick (before a re-render); the
@@ -64,7 +66,7 @@ export function UserMenu({ size, userName, imageUrl, className, variant = "dropd
       router.push("/login")
     } catch (err) {
       console.error("Logout failed", err)
-      toast.error("Couldn't log out. Please try again.")
+      toast.error(t("logOutFailed"))
     } finally {
       // Re-enable either way, in case navigation is cancelled and this stays mounted.
       pending.current = false
@@ -83,11 +85,11 @@ export function UserMenu({ size, userName, imageUrl, className, variant = "dropd
         </div>
         <Link href="/settings" className={item}>
           <SettingsIcon className="size-5" aria-hidden />
-          Settings
+          {t("settings")}
         </Link>
         <button type="button" onClick={handleLogout} disabled={loggingOut} className={cn(item, "text-left disabled:opacity-50")}>
           <LogOutIcon className="size-5" aria-hidden />
-          Log out
+          {t("logOut")}
         </button>
       </div>
     )
@@ -97,7 +99,7 @@ export function UserMenu({ size, userName, imageUrl, className, variant = "dropd
     <DropdownMenu>
       <DropdownMenuTrigger
         className={cn("rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", className)}
-        aria-label={`Account menu for ${userName}`}
+        aria-label={t("trigger", { name: userName })}
       >
         <UserAvatar size={size} userName={userName} imageUrl={imageUrl} />
       </DropdownMenuTrigger>
@@ -107,12 +109,12 @@ export function UserMenu({ size, userName, imageUrl, className, variant = "dropd
         <DropdownMenuItem asChild>
           <Link href="/settings">
             <SettingsIcon aria-hidden />
-            Settings
+            {t("settings")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={handleLogout}>
           <LogOutIcon aria-hidden />
-          Log out
+          {t("logOut")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

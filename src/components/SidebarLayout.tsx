@@ -2,6 +2,7 @@
 
 import { FC, ReactNode, useEffect, useRef } from "react"
 import { ChevronLeft } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { useSidebar } from "@/components/providers/SidebarContextProvider"
 import { useSessionContext } from "./providers/SessionProvider"
 import { canModerate } from "@/lib/auth/roles"
@@ -21,6 +22,7 @@ interface SidebarLayoutProps {
  * Settings and the rest).
  */
 export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
+  const t = useTranslations("nav")
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const { session } = useSessionContext()
   const railRef = useRef<HTMLElement>(null)
@@ -61,7 +63,7 @@ export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
           <button
             type="button"
             onClick={toggleSidebar}
-            aria-label="Close navigation"
+            aria-label={t("closeNavigation")}
             aria-controls={APP_NAV_ID}
             className="absolute left-20 top-4 z-50 rounded-full bg-card p-2 shadow-md sm:hidden"
           >

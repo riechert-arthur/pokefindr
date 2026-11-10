@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Check } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -14,6 +15,7 @@ import { LoadingButton } from "@/components/wrappers/LoadingButton"
  * to the app, with a code or with access_denied).
  */
 export function ConsentForm({ client, username, permissions }: { client: { name: string; redirectHost: string }; username: string; permissions: string[] }) {
+  const t = useTranslations("auth.consent")
   const [sending, setSending] = useState<"allow" | "deny" | null>(null)
 
   async function answer(accept: boolean) {
@@ -29,7 +31,7 @@ export function ConsentForm({ client, username, permissions }: { client: { name:
       window.location.assign(body.url)
     } catch (err) {
       console.error("[oauth] consent failed", err)
-      toast.error("That didn't go through. Start connecting from the app again.")
+      toast.error(t("failed"))
       setSending(null)
     }
   }
@@ -37,14 +39,14 @@ export function ConsentForm({ client, username, permissions }: { client: { name:
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-xl">Connect {client.name}?</CardTitle>
+        <CardTitle className="text-xl">{t("title", { app: client.name })}</CardTitle>
         <CardDescription>
-          It wants to use your PokeFindr account, <span className="font-medium text-foreground">@{username}</span>.
+          {t.rich("description", { username, user: (chunks) => <span className="font-medium text-foreground">{chunks}</span> })}
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6">
         <div className="grid gap-2">
-          <p className="text-sm font-medium text-foreground">It will be able to:</p>
+          <p className="text-sm font-medium text-foreground">{t("canDo")}</p>
           <ul className="grid gap-2">
             {permissions.map((p) => (
               <li key={p} className="flex items-start gap-2 text-sm text-muted-foreground">
@@ -55,19 +57,18 @@ export function ConsentForm({ client, username, permissions }: { client: { name:
           </ul>
         </div>
         <p className="rounded-md border border-border bg-muted px-3 py-2 text-sm text-muted-foreground">
-          Allowing sends you back to <span className="font-medium text-foreground">{client.redirectHost}</span>. Only allow it if you just asked an app to connect.{" "}
-          It can never see your password. Disconnect it any time from the app.
+          {t.rich("warning", { host: client.redirectHost, b: (chunks) => <span className="font-medium text-foreground">{chunks}</span> })}
         </p>
         <div className="grid gap-3">
           {sending === "allow" ? (
-            <LoadingButton className="w-full">Connecting…</LoadingButton>
+            <LoadingButton className="w-full">{t("allowing")}</LoadingButton>
           ) : (
             <Button type="button" className="w-full" disabled={sending !== null} onClick={() => answer(true)}>
-              Allow
+              {t("allow")}
             </Button>
           )}
           <Button type="button" variant="outline" className="w-full" disabled={sending !== null} onClick={() => answer(false)}>
-            {sending === "deny" ? "Cancelling…" : "Cancel"}
+            {sending === "deny" ? t("cancelling") : t("cancel")}
           </Button>
         </div>
       </CardContent>

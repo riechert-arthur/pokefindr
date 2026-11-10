@@ -1,24 +1,28 @@
 import { describe, expect, it } from "vitest"
-import { FAQS, answerParts, answerText, faqJsonLd } from "@/lib/faq"
+import { createTranslator } from "next-intl"
+import { FAQ_IDS, faqAnswerText, faqJsonLd, type FaqMessages } from "@/lib/faq"
+import { MESSAGES, message } from "../helpers/intl"
+import type { Locale } from "@/i18n/routing"
+
+const faq = (locale: Locale) => createTranslator({ locale, messages: MESSAGES[locale], namespace: "faq" }) as unknown as FaqMessages
 
 describe("FAQ", () => {
-  it("splits answers into text and links", () => {
-    expect(answerParts("See the [Pokémon Center website](https://example.com/a?b=1). Thanks.")).toEqual([
-      { text: "See the " },
-      { text: "Pokémon Center website", href: "https://example.com/a?b=1" },
-      { text: ". Thanks." },
-    ])
-    expect(answerParts("No links.")).toEqual([{ text: "No links." }])
-    // Only http(s) links; anything else stays text.
-    expect(answerParts("[x](javascript:alert(1))")).toEqual([{ text: "[x](javascript:alert(1))" }])
+  it("makes answers plain text, links becoming their text", () => {
+    expect(faqAnswerText(faq("en"), "verified")).toBe("Yes. Locations come from the official retailer list on the Pokémon Center website.")
   })
 
-  it("has no raw HTML and builds FAQPage data with plain-text answers", () => {
-    expect(FAQS.every((f) => !/<[a-z]/i.test(f.answer))).toBe(true)
-    const ld = faqJsonLd()
+  it("builds FAQPage data with plain-text answers", () => {
+    const ld = faqJsonLd(faq("en"))
     expect(ld["@type"]).toBe("FAQPage")
-    expect(ld.mainEntity).toHaveLength(FAQS.length)
-    expect(ld.mainEntity[2].acceptedAnswer.text).toBe(answerText(FAQS[2].answer))
-    expect(ld.mainEntity[2].acceptedAnswer.text).not.toContain("](")
+    expect(ld.mainEntity).toHaveLength(FAQ_IDS.length)
+    expect(ld.mainEntity[0].name).toBe(message()("faq.items.what.question"))
+    for (const q of ld.mainEntity) expect(q.acceptedAnswer.text).not.toMatch(/<|\]\(/)
+  })
+
+  it("builds the FAQPage data in the page's language", () => {
+    const ld = faqJsonLd(faq("es"))
+    expect(ld.mainEntity[0].name).toBe("¿Qué es una máquina expendedora de Pokémon?")
+    expect(ld.mainEntity[2].acceptedAnswer.text).toBe(faqAnswerText(faq("es"), "verified"))
+    expect(ld.mainEntity[2].acceptedAnswer.text).toContain("sitio web del Pokémon Center")
   })
 })

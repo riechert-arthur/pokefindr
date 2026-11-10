@@ -1,16 +1,18 @@
 import type { ReactNode } from "react"
+import { useTranslations } from "next-intl"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
 export const STATUSES = ["live", "sample", "pending", "coming-soon", "sponsored"] as const
 export type Status = (typeof STATUSES)[number]
 
-const STYLES: Record<Status, { label: string; className: string }> = {
-  live: { label: "Live", className: "border-success/40 text-success" },
-  sample: { label: "Sample", className: "border-border text-muted-foreground" },
-  pending: { label: "Pending review", className: "border-warning/45 text-warning" },
-  "coming-soon": { label: "Coming soon", className: "border-dashed border-border text-muted-foreground" },
-  sponsored: { label: "Sponsored", className: "border-border text-muted-foreground" },
+/** Each status's label (in the catalog's `ui.status`) and colors. */
+const STYLES: Record<Status, { label: "live" | "sample" | "pending" | "comingSoon" | "sponsored"; className: string }> = {
+  live: { label: "live", className: "border-success/40 text-success" },
+  sample: { label: "sample", className: "border-border text-muted-foreground" },
+  pending: { label: "pending", className: "border-warning/45 text-warning" },
+  "coming-soon": { label: "comingSoon", className: "border-dashed border-border text-muted-foreground" },
+  sponsored: { label: "sponsored", className: "border-border text-muted-foreground" },
 }
 
 interface StatusBadgeProps {
@@ -22,10 +24,11 @@ interface StatusBadgeProps {
 
 /** Small outlined badge for a status: Live, Sample, Pending review, Coming soon, Sponsored. */
 export function StatusBadge({ status, children, className }: StatusBadgeProps) {
+  const t = useTranslations("ui.status")
   const s = STYLES[status]
   return (
     <Badge variant="outline" data-status={status} className={cn("h-5 rounded-full bg-background px-2 text-overline uppercase", s.className, className)}>
-      {children ?? s.label}
+      {children ?? t(s.label)}
     </Badge>
   )
 }

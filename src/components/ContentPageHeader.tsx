@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { Link } from "@/i18n/navigation"
 import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { useSessionContext } from "./providers/SessionProvider"
+import { useTranslations } from "next-intl"
 
 /** A full-width link in the nav drawer and header ("Log in", Settings, Log out). */
 const NAV_ITEM = "-mx-3 flex items-center gap-2 rounded-lg px-3 py-2.5 text-base/7 font-semibold text-foreground hover:bg-muted/50"
@@ -29,6 +30,7 @@ export const MobileMenu: FC<MobileMenuProps> = ({
   setMobileMenuOpen,
   navigation,
 }) => {
+  const t = useTranslations("content.header")
   const { session } = useSessionContext()
   // The menu is hidden from lg up. Close it when the window widens past lg, or
   // its overlay and scroll lock would stay with no visible panel.
@@ -39,8 +41,8 @@ export const MobileMenu: FC<MobileMenuProps> = ({
 
   return (
     <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-      <SheetContent side="right" closeLabel="Close menu" overlayClassName="bg-transparent lg:hidden" aria-describedby={undefined} className="w-full overflow-y-auto bg-card px-6 py-6 sm:max-w-sm lg:hidden">
-        <SheetTitle className="sr-only">Menu</SheetTitle>
+      <SheetContent side="right" closeLabel={t("closeMenu")} overlayClassName="bg-transparent lg:hidden" aria-describedby={undefined} className="w-full overflow-y-auto bg-card px-6 py-6 sm:max-w-sm lg:hidden">
+        <SheetTitle className="sr-only">{t("menu")}</SheetTitle>
         <div className="flex items-center justify-between pr-8">
           <Link href="/" className="-m-1.5 p-1.5" onClick={() => setMobileMenuOpen(false)}>
             <Logo variant="full" size={32} />
@@ -65,7 +67,7 @@ export const MobileMenu: FC<MobileMenuProps> = ({
                   href="/login"
                   className={NAV_ITEM}
                 >
-                  Log in
+                  {t("logIn")}
                 </Link>
               ) : (
                 <UserMenu
@@ -88,13 +90,14 @@ interface HeaderProps {
 }
 
 export const ContentPageHeader: FC<HeaderProps> = ({ navigation }) => {
+  const t = useTranslations("content.header")
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { session } = useSessionContext()
 
   return (
     <header className="absolute inset-x-0 top-0 z-50">
       <nav
-        aria-label="Global"
+        aria-label={t("navLabel")}
         className="flex items-center justify-between p-6 md:py-0 lg:px-8"
       >
         <div className="flex lg:flex-1">
@@ -108,7 +111,7 @@ export const ContentPageHeader: FC<HeaderProps> = ({ navigation }) => {
             onClick={() => setMobileMenuOpen(true)}
             className="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-foreground"
           >
-            <span className="sr-only">Open main menu</span>
+            <span className="sr-only">{t("openMenu")}</span>
             <MenuIcon aria-hidden="true" className="size-6" />
           </button>
         </div>
@@ -130,7 +133,7 @@ export const ContentPageHeader: FC<HeaderProps> = ({ navigation }) => {
                 href="/login"
                 className={NAV_ITEM}
               >
-                Log in &rarr;
+                {t("logIn")} &rarr;
               </Link>
             ) : (
               <UserMenu 

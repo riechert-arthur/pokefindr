@@ -1,6 +1,7 @@
 "use client"
 
 import { XIcon } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -25,11 +26,12 @@ interface SponsoredSlotProps {
  * (#136); this only renders it.
  */
 export function SponsoredSlot({ sponsor, title, body, cta, href, variant = "compact", onDismiss, onFollow, className }: SponsoredSlotProps) {
+  const t = useTranslations("ads")
   const strip = variant === "strip"
   return (
     <aside
       // Named by its title, so several slots on a page are distinct landmarks.
-      aria-label={`Sponsored: ${title}`}
+      aria-label={t("landmark", { title })}
       data-variant={variant}
       className={cn(
         "relative flex items-center gap-3 rounded-lg border border-border bg-muted p-3 text-body",
@@ -41,7 +43,7 @@ export function SponsoredSlot({ sponsor, title, body, cta, href, variant = "comp
     >
       <span aria-hidden className="h-11 w-[2.125rem] shrink-0 -rotate-6 rounded-md bg-gradient-to-br from-brand to-brand-2 shadow-sm ring-[3px] ring-inset ring-background/70" />
       <span className="min-w-0 flex-1">
-        <span className="block text-overline uppercase text-muted-foreground">Sponsored · {sponsor}</span>
+        <span className="block text-overline uppercase text-muted-foreground">{t("label", { sponsor })}</span>
         {/* The strip's CTA button is its link, so the title isn't a second one. */}
         {strip ? (
           <span className="block font-semibold text-foreground">{title}</span>
@@ -62,7 +64,7 @@ export function SponsoredSlot({ sponsor, title, body, cta, href, variant = "comp
         <button
           type="button"
           onClick={onDismiss}
-          aria-label="Hide ads for this visit"
+          aria-label={t("dismiss")}
           className="absolute right-1 top-1 z-10 grid size-6 place-items-center rounded-md text-muted-foreground hover:bg-background hover:text-foreground"
         >
           <XIcon className="size-3.5" aria-hidden />

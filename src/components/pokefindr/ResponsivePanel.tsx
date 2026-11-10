@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react"
 import { X } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -37,6 +38,7 @@ export function ResponsivePanel({
   children,
   className,
 }: ResponsivePanelProps) {
+  const t = useTranslations("common")
   // undefined until hydration, when the breakpoint isn't known yet.
   const desktop = useMediaQuery(MD_UP)
   // Pick Sheet or Drawer when the panel opens and keep it until it next opens:
@@ -90,7 +92,7 @@ export function ResponsivePanel({
           {/* Swipe and Escape aren't available to everyone: give the drawer a close button. */}
           <DrawerClose className="-m-2 rounded-md p-2 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <X className="size-5" aria-hidden />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{t("close")}</span>
           </DrawerClose>
         </DrawerHeader>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6">{children}</div>

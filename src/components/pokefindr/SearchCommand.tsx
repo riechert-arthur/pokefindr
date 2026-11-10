@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { Command as CommandPrimitive } from "cmdk"
 import { LoaderCircleIcon, SearchIcon, XIcon } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Command, CommandGroup, CommandList } from "@/components/ui/command"
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
@@ -31,7 +32,7 @@ interface SearchCommandProps {
   /** `hero`: the landing page's big box with a Search button. `panel`: the map's. */
   variant?: "hero" | "panel"
   placeholder: string
-  /** The input's accessible name. */
+  /** The input's accessible name. Defaults to "Search a location". */
   label?: string
   /** Shows a clear button while there's text. */
   onClear?: () => void
@@ -48,10 +49,8 @@ interface SearchCommandProps {
   className?: string
 }
 
-const GROUPS = [
-  { key: "areas", heading: "Areas" },
-  { key: "locations", heading: "Locations" },
-] as const
+/** The result groups, in order; each heading is its key's message in `ui.search`. */
+const GROUPS = ["areas", "locations"] as const
 
 /**
  * The search box for the landing hero and the map: type a city, ZIP or
@@ -68,13 +67,15 @@ export function SearchCommand({
   onPick,
   variant = "panel",
   placeholder,
-  label = "Search a location",
+  label,
   onClear,
   leading,
   minLength = 2,
   placement = "auto",
   className,
 }: SearchCommandProps) {
+  const t = useTranslations("ui.search")
+  const name = label ?? t("label")
   const inputRef = useRef<HTMLInputElement>(null)
   const anchorRef = useRef<HTMLDivElement>(null)
   const [focused, setFocused] = useState(false)
@@ -130,17 +131,17 @@ export function SearchCommand({
     !searchable || status === "idle" || status === "loading"
       ? ""
       : status === "error"
-        ? "Search isn't working right now."
+        ? t("announce.error")
         : items.length === 0
-          ? "No matches."
-          : `${items.length} result${items.length === 1 ? "" : "s"}. Use the arrow keys to move and Enter to open.`
+          ? t("announce.none")
+          : t("announce.results", { count: items.length })
 
   return (
     <Command
       shouldFilter={false}
       value={selected}
       onValueChange={setSelected}
-      label={label}
+      label={name}
       // The list drops down in a popover; the root is just the input row.
       className={cn("h-auto overflow-visible bg-transparent", className)}
     >
@@ -177,7 +178,7 @@ export function SearchCommand({
                 if (e.key === "Escape" && open) e.stopPropagation()
               }}
               placeholder={placeholder}
-              aria-label={label}
+              aria-label={name}
               className={cn(
                 "min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground",
                 hero ? "h-[58px] text-body-lg" : "h-10 text-body",
@@ -189,7 +190,7 @@ export function SearchCommand({
                 variant="ghost"
                 size="icon"
                 className="size-8 shrink-0"
-                aria-label="Clear search"
+                aria-label={t("clear")}
                 onClick={() => {
                   onClear()
                   inputRef.current?.focus()
@@ -200,7 +201,7 @@ export function SearchCommand({
             )}
             {hero && (
               <Button type="button" onClick={submit} className="shrink-0">
-                Search
+                {t("submit")}
               </Button>
             )}
           </div>
@@ -222,21 +223,15 @@ export function SearchCommand({
           {/* At most 20rem, and never past the space the popover has (less the footer, shown from sm up). */}
           <CommandList className="max-h-[min(20rem,calc(var(--radix-popover-content-available-height)-0.5rem))] sm:max-h-[min(20rem,calc(var(--radix-popover-content-available-height)-3.5rem))]">
             <CommandPrimitive.Empty className="px-2.5 py-3.5 text-body text-muted-foreground">
-              {status === "error" ? (
-                "Search isn't working right now. Try again in a moment."
-              ) : status === "loading" ? (
-                "Searching…"
-              ) : (
-                <>No places match &ldquo;{query.trim()}&rdquo;. Try a city, ZIP code or street address.</>
-              )}
+              {status === "error" ? t("error") : status === "loading" ? t("searching") : t("noMatches", { query: query.trim() })}
             </CommandPrimitive.Empty>
-            {GROUPS.map(({ key, heading }) => {
+            {GROUPS.map((key) => {
                 const group = items.filter((i) => i.group === key)
                 if (!group.length) return null
                 return (
                   <CommandGroup
                     key={key}
-                    heading={heading}
+                    heading={t(key)}
                     className="p-0 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:pt-2 [&_[cmdk-group-heading]]:text-overline [&_[cmdk-group-heading]]:tracking-normal [&_[cmdk-group-heading]]:text-muted-foreground"
                   >
                     {group.map((item) => (
@@ -260,8 +255,7 @@ export function SearchCommand({
               })}
           </CommandList>
           <div aria-hidden className="mt-1 hidden items-center gap-1.5 border-t border-border p-2 text-overline font-normal tracking-normal text-muted-foreground sm:flex">
-            <Kbd>↑</Kbd>
-            <Kbd>↓</Kbd> to move <Kbd>↵</Kbd> to open
+            {t.rich("keys", { key: (chunks) => <Kbd>{chunks}</Kbd> })}
           </div>
         </PopoverContent>
       </Popover>

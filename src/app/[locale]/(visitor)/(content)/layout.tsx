@@ -1,22 +1,24 @@
 import type { FC, ReactNode } from "react"
 import { ContentPageHeader } from "@/components/ContentPageHeader"
 import { type NavigationLink } from "@/components/ContentPageHeader"
+import { getTranslations } from "next-intl/server"
+import { SUPPORT_URL } from "@/lib/links"
 import { setPageLocale, type LocaleParams } from "@/i18n/static"
-
-const navigation: NavigationLink[] = [
-  { name: "Map", href: "/map" },
-  { name: "Blog", href: "/blog" },
-  { name: "Support", href: "https://discord.gg/f2uUR5bAZU" },
-  { name: "Changelog", href: "/changelog" },
-  { name: "Dashboard", href: "/home",  },
-]
 
 interface ContentPageLayoutProps extends LocaleParams {
   children: ReactNode
 }
 
 const ContentPageLayout: FC<ContentPageLayoutProps> = async ({ children, params }) => {
-  await setPageLocale(params)
+  const locale = await setPageLocale(params)
+  const t = await getTranslations({ locale, namespace: "content.nav" })
+  const navigation: NavigationLink[] = [
+    { name: t("map"), href: "/map" },
+    { name: t("blog"), href: "/blog" },
+    { name: t("support"), href: SUPPORT_URL },
+    { name: t("changelog"), href: "/changelog" },
+    { name: t("dashboard"), href: "/home" },
+  ]
   return (
     <div className="bg-background relative">
       <ContentPageHeader navigation={navigation} />

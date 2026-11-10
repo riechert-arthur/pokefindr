@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, type FormEvent, type KeyboardEvent, type ReactNode } from "react"
 import { ArrowUpIcon, SquareIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useTranslations } from "next-intl"
 
 /** The textarea grows with its text up to this height, then scrolls. */
 const MAX_HEIGHT = 160
@@ -27,6 +28,7 @@ interface ComposerProps {
  * line.
  */
 export function Composer({ value, onChange, onSubmit, busy = false, onStop, placeholder, onFocusChange, disabled, className }: ComposerProps) {
+  const t = useTranslations("assistant.composer")
   const ref = useRef<HTMLTextAreaElement>(null)
 
   useLayoutEffect(() => {
@@ -70,7 +72,7 @@ export function Composer({ value, onChange, onSubmit, busy = false, onStop, plac
           onFocus={() => onFocusChange?.(true)}
           onBlur={() => onFocusChange?.(false)}
           disabled={disabled}
-          aria-label="Message the assistant"
+          aria-label={t("label")}
           maxLength={2000}
           className="block max-h-40 min-h-12 w-full resize-none border-0 bg-transparent py-2.5 text-[16px] leading-[1.45] text-foreground outline-none sm:text-[17px]"
         />
@@ -81,11 +83,11 @@ export function Composer({ value, onChange, onSubmit, busy = false, onStop, plac
         )}
       </div>
       {busy ? (
-        <button type="button" onClick={onStop} aria-label="Stop" className={sendClass}>
+        <button type="button" onClick={onStop} aria-label={t("stop")} className={sendClass}>
           <SquareIcon className="size-[14px] fill-current stroke-none" aria-hidden />
         </button>
       ) : (
-        <button type="submit" aria-label="Send" disabled={disabled || !value.trim()} className={sendClass}>
+        <button type="submit" aria-label={t("send")} disabled={disabled || !value.trim()} className={sendClass}>
           <ArrowUpIcon className="size-[18px]" aria-hidden />
         </button>
       )}

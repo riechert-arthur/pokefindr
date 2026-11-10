@@ -24,7 +24,10 @@ import { z } from "zod/v3"
 import { useForm } from "react-hook-form"
 import { handleSubmitError } from "@/lib/forms"
 import { LoadingButton } from "@/components/wrappers/LoadingButton"
-import { loginSchema } from "@/lib/schemas"
+import type { AuthSchemas } from "@/lib/schemas"
+import { useTranslations } from "next-intl"
+import { useAuthSchemas } from "./useAuthSchemas"
+import { Terms } from "./Terms"
 import axios from "axios"
 import { toast } from "sonner"
 import { broadcastAuth } from "@/lib/auth/broadcast"
@@ -34,12 +37,14 @@ import { OAuthButtons } from "./OAuthButtons"
 /** A message to show above the form: why the visitor landed on /login. */
 export type LoginNotice = "verified" | "link-expired" | "oauth-failed" | "connect-app"
 
-const NOTICES: Record<LoginNotice, { text: string; tone: "ok" | "warn" }> = {
-  verified: { text: "Your email is confirmed. Log in to get started.", tone: "ok" },
-  "link-expired": { text: "That link has expired or was already used. Log in and we'll send a new one.", tone: "warn" },
-  "oauth-failed": { text: "That sign-in didn't go through. Try again, or use your email.", tone: "warn" },
-  "connect-app": { text: "Log in to connect an app to your PokeFindr account. You'll see what it's asking for next.", tone: "ok" },
-}
+const NOTICES = {
+  verified: { key: "verified", tone: "ok" },
+  "link-expired": { key: "linkExpired", tone: "warn" },
+  "oauth-failed": { key: "oauthFailed", tone: "warn" },
+  "connect-app": { key: "connectApp", tone: "ok" },
+} as const satisfies Record<LoginNotice, { key: string; tone: "ok" | "warn" }>
+
+type LoginValues = z.infer<AuthSchemas["loginSchema"]>
 
 export function LoginForm({
   className,
@@ -54,8 +59,10 @@ export function LoginForm({
   next?: string | null
 }) {
   const router = useRouter()
+  const t = useTranslations("auth")
+  const { loginSchema } = useAuthSchemas()
 
-  const form = useForm<z.infer<typeof loginSchema>>({
+  const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
@@ -63,10 +70,10 @@ export function LoginForm({
     },
   })
 
-  async function onSubmit(values: z.infer<typeof loginSchema>) {
+  async function onSubmit(values: LoginValues) {
     try {
       await axios.post("/api/auth/login", values, { withCredentials: true })
-      toast.success("Logged in!")
+      toast.success(t("login.success"))
       broadcastAuth("login")
       // An API route, not a page: a full navigation, so its redirects reach the app that asked.
       if (next) return window.location.assign(next)
@@ -83,9 +90,9 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-xl">Welcome back</CardTitle>
+          <CardTitle className="text-xl">{t("login.title")}</CardTitle>
           <CardDescription>
-            {providers.length ? "Log in with your account or email" : "Log in with your email"}
+            {providers.length ? t("login.descriptionWithProviders") : t("login.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -97,7 +104,7 @@ export function LoginForm({
                 NOTICES[notice].tone === "ok" ? "border-success/40 bg-success/10 text-foreground" : "border-warning/40 bg-warning/10 text-foreground",
               )}
             >
-              {NOTICES[notice].text}
+              {t(`login.notices.${NOTICES[notice].key}`)}
             </p>
           )}
           <Form {...form}>
@@ -111,9 +118,9 @@ export function LoginForm({
                     render={({ field }) => (
                       <FormItem>
                         <div className="grid gap-3">
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel>{t("fields.email")}</FormLabel>
                           <FormControl>
-                            <Input placeholder="m@example.com" {...field} />
+                            <Input placeholder={t("fields.emailPlaceholder")} {...field} />
                           </FormControl>
                         </div>
                         <FormMessage />
@@ -127,9 +134,9 @@ export function LoginForm({
                       <FormItem>
                         <div className="grid gap-3">
                           <div className="flex items-center">
-                            <FormLabel>Password</FormLabel>
+                            <FormLabel>{t("fields.password")}</FormLabel>
                             <Link href="/forgot-password" className="ml-auto text-sm underline-offset-4 hover:underline">
-                              Forgot your password?
+                              {t("login.forgot")}
                             </Link>
                           </div>
                           <FormControl>
@@ -142,30 +149,30 @@ export function LoginForm({
                   />
                   {!form.formState.isSubmitting && (
                     <Button type="submit" className="w-full">
-                      Login
+                      {t("login.submit")}
                     </Button>
                   )}
                   {form.formState.isSubmitting && (
                     <LoadingButton className="w-full">
-                      Logging in...
+                      {t("login.submitting")}
                     </LoadingButton>
                   )}
                 </div>
                 <div className="text-center text-sm">
-                  Don&apos;t have an account?{" "}
-                  <Link href="/signup" className="underline underline-offset-4">
-                    Sign up
-                  </Link>
+                  {t.rich("login.noAccount", {
+                    link: (chunks) => (
+                      <Link href="/signup" className="underline underline-offset-4">
+                        {chunks}
+                      </Link>
+                    ),
+                  })}
                 </div>
               </div>
             </form>
           </Form>
         </CardContent>
       </Card>
-      <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-        By clicking continue, you agree to our <Link href="/terms-of-service">Terms of Service</Link>{" "}
-        and <Link href="/privacy-policy">Privacy Policy</Link>.
-      </div>
+      <Terms />
     </div>
   )
 }

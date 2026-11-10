@@ -1,6 +1,7 @@
 
 import React from 'react'
 import { SquarePenIcon, Trash2Icon } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { StarRating } from '@/components/pokefindr/StarRating'
 
 export interface Review {
@@ -24,10 +25,11 @@ interface RecentReviewsSectionProps {
 }
 
 export const RecentReviewsSection: React.FC<RecentReviewsSectionProps> = ({ reviews, onEdit, onDelete }) => {
+  const t = useTranslations("content.recentReviews")
   return (
     <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base/7 font-semibold text-foreground">Your Recent Reviews</h2>
+        <h2 className="text-base/7 font-semibold text-foreground">{t("title")}</h2>
       </div>
       <div className="overflow-x-auto py-4">
         <ul role="list" className="flex space-x-6">
@@ -54,13 +56,13 @@ export const RecentReviewsSection: React.FC<RecentReviewsSectionProps> = ({ revi
                   onClick={() => onEdit(review)}
                   className="flex items-center mr-1 text-sm font-semibold text-primary hover:text-primary/80"
                 >
-                  <SquarePenIcon className="mr-1 size-6" /> Edit
+                  <SquarePenIcon className="mr-1 size-6" /> {t("edit")}
                 </button>
                 <button
                   onClick={() => onDelete(review.id)}
                   className="flex items-center text-sm font-semibold text-destructive hover:text-destructive/80"
                 >
-                  <Trash2Icon className="size-6 mr-1" /> Delete
+                  <Trash2Icon className="size-6 mr-1" /> {t("delete")}
                 </button>
               </div>
             </li>

@@ -1,6 +1,7 @@
 import React from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, fireEvent, render, screen, waitFor } from "../../helpers/intl"
+import { act, fireEvent, MESSAGES, render, screen, waitFor } from "../../helpers/intl"
+import { NextIntlClientProvider } from "next-intl"
 import { renderToString } from "react-dom/server"
 import { ResponsivePanel } from "@/components/pokefindr/ResponsivePanel"
 import { resetMediaQueryCache } from "@/hooks/use-media-query"
@@ -105,7 +106,11 @@ describe("ResponsivePanel", () => {
     )
     // The server render assumes desktop; hydrating on a phone must not keep the Sheet.
     const container = document.createElement("div")
-    container.innerHTML = renderToString(ui)
+    container.innerHTML = renderToString(
+      <NextIntlClientProvider locale="en" messages={MESSAGES.en} timeZone="UTC">
+        {ui}
+      </NextIntlClientProvider>,
+    )
     document.body.appendChild(container)
     render(ui, { container, hydrate: true })
     await waitFor(() => expect(screen.getByRole("dialog")).toHaveAttribute("data-vaul-drawer-direction", "bottom"))

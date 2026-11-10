@@ -2,6 +2,7 @@
 
 import React, { useRef } from "react"
 import { Star, StarHalf } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 
 interface StarRatingProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange"> {
@@ -10,7 +11,7 @@ interface StarRatingProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "on
   starSize?: number
   /** Makes the stars a 1–5 radio group. Without it the rating is read-only. */
   onChange?: (newRating: number) => void
-  /** Accessible name for the input, e.g. "Your rating". */
+  /** Accessible name for the input, e.g. "Your rating". Defaults to "Rating". */
   label?: string
 }
 
@@ -43,7 +44,8 @@ const StarIcon = ({ fill, size }: { fill: Fill; size: number }) => (
  * Extra props such as id and aria-describedby, which FormControl passes, go on
  * the wrapper.
  */
-export function StarRating({ rating, starSize = 24, onChange, label = "Rating", className, ...rest }: StarRatingProps) {
+export function StarRating({ rating, starSize = 24, onChange, label, className, ...rest }: StarRatingProps) {
+  const t = useTranslations("ui.starRating")
   const refs = useRef<(HTMLButtonElement | null)[]>([])
   const wrapper = cn("flex gap-0.5", className)
 
@@ -52,7 +54,7 @@ export function StarRating({ rating, starSize = 24, onChange, label = "Rating", 
     // shows and reads as "4.5 out of 5 stars".
     const shown = toHalf(rating)
     return (
-      <div role="img" aria-label={`${shown} out of 5 stars`} className={wrapper} {...rest}>
+      <div role="img" aria-label={t("readOnly", { rating: shown })} className={wrapper} {...rest}>
         {[1, 2, 3, 4, 5].map((star) => (
           <StarIcon key={star} fill={fillFor(shown, star)} size={starSize} />
         ))}
@@ -79,7 +81,7 @@ export function StarRating({ rating, starSize = 24, onChange, label = "Rating", 
   }
 
   return (
-    <div role="radiogroup" aria-label={label} className={wrapper} onKeyDown={onKeyDown} {...rest}>
+    <div role="radiogroup" aria-label={label ?? t("label")} className={wrapper} onKeyDown={onKeyDown} {...rest}>
       {[1, 2, 3, 4, 5].map((star) => (
         <button
           key={star}
@@ -89,7 +91,7 @@ export function StarRating({ rating, starSize = 24, onChange, label = "Rating", 
           type="button"
           role="radio"
           aria-checked={selected === star}
-          aria-label={`${star} ${star === 1 ? "star" : "stars"}`}
+          aria-label={t("star", { count: star })}
           // Roving tabindex: one tab stop, on the selected star (or the first).
           tabIndex={selected === star || (selected < 1 && star === 1) ? 0 : -1}
           onClick={() => select(star)}

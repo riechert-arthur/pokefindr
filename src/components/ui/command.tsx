@@ -4,6 +4,7 @@ import * as React from "react"
 import { type DialogProps } from "@radix-ui/react-dialog"
 import { Command as CommandPrimitive } from "cmdk"
 import { Search } from "lucide-react"
+import { useTranslations } from "next-intl"
 
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
@@ -24,7 +25,7 @@ const Command = React.forwardRef<
 Command.displayName = CommandPrimitive.displayName
 
 interface CommandDialogProps extends DialogProps {
-  /** Accessible name for the dialog (visually hidden). */
+  /** Accessible name for the dialog (visually hidden). Defaults to "Search". */
   title?: string
   /** Accessible description for the dialog (visually hidden). Omit it to have none. */
   description?: string
@@ -34,16 +35,17 @@ interface CommandDialogProps extends DialogProps {
 
 const CommandDialog = ({
   children,
-  title = "Search",
+  title,
   description,
   commandProps,
   ...props
 }: CommandDialogProps) => {
+  const t = useTranslations("ui")
   return (
     <Dialog {...props}>
       {/* Without a description, opt out of aria-describedby so Radix doesn't warn. */}
       <DialogContent className="overflow-hidden p-0" {...(description ? {} : { "aria-describedby": undefined })}>
-        <DialogTitle className="sr-only">{title}</DialogTitle>
+        <DialogTitle className="sr-only">{title ?? t("commandDialog")}</DialogTitle>
         {description && <DialogDescription className="sr-only">{description}</DialogDescription>}
         <Command
           {...commandProps}

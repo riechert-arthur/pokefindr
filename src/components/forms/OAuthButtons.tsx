@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { DiscordIcon } from "@/components/icons/DiscordIcon"
@@ -40,6 +41,7 @@ function failedUrl(next: string | null): string {
 }
 
 export function OAuthButtons({ providers, next = null }: { providers: readonly OAuthProvider[]; next?: string | null }) {
+  const t = useTranslations("auth.oauth")
   const [going, setGoing] = useState<OAuthProvider | null>(null)
   if (providers.length === 0) return null
 
@@ -57,7 +59,7 @@ export function OAuthButtons({ providers, next = null }: { providers: readonly O
       window.location.href = url
     } catch (err) {
       console.error("[auth] couldn't start OAuth", err)
-      toast.error(`Couldn't reach ${OAUTH_LABELS[provider]}. Try again.`)
+      toast.error(t("failed", { provider: OAUTH_LABELS[provider] }))
       setGoing(null)
     }
   }
@@ -70,13 +72,13 @@ export function OAuthButtons({ providers, next = null }: { providers: readonly O
           return (
             <Button key={p} type="button" variant="outline" className="w-full" disabled={going !== null} onClick={() => start(p)}>
               <Icon />
-              {going === p ? `Opening ${OAUTH_LABELS[p]}…` : `Continue with ${OAUTH_LABELS[p]}`}
+              {going === p ? t("opening", { provider: OAUTH_LABELS[p] }) : t("continueWith", { provider: OAUTH_LABELS[p] })}
             </Button>
           )
         })}
       </div>
       <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t after:border-border">
-        <span className="relative z-10 bg-card px-2 text-muted-foreground">Or continue with email</span>
+        <span className="relative z-10 bg-card px-2 text-muted-foreground">{t("divider")}</span>
       </div>
     </>
   )

@@ -4,14 +4,11 @@ import { useRef, useState, type FormEvent } from "react"
 import { ThumbsDownIcon, ThumbsUpIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { useTranslations } from "next-intl"
 
-export const FEEDBACK_REASON_LABELS = {
-  wrong_place: "Wrong place",
-  outdated: "Outdated info",
-  misunderstood: "Didn't understand",
-  other: "Other",
-} as const
-type Reason = keyof typeof FEEDBACK_REASON_LABELS
+/** Why a thumbs down: the API's reasons, labeled by assistant.feedback.reasons in the catalog. */
+export const FEEDBACK_REASONS = ["wrong_place", "outdated", "misunderstood", "other"] as const
+type Reason = (typeof FEEDBACK_REASONS)[number]
 
 type Vote = { vote: "up" | "down"; reason?: Reason | null; comment?: string | null }
 
@@ -32,6 +29,7 @@ const chip =
  * saved, and a thumbs down sent again keeps the reason already given.
  */
 export function FeedbackBar({ turnId }: { turnId: string }) {
+  const t = useTranslations("assistant.feedback")
   const [vote, setVote] = useState<"up" | "down" | null>(null)
   const [asking, setAsking] = useState(false)
   const [reason, setReason] = useState<Reason | null>(null)
@@ -77,36 +75,36 @@ export function FeedbackBar({ turnId }: { turnId: string }) {
 
   return (
     <div className="grid gap-2">
-      <div className="flex items-center gap-1" role="group" aria-label="Rate this answer">
-        <button type="button" className={iconButton} aria-label="Good answer" aria-pressed={vote === "up"} disabled={sending} onClick={() => choose("up")}>
+      <div className="flex items-center gap-1" role="group" aria-label={t("group")}>
+        <button type="button" className={iconButton} aria-label={t("good")} aria-pressed={vote === "up"} disabled={sending} onClick={() => choose("up")}>
           <ThumbsUpIcon className="size-3.5" aria-hidden />
         </button>
-        <button type="button" className={iconButton} aria-label="Bad answer" aria-pressed={vote === "down"} disabled={sending} onClick={() => choose("down")}>
+        <button type="button" className={iconButton} aria-label={t("bad")} aria-pressed={vote === "down"} disabled={sending} onClick={() => choose("down")}>
           <ThumbsDownIcon className="size-3.5" aria-hidden />
         </button>
         <span className="ml-1 text-caption" role="status">
-          {failed ? <span className="text-destructive">Couldn&apos;t send that. Try again.</span> : thanks ? <span className="text-muted-foreground">Thanks for the feedback.</span> : null}
+          {failed ? <span className="text-destructive">{t("failed")}</span> : thanks ? <span className="text-muted-foreground">{t("thanks")}</span> : null}
         </span>
       </div>
       {asking && (
         <form onSubmit={sendReason} className="grid gap-2 rounded-lg border border-border bg-card p-3">
           <p className="text-caption font-semibold text-foreground" id={`why-${turnId}`}>
-            What was wrong? (optional)
+            {t("why")}
           </p>
           <div role="group" aria-labelledby={`why-${turnId}`} className="flex flex-wrap gap-1.5">
-            {(Object.keys(FEEDBACK_REASON_LABELS) as Reason[]).map((r) => (
+            {FEEDBACK_REASONS.map((r) => (
               <button key={r} type="button" aria-pressed={reason === r} className={chip} onClick={() => setReason(reason === r ? null : r)}>
-                {FEEDBACK_REASON_LABELS[r]}
+                {t(`reasons.${r}`)}
               </button>
             ))}
           </div>
-          <Textarea value={comment} onChange={(e) => setComment(e.target.value)} maxLength={500} rows={2} aria-label="Tell us more (optional)" placeholder="Tell us more (optional)" className="text-body" />
+          <Textarea value={comment} onChange={(e) => setComment(e.target.value)} maxLength={500} rows={2} aria-label={t("more")} placeholder={t("more")} className="text-body" />
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" size="sm" onClick={() => setAsking(false)}>
-              Skip
+              {t("skip")}
             </Button>
             <Button type="submit" size="sm" disabled={sending}>
-              Send
+              {t("send")}
             </Button>
           </div>
         </form>

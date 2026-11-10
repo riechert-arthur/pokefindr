@@ -7,6 +7,7 @@ import { buttonVariants } from "@/components/ui/button"
 import { PlaceSearch, type PlacePick } from "@/components/search/PlaceSearch"
 import { DEFAULT_RADIUS, mapUrl, roundPlace } from "@/lib/map/url-state"
 import { track } from "@/lib/analytics"
+import { useTranslations } from "next-intl"
 
 /** The map URL a pick opens: a place with the default radius, a state, or a location's details. */
 export function pickUrl(pick: PlacePick): string {
@@ -32,6 +33,7 @@ const chip =
  * location (near=me, so their position never goes in the URL).
  */
 export function HeroSearch() {
+  const t = useTranslations("landing.search")
   const router = useRouter()
   const [query, setQuery] = useState("")
   return (
@@ -46,11 +48,11 @@ export function HeroSearch() {
             track("open_map_from_landing", { via: "search" })
             router.push(pickUrl(pick))
           }}
-          placeholder="City or address, like Denver, CO"
+          placeholder={t("placeholder")}
         />
       </div>
       <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-body text-muted-foreground">
-        <span>Try</span>
+        <span>{t("try")}</span>
         {QUICK_PICKS.map((p) => (
           <Link key={p.label} href={mapUrl("/map", { q: p.label, lat: p.lat, lng: p.lng, r: DEFAULT_RADIUS })} className={chip} onClick={() => track("open_map_from_landing", { via: "quick_pick" })}>
             {p.label}
@@ -58,7 +60,7 @@ export function HeroSearch() {
         ))}
         <Link href={mapUrl("/map", { near: "me", r: DEFAULT_RADIUS })} className={chip} onClick={() => track("open_map_from_landing", { via: "my_location" })}>
           <NavigationIcon className="size-3.5" aria-hidden />
-          Use my location
+          {t("myLocation")}
         </Link>
       </div>
     </>
@@ -67,9 +69,10 @@ export function HeroSearch() {
 
 /** "View full map" under the search, counted as leaving the landing page for the map. */
 export function ViewMapLink() {
+  const t = useTranslations("landing.search")
   return (
     <Link href="/map" className={buttonVariants({ variant: "outline" })} onClick={() => track("open_map_from_landing", { via: "button" })}>
-      View full map <ArrowRightIcon className="size-4" aria-hidden />
+      {t("viewMap")} <ArrowRightIcon className="size-4" aria-hidden />
     </Link>
   )
 }

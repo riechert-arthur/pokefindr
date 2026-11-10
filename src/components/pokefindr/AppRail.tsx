@@ -1,42 +1,49 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { Link, usePathname } from "@/i18n/navigation"
 import type { ComponentType, Ref, SVGProps } from "react"
 import { BookOpenIcon, HouseIcon, MapPinIcon, SettingsIcon, ShieldIcon } from "lucide-react"
 import { Logo } from "@/components/brand/Logo"
 import { DiscordIcon } from "@/components/icons/DiscordIcon"
 import { ThemeToggle } from "@/components/pokefindr/ThemeToggle"
+import { SUPPORT_URL } from "@/lib/links"
 import { cn } from "@/lib/utils"
+
+type NavLabel = "home" | "blog" | "map" | "discord" | "settings" | "admin"
 
 interface RailItem {
   href: string
-  label: string
+  /** Its label in the catalog's `nav` messages. */
+  label: NavLabel
   icon: ComponentType<SVGProps<SVGSVGElement>>
   external?: boolean
 }
 
 /** The prototype's rail: Home, Blog, Map. */
 const MAIN: RailItem[] = [
-  { href: "/home", label: "Home", icon: HouseIcon },
-  { href: "/blog", label: "Blog", icon: BookOpenIcon },
-  { href: "/map", label: "Map", icon: MapPinIcon },
+  { href: "/home", label: "home", icon: HouseIcon },
+  { href: "/blog", label: "blog", icon: BookOpenIcon },
+  { href: "/map", label: "map", icon: MapPinIcon },
 ]
 
-const DISCORD: RailItem = { href: "https://discord.gg/f2uUR5bAZU", label: "Discord", icon: DiscordIcon, external: true }
-const SETTINGS: RailItem = { href: "/settings", label: "Settings", icon: SettingsIcon }
-const ADMIN: RailItem = { href: "/admin", label: "Admin", icon: ShieldIcon }
+const DISCORD: RailItem = { href: SUPPORT_URL, label: "discord", icon: DiscordIcon, external: true }
+const SETTINGS: RailItem = { href: "/settings", label: "settings", icon: SettingsIcon }
+const ADMIN: RailItem = { href: "/admin", label: "admin", icon: ShieldIcon }
 
 /** A 40px rounded icon button, as in the prototype's `.rail button`. */
 const itemClass =
   "grid size-10 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 
 function RailLink({ item, current }: { item: RailItem; current: boolean }) {
+  const t = useTranslations("nav")
   const Icon = item.icon
+  const label = t(item.label)
   return (
     <Link
       href={item.href}
-      aria-label={item.label}
-      title={item.label}
+      aria-label={label}
+      title={label}
       aria-current={current ? "page" : undefined}
       className={cn(itemClass, current && "bg-muted text-foreground")}
       {...(item.external && { target: "_blank", rel: "noopener noreferrer" })}
@@ -65,17 +72,18 @@ interface AppRailProps {
  * bottom; the prototype leaves them out, but the app needs them somewhere.
  */
 export function AppRail({ signedIn = false, isAdmin = false, className, ref }: AppRailProps) {
+  const t = useTranslations("nav")
   const pathname = usePathname()
   const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
 
   return (
     <nav
       id={APP_NAV_ID}
-      aria-label="App navigation"
+      aria-label={t("appNavigation")}
       className={cn("flex w-16 flex-none flex-col items-center gap-2 border-r border-border bg-card py-3.5", className)}
       ref={ref}
     >
-      <Link href="/" aria-label="PokeFindr home" className="mb-2 grid size-10 place-items-center">
+      <Link href="/" aria-label={t("logoHome")} className="mb-2 grid size-10 place-items-center">
         <Logo size={30} />
       </Link>
       {MAIN.map((item) => (

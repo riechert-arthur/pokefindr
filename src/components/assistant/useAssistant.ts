@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
+import { useTranslations } from "next-intl"
 import type { AssistantCard } from "@/lib/types/assistant"
 import type { AssistantEvent, AssistantTurn } from "@/lib/types/assistant-stream"
 import { clipHistory, memoryOf } from "@/lib/assistant/memory"
@@ -23,8 +24,6 @@ export type ChatMessage =
       turnId: string | null
       done: boolean
     }
-
-const STOPPED = "Stopped."
 
 /** What a turn that ended without `done` remembers: what came, cards included, so follow-ups can still use its places. */
 const partialMemory = (m: { text: string; cards: AssistantCard[] }) => (m.text || m.cards.length ? memoryOf(m.text, m.cards) : null)
@@ -59,11 +58,13 @@ async function* lines(body: ReadableStream<Uint8Array>): AsyncGenerator<string> 
   if (buffer.trim()) yield buffer.trim()
 }
 
-/** What to say when /api/assistant answers with an error status. */
-async function refusalNote(res: Response): Promise<string> {
-  if (res.status === 401) return "Your session ended. Log in again to keep chatting."
+type ChatMessages = ReturnType<typeof useTranslations<"assistant.chat">>
+
+/** What to say when /api/assistant answers with an error status. The API's own message is in English for now (#185). */
+async function refusalNote(res: Response, t: ChatMessages): Promise<string> {
+  if (res.status === 401) return t("sessionEnded")
   const body = (await res.json().catch(() => null)) as { error?: string } | null
-  return body?.error ?? "Something went wrong with the assistant. Try again."
+  return body?.error ?? t("failed")
 }
 
 /**
@@ -73,6 +74,7 @@ async function refusalNote(res: Response): Promise<string> {
  * keeps what came; `reset` starts a new chat.
  */
 export function useAssistant() {
+  const t = useTranslations("assistant.chat")
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [busy, setBusy] = useState(false)
   const ctl = useRef<AbortController | null>(null)
@@ -89,7 +91,7 @@ export function useAssistant() {
     const history = historyOf([...messagesRef.current, user])
     const update = (fn: (m: Extract<ChatMessage, { role: "assistant" }>) => Partial<Extract<ChatMessage, { role: "assistant" }>>) =>
       setMessages((ms) => ms.map((m) => (m.id === answerId && m.role === "assistant" ? { ...m, ...fn(m) } : m)))
-    setMessages((ms) => [...ms, user, { id: answerId, role: "assistant", text: "", cards: [], status: "Thinking…", note: null, memory: null, turnId: null, done: false }])
+    setMessages((ms) => [...ms, user, { id: answerId, role: "assistant", text: "", cards: [], status: t("thinking"), note: null, memory: null, turnId: null, done: false }])
     // Counted over the whole conversation: `history` is clipped to the last turns.
     track("assistant_query", { turn: messagesRef.current.filter((m) => m.role === "user").length + 1 })
     const abort = new AbortController()
@@ -103,7 +105,7 @@ export function useAssistant() {
         signal: abort.signal,
       })
       if (!res.ok || !res.body) {
-        const note = await refusalNote(res)
+        const note = await refusalNote(res, t)
         update(() => ({ status: null, note, done: true }))
         return
       }
@@ -124,22 +126,22 @@ export function useAssistant() {
             memory: event.memory,
             turnId: event.turnId ?? null,
             done: true,
-            note: event.stop === "max_tokens" ? "The answer was cut short. Ask for less at a time." : null,
+            note: event.stop === "max_tokens" ? t("cutShort") : null,
           }))
       }
-      update((m) => (m.done ? {} : { status: null, done: true, note: m.note ?? "The answer stopped early. Try again.", memory: partialMemory(m) }))
+      update((m) => (m.done ? {} : { status: null, done: true, note: m.note ?? t("stoppedEarly"), memory: partialMemory(m) }))
     } catch (err) {
       // Stop after the answer finished changes nothing.
-      if (abort.signal.aborted) update((m) => (m.done ? {} : { status: null, done: true, note: STOPPED, memory: partialMemory(m) }))
+      if (abort.signal.aborted) update((m) => (m.done ? {} : { status: null, done: true, note: t("stopped"), memory: partialMemory(m) }))
       else {
         console.error("[assistant] request failed", err)
-        update((m) => (m.done ? {} : { status: null, done: true, note: "Couldn't reach the assistant. Check your connection and try again.", memory: partialMemory(m) }))
+        update((m) => (m.done ? {} : { status: null, done: true, note: t("unreachable"), memory: partialMemory(m) }))
       }
     } finally {
       ctl.current = null
       setBusy(false)
     }
-  }, [])
+  }, [t])
 
   const stop = useCallback(() => ctl.current?.abort(), [])
   const reset = useCallback(() => {

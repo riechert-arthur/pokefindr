@@ -3,10 +3,22 @@
 
 import type { FC } from "react"
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 
-const CURRENT_CHANGELOG_VERSION = "1.2"
+/**
+ * The release the pop-up announces: its version, when it came out, and its
+ * changes (some in shorter words than the changelog page). A new release
+ * changes all three together, with its messages in content.changelog.
+ */
+const RELEASE = {
+  version: "1.2",
+  released: "v1_2.released",
+  items: ["modal.items.accounts", "v1_2.items.reviews", "modal.items.settings", "modal.items.sso", "v1_2.items.ratings"],
+} as const
+const CURRENT_CHANGELOG_VERSION = RELEASE.version
 
 const ChangelogModal: FC = () => {
+  const t = useTranslations("content.changelog")
   const [isOpen, setIsOpen] = useState(false)
 
   useEffect(() => {
@@ -28,21 +40,19 @@ const ChangelogModal: FC = () => {
     <div onClick={handleClose} className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[1000]">
       <div onClick={(e) => e.stopPropagation()} className="bg-card rounded-lg shadow-lg max-w-md w-full mx-4 p-6">
         <h2 className="text-xl font-semibold mb-2">
-          What&apos;s New in Version {CURRENT_CHANGELOG_VERSION}
+          {t("title", { version: CURRENT_CHANGELOG_VERSION })}
         </h2>
-        <p className="text-sm text-muted-foreground mb-4">Released May 19, 2025</p>
+        <p className="text-sm text-muted-foreground mb-4">{t(RELEASE.released)}</p>
         <ul className="list-disc list-inside space-y-1 mb-6">
-          <li><strong>Free User Accounts</strong> – Users can now create accounts for free.</li>
-          <li><strong>Review Management</strong> – Add, edit, and delete reviews for locations.</li>
-          <li><strong>Settings Page</strong> – Manage your profile and account information.</li>
-          <li><strong>SSO (Single Sign-On)</strong> – Log in using Google (more providers coming).</li>
-          <li><strong>Star Ratings</strong> – Locations now have star ratings based on user reviews.</li>
+          {RELEASE.items.map((key) => (
+            <li key={key}>{t.rich(key, { b: (chunks) => <strong>{chunks}</strong>, i: (chunks) => <i>{chunks}</i> })}</li>
+          ))}
         </ul>
         <button
           onClick={handleClose}
           className="w-full bg-primary text-primary-foreground py-2 rounded hover:bg-primary/90 hover:cursor-pointer"
         >
-          Got it!
+          {t("modal.close")}
         </button>
       </div>
     </div>

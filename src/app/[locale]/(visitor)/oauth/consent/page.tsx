@@ -2,18 +2,35 @@ import { headers } from "next/headers"
 // The authorize endpoint is an API route, outside the languages.
 // eslint-disable-next-line no-restricted-imports
 import { redirect } from "next/navigation"
-import { getLocale } from "next-intl/server"
+import { getLocale, getTranslations } from "next-intl/server"
 import { redirect as localizedRedirect } from "@/i18n/navigation"
 import type { Metadata } from "next"
+import type { Locale } from "@/i18n/routing"
 import { AuthPage } from "@/components/forms/AuthPage"
 import { ConsentForm } from "@/components/forms/ConsentForm"
 import { getAuth } from "@/server/auth/auth"
 import { getConsentClient } from "@/server/services/oauth-clients"
 import { getProfile } from "@/server/services/users"
-import { SCOPE_LABELS } from "@/lib/mcp/scopes"
+import type { LocaleParams } from "@/i18n/static"
+import type { McpAccountScope } from "@/lib/mcp/scopes"
 import { authorizeContinuation } from "@/lib/auth/oauth-continue"
 
-export const metadata: Metadata = { title: "Connect an app", robots: { index: false } }
+export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
+  const { locale } = await params
+  const t = await getTranslations({ locale: locale as Locale, namespace: "auth.meta" })
+  return { title: t("consent"), robots: { index: false } }
+}
+
+/**
+ * The consent page's line for each scope (auth.consent.scopes). Every account
+ * scope must have one, so a new scope fails typecheck until it's described;
+ * openid isn't shown.
+ */
+const SCOPE_MESSAGES = {
+  "account:read": "accountRead",
+  "places:submit": "placesSubmit",
+  offline_access: "offlineAccess",
+} as const satisfies Record<McpAccountScope | "offline_access", string>
 export const dynamic = "force-dynamic"
 
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)
@@ -38,22 +55,23 @@ export default async function ConsentPage({ searchParams }: { searchParams: Prom
     return localizedRedirect({ href: "/login", locale: await getLocale() })
   }
   const [client, profile] = await Promise.all([getConsentClient(params), getProfile(session.user.id)])
+  const t = await getTranslations("auth.consent")
   if (!client || !profile) {
     return (
       <AuthPage>
         <p role="alert" className="text-center text-body text-foreground">
-          This link has expired or isn&apos;t valid. Start connecting from the app again.
+          {t("invalid")}
         </p>
       </AuthPage>
     )
   }
   const scopes = (one(query.scope) ?? "").split(" ")
-  const permissions = Object.entries(SCOPE_LABELS)
+  const permissions = Object.entries(SCOPE_MESSAGES)
     .filter(([s]) => scopes.includes(s))
-    .map(([, label]) => label)
+    .map(([, key]) => t(`scopes.${key}`))
   return (
     <AuthPage>
-      <ConsentForm client={client} username={profile.username ?? "you"} permissions={permissions.length ? permissions : ["See that you have a PokeFindr account"]} />
+      <ConsentForm client={client} username={profile.username ?? t("you")} permissions={permissions.length ? permissions : [t("scopes.none")]} />
     </AuthPage>
   )
 }

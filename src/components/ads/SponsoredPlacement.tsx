@@ -2,6 +2,7 @@
 
 import { useRef, useState, useSyncExternalStore } from "react"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 import { SponsoredSlot } from "@/components/pokefindr/SponsoredSlot"
 import { pickBanner, type SponsorPlacement } from "@/config/banners"
 import { cn } from "@/lib/utils"
@@ -63,6 +64,7 @@ function focusAfter(el: HTMLElement): HTMLElement | null {
  * shows (an empty one would be read as a blank place).
  */
 export function SponsoredPlacement({ placement, className, listItem = false }: { placement: SponsorPlacement; className?: string; listItem?: boolean }) {
+  const t = useTranslations("ads")
   const hidden = useAdsHidden()
   // An admin can switch a placement off (#159).
   const on = usePlacementOn(placement)
@@ -88,7 +90,7 @@ export function SponsoredPlacement({ placement, className, listItem = false }: {
           const next = ref.current ? focusAfter(ref.current) : null
           hideAds()
           next?.focus()
-          toast("Ads hidden", { description: "They stay hidden for the rest of this visit." })
+          toast(t("hidden"), { description: t("hiddenBody") })
         }}
         onFollow={() => track("sponsored_click", { placement, banner: banner.id })}
         className={strip ? undefined : className}
