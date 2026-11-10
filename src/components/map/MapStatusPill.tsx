@@ -5,12 +5,11 @@ import type { ViewportStatus } from "./useViewportLocations"
 
 /** What the pill says, as plain text: also what screen readers hear once the view settles. */
 export function statusText({ zoomedOut, total, inView, status, truncated, kinds }: Omit<MapStatusPillProps, "className">, f: Format): string | null {
-  const placesLabel = f.places
-  if (zoomedOut) return total === null ? null : `${placesLabel(total, kinds)} in the US · Zoom in or pick a state to see them`
+  if (zoomedOut) return total === null ? null : `${f.places(total, kinds)} in the US · Zoom in or pick a state to see them`
   if (status === "error") return "Couldn't load this area · Move the map to try again"
   if (status === "idle" || (status === "loading" && inView === 0)) return "Loading this area…"
-  if (status === "loading") return `${placesLabel(inView, kinds)} in view · updating…`
-  return `${placesLabel(inView, kinds, truncated)} in view · ${truncated ? "zoom in to see them all" : "loaded for this area"}`
+  if (status === "loading") return `${f.places(inView, kinds)} in view · updating…`
+  return `${f.places(inView, kinds, truncated)} in view · ${truncated ? "zoom in to see them all" : "loaded for this area"}`
 }
 
 interface MapStatusPillProps {
@@ -32,13 +31,12 @@ interface MapStatusPillProps {
 export function MapStatusPill(props: MapStatusPillProps) {
   const { zoomedOut, total, inView, status, truncated, kinds, className } = props
   const f = useFormat()
-  const placesLabel = f.places
   let content: React.ReactNode
   if (zoomedOut) {
     if (total === null) return null
     content = (
       <>
-        <span className="text-muted-foreground">{placesLabel(total, kinds)} in the US</span> · Zoom in or pick a state to see them
+        <span className="text-muted-foreground">{f.places(total, kinds)} in the US</span> · Zoom in or pick a state to see them
       </>
     )
   } else if (status === "error") {
@@ -56,7 +54,7 @@ export function MapStatusPill(props: MapStatusPillProps) {
     content = (
       <>
         <span className={cn("size-2 rounded-full", loading ? "bg-muted-foreground" : "bg-success")} aria-hidden />
-        {placesLabel(inView, kinds, truncated && !loading)} in view{" "}
+        {f.places(inView, kinds, truncated && !loading)} in view{" "}
         <span className="text-muted-foreground">
           · {loading ? "updating…" : truncated ? "zoom in to see them all" : "loaded for this area"}
         </span>
