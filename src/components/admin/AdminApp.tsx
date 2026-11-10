@@ -17,7 +17,8 @@ import { REPORTS_HOT } from "@/lib/admin/reports"
 import { RefreshSummary } from "@/components/admin/useRefreshSummary"
 import { DEFAULT_SECTION, groupsFor, sectionFor } from "@/lib/admin/sections"
 import { queueIsLate, type AdminSummary } from "@/lib/admin/summary"
-import type { StaffRole } from "@/lib/admin/roles"
+import { can } from "@/lib/auth/entitlements"
+import type { Role } from "@/lib/auth/roles"
 
 /** How often the counts refresh while the admin is open. */
 const SUMMARY_EVERY_MS = 60_000
@@ -56,7 +57,7 @@ const SECTIONS: Record<string, () => ReactNode> = {
  * The admin (#152): the sidebar, the section's title and description, and
  * the section, chosen by `?section=` (so each has a link and Back works).
  */
-export function AdminApp({ role, username }: { role: StaffRole; username: string }) {
+export function AdminApp({ role, username }: { role: Role; username: string }) {
   const [param, setParam] = useQueryState("section", { history: "push" })
   const section = sectionFor(param ?? DEFAULT_SECTION, role)!
   const [summary, refreshSummary] = useSummary()
@@ -86,7 +87,7 @@ export function AdminApp({ role, username }: { role: StaffRole; username: string
               <MapPinIcon aria-hidden />
               Open map
             </Link>
-            {role === "admin" && section.id !== "add-vending" && (
+            {can(role, "admin.vending") && section.id !== "add-vending" && (
               <Button size="sm" onClick={() => void setParam("add-vending")}>
                 <PlusIcon aria-hidden />
                 Add vending machine

@@ -1,17 +1,18 @@
+import { can, type Entitlement } from "@/lib/auth/entitlements"
 import type { Role } from "@/lib/auth/roles"
 
 /**
  * The admin's sections (#152), grouped as in the prototype's sidebar. Each
- * is `/admin?section=<id>`. Moderators see the Moderation group; admins
- * see everything.
+ * is `/admin?section=<id>`, shown to whoever has its entitlement
+ * (src/lib/auth/entitlements.ts).
  */
 export interface AdminSection {
   id: string
   label: string
   /** The page's one-line description, under its title. */
   sub: string
-  /** Who may open it. */
-  access: "moderator" | "admin"
+  /** What opening it needs. */
+  entitlement: Entitlement
 }
 
 export interface AdminGroup {
@@ -25,20 +26,20 @@ export const ADMIN_GROUPS: readonly AdminGroup[] = [
     id: "moderation",
     label: "Moderation",
     sections: [
-      { id: "queue", label: "Review queue", sub: "New card shops and events wait here before they go on the map.", access: "moderator" },
-      { id: "reports", label: "Reports", sub: "Problems people reported on live locations.", access: "moderator" },
+      { id: "queue", label: "Review queue", sub: "New card shops and events wait here before they go on the map.", entitlement: "moderation.view" },
+      { id: "reports", label: "Reports", sub: "Problems people reported on live locations.", entitlement: "moderation.view" },
     ],
   },
   {
     id: "locations",
     label: "Locations",
     sections: [
-      { id: "coverage", label: "Coverage", sub: "Where the map has locations today.", access: "admin" },
+      { id: "coverage", label: "Coverage", sub: "Where the map has locations today.", entitlement: "admin.coverage" },
       {
         id: "add-vending",
         label: "Add vending machine",
         sub: "Add a machine missing from the official list. Anything that overlaps an existing machine is blocked.",
-        access: "admin",
+        entitlement: "admin.vending",
       },
     ],
   },
@@ -46,8 +47,8 @@ export const ADMIN_GROUPS: readonly AdminGroup[] = [
     id: "system",
     label: "System",
     sections: [
-      { id: "jobs", label: "Jobs", sub: "Background jobs that keep locations up to date.", access: "admin" },
-      { id: "ads", label: "Ads", sub: "Turn sponsored placements on or off.", access: "admin" },
+      { id: "jobs", label: "Jobs", sub: "Background jobs that keep locations up to date.", entitlement: "admin.jobs" },
+      { id: "ads", label: "Ads", sub: "Turn sponsored placements on or off.", entitlement: "admin.ads" },
     ],
   },
 ]
@@ -56,8 +57,7 @@ export const ADMIN_SECTIONS: readonly AdminSection[] = ADMIN_GROUPS.flatMap((g) 
 export const DEFAULT_SECTION = "queue"
 
 /** Whether `role` may open `section`. */
-export const canOpen = (role: Role | null | undefined, section: AdminSection) =>
-  role === "admin" || (role === "moderator" && section.access === "moderator")
+export const canOpen = (role: Role | null | undefined, section: AdminSection) => can(role, section.entitlement)
 
 /** The groups `role` sees, each with only the sections it may open; empty groups dropped. */
 export function groupsFor(role: Role | null | undefined): AdminGroup[] {

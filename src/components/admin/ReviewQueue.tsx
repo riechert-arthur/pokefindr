@@ -1,4 +1,5 @@
 "use client"
+import { can } from "@/lib/auth/entitlements"
 
 import { useCallback, useEffect, useId, useState } from "react"
 import { CheckIcon, InboxIcon, ShieldAlertIcon, TriangleAlertIcon, Undo2Icon } from "lucide-react"
@@ -254,7 +255,7 @@ function Detail({ item, busy, onDecide }: { item: ModerationItem; busy: boolean;
         </dl>
 
         {item.status === "pending" ? (
-          item.sentByViewer && session?.role !== "admin" ? (
+          item.sentByViewer && !can(session?.role, "moderation.decideOwn") ? (
             <p className="text-body text-muted-foreground">You sent this one, so another moderator has to review it.</p>
           ) : rejecting ? (
             <fieldset className="flex flex-col gap-3 rounded-lg border border-border p-3">

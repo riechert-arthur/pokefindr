@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod/v3"
 import { REPORT_ACTIONS } from "@/lib/locations/reports"
-import { requireStaff } from "@/server/admin/access"
+import { requireEntitlement } from "@/server/admin/access"
 import { enqueueJob } from "@/server/lib/jobs/enqueue"
 import { actOnReports } from "@/server/services/report-admin"
 
@@ -22,7 +22,7 @@ const ANSWERS = {
  *   also refreshes the map's region counts. Moderators and admins.
  */
 export async function POST(request: NextRequest, context: { params: Promise<{ locationId: string }> }) {
-  const staff = await requireStaff(request, "moderator")
+  const staff = await requireEntitlement(request, "moderation.decide")
   if (staff instanceof NextResponse) return staff
   const id = idSchema.safeParse((await context.params).locationId)
   if (!id.success) return NextResponse.json({ error: "Location not found" }, { status: 404 })

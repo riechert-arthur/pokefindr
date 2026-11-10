@@ -5,7 +5,7 @@ import { ChevronLeft } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { useSidebar } from "@/components/providers/SidebarContextProvider"
 import { useSessionContext } from "./providers/SessionProvider"
-import { canModerate } from "@/lib/auth/roles"
+import { can } from "@/lib/auth/entitlements"
 import { AppRail, APP_NAV_ID } from "@/components/pokefindr/AppRail"
 import { TabBar } from "@/components/pokefindr/TabBar"
 import { cn } from "@/lib/utils"
@@ -50,7 +50,7 @@ export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
         <AppRail
           ref={railRef}
           signedIn={Boolean(session)}
-          isAdmin={canModerate(session?.role)}
+          isAdmin={can(session?.role, "admin.open")}
           className={cn(
             "z-50 transition-[transform,visibility] duration-300",
             "max-sm:fixed max-sm:inset-y-0 max-sm:left-0 max-sm:shadow-xl",
@@ -74,7 +74,7 @@ export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
         {/* relative: pages' absolute headers start at the rail's edge, not under it. */}
         <main className="relative z-10 min-w-0 flex-1 overflow-auto bg-muted/50 dark:bg-background">{children}</main>
       </div>
-      <TabBar canAdd isAdmin={canModerate(session?.role)} className="sm:hidden" />
+      <TabBar canAdd isAdmin={can(session?.role, "admin.open")} className="sm:hidden" />
     </div>
   )
 }

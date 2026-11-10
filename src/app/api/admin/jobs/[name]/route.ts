@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod/v3"
-import { requireStaff } from "@/server/admin/access"
+import { requireEntitlement } from "@/server/admin/access"
 import { enqueueJob } from "@/server/lib/jobs/enqueue"
 import { pausedReason } from "@/server/lib/jobs/history"
 import { isJobName } from "@/server/lib/jobs/registry"
@@ -21,7 +21,7 @@ const body = z.discriminatedUnion("action", [
  *   pause flag. Admins only.
  */
 export async function POST(request: NextRequest, context: { params: Promise<{ name: string }> }) {
-  const staff = await requireStaff(request, "admin")
+  const staff = await requireEntitlement(request, "admin.jobs")
   if (staff instanceof NextResponse) return staff
   const { name } = await context.params
   const info = jobCatalog().find((j) => j.name === name)

@@ -5,7 +5,8 @@ import { locationSubmissions, locations } from "@/server/db/schema"
 import { listJobs } from "@/server/services/admin-jobs"
 import type { LocationKind } from "@/lib/types/locations"
 import type { AdminSummary } from "@/lib/admin/summary"
-import type { StaffRole } from "@/lib/admin/roles"
+import { can } from "@/lib/auth/entitlements"
+import type { Role } from "@/lib/auth/roles"
 import { openReportCounts } from "@/server/services/report-admin"
 
 /**
@@ -13,8 +14,8 @@ import { openReportCounts } from "@/server/services/report-admin"
  * get only the Moderation counts: live locations and the sync job are
  * admin data.
  */
-export async function getAdminSummary(role: StaffRole, db: Database = getDb()): Promise<AdminSummary> {
-  const admin = role === "admin"
+export async function getAdminSummary(role: Role, db: Database = getDb()): Promise<AdminSummary> {
+  const admin = can(role, "admin.summary.all")
   const [[queue], reports, live, jobs] = await Promise.all([
     db
       .select({ count: sql<number>`count(*)::int`, oldestAt: sql<string | null>`min(${locationSubmissions.createdAt})` })

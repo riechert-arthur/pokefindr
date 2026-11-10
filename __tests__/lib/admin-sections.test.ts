@@ -5,7 +5,7 @@ import { queueIsLate } from "@/lib/admin/summary"
 describe("admin sections", () => {
   it("shows moderators only what they may open, admins everything", () => {
     expect(groupsFor("admin").flatMap((g) => g.sections)).toEqual(ADMIN_SECTIONS)
-    expect(groupsFor("moderator").flatMap((g) => g.sections).every((s) => s.access === "moderator")).toBe(true)
+    expect(groupsFor("moderator").flatMap((g) => g.sections).map((s) => s.id)).toEqual(["queue", "reports"])
     expect(groupsFor("member")).toEqual([])
     expect(groupsFor(null)).toEqual([])
   })
