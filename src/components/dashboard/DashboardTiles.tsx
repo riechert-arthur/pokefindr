@@ -13,10 +13,15 @@ import { useFormat } from "@/i18n/format"
 import { useDistance } from "@/i18n/useDistance"
 import { useTranslations } from "next-intl"
 
-/** A dashboard tile, as the prototype's `.tiles .dcard`. */
+/**
+ * A dashboard tile, as the prototype's `.tiles .dcard`. `min-w-0` lets it
+ * shrink to its column in the dashboard's grid, and `grid-cols-1` (a
+ * `minmax(0, 1fr)` track) stops its own rows from widening it, so a long name
+ * truncates instead of overflowing.
+ */
 function Tile({ title, badge, children }: { title: string; badge?: ReactNode; children: ReactNode }) {
   return (
-    <section aria-label={title} className="grid content-start gap-1.5 rounded-xl border border-border bg-card p-3">
+    <section aria-label={title} className="grid min-w-0 grid-cols-1 content-start gap-1.5 rounded-xl border border-border bg-card p-3">
       <h3 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-body font-semibold text-foreground">
         {title}
         {badge}
@@ -27,7 +32,7 @@ function Tile({ title, badge, children }: { title: string; badge?: ReactNode; ch
 }
 
 const muted = "text-caption text-muted-foreground"
-const itemClass = "flex w-full items-start gap-2.5 rounded-md py-1 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+const itemClass = "flex w-full min-w-0 items-start gap-2.5 rounded-md py-1 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 
 export type NearState = { status: "idle" } | { status: "locating" } | { status: "denied" } | { status: "ready"; count: number | null }
 
@@ -116,9 +121,10 @@ export function ReviewsTile({ reviews }: { reviews: MyReview[] | "error" | null 
           {reviews.slice(0, 4).map((r) => (
             <Link key={r.id} href={mapUrl("/map", { location: r.location.id })} className={itemClass}>
               <span className="min-w-0 flex-1">
+                {/* The name shrinks and ends in an ellipsis; the stars keep their room (#302). */}
                 <span className="flex items-center gap-1.5 text-body font-medium text-foreground">
-                  <span className="truncate">{r.location.name ?? t("reviews.unnamed")}</span>
-                  <StarRating rating={r.rating} starSize={11} />
+                  <span className="min-w-0 truncate">{r.location.name ?? t("reviews.unnamed")}</span>
+                  <StarRating rating={r.rating} starSize={11} className="shrink-0" />
                 </span>
                 <span className={`block truncate ${muted}`}>{r.comment || [r.location.city, r.location.state].filter(Boolean).join(", ")}</span>
               </span>
