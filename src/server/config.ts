@@ -155,6 +155,17 @@ const serverSchema = z.object({
   ASSISTANT_ENABLED: blankAsUnset(z.enum(["true", "false"]).default("true")).transform((v) => v === "true"),
   /** The most the assistant may spend a UTC day, over all users, in dollars. Past it, it pauses until midnight UTC. */
   ASSISTANT_DAILY_BUDGET_USD: blankAsUnset(z.coerce.number().positive().default(10)),
+
+  /**
+   * Who checks reviews (and, later, assistant questions) before others see
+   * them (#253, src/server/container.ts): "claude" (Claude Haiku through the
+   * assistant's Claude credentials) or "fake" (keyword rules, no account).
+   * Unset, production uses claude when a Claude key or federation is set,
+   * and everything else fake, so local dev and CI never spend money.
+   */
+  MODERATION_PROVIDER: blankAsUnset(z.enum(["fake", "claude"]).optional()),
+  /** The moderation model. */
+  MODERATION_MODEL: blankAsUnset(z.string().min(1).default("claude-haiku-5-5")),
 }).transform((env, ctx) => {
   if (env.NODE_ENV === "production" && env.MAIL_PROVIDER === "smtp" && !env.MAIL_FROM)
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["MAIL_FROM"], message: "required to send email in production" })
@@ -164,6 +175,8 @@ const serverSchema = z.object({
     ROUTER_PROVIDER: env.ROUTER_PROVIDER ?? (env.ROUTER_API_KEY ? "openrouteservice" : "fake"),
     RATE_LIMIT_STORE: env.RATE_LIMIT_STORE ?? (env.NODE_ENV === "production" ? "postgres" : "memory"),
     MAIL_FROM: env.MAIL_FROM ?? "PokeFindr <no-reply@localhost>",
+    MODERATION_PROVIDER:
+      env.MODERATION_PROVIDER ?? (env.NODE_ENV === "production" && (env.ANTHROPIC_API_KEY || env.ANTHROPIC_FEDERATION_RULE_ID) ? "claude" : "fake"),
     IMAGE_STORE: env.IMAGE_STORE ?? (env.BLOB_READ_WRITE_TOKEN ? "vercel-blob" : env.NODE_ENV === "production" ? "none" : "local"),
   }
 }).superRefine((env, ctx) => {
@@ -180,6 +193,8 @@ const serverSchema = z.object({
   for (const p of ["GOOGLE", "DISCORD"] as const)
     if (Boolean(env[`${p}_CLIENT_ID`]) !== Boolean(env[`${p}_CLIENT_SECRET`]))
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: [`${p}_CLIENT_${env[`${p}_CLIENT_ID`] ? "SECRET" : "ID"}`], message: `${p.toLowerCase()} sign-in needs both ${p}_CLIENT_ID and ${p}_CLIENT_SECRET` })
+  if (env.MODERATION_PROVIDER === "claude" && !env.ANTHROPIC_API_KEY && !env.ANTHROPIC_FEDERATION_RULE_ID)
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["MODERATION_PROVIDER"], message: "claude needs ANTHROPIC_API_KEY or workload identity federation" })
   if (env.IMAGE_STORE === "vercel-blob" && !env.BLOB_READ_WRITE_TOKEN)
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["BLOB_READ_WRITE_TOKEN"], message: "required when IMAGE_STORE is vercel-blob" })
   if (env.MAIL_PROVIDER === "smtp" && !env.SMTP_URL)

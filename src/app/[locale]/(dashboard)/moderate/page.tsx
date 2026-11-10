@@ -22,6 +22,6 @@ export async function generateMetadata({ params }: LocaleParams): Promise<Metada
 export default async function ModeratePage({ params }: LocaleParams) {
   await setPageLocale(params)
   const role = await roleOf((await headers()).get("x-user-id"))
-  if (!can(role, "moderation.view")) notFound()
-  return <ModerateDashboard />
+  if (!role || !can(role, "moderation.view")) notFound()
+  return <ModerateDashboard role={role} />
 }

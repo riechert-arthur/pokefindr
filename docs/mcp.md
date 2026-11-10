@@ -25,6 +25,7 @@ instance can answer any request. Clients on the 2026-07-28 protocol and on the 2
 served. GET and DELETE (2025 session streams) answer 405.
 
 The tools are the assistant's own: the same inputs, caps (10 places a call) and text cleaning.
+Reviews held for a moderator never appear in `get_place` ([moderation.md](moderation.md)).
 Each place, route stop and event in a result carries a `url` on the site (`/map?location=<id>`,
 or the map around an event), so answers lead back to the map. Results come as JSON text and as
 `structuredContent`. An input the model can fix (an unknown city, a bad id) comes back as a tool
@@ -38,7 +39,7 @@ protected-resource document, which is how MCP clients start signing in. The OAut
 
 | Tool | Scope | What it does |
 | --- | --- | --- |
-| `my_reviews` | `account:read` | The person's reviews, newest 20 |
+| `my_reviews` | `account:read` | The person's reviews, newest 20, with each one's status (published, held for a moderator, removed) |
 | `my_submissions` | `account:read` | Their submissions and each one's status (pending, approved, rejected with the reason, ended) |
 | `submit_place` | `places:submit` | Adds a card shop or event for review, as them |
 

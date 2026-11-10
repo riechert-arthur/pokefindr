@@ -8,6 +8,7 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import { AdminSidebar } from "@/components/admin/AdminSidebar"
 import { ReviewQueue } from "@/components/admin/ReviewQueue"
 import { ReportsTable } from "@/components/admin/ReportsTable"
+import { HeldReviews } from "@/components/admin/HeldReviews"
 import { AddVendingForm } from "@/components/admin/AddVendingForm"
 import { CoverageView } from "@/components/admin/CoverageView"
 import { JobsTable } from "@/components/admin/JobsTable"
@@ -23,6 +24,7 @@ import type { Role } from "@/lib/auth/roles"
 /** Each section's body. Later sections (#153–#159) add themselves here and in ADMIN_GROUPS. */
 const SECTIONS: Record<string, () => ReactNode> = {
   queue: () => <ReviewQueue />,
+  reviews: () => <HeldReviews />,
   reports: () => <ReportsTable />,
   coverage: () => <CoverageView />,
   "add-vending": () => <AddVendingForm />,

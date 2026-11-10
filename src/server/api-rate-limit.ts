@@ -15,6 +15,8 @@ export const RATE_RULES = {
   locations: { name: "locations", perMinute: 120, burst: 40 },
   /** Type-ahead sends a request every few keystrokes: room for fast typing, not for scraping. */
   geocode: { name: "geocode", perMinute: 60, burst: 20 },
+  /** Posting and editing reviews: each one with text is a paid moderation check (#253). */
+  reviews: { name: "reviews", perMinute: 10, burst: 10 },
   /** Uploading or removing a profile picture (#290), per account: a few tries, not a stream of files. */
   avatar: { name: "avatar", perMinute: 4, burst: 6 },
   /** A moderator removing pictures (#290), per staff member: a handful of reviews, not a sweep of every account. */

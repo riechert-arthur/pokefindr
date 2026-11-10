@@ -7,6 +7,9 @@ import type { Geocoder } from "@/server/ports/geocoder"
 import type { Mailer } from "@/server/ports/mailer"
 import type { Router } from "@/server/ports/router"
 import type { SharedRateLimiter } from "@/server/ports/rate-limiter"
+import type { ContentModerator } from "@/server/ports/moderator"
+import { FakeModerator } from "@/server/adapters/moderator/fake"
+import { ClaudeModerator } from "@/server/adapters/moderator/claude"
 import type { ImageStore } from "@/server/ports/image-store"
 import { LocalImageStore } from "@/server/adapters/image-store/local"
 import { MemoryImageStore } from "@/server/adapters/image-store/memory"
@@ -88,6 +91,8 @@ export function makeImageStore(config: ServerConfig): ImageStore | null {
 }
 
 let geocoder: Geocoder | undefined
+let moderator: ContentModerator | undefined
+let moderatorForTests: ContentModerator | null = null
 let imageStore: ImageStore | null | undefined
 let router: Router | undefined
 let rateLimiter: SharedRateLimiter | undefined
@@ -156,11 +161,41 @@ export function getAnthropic(): Anthropic | null {
   return anthropic
 }
 
+/**
+ * The content moderator (#253) from config: Claude Haiku through the same
+ * client as the assistant, or the keyword fake.
+ */
+export function makeModerator(config: ServerConfig, client: () => Anthropic | null = getAnthropic): ContentModerator {
+  switch (config.MODERATION_PROVIDER) {
+    case "claude": {
+      const c = client()
+      // config.ts checks the credentials are set; null here means they couldn't be used.
+      if (!c) throw new Error("MODERATION_PROVIDER is claude, but there's no Claude client")
+      return new ClaudeModerator(c, config.MODERATION_MODEL)
+    }
+    case "fake":
+      return new FakeModerator()
+  }
+}
+
+/** The configured content moderator, built once per server instance. */
+export function getModerator(): ContentModerator {
+  if (moderatorForTests) return moderatorForTests
+  moderator ??= makeModerator(getServerConfig())
+  return moderator
+}
+
+/** Test helper: check with this moderator (null restores the configured one). */
+export function setModeratorForTests(m: ContentModerator | null) {
+  moderatorForTests = m
+}
+
 /** Test helper: forget the built adapters so the next call re-reads config. */
 export function resetContainerForTests() {
   geocoder = undefined
   router = undefined
   mailer = undefined
   anthropic = undefined
+  moderator = undefined
   imageStore = undefined
 }

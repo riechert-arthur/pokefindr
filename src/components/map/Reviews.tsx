@@ -136,12 +136,12 @@ export function ReviewsSection({ kind, reviews, username, image = null, moderate
             {t("tryAgain")}
           </Button>
         </p>
-      ) : reviews.status === "loading" && reviews.count === 0 ? (
+      ) : reviews.status === "loading" && reviews.reviews.length === 0 ? (
         <div aria-label={t("loading")} className="grid gap-2.5">
           <Skeleton className="h-16 w-full" />
           <Skeleton className="h-16 w-full" />
         </div>
-      ) : reviews.count === 0 ? (
+      ) : reviews.reviews.length === 0 ? (
         <p className="text-body text-muted-foreground">
           {t("first", { kind })}
         </p>
@@ -153,10 +153,14 @@ export function ReviewsSection({ kind, reviews, username, image = null, moderate
                 <UserAvatar size="xs" name={r.username} imageUrl={r.image} />
                 <b className="font-semibold">{r.username}</b>
                 <StarRating rating={r.rating} starSize={13} />
+                {r.status === "held" && <span className="rounded-full bg-warning/15 px-2 py-0.5 text-caption font-semibold text-warning">{t("pending")}</span>}
+                {r.status === "removed" && <span className="rounded-full bg-muted px-2 py-0.5 text-caption font-semibold text-muted-foreground">{t("removed")}</span>}
                 <span className="grow" />
                 <span className="text-caption text-muted-foreground">{f.ago(r.createdAt)}</span>
               </div>
               {r.text && <p className="mt-1.5 whitespace-pre-line break-words">{r.text}</p>}
+              {r.status === "held" && <p className="mt-1 text-caption text-muted-foreground">{t("pendingBody")}</p>}
+              {r.status === "removed" && <p className="mt-1 text-caption text-muted-foreground">{t("removedBody")}</p>}
               {moderate && !r.mine && r.image && (
                 <div className="mt-1 flex gap-1">
                   <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-caption" onClick={() => void removePhoto(r)} disabled={busy}>

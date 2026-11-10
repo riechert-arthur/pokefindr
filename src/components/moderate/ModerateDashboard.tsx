@@ -6,25 +6,30 @@ import { useQueryState } from "nuqs"
 import { MenuIcon } from "lucide-react"
 import { ReviewQueue } from "@/components/admin/ReviewQueue"
 import { ReportsTable } from "@/components/admin/ReportsTable"
+import { HeldReviews } from "@/components/admin/HeldReviews"
 import { CountBadge } from "@/components/admin/CountBadge"
 import { RefreshSummary } from "@/components/admin/useRefreshSummary"
 import { moderationCounts, useAdminSummary } from "@/components/admin/useAdminSummary"
 import { APP_NAV_ID } from "@/components/pokefindr/AppRail"
 import { useSidebar } from "@/components/providers/SidebarContextProvider"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { MODERATE_TABS, tabFor } from "@/lib/moderate/tabs"
+import { tabFor, tabsFor } from "@/lib/moderate/tabs"
+import type { Role } from "@/lib/auth/roles"
 
 /**
- * /moderate (#293): the review queue and Reports as two tabs, picked with
- * `?tab=` (so each has a link and Back works), inside the normal app layout.
- * The same components and APIs as /admin's Moderation group; the counts come
- * from /api/admin/summary, which gives moderators only these two.
+ * /moderate (#293): the review queue, held Reviews (#253) and Reports as
+ * tabs, picked with `?tab=` (so each has a link and Back works), inside the
+ * normal app layout. The same components and APIs as /admin's Moderation
+ * group; the counts come from /api/admin/summary, which gives moderators
+ * only these. Each tab shows to whoever has its entitlement (tabsFor).
  */
-export function ModerateDashboard() {
+export function ModerateDashboard({ role }: { role: Role }) {
   const t = useTranslations("moderate")
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const [param, setParam] = useQueryState("tab", { history: "push" })
-  const tab = tabFor(param)
+  const tabs = tabsFor(role)
+  const asked = tabFor(param)
+  const tab = tabs.includes(asked) ? asked : "queue"
   const [summary, refreshSummary] = useAdminSummary()
   const counts = moderationCounts(summary)
 
@@ -53,7 +58,7 @@ export function ModerateDashboard() {
         </header>
         <Tabs value={tab} onValueChange={(v) => void setParam(v === "queue" ? null : v)}>
           <TabsList>
-            {MODERATE_TABS.map((id) => {
+            {tabs.map((id) => {
               const c = counts[id]
               return (
                 <TabsTrigger key={id} value={id} className="gap-1.5">
@@ -67,6 +72,11 @@ export function ModerateDashboard() {
           <TabsContent value="queue" lang="en" className="mt-4">
             <ReviewQueue />
           </TabsContent>
+          {tabs.includes("reviews") && (
+            <TabsContent value="reviews" lang="en" className="mt-4">
+              <HeldReviews />
+            </TabsContent>
+          )}
           <TabsContent value="reports" lang="en" className="mt-4">
             <ReportsTable />
           </TabsContent>

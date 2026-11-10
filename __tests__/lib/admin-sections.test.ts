@@ -7,7 +7,7 @@ describe("admin sections", () => {
     expect(groupsFor("super_admin").flatMap((g) => g.sections)).toEqual(ADMIN_SECTIONS)
     expect(groupsFor("super_admin").map((g) => g.id)).toEqual(["moderation", "locations", "system", "people"])
     expect(groupsFor("admin").flatMap((g) => g.sections)).toEqual(ADMIN_SECTIONS.filter((s) => s.id !== "users"))
-    expect(groupsFor("moderator").flatMap((g) => g.sections).map((s) => s.id)).toEqual(["queue", "reports"])
+    expect(groupsFor("moderator").flatMap((g) => g.sections).map((s) => s.id)).toEqual(["queue", "reviews", "reports"])
     expect(groupsFor("member")).toEqual([])
     expect(groupsFor(null)).toEqual([])
   })

@@ -45,15 +45,17 @@ describe("/moderate", () => {
   })
 
   it.each<Role>(["moderator", "admin", "super_admin"])("opens for a %s", async (role) => {
-    const page = (await moderate(role)) as { type: unknown }
+    const page = (await moderate(role)) as { type: unknown; props: { role: Role } }
     expect(page.type).toBeTypeOf("function")
+    expect(page.props.role).toBe(role)
   })
 })
 
 describe("/admin", () => {
-  it("sends moderators to /moderate, in their language, keeping Reports", async () => {
+  it("sends moderators to /moderate, in their language, keeping Reports and Reviews", async () => {
     await expect(admin("moderator")).rejects.toThrow("REDIRECT en /moderate")
     await expect(admin("moderator", "reports", "es")).rejects.toThrow("REDIRECT es /moderate?tab=reports")
+    await expect(admin("moderator", "reviews")).rejects.toThrow("REDIRECT en /moderate?tab=reviews")
     await expect(admin("moderator", "jobs")).rejects.toThrow("REDIRECT en /moderate")
   })
 

@@ -27,6 +27,7 @@ export const ADMIN_GROUPS: readonly AdminGroup[] = [
     label: "Moderation",
     sections: [
       { id: "queue", label: "Review queue", sub: "New card shops and events wait here before they go on the map.", entitlement: "moderation.view" },
+      { id: "reviews", label: "Reviews", sub: "Reviews the automatic check held. Only their authors see them until you approve them.", entitlement: "moderation.reviews" },
       { id: "reports", label: "Reports", sub: "Problems people reported on live locations.", entitlement: "moderation.view" },
     ],
   },

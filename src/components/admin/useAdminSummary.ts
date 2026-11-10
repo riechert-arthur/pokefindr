@@ -9,8 +9,8 @@ import type { SectionCount } from "@/components/admin/AdminSidebar"
 const SUMMARY_EVERY_MS = 60_000
 
 /**
- * The counts from /api/admin/summary (moderators get only the queue and
- * reports), refreshed every minute and when the window gets focus. Returns
+ * The counts from /api/admin/summary (moderators get only the Moderation
+ * counts), refreshed every minute and when the window gets focus. Returns
  * them (null until the first answer) and a function to refresh now, for
  * sections to call after a change (see useRefreshSummary).
  */
@@ -34,12 +34,17 @@ export function useAdminSummary(): [AdminSummary | null, () => void] {
   return [summary, refresh]
 }
 
-/** The queue's and Reports' counts beside their names; red when something waited too long or a place has many reports. */
+/**
+ * The queue's, held Reviews' and Reports' counts beside their names; red when
+ * something waited too long or a place has many reports. Reviews only for
+ * whoever the summary counts them for (moderation.reviews).
+ */
 export function moderationCounts(summary: AdminSummary | null): Record<string, SectionCount> {
   return summary
     ? {
         queue: { count: summary.queue.count, hot: queueIsLate(summary.queue) },
         reports: { count: summary.reports.locations, hot: summary.reports.maxOnOne >= REPORTS_HOT },
+        ...(summary.reviews && { reviews: { count: summary.reviews.held, hot: false } }),
       }
     : {}
 }

@@ -14,7 +14,9 @@ export const ENTITLEMENTS = {
   "moderation.view": ["moderator", "admin", "super_admin"],
   /** Approve or reject submissions, and act on reports. */
   "moderation.decide": ["moderator", "admin", "super_admin"],
-  /** Decide a submission you sent yourself. Moderators can't; admins (and super admins) can, so a site with one admin isn't stuck. */
+  /** See held reviews (#253) and approve or remove them, in /moderate and /admin. Your own need moderation.decideOwn too. */
+  "moderation.reviews": ["moderator", "admin", "super_admin"],
+  /** Decide a submission you sent, or a review you wrote, yourself. Moderators can't; admins (and super admins) can, so a site with one admin isn't stuck. */
   "moderation.decideOwn": ["admin", "super_admin"],
   /** Remove someone's profile picture, which shows publicly next to their reviews (#290). */
   "moderation.avatars": ["moderator", "admin", "super_admin"],

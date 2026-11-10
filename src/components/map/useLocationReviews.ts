@@ -13,11 +13,14 @@ export interface Review {
   image?: string | null
   createdAt: string
   mine: boolean
+  /** The viewer's own review can be "held" (pending review) or "removed"; everyone else's are published (#253). */
+  status?: "published" | "held" | "removed"
 }
 
 export interface ReviewsState {
   status: "loading" | "ready" | "error"
   reviews: Review[]
+  /** Published reviews: the viewer's own held or removed one is listed but not counted. */
   count: number
   /** 0 without reviews. */
   average: number
@@ -98,11 +101,12 @@ export function useLocationReviews(locationId: string): ReviewsState {
       setReviews((rs) => [temp, ...rs])
       try {
         const res = await send("/api/reviews", "POST", { locationId, ...input })
-        const { id } = (await res.json()) as { id: string }
+        const { id, status = "published" } = (await res.json()) as { id: string; status?: Review["status"] }
         saved.current.add(id)
         // A reload during the post may already list it under its id.
-        setReviews((rs) => rs.filter((r) => r.id !== id).map((r) => (r.id === temp.id ? { ...r, id } : r)))
-        toast.success(t("posted"), { description: t("postedBody") })
+        setReviews((rs) => rs.filter((r) => r.id !== id).map((r) => (r.id === temp.id ? { ...r, id, status } : r)))
+        if (status === "held") toast(t("held"), { description: t("heldBody") })
+        else toast.success(t("posted"), { description: t("postedBody") })
         return true
       } catch (err) {
         setReviews((rs) => rs.filter((r) => r.id !== temp.id))
@@ -117,7 +121,10 @@ export function useLocationReviews(locationId: string): ReviewsState {
     const before = current.current.find((r) => r.id === id)
     setReviews((rs) => rs.map((r) => (r.id === id ? { ...r, ...input } : r)))
     try {
-      await send(`/api/reviews/${encodeURIComponent(id)}`, "PATCH", input)
+      const res = await send(`/api/reviews/${encodeURIComponent(id)}`, "PATCH", input)
+      const { status = "published" } = (await res.json().catch(() => ({}))) as { status?: Review["status"] }
+      setReviews((rs) => rs.map((r) => (r.id === id ? { ...r, status } : r)))
+      if (status === "held") toast(t("held"), { description: t("heldBody") })
       return true
     } catch (err) {
       if (before) setReviews((rs) => rs.map((r) => (r.id === id ? before : r)))
@@ -141,7 +148,8 @@ export function useLocationReviews(locationId: string): ReviewsState {
     }
   }, [t])
 
-  const count = reviews.length
-  const average = count ? reviews.reduce((n, r) => n + r.rating, 0) / count : 0
+  const counted = reviews.filter((r) => (r.status ?? "published") === "published")
+  const count = counted.length
+  const average = count ? counted.reduce((n, r) => n + r.rating, 0) / count : 0
   return { status, reviews, count, average, reload, add, edit, remove }
 }

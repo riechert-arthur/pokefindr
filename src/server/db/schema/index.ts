@@ -49,6 +49,7 @@ import type { LocationKind } from "@/lib/types/locations"
 import type { RejectReason, ShopSells, SubmissionKind, SubmissionStatus } from "@/lib/submissions/constants"
 import type { Role } from "@/lib/auth/roles"
 import type { Locale } from "@/i18n/routing"
+import type { ModerationCategory, ModerationVerdict, ReviewStatus, SubmissionTextCheck } from "@/lib/reviews/moderation"
 
 const createdAt = () => timestamp("created_at", { withTimezone: true }).defaultNow()
 
@@ -478,11 +479,41 @@ export const locationRatings = pgTable(
     rating: integer("rating").notNull(),
     text: text("text"),
     createdAt: createdAt(),
+    /** Who sees it (#253, migration 0024): published for everyone; held or removed for its author only. */
+    status: text("status").$type<ReviewStatus>().notNull().default("published"),
+    /** The moderator who last approved or removed it, and when (for the undo window). */
+    moderatedBy: uuid("moderated_by").references(() => profiles.id, { onDelete: "set null" }),
+    moderatedAt: timestamp("moderated_at", { withTimezone: true }),
   },
   (t) => [
     index("location_ratings_location_id_idx").on(t.locationId),
     index("location_ratings_user_id_idx").on(t.userId),
     check("location_ratings_rating_range", sql`${t.rating} BETWEEN 1 AND 5`),
+    check("location_ratings_status_check", sql`${t.status} in ('published', 'held', 'removed')`),
+    index("location_ratings_held_created_idx").on(t.createdAt).where(sql`${t.status} = 'held'`),
+  ],
+)
+
+/** Each automatic check of a review's text (#253, migration 0024). */
+export const reviewModerationChecks = pgTable(
+  "review_moderation_checks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ratingId: uuid("rating_id").notNull().references(() => locationRatings.id, { onDelete: "cascade" }),
+    verdict: text("verdict").$type<ModerationVerdict>().notNull(),
+    categories: text("categories").array().$type<ModerationCategory[]>().notNull(),
+    reason: text("reason").notNull(),
+    model: text("model").notNull(),
+    promptVersion: text("prompt_version").notNull(),
+    /** The check didn't run (an outage or a timeout): the review was held and is checked again. */
+    failed: boolean("failed").notNull().default(false),
+    /** Millionths of a dollar. */
+    costMicros: integer("cost_micros").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("review_moderation_checks_rating_created_idx").on(t.ratingId, t.createdAt),
+    check("review_moderation_checks_verdict_check", sql`${t.verdict} in ('allow', 'hold', 'block')`),
   ],
 )
 
@@ -772,6 +803,8 @@ export const locationSubmissions = pgTable(
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     locationId: uuid("location_id").references(() => locations.id, { onDelete: "set null" }),
     createdAt: createdAt().notNull(),
+    /** The automatic check of its name, notes and links (#253, migration 0024), shown to moderators. Null until it ran. */
+    textCheck: jsonb("text_check").$type<SubmissionTextCheck>(),
   },
   (t) => [
     index("location_submissions_submitted_by_created_idx").on(t.submittedBy, t.createdAt),

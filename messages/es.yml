@@ -238,6 +238,12 @@ reviews:
   deleteBodyUnnamed: Se eliminará tu calificación. Esto no se puede deshacer.
   posted: Reseña publicada
   postedBody: Aparece al principio de las reseñas.
+  held: Reseña enviada a revisión
+  heldBody: Un moderador la revisará antes de que otros puedan verla.
+  pending: Pendiente de revisión
+  pendingBody: Solo tú puedes verla hasta que un moderador la apruebe.
+  removed: Retirada
+  removedBody: Un moderador retiró esta reseña, así que solo tú puedes verla. Edítala para enviarla de nuevo a revisión.
   postFailed: No se pudo publicar tu reseña
   editFailed: No se pudieron guardar tus cambios
   deleteFailed: No se pudo eliminar tu reseña
@@ -557,13 +563,14 @@ assistant:
     failed: No pudimos borrar tu historial
     failedBody: Revisa tu conexión e inténtalo de nuevo.
 
-# /moderate (#293): moderators' dashboard. The review queue and Reports inside it are English only, like /admin.
+# /moderate (#293): moderators' dashboard. The review queue, Reviews and Reports inside it are English only, like /admin.
 moderate:
   title: Moderar
-  intro: Revisa los lugares nuevos antes de que aparezcan en el mapa y atiende los problemas que la gente reporta.
+  intro: Revisa los lugares nuevos antes de que aparezcan en el mapa, revisa las reseñas que retuvo la revisión automática y atiende los problemas que la gente reporta.
   openNav: Abrir navegación
   tabs:
     queue: Cola de revisión
+    reviews: Reseñas
     reports: Reportes
     waiting: "{count, plural, one {# pendiente} other {# pendientes}}"
 
@@ -930,6 +937,8 @@ content:
     title: Tus reseñas recientes
     edit: Editar
     delete: Eliminar
+    pending: Pendiente de revisión
+    removed: Retirada por un moderador
 
 legal:
   englishOnly: Esta página solo está disponible en inglés. <link>Leerla en inglés</link>.
