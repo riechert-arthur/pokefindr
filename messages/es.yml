@@ -554,6 +554,7 @@ assistant:
 settings:
   title: Configuración general
   loadingProfile: Cargando tu perfil…
+  loadFailed: No pudimos cargar tu perfil. Revisa tu conexión y vuelve a cargar la página.
   openNav: Abrir navegación
   profile:
     title: Perfil

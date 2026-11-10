@@ -32,11 +32,13 @@ const Alert = React.forwardRef<
 ))
 Alert.displayName = "Alert"
 
+// A div, not the registry's <h5>: an alert sits under the page's own headings,
+// and an <h5> there would skip levels.
 const AlertTitle = React.forwardRef<
-  HTMLParagraphElement,
-  React.HTMLAttributes<HTMLHeadingElement>
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <h5
+  <div
     ref={ref}
     className={cn("mb-1 font-medium leading-none tracking-tight", className)}
     {...props}
