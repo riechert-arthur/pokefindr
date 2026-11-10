@@ -24,7 +24,6 @@ import { PlaceSearch, type PlacePick } from "@/components/search/PlaceSearch"
 import { APP_NAV_ID } from "@/components/pokefindr/AppRail"
 import { Button } from "@/components/ui/button"
 import { LOCATION_KINDS, type LocationFeature, type LocationFeatureProperties, type LocationKind } from "@/lib/types/locations"
-import { useLocations } from "./useLocations"
 import { LocationPopup, type LocationPopupProps } from "./LocationPinPopUps"
 import { useSidebar } from "../providers/SidebarContextProvider"
 import { UserMenu } from "@/components/pokefindr/UserMenu"
@@ -169,8 +168,6 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const area = useMemo(() => (place ? radiusCircle(place.lng, place.lat, place.radius) : EMPTY_AREA), [place])
   const radius = useMemo(() => radiusLayers(colors), [colors])
 
-  // Every location, for the search box only; the map draws what's in view.
-  const collection = useLocations()
   const { states, max, total, bounds, kindTotals } = useStateShading(kindSet, retailers)
   // The results list for the place (or the viewer), closest first.
   const nearby = useNearbyLocations(place, kinds, retailers)
@@ -188,11 +185,10 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     [states],
   )
   const [map, setMap] = useState<ViewportMap>()
-  const viewport = useViewportLocations(map, { types: kinds })
+  const viewport = useViewportLocations(map, { types: kinds, retailers })
   const inView = useMemo<FeatureCollection<Point, LocationFeatureProperties & { dim?: boolean }>>(() => {
-    const features = retailers?.length
-      ? viewport.features.filter((f) => f.properties.kind !== "vending" || retailers.includes(f.properties.retailer))
-      : viewport.features
+    // The API filters by retailer before its cap (#201).
+    const features = viewport.features
     if (!place) return { type: "FeatureCollection", features }
     return {
       type: "FeatureCollection",
@@ -201,7 +197,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         return { ...f, properties: { ...f.properties, dim: milesBetween(place.lng, place.lat, lng, lat) > place.radius } }
       }),
     }
-  }, [viewport.features, retailers, place])
+  }, [viewport.features, place])
 
   // The search box's text: the view's label, until the viewer types.
   const [query, setQuery] = useState(() => searchLabel(params, t("search.yourLocation"), stateName))
@@ -215,9 +211,11 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const userMoving = useRef(false)
 
   // The details panel follows `location=` (a shared link, Back or Forward).
-  // A location the map hasn't loaded comes from /api/locations/<id>.
-  // globalThis: `Map` here is the map component from ./engine.
-  const knownLocations = useMemo(() => new globalThis.Map(collection.features.map((f) => [f.properties.id, f])), [collection])
+  // A location in view opens at once; any other comes from /api/locations/<id>
+  // (the map no longer loads every location, #201).
+  // Read through a ref: a new view loading mustn't re-run this (and cancel a details fetch).
+  const viewportFeatures = useRef(viewport.features)
+  viewportFeatures.current = viewport.features
   useEffect(() => {
     const id = params.location
     if (!id) {
@@ -225,7 +223,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
       pushedDetails.current = null
       return
     }
-    const feature = knownLocations.get(id)
+    const feature = viewportFeatures.current.find((f) => f.properties.id === id)
     if (feature) {
       dispatch({ type: "showDetails", location: toSelected(feature) })
       return
@@ -256,7 +254,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         void setParams({ location: null }, { history: "replace" })
       })
     return () => controller.abort()
-  }, [params.location, knownLocations, setParams])
+  }, [params.location, setParams])
 
   // A new view (a pick, Back or Forward) puts its label in the search box.
   // Keyed on the label, so a pan (a camera-only URL write) keeps what the

@@ -5,9 +5,10 @@ import { locations } from "@/server/db/schema"
 import { OUTSIDE_LOWER_48 } from "@/lib/map/states"
 import type { LocationFeature, LocationFeatureCollection, LocationKind, NearbyLocations, StateCities } from "@/lib/types/locations"
 import type { Bbox } from "@/lib/locations/bbox"
+import { NEAR_LIMIT } from "@/lib/locations/search"
 
-/** The most locations one viewport request returns. */
-export const BBOX_LIMIT = 2000
+/** The most locations one viewport request returns (#201); `truncated` says when there were more. */
+export const BBOX_LIMIT = 500
 
 /**
  * One row of `locations` (as `p`) as a GeoJSON Feature, the shape the map
@@ -33,13 +34,14 @@ const featureJson = (extra: SQL = sql``) => sql`
 /**
  * Active, positioned locations matching `where`, as a GeoJSON
  * FeatureCollection built in one query. Postgres does the JSON assembly, so
- * this stays fast as the table grows. With `limit`, it returns at most that
- * many and sets `truncated` when more matched.
+ * this stays fast as the table grows. It returns at most `limit` and sets
+ * `truncated` when more matched: there's no uncapped form, so no caller can
+ * list every location (#201).
  */
 export async function queryFeatures(
   db: Database,
-  where: SQL = sql`true`,
-  limit?: number,
+  where: SQL,
+  limit: number,
   // Unqualified columns, so it applies to both CTEs below.
   orderBy: SQL = sql`"machineID", id`,
 ): Promise<LocationFeatureCollection> {
@@ -48,11 +50,11 @@ export async function queryFeatures(
       select l.* from ${locations} l
       where l.is_active and l.geog is not null and ${where}
       order by ${orderBy}
-      ${limit === undefined ? sql`` : sql`limit ${limit + 1}`}
+      limit ${limit + 1}
     ),
     page as (
       select * from matched
-      ${limit === undefined ? sql`` : sql`limit ${limit}`}
+      limit ${limit}
     )
     select json_build_object(
       'type', 'FeatureCollection',
@@ -66,17 +68,7 @@ export async function queryFeatures(
       'truncated', (select count(*) from matched) > (select count(*) from page)
     ) as fc
   `)
-  const fc = rows[0].fc
-  // `truncated` is only meaningful for capped queries.
-  if (limit === undefined) delete fc.truncated
-  return fc
-}
-
-/** All active locations as a GeoJSON FeatureCollection. */
-export async function getActiveLocationsGeoJSON(
-  db: Database = getDb(),
-): Promise<LocationFeatureCollection> {
-  return queryFeatures(db)
+  return rows[0].fc
 }
 
 /**
@@ -169,8 +161,8 @@ export async function searchLocations(
   return fc
 }
 
-/** The most results one radius search returns; the list shows them all, closest first. */
-export const NEAR_LIMIT = 500
+/** The most rows one near request returns (#201, set in lib for the route's validation too). */
+export { NEAR_LIMIT }
 
 export interface NearQuery {
   /** [lng, lat] of the place. */
@@ -295,18 +287,23 @@ export interface BboxQuery {
   bbox: Bbox
   /** Kinds to include. Empty means none. */
   types: readonly LocationKind[]
+  /** Vending retailers to keep (other kinds aren't filtered), as the map's `retailer=`. Empty means all. */
+  retailers?: readonly string[]
   limit?: number
 }
 
 /**
- * Active locations inside `bbox`, for the map above zoom 6. The test is
+ * Active locations inside `bbox`, for the map from zoom 6 (POINT_ZOOM). The
+ * retailer filter runs here, before the cap, and a cut-off box keeps the
+ * places nearest its center, so a full view still fills the screen evenly
+ * outward from the middle. The test is
  * planar: `geog::geometry && envelope` keeps exactly the points between the
  * box's meridians and parallels, using the GiST index on `geog::geometry`.
  * (On geography, `&&` compares boxes on the sphere, which bow out: it
  * returned points ~10 km past a city-sized box's sides.)
  */
 export async function getLocationsInBbox(
-  { bbox, types, limit = BBOX_LIMIT }: BboxQuery,
+  { bbox, types, retailers = [], limit = BBOX_LIMIT }: BboxQuery,
   db: Database = getDb(),
 ): Promise<LocationFeatureCollection> {
   if (types.length === 0) return { type: "FeatureCollection", features: [], truncated: false }
@@ -314,8 +311,9 @@ export async function getLocationsInBbox(
   return queryFeatures(
     db,
     sql`l.geog::geometry && ST_MakeEnvelope(${west}, ${south}, ${east}, ${north}, 4326)
-      and l.kind in (${kindsIn(types)})`,
+      and l.kind in (${kindsIn(types)}) ${retailerIn(retailers)}`,
     limit,
+    sql`geog::geometry <-> ST_SetSRID(ST_MakePoint(${(west + east) / 2}, ${(south + north) / 2}), 4326), id`,
   )
 }
 

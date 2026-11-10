@@ -30,6 +30,8 @@ export interface ViewportLocations {
 
 export interface ViewportOptions {
   types: readonly LocationKind[]
+  /** Vending retailers to keep, as the map's `retailer=`; filtered by the API, before its cap. Empty or absent means all. */
+  retailers?: readonly string[] | null
   /** Wait this long after the map stops before fetching. */
   debounceMs?: number
 }
@@ -39,10 +41,10 @@ export const VIEWPORT_DEBOUNCE_MS = 250
 /**
  * The query for a view: its box rounded outward to 0.01° (so nearby views
  * share CDN cache entries, and the box always covers the screen), clamped to
- * the world, plus the kinds. A box over the API's limit (MAX_BBOX_AREA; a
- * very large screen at zoom 6) is shrunk around its center to fit.
+ * the world, plus the kinds and retailers. A box over the API's limit
+ * (MAX_BBOX_AREA; a very large screen at zoom 6) is shrunk around its center to fit.
  */
-export function viewportQuery(map: ViewportMap, types: readonly LocationKind[]): string {
+export function viewportQuery(map: ViewportMap, types: readonly LocationKind[], retailers: readonly string[] = []): string {
   const b = map.getBounds()
   let [w, s, e, n] = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]
   const area = (e - w) * (n - s)
@@ -56,7 +58,8 @@ export function viewportQuery(map: ViewportMap, types: readonly LocationKind[]):
   const up = (v: number) => Math.ceil(v * 100) / 100
   const clamp = (v: number, limit: number) => Math.max(-limit, Math.min(limit, v))
   const bbox = [clamp(down(w), 180), clamp(down(s), 90), clamp(up(e), 180), clamp(up(n), 90)].join(",")
-  return `bbox=${bbox}&types=${types.join(",")}`
+  const retailer = retailers.length ? `&retailer=${encodeURIComponent(retailers.join(","))}` : ""
+  return `bbox=${bbox}&types=${types.join(",")}${retailer}`
 }
 
 const EMPTY: ViewportLocations = { features: [], status: "idle", truncated: false }
@@ -69,13 +72,16 @@ const EMPTY: ViewportLocations = { features: [], status: "idle", truncated: fals
  */
 export function useViewportLocations(
   map: ViewportMap | undefined,
-  { types, debounceMs = VIEWPORT_DEBOUNCE_MS }: ViewportOptions,
+  { types, retailers, debounceMs = VIEWPORT_DEBOUNCE_MS }: ViewportOptions,
 ): ViewportLocations {
   const [state, setState] = useState<ViewportLocations>(EMPTY)
   const typesKey = types.join(",")
-  // Read the latest types from the listener without re-subscribing.
+  const retailersKey = (retailers ?? []).join(",")
+  // Read the latest filters from the listener without re-subscribing.
   const typesRef = useRef(types)
   typesRef.current = types
+  const retailersRef = useRef(retailers ?? [])
+  retailersRef.current = retailers ?? []
 
   useEffect(() => {
     if (!map) return
@@ -92,7 +98,7 @@ export function useViewportLocations(
       controller = current
       setState((s) => ({ ...s, status: "loading" }))
       try {
-        const res = await fetch(`/api/locations?${viewportQuery(map, typesRef.current)}`, { signal: current.signal })
+        const res = await fetch(`/api/locations?${viewportQuery(map, typesRef.current, retailersRef.current)}`, { signal: current.signal })
         if (!res.ok) throw new Error(`Failed to load locations (${res.status})`)
         const fc = (await res.json()) as LocationFeatureCollection
         if (current.signal.aborted) return
@@ -118,8 +124,8 @@ export function useViewportLocations(
       clearTimeout(timer)
       controller?.abort()
     }
-    // typesKey: refetch when the kinds change.
-  }, [map, debounceMs, typesKey])
+    // typesKey, retailersKey: refetch when the filters change.
+  }, [map, debounceMs, typesKey, retailersKey])
 
   return state
 }

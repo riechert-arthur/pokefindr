@@ -95,7 +95,6 @@ map:
     coverage: Por ahora, PokeFindr cubre EE. UU. Pronto habrá más países.
   attribution: "Contornos: Natural Earth, US Census"
   loadPlaceFailed: No se pudo cargar este lugar
-  loadLocationsFailed: No se pudieron cargar las máquinas expendedoras. Recarga la página para intentarlo de nuevo.
   connection: Revisa tu conexión e inténtalo de nuevo.
   addSignedOut:
     title: Inicia sesión para agregar un lugar
@@ -738,7 +737,7 @@ faq:
       answer: Una máquina expendedora que vende productos oficiales del Juego de Cartas Coleccionables Pokémon, como sobres y Cajas de Entrenador Élite. Las surte The Pokémon Company International, así que todo lo que contienen es auténtico.
     map:
       question: ¿Cómo uso el mapa?
-      answer: Busca una ciudad o dirección desde la página de inicio o el mapa. El mapa se abre en esa zona y muestra cada lugar dentro de tu radio, primero el más cercano. Aleja el mapa para ver todo el país, o elige un estado para explorarlo.
+      answer: Busca una ciudad o dirección desde la página de inicio o el mapa. El mapa se abre en esa zona y muestra los lugares dentro de tu radio, primero el más cercano (hasta 200 a la vez). Aleja el mapa para ver todo el país, o elige un estado para explorarlo.
     verified:
       question: ¿Las ubicaciones de las máquinas expendedoras están verificadas?
       answer: Sí. Las ubicaciones vienen de la lista oficial de tiendas en el <center>sitio web del Pokémon Center</center>.

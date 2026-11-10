@@ -137,7 +137,6 @@ map:
   # Credit for the outlines, in the map's attribution.
   attribution: "Outlines: Natural Earth, US Census"
   loadPlaceFailed: Couldn't load this place
-  loadLocationsFailed: Couldn't load vending machine locations. Please refresh to try again.
   connection: Check your connection and try again.
   # Adding a place while signed out.
   addSignedOut:
@@ -804,7 +803,7 @@ faq:
       answer: An automated retail machine that sells official Pokémon Trading Card Game products like booster packs and Elite Trainer Boxes. They're stocked by The Pokémon Company International, so everything inside is authentic.
     map:
       question: How do I use the map?
-      answer: Search a city or address from the home page or the map. The map opens on that area and lists every location inside your radius, closest first. Zoom out to see the whole country, or pick a state to explore it.
+      answer: Search a city or address from the home page or the map. The map opens on that area and lists the locations inside your radius, closest first (up to 200 at a time). Zoom out to see the whole country, or pick a state to explore it.
     verified:
       question: Are the vending machine locations verified?
       # <center> links to the retailer list on the Pokémon Center website.

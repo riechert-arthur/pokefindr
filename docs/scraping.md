@@ -108,3 +108,30 @@ route is guarded, side by side. Over the limit is a 429 with `Retry-After`.
   an outage of the limiter shouldn't take the map down. The firewall's limits still apply.
 - The assistant, MCP and feedback limits are per user and stay in memory (`tokenBucket`, which
   shares its bucket math with the memory adapter).
+
+## Caps on every query (#201)
+
+The fewer places one request can return, the more requests a full copy takes, and the easier it is
+to spot. No route returns every location: `queryFeatures()` always takes a limit, and
+`__tests__/integration/query-caps.test.ts` seeds more places than any cap and checks each route.
+
+| Route | Most rows | Most area | When there are more |
+| --- | --- | --- | --- |
+| `/api/locations?bbox=` (the map) | 500 | 300 square degrees | `truncated`; the pill says to zoom in |
+| `/api/locations/near` (the results list) | 200 | a 50-mile radius | `truncated`; `counts` and `total` cover every match |
+| `/api/locations/search` | 20 (5 by default) | — | — |
+| `/api/locations/cities` | 30 cities | one state | counts only |
+| `/api/locations/counts` | 10 points | a 50-mile radius each | counts only |
+| `/api/locations/[id]` | 1 | — | — |
+| `/api/highlights` | 4 hotspots, 3 events | — | — |
+| `/api/locations/aggregates`, `/retailers` | counts per region, retailer names | — | no places |
+
+- **The map's box.** From zoom 6 (`POINT_ZOOM`) the map loads the places in view; below it, it
+  shades states from the aggregates. At zoom 6 a 1440p screen shows about 28° × 11° (MapLibre's
+  tiles are 512 px); a bigger screen's box is shrunk around its center to 300 square degrees.
+  The retailer filter runs in the query, before the cap, and a cut-off box keeps the places
+  nearest its middle, so the screen fills evenly outward from the center.
+- **No list of everything.** `GET /api/locations` without a box is a 400. The map used to load
+  every location to open `?location=` links instantly; it now looks in the places in view, then
+  asks `/api/locations/[id]`.
+- **The landing map** (#200) gets counts per 0.25° cell, rendered into the page, not points.

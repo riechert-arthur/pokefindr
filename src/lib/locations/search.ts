@@ -1,16 +1,12 @@
 import { z } from "zod/v3"
-import { coordinate, kindsParam, pointParam } from "./bbox"
+import { coordinate, kindsParam, pointParam, retailerParam } from "./bbox"
 import { RADII } from "@/lib/map/url-state"
 import { stateCode } from "@/lib/map/states"
 
 /** A search radius in miles: one the map offers. */
 const radiusParam = z.coerce.number().refine((r) => (RADII as readonly number[]).includes(r), `must be one of ${RADII.join(", ")}`)
 
-/** Vending retailers, comma-separated, as in the map's URL (`retailer=`). Absent means all. */
-export const retailerParam = z
-  .string()
-  .optional()
-  .transform((s) => (s ? s.split(",").map((r) => r.trim()).filter(Boolean) : []))
+export { retailerParam }
 
 /** Most points one counts request may ask about: a search list's worth. */
 export const MAX_COUNT_POINTS = 10
@@ -41,6 +37,9 @@ export const searchQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(20).default(5),
 })
 
+/** The most rows one near request returns (#201); counts and the total still cover every match. */
+export const NEAR_LIMIT = 200
+
 /** GET /api/locations/near?lng=…&lat=…&r=10&types=…&retailer=… */
 export const nearQuerySchema = z.object({
   lng: coordinate(-180, 180),
@@ -49,8 +48,8 @@ export const nearQuerySchema = z.object({
   types: kindsParam,
   /** Vending retailers, comma-separated, as in the map's URL. */
   retailer: retailerParam,
-  /** The most rows to return (the closest); 500 by default. Counts and the total still cover every match. */
-  limit: z.coerce.number().int().min(1).max(500).optional(),
+  /** The most rows to return (the closest); NEAR_LIMIT at most, and by default. Counts and the total still cover every match. */
+  limit: z.coerce.number().int().min(1).max(NEAR_LIMIT).optional(),
 })
 
 /** GET /api/locations/cities?state=WA&types=… */

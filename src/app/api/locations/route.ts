@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { getActiveLocationsGeoJSON, getLocationsInBbox } from "@/server/services/locations"
+import { getLocationsInBbox } from "@/server/services/locations"
 import { bboxQuerySchema } from "@/lib/locations/bbox"
 import { guardRoute, RATE_RULES } from "@/server/api-rate-limit"
 
@@ -10,33 +10,27 @@ export const dynamic = "force-dynamic"
 
 /**
  * GET /api/locations?bbox=west,south,east,north&types=vending,shop
- *   Active locations in the box (at most 2,000; `truncated` says when there
- *   were more). Without `types`, every kind.
- * GET /api/locations
- *   Every active location. The map uses this until it loads by viewport.
+ *   Active locations in the box (at most 500 and 300 square degrees;
+ *   `truncated` says when there were more). Without `types`, every kind.
+ *   There's no way to ask for every location (#201, docs/scraping.md).
  */
 export async function GET(request: NextRequest) {
   const blocked = await guardRoute(request, RATE_RULES.locations, { bots: true })
   if (blocked) return blocked
   const params = request.nextUrl.searchParams
   try {
-    if (!params.has("bbox")) {
-      return NextResponse.json(await getActiveLocationsGeoJSON(), {
-        // Only the browser keeps it: a CDN copy would reach bots without BotID's check (#198).
-        headers: { "Cache-Control": "private, max-age=30" },
-      })
-    }
-
     const parsed = bboxQuerySchema.safeParse({
       bbox: params.get("bbox"),
       types: params.get("types") ?? undefined,
+      retailer: params.get("retailer") ?? undefined,
     })
     if (!parsed.success) {
       const message = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")
       return NextResponse.json({ error: `Invalid query. ${message}` }, { status: 400 })
     }
 
-    return NextResponse.json(await getLocationsInBbox(parsed.data), {
+    const { retailer, ...query } = parsed.data
+    return NextResponse.json(await getLocationsInBbox({ ...query, retailers: retailer }), {
       // Only the browser keeps it: a CDN copy would reach bots without BotID's check (#198).
       headers: { "Cache-Control": "private, max-age=30" },
     })
