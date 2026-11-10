@@ -897,3 +897,61 @@ og:
   line2: de Pokémon
   accent: cerca de ti
   subtitle: Máquinas de cartas, tiendas y eventos en un solo mapa.
+
+states:
+  AK: Alaska
+  AL: Alabama
+  AR: Arkansas
+  AS: Samoa Americana
+  AZ: Arizona
+  CA: California
+  CO: Colorado
+  CT: Connecticut
+  DC: Distrito de Columbia
+  DE: Delaware
+  FL: Florida
+  GA: Georgia
+  GU: Guam
+  HI: Hawái
+  IA: Iowa
+  ID: Idaho
+  IL: Illinois
+  IN: Indiana
+  KS: Kansas
+  KY: Kentucky
+  LA: Luisiana
+  MA: Massachusetts
+  MD: Maryland
+  ME: Maine
+  MI: Míchigan
+  MN: Minnesota
+  MO: Misuri
+  MP: Mancomunidad de las Islas Marianas del Norte
+  MS: Mississippi
+  MT: Montana
+  NC: Carolina del Norte
+  ND: Dakota del Norte
+  NE: Nebraska
+  NH: Nuevo Hampshire
+  NJ: Nueva Jersey
+  NM: Nuevo México
+  NV: Nevada
+  NY: Nueva York
+  OH: Ohio
+  OK: Oklahoma
+  OR: Oregón
+  PA: Pensilvania
+  PR: Puerto Rico
+  RI: Rhode Island
+  SC: Carolina del Sur
+  SD: Dakota del Sur
+  TN: Tennessee
+  TX: Texas
+  UT: Utah
+  VA: Virginia
+  VI: Islas Vírgenes de los Estados Unidos
+  VT: Vermont
+  WA: Washington
+  WI: Wisconsin
+  WV: Virginia Occidental
+  WY: Wyoming

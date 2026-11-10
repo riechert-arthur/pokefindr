@@ -102,12 +102,14 @@ function readsOf(code: string) {
     } else if (m[3]) exact.add(m[3])
   }
   // t(failure), t(kind): a key from a variable holding one of a set of strings.
-  const byVariable = /\bt\(\s*[A-Za-z_]\w*\s*[,)]/.test(code)
-  // The sets such a variable can come from: a union type ("webgl" | "crash")
-  // or an array of strings (["vending", "shop"]), in any file.
+  const byVariable = /\bt\(\s*[A-Za-z_]\w*(?:\s+as\s+\w+)?\s*[,)]/.test(code)
+  // The sets such a variable can come from: a union type ("webgl" | "crash"),
+  // an array of strings (["vending", "shop"]), or a table's code-like keys
+  // (`AK: { name: "Alaska" }`), in any file.
   const members = new Set<string>()
   for (const m of code.matchAll(/(?:\|\s*)(["'])([\w-]+)\1|(["'])([\w-]+)\3(?=\s*\|)/g)) members.add((m[2] ?? m[4])!)
   for (const list of code.matchAll(/\[\s*(?:["'][\w-]+["']\s*,\s*)+["'][\w-]+["']\s*,?\s*\]/g)) for (const m of list[0].matchAll(/["']([\w-]+)["']/g)) members.add(m[1])
+  for (const m of code.matchAll(/^\s*([A-Z][A-Z0-9_]*):\s/gm)) members.add(m[1])
   return { namespaces, exact, patterns, byVariable, members }
 }
 
@@ -121,7 +123,7 @@ describe("unused messages", () => {
           if (ns && !key.startsWith(`${ns}.`)) return false
           const rest = ns ? key.slice(ns.length + 1) : key
           if (exact.has(rest) || patterns.some((p) => p.test(rest))) return true
-          // A last segment read through a variable that holds it ("webgl", "shop").
+          // A last segment read through a variable that holds it ("webgl", "shop", a state's code).
           return byVariable && !rest.includes(".") && sets.has(rest)
         }),
       )

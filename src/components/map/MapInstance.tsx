@@ -61,6 +61,7 @@ import { initialMapView, shownKinds, viewKey, type InitialMapView } from "@/lib/
 import { INITIAL_LOAD_STATE, nextLoadState, type MapLoadState } from "./mapLoadState"
 import { track } from "@/lib/analytics"
 import { useTranslations } from "next-intl"
+import { useStateName } from "./useStateName"
 
 type SelectedLocation = Omit<LocationPopupProps, "onClose" | "onDetails">
 
@@ -71,8 +72,8 @@ const toSelected = (feat: LocationFeature): SelectedLocation => {
 }
 
 /** What the search box shows for the URL's view: the place, the state, or "Your location" (`yourLocation`). */
-const searchLabel = (params: MapSearchParams, yourLocation: string): string =>
-  params.near === "me" ? yourLocation : params.q ? params.q : params.state && Object.hasOwn(STATES, params.state) ? STATES[params.state].name : ""
+const searchLabel = (params: MapSearchParams, yourLocation: string, stateName: (code: string) => string): string =>
+  params.near === "me" ? yourLocation : params.q ? params.q : params.state && Object.hasOwn(STATES, params.state) ? stateName(params.state) : ""
 
 type Box = readonly [readonly [number, number], readonly [number, number]]
 const overlaps = ([[w1, s1], [e1, n1]]: Box, [[w2, s2], [e2, n2]]: Box) => w1 <= e2 && w2 <= e1 && s1 <= n2 && s2 <= n1
@@ -105,6 +106,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const { session, isLoading: sessionLoading } = useSessionContext()
   const router = useRouter()
   const t = useTranslations("map")
+  const stateName = useStateName()
   // For error toasts in effects, so a new translator doesn't refetch.
   const tRef = useRef(t)
   tRef.current = t
@@ -181,7 +183,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     () =>
       (states?.features ?? [])
         .filter((f) => f.properties.region)
-        .map((f) => ({ code: f.properties.region, name: f.properties.name, count: f.properties.count }))
+        .map((f) => ({ code: f.properties.region, count: f.properties.count }))
         .sort((a, b) => b.count - a.count),
     [states],
   )
@@ -202,7 +204,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   }, [viewport.features, retailers, place])
 
   // The search box's text: the view's label, until the viewer types.
-  const [query, setQuery] = useState(() => searchLabel(params, t("search.yourLocation")))
+  const [query, setQuery] = useState(() => searchLabel(params, t("search.yourLocation"), stateName))
   // Where search ranks nearby results first: the map's center once zoomed in, to ~10 km.
   const [searchNear, setSearchNear] = useState<[number, number] | undefined>()
 
@@ -261,7 +263,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   // viewer typed.
   // A pan that drops `state=` changes the label too, but the viewer may be
   // typing: then keep their text.
-  const viewLabel = searchLabel(params, t("search.yourLocation"))
+  const viewLabel = searchLabel(params, t("search.yourLocation"), stateName)
   const shownLabel = useRef(viewLabel)
   const leftStateByPan = useRef(false)
   useEffect(() => {
@@ -447,7 +449,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const openEvent = (e: UpcomingEvent) =>
     handleSearchPick({ type: "area", area: { label: [e.city, e.state].filter(Boolean).join(", ") || e.title, lng: e.lng, lat: e.lat, kind: "city", state: e.state } })
   const openState = (code: string) =>
-    handleSearchPick({ type: "area", area: { label: STATES[code].name, lng: 0, lat: 0, kind: "state", state: code } })
+    handleSearchPick({ type: "area", area: { label: stateName(code), lng: 0, lat: 0, kind: "state", state: code } })
 
   /** The search box's ✕: back to the whole US, as a new view. */
   const handleSearchClear = () => {
@@ -717,7 +719,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
           kinds={kinds}
           kindTotals={kindTotals}
           onKindsChange={handleKindsChange}
-          sheetLabel={adding ? t("panel.add") : details ? details.retailer : place ? t("panel.results") : stateFocus ? STATES[stateFocus].name : t("panel.us")}
+          sheetLabel={adding ? t("panel.add") : details ? details.retailer : place ? t("panel.results") : stateFocus ? stateName(stateFocus) : t("panel.us")}
           sheet={
             adding ? (
               session ? (
@@ -760,7 +762,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
                         ? t("back.to", { place: urlView.place.label })
                         : t("back.results")
                     : stateFocus
-                      ? t("back.to", { place: STATES[stateFocus].name })
+                      ? t("back.to", { place: stateName(stateFocus) })
                       : t("back.plain")
                 }
                 onBack={closeDetails}
@@ -784,7 +786,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
             ) : stateFocus ? (
               <StateSheet
                 code={stateFocus}
-                name={STATES[stateFocus].name}
+                name={stateName(stateFocus)}
                 kinds={kinds}
                 data={stateCities}
                 onBack={handleSearchClear}

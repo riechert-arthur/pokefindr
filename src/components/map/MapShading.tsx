@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { BasemapOverlays, useBasemapStack } from "./BasemapOverlays"
+import { BasemapOverlays, useBasemapStack, useLocalizedLabels } from "./BasemapOverlays"
 import { CountryLayers } from "./CountryLayers"
 import { StateLayers } from "./StateLayers"
 import type { MapColors } from "./layers"
@@ -27,6 +27,7 @@ interface MapShadingProps {
  */
 export function MapShading({ colors, states, max, bounds, onStateSelect }: MapShadingProps) {
   const stack = useBasemapStack()
+  useLocalizedLabels()
   const waterIds = useMemo(
     () => stack.overlays.filter((l) => l.type === "fill").map((l) => l.id),
     [stack.overlays],

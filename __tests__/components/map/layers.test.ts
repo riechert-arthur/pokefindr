@@ -193,7 +193,7 @@ describe("countryAtPoint", () => {
   const f = (layer: string, id?: number, name?: string) => ({ layer: { id: layer }, id, properties: name ? { name } : {} })
 
   it("names the country under the pointer", () => {
-    expect(countryAtPoint([f("world-hit", 7, "Canada"), f("world-fill")], water)).toEqual({ kind: "country", id: 7, name: "Canada" })
+    expect(countryAtPoint([f("world-hit", 7, "Canada"), f("world-fill")], water)).toEqual({ kind: "country", id: 7, name: "Canada", iso: "" })
   })
 
   it("stays quiet over the US and over water, where the rough outlines spill", () => {

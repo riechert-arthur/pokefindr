@@ -7,7 +7,8 @@ import { Layer, Popup, Source, useMap, type MapMouseEvent } from "./engine"
 import { countryAtPoint, LAYERS, SOURCES, worldLayers, type CountryHit, type MapColors } from "./layers"
 import { COUNTRIES_URL, SUPPORTED_COUNTRIES } from "@/lib/map/countries"
 import { worldWithHoles } from "@/lib/map/geo"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
+import { countryName } from "@/lib/map/country-names"
 
 type Outline = Feature<Polygon | MultiPolygon, { name: string; iso: string }>
 type CountryCollection = FeatureCollection<Polygon | MultiPolygon, { name: string; iso: string }>
@@ -47,9 +48,10 @@ export function CountryLayers({ colors, beforeId, waterIds }: CountryLayersProps
   const [geo, setGeo] = useState<Geo | null>(null)
   const [tip, setTip] = useState<{ lng: number; lat: number; name: string | null } | null>(null)
   const t = useTranslations("map.country")
-  // The click handler below is set up once per map; it reads the messages here.
-  const messages = useRef({ t })
-  messages.current = { t }
+  const locale = useLocale()
+  // The handlers below are set up once per map; they read the messages and language here.
+  const messages = useRef({ t, locale })
+  messages.current = { t, locale }
 
   useEffect(() => {
     const controller = new AbortController()
@@ -105,7 +107,7 @@ export function CountryLayers({ colors, beforeId, waterIds }: CountryLayersProps
       const hit = hitAt(last.point)
       if (hit.kind === "none") return clear()
       setHover(hit.kind === "country" ? hit.id : undefined)
-      setTip({ lng: last.lngLat.lng, lat: last.lngLat.lat, name: hit.kind === "country" ? hit.name : null })
+      setTip({ lng: last.lngLat.lng, lat: last.lngLat.lat, name: hit.kind === "country" ? countryName(hit.iso, hit.name, messages.current.locale) : null })
     }
     const onMove = (e: MapMouseEvent) => {
       last = e
@@ -119,8 +121,8 @@ export function CountryLayers({ colors, beforeId, waterIds }: CountryLayersProps
       const hit = hitAt(e.point)
       if (hit.kind !== "none") {
         // Names the country when the outlines know it (small ones, like Malta, aren't in the 110m set).
-        const { t } = messages.current
-        toast(hit.kind === "country" ? t("unsupported", { name: hit.name }) : t("unsupportedUnnamed"), { description: t("coverage") })
+        const { t, locale } = messages.current
+        toast(hit.kind === "country" ? t("unsupported", { name: countryName(hit.iso, hit.name, locale) }) : t("unsupportedUnnamed"), { description: t("coverage") })
       }
     }
     map.on("mousemove", onMove)
