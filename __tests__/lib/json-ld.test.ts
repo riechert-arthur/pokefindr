@@ -12,10 +12,12 @@ describe("structured data (#255)", () => {
 
   it("describes the site and its organization", () => {
     expect(organizationJsonLd(SITE)).toMatchObject({ "@type": "Organization", "@id": `${SITE}/#organization`, name: "PokeFindr", url: `${SITE}/`, logo: `${SITE}/apple-icon` })
-    expect(websiteJsonLd(SITE, { url: `${SITE}/es`, language: "es" })).toMatchObject({
+    // One node for every language: same @id, same url.
+    expect(websiteJsonLd(SITE, ["en", "es"])).toMatchObject({
       "@type": "WebSite",
-      url: `${SITE}/es`,
-      inLanguage: "es",
+      "@id": `${SITE}/#website`,
+      url: `${SITE}/`,
+      inLanguage: ["en", "es"],
       publisher: { "@id": `${SITE}/#organization` },
     })
   })

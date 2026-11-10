@@ -14,30 +14,34 @@ const SITE_NAME = "PokeFindr"
 
 /** schema.org ids, so the page, the site and the organization can point at each other. */
 const organizationId = (site: string) => new URL("/#organization", site).toString()
-const websiteId = (site: string) => new URL("/#website", site).toString()
+export const websiteId = (site: string) => new URL("/#website", site).toString()
+
+/** The organization's name, address and logo, for nodes that name it in full. */
+const organization = (site: string) => ({ "@type": "Organization", name: SITE_NAME, url: new URL("/", site).toString(), logo: new URL("/apple-icon", site).toString() }) as const
 
 /** The organization behind the site, with its logo (the generated 180 px icon) and the Discord. */
 export function organizationJsonLd(site: string) {
   return {
     "@context": "https://schema.org",
-    "@type": "Organization",
     "@id": organizationId(site),
-    name: SITE_NAME,
-    url: new URL("/", site).toString(),
-    logo: new URL("/apple-icon", site).toString(),
+    ...organization(site),
     sameAs: [SUPPORT_URL],
   }
 }
 
-/** The site in a language (`url` is its home page there). No SearchAction: the map's search isn't a results page. */
-export function websiteJsonLd(site: string, { url, language }: { url: string; language: string }) {
+/**
+ * The site, the same in every language: one @id, so one url (its root) and
+ * every language it's in. The pages name their own language. No
+ * SearchAction: the map's search isn't a results page.
+ */
+export function websiteJsonLd(site: string, languages: readonly string[]) {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "@id": websiteId(site),
     name: SITE_NAME,
-    url,
-    inLanguage: language,
+    url: new URL("/", site).toString(),
+    inLanguage: [...languages],
     publisher: { "@id": organizationId(site) },
   }
 }
@@ -64,8 +68,8 @@ export function blogPostingJsonLd(site: string, post: BlogPostingInput) {
     url: post.url,
     mainEntityOfPage: post.url,
     inLanguage: "en",
-    author: { "@type": "Organization", name: SITE_NAME, url: new URL("/", site).toString() },
     // In full, not by @id: the organization's own JSON-LD is on the landing page, not here.
-    publisher: { "@type": "Organization", name: SITE_NAME, url: new URL("/", site).toString(), logo: new URL("/apple-icon", site).toString() },
+    author: organization(site),
+    publisher: organization(site),
   }
 }

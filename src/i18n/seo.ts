@@ -80,6 +80,13 @@ export function englishOnlyMetadata(path: string, metadata: Metadata = {}): Prom
   return withLanguage(DEFAULT_LOCALE, url, { canonical: url }, metadata)
 }
 
+/**
+ * `robots` for a page that's never indexed (an account-flow step). Page
+ * metadata replaces the layout's robots whole, so this keeps its nofollow
+ * for a language that isn't public yet.
+ */
+export const noindex = (locale: string): NonNullable<Metadata["robots"]> => ({ index: false, follow: (PUBLIC_LOCALES as readonly string[]).includes(locale) })
+
 /** For pages that aren't indexed (the layout's default): og:locale and the link preview. */
 export function languageMetadata(locale: Locale, metadata: Metadata = {}): Promise<Metadata> {
   return withLanguage(locale, localizedPath("/", locale), undefined, { ...metadata, openGraph: { url: undefined, ...metadata.openGraph } })

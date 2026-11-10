@@ -4,7 +4,8 @@ import { Hero, type HeroStats } from "@/components/landing/Hero"
 import { HeroMap } from "@/components/landing/HeroMap"
 import { FaqSection, HowItWorks, LocationTypes } from "@/components/landing/LandingSections"
 import { faqJsonLd } from "@/lib/faq"
-import { jsonLd, organizationJsonLd, websiteJsonLd } from "@/lib/json-ld"
+import { jsonLd, organizationJsonLd, websiteId, websiteJsonLd } from "@/lib/json-ld"
+import { PUBLIC_LOCALES } from "@/i18n/routing"
 import type { LocationKind } from "@/lib/types/locations"
 import { getRegionCounts } from "@/server/services/region-counts"
 import { getVendingCells, VENDING_CELL_DEG } from "@/server/services/locations"
@@ -85,12 +86,12 @@ export default async function LandingPage({ params }: LocaleParams) {
     description: t("pageDescription"),
     url,
     inLanguage: locale,
-    isPartOf: { "@id": new URL("/#website", PRODUCTION_URL).toString() },
+    isPartOf: { "@id": websiteId(PRODUCTION_URL) },
   }
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(organizationJsonLd(PRODUCTION_URL))} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(websiteJsonLd(PRODUCTION_URL, { url, language: locale }))} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(websiteJsonLd(PRODUCTION_URL, PUBLIC_LOCALES))} />
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(webPage)} />
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(faqJsonLd(faq))} />
       <div className="isolate">
