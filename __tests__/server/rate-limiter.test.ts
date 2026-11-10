@@ -1,5 +1,7 @@
 // @vitest-environment node
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
+
+vi.mock("server-only", () => ({}))
 import { MemoryRateLimiter } from "@/server/adapters/rate-limiter/memory"
 
 const rule = { name: "test", perMinute: 60, burst: 3 }

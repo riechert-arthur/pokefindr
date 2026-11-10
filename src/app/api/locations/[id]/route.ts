@@ -1,8 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod/v3"
 import { getLocationFeature } from "@/server/services/locations"
-import { refuseBots } from "@/server/bot-check"
-import { limitClient, RATE_RULES } from "@/server/api-rate-limit"
+import { guardRoute, RATE_RULES } from "@/server/api-rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -16,10 +15,8 @@ type Context = { params: Promise<{ id: string }> }
  *   Forward). 404 when there's no active location with that id.
  */
 export async function GET(request: NextRequest, context: Context) {
-  const refused = await refuseBots()
-  if (refused) return refused
-  const limited = await limitClient(request, RATE_RULES.locations)
-  if (limited) return limited
+  const blocked = await guardRoute(request, RATE_RULES.locations)
+  if (blocked) return blocked
   const parsed = idSchema.safeParse((await context.params).id)
   if (!parsed.success) return NextResponse.json({ error: "Not a location id" }, { status: 400 })
   try {

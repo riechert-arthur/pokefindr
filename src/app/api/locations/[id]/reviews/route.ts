@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod/v3"
 import { getPanelReviews } from "@/server/services/reviews"
 import { viewerId } from "@/server/auth/viewer"
-import { limitClient, RATE_RULES } from "@/server/api-rate-limit"
+import { guardRoute, RATE_RULES } from "@/server/api-rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -15,8 +15,8 @@ type Context = { params: Promise<{ id: string }> }
  *   it's the signed-in viewer's own (`mine`), so the response is private.
  */
 export async function GET(request: NextRequest, context: Context) {
-  const limited = await limitClient(request, RATE_RULES.locations)
-  if (limited) return limited
+  const blocked = await guardRoute(request, RATE_RULES.locations)
+  if (blocked) return blocked
   const parsed = idSchema.safeParse((await context.params).id)
   if (!parsed.success) return NextResponse.json({ error: "Not a location id" }, { status: 400 })
   try {
