@@ -4,13 +4,13 @@ import type { ReactNode } from "react"
 import { CalendarDaysIcon, FlameIcon, MapIcon, SendIcon } from "lucide-react"
 import { KindDot } from "@/components/pokefindr/KindDot"
 import { StatusBadge } from "@/components/pokefindr/StatusBadge"
-import { countLabel, placesLabel } from "@/components/pokefindr/kinds"
-import { formatEventWhen } from "@/lib/highlights/format"
 import type { Highlights, Hotspot, UpcomingEvent } from "@/lib/types/highlights"
 import type { LocationKind } from "@/lib/types/locations"
 import { HOTSPOT_RADIUS_MILES } from "@/lib/highlights/constants"
 import type { MySubmission } from "@/lib/submissions/schemas"
 import { SubmissionRows } from "./MySubmissions"
+import { useFormat } from "@/i18n/format"
+import { useDistance } from "@/i18n/useDistance"
 
 /** A state and its count for the shown kinds. */
 export interface StateTotal {
@@ -74,6 +74,8 @@ const iconBox = "grid size-8 shrink-0 place-items-center rounded-lg bg-muted gro
  * way in.
  */
 export function UsSheet({ highlights, states, kinds, onHotspot, onEvent, onState, submissions, onSubmission }: UsSheetProps) {
+  const f = useFormat()
+  const { radius: radiusText } = useDistance()
   const hotspots = kinds.includes("vending") ? (highlights?.hotspots ?? []) : []
   const events = kinds.includes("event") ? (highlights?.events ?? []) : []
   const top = states.filter((s) => s.count > 0).slice(0, 5)
@@ -101,7 +103,7 @@ export function UsSheet({ highlights, states, kinds, onHotspot, onEvent, onState
                   </span>
                 }
                 title={`${h.city}, ${h.state}`}
-                sub={`${countLabel("vending", h.count)} within ${HOTSPOT_RADIUS_MILES} mi`}
+                sub={`${f.kindCount("vending", h.count)} within ${radiusText(HOTSPOT_RADIUS_MILES)}`}
                 onClick={() => onHotspot(h)}
               />
             ))}
@@ -119,7 +121,7 @@ export function UsSheet({ highlights, states, kinds, onHotspot, onEvent, onState
                 lead={<KindDot kind="event" className="mt-px" />}
                 title={e.title}
                 badge={e.isSample && <StatusBadge status="sample" />}
-                sub={[formatEventWhen(e.startsAt, e.endsAt), e.city].filter(Boolean).join(" · ")}
+                sub={[f.eventWhen(e.startsAt, e.endsAt), e.city].filter(Boolean).join(" · ")}
                 onClick={() => onEvent(e)}
               />
             ))}
@@ -136,7 +138,7 @@ export function UsSheet({ highlights, states, kinds, onHotspot, onEvent, onState
                   </span>
                 }
                 title={s.name}
-                sub={placesLabel(s.count, kinds)}
+                sub={f.places(s.count, kinds)}
                 onClick={() => onState(s.code)}
               />
             ))}

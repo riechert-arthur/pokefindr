@@ -12,9 +12,9 @@ import { Pill, type PillTone } from "@/components/admin/Pill"
 import { useRefreshSummary } from "@/components/admin/useRefreshSummary"
 import { REPORT_REASON_LABELS, type ReportAction } from "@/lib/locations/reports"
 import { REPORTS_HOT, type ReportedLocation } from "@/lib/admin/reports"
-import { timeAgo } from "@/lib/format/time"
 import { mapUrl } from "@/lib/map/url-state"
 import { cn } from "@/lib/utils"
+import { useFormat } from "@/i18n/format"
 
 type Load = { status: "loading" } | { status: "error" } | { status: "ready"; rows: ReportedLocation[] }
 
@@ -36,6 +36,7 @@ const td = "px-3 py-3 align-top text-body"
  * Hiding takes it off the map for everyone; Reopen undoes the last action.
  */
 export function ReportsTable() {
+  const f = useFormat()
   const refreshSummary = useRefreshSummary()
   const [load, setLoad] = useState<Load>({ status: "loading" })
   const [busy, setBusy] = useState<string | null>(null)
@@ -122,10 +123,10 @@ export function ReportsTable() {
                     <Pill tone={open && row.open >= REPORTS_HOT ? "crit" : open ? "warn" : "idle"}>{open ? row.open : row.total}</Pill>
                   </td>
                   <td className={td}>
-                    <div className="text-foreground">{timeAgo(row.lastReportAt)}</div>
+                    <div className="text-foreground">{f.ago(row.lastReportAt)}</div>
                     {row.lastAction && (
                       <div className="text-caption text-muted-foreground">
-                        {DONE[row.lastAction.action].replace(/^./, (c) => c.toUpperCase())} by {row.lastAction.by}, {timeAgo(row.lastAction.at)}
+                        {DONE[row.lastAction.action].replace(/^./, (c) => c.toUpperCase())} by {row.lastAction.by}, {f.ago(row.lastAction.at)}
                       </div>
                     )}
                   </td>

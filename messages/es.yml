@@ -10,3 +10,15 @@ errors:
     title: Algo salió mal
   home: Volver al inicio
   support: Contactar con soporte
+
+format:
+  places: "{count, plural, one {# lugar} other {#{more} lugares}}"
+  kinds:
+    vending: "{count, plural, one {# máquina expendedora} other {#{more} máquinas expendedoras}}"
+    shop: "{count, plural, one {# tienda de cartas} other {#{more} tiendas de cartas}}"
+    event: "{count, plural, one {# evento} other {#{more} eventos}}"
+  ago:
+    now: justo ahora
+    minutes: "hace {count} min"
+    hours: "hace {count} h"
+    days: "{count, plural, one {hace # día} other {hace # días}}"

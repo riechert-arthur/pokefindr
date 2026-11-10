@@ -19,3 +19,21 @@ errors:
   home: Go back home
   # Opens our Discord server.
   support: Contact support
+
+# Counts and times, used across the app. ICU plurals: "one" and "other" here,
+# and whatever forms a language needs in its own catalog.
+format:
+  # A count of places of more than one kind: "12 places in view". {more} is "+"
+  # when there are more than were loaded ("2,000+ places"), and empty otherwise.
+  places: "{count, plural, one {# place} other {#{more} places}}"
+  # A count of one kind of place, as above.
+  kinds:
+    vending: "{count, plural, one {# vending machine} other {#{more} vending machines}}"
+    shop: "{count, plural, one {# card shop} other {#{more} card shops}}"
+    event: "{count, plural, one {# event} other {#{more} events}}"
+  # How long ago a review was written. After a week it's a date instead ("Mar 4").
+  ago:
+    now: just now
+    minutes: "{count} min ago"
+    hours: "{count} hr ago"
+    days: "{count, plural, one {# day ago} other {# days ago}}"

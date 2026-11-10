@@ -1,7 +1,8 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { KINDS, formatCount, type LocationKind } from "./kinds"
+import { KINDS, type LocationKind } from "./kinds"
+import { useFormat } from "@/i18n/format"
 
 interface TypeChipProps {
   kind: LocationKind
@@ -19,6 +20,7 @@ interface TypeChipProps {
  * and text. On: the swatch fills with the kind's color and the border darkens.
  */
 export function TypeChip({ kind, pressed, onPressedChange, count, short, className }: TypeChipProps) {
+  const f = useFormat()
   const meta = KINDS[kind]
   const Icon = meta.icon
   const label = short ? meta.short : meta.label
@@ -27,7 +29,7 @@ export function TypeChip({ kind, pressed, onPressedChange, count, short, classNa
       type="button"
       aria-pressed={pressed}
       // Starts with the visible text, so voice control ("click Vending 1,457") matches.
-      aria-label={count === undefined ? label : `${label} ${formatCount(count)}`}
+      aria-label={count === undefined ? label : `${label} ${f.count(count)}`}
       onClick={() => onPressedChange(!pressed)}
       data-kind={kind}
       className={cn(
@@ -47,7 +49,7 @@ export function TypeChip({ kind, pressed, onPressedChange, count, short, classNa
         <Icon className="size-[0.6875rem]" strokeWidth={2.5} />
       </span>
       {label}
-      {count !== undefined && <span className="text-caption tabular-nums text-muted-foreground">{formatCount(count)}</span>}
+      {count !== undefined && <span className="text-caption tabular-nums text-muted-foreground">{f.count(count)}</span>}
     </button>
   )
 }

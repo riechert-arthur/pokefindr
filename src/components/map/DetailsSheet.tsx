@@ -8,6 +8,7 @@ import { KINDS, kindName, toKind } from "@/components/pokefindr/kinds"
 import { Button } from "@/components/ui/button"
 import { milesBetween } from "@/lib/map/geo"
 import { track } from "@/lib/analytics"
+import { useDistance } from "@/i18n/useDistance"
 
 /** The location the panel is about: a map feature's properties and point. */
 export interface DetailsLocation {
@@ -50,8 +51,6 @@ export function directionsUrl({ retailer, address, city, state }: DetailsLocatio
 /** The line under the title: the street address, or the city for places without one. */
 const subtitle = ({ address, city, state }: DetailsLocation) => [address, city, state].filter(Boolean).join(", ")
 
-/** "0.4 mi". */
-const miles = (n: number) => `${n.toFixed(1)} mi`
 
 /**
  * A location's details in the map's left panel, as in the prototype: back to
@@ -59,6 +58,7 @@ const miles = (n: number) => `${n.toFixed(1)} mi`
  * link, then its facts (per kind) and distances.
  */
 export function DetailsSheet({ location, backLabel, onBack, me, from, summary, actions, top, children }: DetailsSheetProps) {
+  const { distance } = useDistance()
   const kind = toKind(location.kind)
   const { longitude: lng, latitude: lat } = location
 
@@ -81,8 +81,8 @@ export function DetailsSheet({ location, backLabel, onBack, me, from, summary, a
           ...(location.address ? ([["Address", location.address]] as [string, ReactNode][]) : []),
           [kind === "event" ? "Where" : "Location", [location.city, location.state].filter(Boolean).join(", ")],
         ]
-  if (me) facts.push(["From you", miles(milesBetween(me.lng, me.lat, lng, lat))])
-  if (from) facts.push(["Distance", `${miles(milesBetween(from.lng, from.lat, lng, lat))} from ${from.label}`])
+  if (me) facts.push(["From you", distance(milesBetween(me.lng, me.lat, lng, lat))])
+  if (from) facts.push(["Distance", `${distance(milesBetween(from.lng, from.lat, lng, lat))} from ${from.label}`])
 
   const copyLink = () => {
     const link = window.location.href

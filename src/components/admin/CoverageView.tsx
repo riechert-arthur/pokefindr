@@ -4,14 +4,16 @@ import { useCallback, useEffect, useState } from "react"
 import { TriangleAlertIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/pokefindr/EmptyState"
-import { KINDS, KIND_ORDER, formatCount } from "@/components/pokefindr/kinds"
+import { KINDS, KIND_ORDER } from "@/components/pokefindr/kinds"
 import type { Coverage } from "@/lib/admin/coverage"
 import { cn } from "@/lib/utils"
+import { useFormat } from "@/i18n/format"
 
 const card = "rounded-xl border border-border bg-card p-4 sm:p-5"
 
 /** Horizontal bars, as in the prototype: label, bar scaled to the largest, count. The list is the data; the bars are decoration. */
 function Bars({ rows, barClass, label }: { rows: { name: string; value: number; display?: string }[]; barClass: string; label: string }) {
+  const f = useFormat()
   const max = Math.max(1, ...rows.map((r) => r.value))
   return (
     <ul aria-label={label} className="mt-3 flex flex-col gap-1.5">
@@ -21,7 +23,7 @@ function Bars({ rows, barClass, label }: { rows: { name: string; value: number; 
           <span aria-hidden className="h-2 overflow-hidden rounded-full bg-muted">
             <span className={cn("block h-full rounded-full", barClass)} style={{ width: `${(r.value / max) * 100}%` }} />
           </span>
-          <span className="text-right font-semibold tabular-nums text-foreground">{r.display ?? formatCount(r.value)}</span>
+          <span className="text-right font-semibold tabular-nums text-foreground">{r.display ?? f.count(r.value)}</span>
         </li>
       ))}
     </ul>
@@ -34,6 +36,7 @@ function Bars({ rows, barClass, label }: { rows: { name: string; value: number; 
  * the map's (/api/locations/aggregates).
  */
 export function CoverageView() {
+  const f = useFormat()
   const [data, setData] = useState<Coverage | null | "error">(null)
   const load = useCallback(() => {
     fetch("/api/admin/coverage", { cache: "no-store" })
@@ -76,7 +79,7 @@ export function CoverageView() {
               // The term comes first in the markup; the number shows on top.
               <div key={k} className="flex flex-col-reverse rounded-lg bg-muted p-3">
                 <dt className="text-caption text-muted-foreground">{KINDS[k].many}</dt>
-                <dd className="text-heading tabular-nums text-foreground">{formatCount(data.totals[k] ?? 0)}</dd>
+                <dd className="text-heading tabular-nums text-foreground">{f.count(data.totals[k] ?? 0)}</dd>
               </div>
             ))}
           </dl>

@@ -47,14 +47,15 @@ export function zonedToIso(local: string, zone: string): string {
 }
 
 /**
- * "Mountain Time", "Hawaii-Aleutian Time": the zone's name for people.
+ * "Mountain Time", "Hawaii-Aleutian Time" ("hora de las Montañas Rocosas"):
+ * the zone's name for people, in `locale`.
  * Browsers without "longGeneric" (Safari before 15.4) throw on it; they get
  * the long name ("Mountain Standard Time"), then the zone id.
  */
-export function zoneName(zone: string, at = new Date()): string {
+export function zoneName(zone: string, locale: string, at = new Date()): string {
   for (const style of ["longGeneric", "long"] as const) {
     try {
-      const part = new Intl.DateTimeFormat("en-US", { timeZone: zone, timeZoneName: style }).formatToParts(at).find((p) => p.type === "timeZoneName")
+      const part = new Intl.DateTimeFormat(locale, { timeZone: zone, timeZoneName: style }).formatToParts(at).find((p) => p.type === "timeZoneName")
       if (part) return part.value
     } catch {
       // Not supported here: try the next style.
@@ -63,6 +64,6 @@ export function zoneName(zone: string, at = new Date()): string {
   return zone
 }
 
-/** "Sat, Nov 15, 6:00 PM" in `zone`. */
-export const formatInZone = (iso: string, zone: string) =>
-  new Date(iso).toLocaleString("en-US", { timeZone: zone, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+/** "Sat, Nov 15, 6:00 PM" in `zone`, written for `locale`. */
+export const formatInZone = (iso: string, zone: string, locale: string) =>
+  new Date(iso).toLocaleString(locale, { timeZone: zone, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })

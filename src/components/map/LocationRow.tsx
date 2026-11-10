@@ -3,6 +3,7 @@
 import { KindDot } from "@/components/pokefindr/KindDot"
 import { toKind } from "@/components/pokefindr/kinds"
 import type { LocationFeature } from "@/lib/types/locations"
+import { useDistance } from "@/i18n/useDistance"
 
 /** A row's second line: the street address and city, or the city and state. */
 const where = ({ address, city, state }: LocationFeature["properties"]) => (address ? [address, city] : [city, state]).filter(Boolean).join(", ")
@@ -17,6 +18,7 @@ interface LocationRowProps {
 
 /** One location in a list (results, Also nearby): its kind dot, name, address and distance. Opens its details. */
 export function LocationRow({ feature, distance, selected, onOpen }: LocationRowProps) {
+  const { distance: distanceLabel } = useDistance()
   const p = feature.properties
   return (
     <button
@@ -30,7 +32,7 @@ export function LocationRow({ feature, distance, selected, onOpen }: LocationRow
         <span className="block text-body font-semibold text-foreground">{p.retailer}</span>
         <span className="block truncate text-body text-muted-foreground">{where(p)}</span>
       </span>
-      {distance !== undefined && <span className="whitespace-nowrap pt-0.5 text-caption tabular-nums text-muted-foreground">{distance.toFixed(1)} mi</span>}
+      {distance !== undefined && <span className="whitespace-nowrap pt-0.5 text-caption tabular-nums text-muted-foreground">{distanceLabel(distance)}</span>}
     </button>
   )
 }

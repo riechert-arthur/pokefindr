@@ -2,13 +2,13 @@
 
 import { ChevronLeftIcon, MapPinIcon } from "lucide-react"
 import { EmptyState } from "@/components/pokefindr/EmptyState"
-import { placesLabel } from "@/components/pokefindr/kinds"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { LocationKind } from "@/lib/types/locations"
 import { cn } from "@/lib/utils"
 import { breakdown } from "./ResultsSheet"
 import type { StateCitiesState } from "./useStateCities"
+import { useFormat } from "@/i18n/format"
 
 interface StateSheetProps {
   /** Two-letter code, e.g. "WA". */
@@ -23,6 +23,7 @@ interface StateSheetProps {
 
 /** A state's view, as in the prototype: back to the US, the state's counts, and its busiest cities. */
 export function StateSheet({ code, name, kinds, data, onBack, onCity }: StateSheetProps) {
+  const f = useFormat()
   const { status } = data
   // Another state's cities would be wrong under this name: placeholders until this one's arrive.
   const current = data.state === code ? data.cities : null
@@ -36,7 +37,7 @@ export function StateSheet({ code, name, kinds, data, onBack, onCity }: StateShe
         <div className="min-w-0 flex-1" aria-live="polite" aria-atomic>
           <h2 className="text-subheading text-foreground">{name}</h2>
           <p className="text-body text-muted-foreground">
-            {current ? (current.total ? breakdown(current.counts, kinds) : "Nothing here for the selected types") : " "}
+            {current ? (current.total ? breakdown(current.counts, kinds, f) : "Nothing here for the selected types") : " "}
           </p>
         </div>
       </div>
@@ -75,7 +76,7 @@ export function StateSheet({ code, name, kinds, data, onBack, onCity }: StateShe
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-body font-semibold text-foreground">{c.city}</span>
-                    <span className="block text-body text-muted-foreground">{placesLabel(c.count, kinds)}</span>
+                    <span className="block text-body text-muted-foreground">{f.places(c.count, kinds)}</span>
                   </span>
                 </button>
               </li>

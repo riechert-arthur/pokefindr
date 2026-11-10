@@ -15,6 +15,7 @@ import { submissionSchema, type DuplicateCandidate } from "@/lib/submissions/sch
 import { cn } from "@/lib/utils"
 import { STATE_ZONES, browserZone, formatInZone, zoneName, zonedToIso } from "@/lib/time/zones"
 import { track } from "@/lib/analytics"
+import { useLocale } from "next-intl"
 
 type InputProps = ComponentProps<typeof Input>
 
@@ -92,6 +93,7 @@ interface AddPlaceSheetProps {
  * one anyway needs a tick. Errors show next to their field.
  */
 export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindChange, onStepChange, initialKind = null }: AddPlaceSheetProps) {
+  const locale = useLocale()
   const [step, setStep] = useState(initialKind ? 1 : 0)
   const [kind, setKind] = useState<SubmissionKind | null>(initialKind)
   const [draft, setDraft] = useState<Draft>(EMPTY)
@@ -286,7 +288,7 @@ export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindC
                   <Input id={`${id}-venue`} value={draft.venue} onChange={(e) => set("venue", e.target.value)} />
                 </Field>
                 <p className="-mb-1 text-caption text-muted-foreground">
-                  In the event&apos;s local time: {zoneName(eventZone(draft))}
+                  In the event&apos;s local time: {zoneName(eventZone(draft), locale)}
                   {STATE_ZONES[draft.state.trim().toUpperCase()] ? "" : ", yours. Fill in the state below to use the event's."}
                 </p>
                 <div className="grid grid-cols-2 gap-2">
@@ -437,12 +439,13 @@ function DuplicateWarning({ duplicates, kind }: { duplicates: DuplicateCandidate
 }
 
 function Review({ kind, draft }: { kind: SubmissionKind; draft: Draft }) {
+  const locale = useLocale()
   const zone = eventZone(draft)
-  const when = (v: string) => (v ? `${formatInZone(zonedToIso(v, zone), zone)}` : "")
+  const when = (v: string) => (v ? `${formatInZone(zonedToIso(v, zone), zone, locale)}` : "")
   const rows: [string, string][] = [
     ["Name", draft.name],
     ...(kind === "event"
-      ? ([["Venue", draft.venue], ["When", [[when(draft.startsAt), when(draft.endsAt)].filter(Boolean).join(" – "), draft.startsAt ? zoneName(zone) : ""].filter(Boolean).join(", ")]] as [string, string][])
+      ? ([["Venue", draft.venue], ["When", [[when(draft.startsAt), when(draft.endsAt)].filter(Boolean).join(" – "), draft.startsAt ? zoneName(zone, locale) : ""].filter(Boolean).join(", ")]] as [string, string][])
       : []),
     ["Address", [draft.address, [draft.city, draft.state].filter(Boolean).join(", ")].filter(Boolean).join(", ")],
     ...(kind === "shop"

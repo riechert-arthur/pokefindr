@@ -5,11 +5,13 @@ import { MapIcon, MapPinIcon } from "lucide-react"
 import { track } from "@/lib/analytics"
 import { SearchCommand, type SearchCommandItem } from "@/components/pokefindr/SearchCommand"
 import { KindDot } from "@/components/pokefindr/KindDot"
-import { kindName, placesLabel, toKind } from "@/components/pokefindr/kinds"
+import { kindName, toKind } from "@/components/pokefindr/kinds"
 import { MIN_QUERY_LENGTH } from "@/lib/geocode/query"
 import type { GeocodeResult } from "@/lib/geocode/client"
 import { LOCATION_KINDS, type LocationFeature, type LocationKind } from "@/lib/types/locations"
 import { AREA_COUNT_RADIUS, useSearch } from "./useSearch"
+import { useFormat } from "@/i18n/format"
+import { useDistance } from "@/i18n/useDistance"
 
 const areaId = (i: number, a: GeocodeResult) => `area-${i}-${a.label}`
 
@@ -40,6 +42,8 @@ interface PlaceSearchProps {
 
 /** SearchCommand with live results: areas from /api/geocode with counts, and matching locations. */
 export function PlaceSearch({ kinds = LOCATION_KINDS, retailers, radius = AREA_COUNT_RADIUS, near, locations = false, onPick, onQueryChange, ...props }: PlaceSearchProps) {
+  const f = useFormat()
+  const { radius: radiusText } = useDistance()
   // Searches only what the viewer typed: a label the caller put in the box
   // (the map's current place) isn't a question, and neither is the text
   // left in the box after a pick: panning the map doesn't search again.
@@ -53,14 +57,14 @@ export function PlaceSearch({ kinds = LOCATION_KINDS, retailers, radius = AREA_C
         id: areaId(i, a),
         group: "areas" as const,
         label: a.label,
-        meta: a.count === null ? undefined : a.kind === "state" ? placesLabel(a.count, kinds) : `${placesLabel(a.count, kinds)} within ${radius} mi`,
+        meta: a.count === null ? undefined : a.kind === "state" ? f.places(a.count, kinds) : `${f.places(a.count, kinds)} within ${radiusText(radius)}`,
         icon: a.kind === "state" ? <MapIcon aria-hidden className="size-4 shrink-0" /> : <MapPinIcon aria-hidden className="size-4 shrink-0" />,
       })),
-      ...results.locations.map((f) => {
-        const kind = toKind(f.properties.kind)
-        const { retailer, address, city } = f.properties
+      ...results.locations.map((loc) => {
+        const kind = toKind(loc.properties.kind)
+        const { retailer, address, city } = loc.properties
         return {
-          id: `location-${f.properties.id}`,
+          id: `location-${loc.properties.id}`,
           group: "locations" as const,
           label: retailer,
           detail: [address, city].filter(Boolean).join(", "),
@@ -69,7 +73,7 @@ export function PlaceSearch({ kinds = LOCATION_KINDS, retailers, radius = AREA_C
         }
       }),
     ],
-    [results, kinds, radius],
+    [results, kinds, radius, f, radiusText],
   )
 
   const pick = (id: string) => {
