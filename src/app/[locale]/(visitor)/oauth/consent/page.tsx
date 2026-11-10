@@ -12,6 +12,7 @@ import { getAuth } from "@/server/auth/auth"
 import { getConsentClient } from "@/server/services/oauth-clients"
 import { getProfile } from "@/server/services/users"
 import type { LocaleParams } from "@/i18n/static"
+import type { McpAccountScope } from "@/lib/mcp/scopes"
 import { authorizeContinuation } from "@/lib/auth/oauth-continue"
 
 export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
@@ -20,12 +21,16 @@ export async function generateMetadata({ params }: LocaleParams): Promise<Metada
   return { title: t("consent"), robots: { index: false } }
 }
 
-/** The consent page's line for each scope (auth.consent.scopes); ones not listed aren't shown. */
+/**
+ * The consent page's line for each scope (auth.consent.scopes). Every account
+ * scope must have one, so a new scope fails typecheck until it's described;
+ * openid isn't shown.
+ */
 const SCOPE_MESSAGES = {
   "account:read": "accountRead",
   "places:submit": "placesSubmit",
   offline_access: "offlineAccess",
-} as const
+} as const satisfies Record<McpAccountScope | "offline_access", string>
 export const dynamic = "force-dynamic"
 
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v)

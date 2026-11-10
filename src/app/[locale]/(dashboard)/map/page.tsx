@@ -19,7 +19,8 @@ export async function generateMetadata({ params }: LocaleParams): Promise<Metada
     title: t("title"),
     description: t("description"),
     keywords: t("keywords").split(",").map((k) => k.trim()),
-    openGraph: { title: t("ogTitle"), description: t("ogDescription") },
+    // No og:url: a shared /map?location=… link previews as itself, not as the bare map.
+    openGraph: { title: t("ogTitle"), description: t("ogDescription"), url: undefined },
   })
 }
 

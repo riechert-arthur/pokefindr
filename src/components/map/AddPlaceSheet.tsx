@@ -11,17 +11,17 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { searchPlaces, type GeocodeResult } from "@/lib/geocode/client"
 import { SHOP_SELLS, type ShopSells, type SubmissionKind } from "@/lib/submissions/constants"
 import type { ZodIssue } from "zod/v3"
-import { submissionSchema, type DuplicateCandidate } from "@/lib/submissions/schemas"
+import { SUBMISSION_ERROR_KEYS, submissionSchema, type DuplicateCandidate, type SubmissionErrorKey } from "@/lib/submissions/schemas"
 import { cn } from "@/lib/utils"
 import { STATE_ZONES, browserZone, formatInZone, zoneName, zonedToIso } from "@/lib/time/zones"
 import { track } from "@/lib/analytics"
-import { useFormatter, useLocale, useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 
 type InputProps = ComponentProps<typeof Input>
 
 /** The schema's messages the form shows in the page's language (addPlace.errors); any other is "Check this field." */
-const ERROR_KEYS = ["hidden", "linkTooLong", "link", "tooLong", "name", "city", "endBeforeStart", "tooManyDays"] as const
-type ErrorKey = (typeof ERROR_KEYS)[number]
+const ERROR_KEYS = SUBMISSION_ERROR_KEYS
+type ErrorKey = SubmissionErrorKey
 
 export interface Pin {
   lng: number
@@ -99,8 +99,9 @@ interface AddPlaceSheetProps {
 export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindChange, onStepChange, initialKind = null }: AddPlaceSheetProps) {
   const locale = useLocale()
   const t = useTranslations("addPlace")
-  const format = useFormatter()
-  const coordinate = (n: number) => format.number(n, { minimumFractionDigits: 5, maximumFractionDigits: 5, useGrouping: false })
+  // Coordinates keep a decimal point in every language, as maps and GPS show them:
+  // a decimal comma would run into the comma between the two.
+  const coordinate = (n: number) => n.toFixed(5)
   /** A field's problem from the schema, in the page's language (its message names the catalog's in params.key). */
   const fieldError = (issue: ZodIssue): string => {
     if (issue.code === "invalid_string" && issue.path[0] === "startsAt") return t("errors.startsAt")

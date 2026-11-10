@@ -24,14 +24,17 @@ describe("each language's address for search engines (#183)", () => {
     expect((await englishOnlyMetadata("/privacy-policy")).alternates).toEqual({ canonical: "/privacy-policy" })
   })
 
-  it("lists every indexed page and post in every public language, with the others as alternates", async () => {
+  it("lists every indexed page in every public language, with the same alternates as its hreflang", async () => {
     const entries = await sitemap()
-    expect(entries).toHaveLength((INDEXED_PAGES.length + 1) * 2)
+    // The two legal pages and the one post are English everywhere: listed once.
+    expect(entries).toHaveLength((INDEXED_PAGES.length - 2) * 2 + 2 + 1)
     expect(entries).toContainEqual({
       url: "https://pokefindr.app/es/map",
-      alternates: { languages: { en: "https://pokefindr.app/map", es: "https://pokefindr.app/es/map" } },
+      alternates: { languages: { en: "https://pokefindr.app/map", es: "https://pokefindr.app/es/map", "x-default": "https://pokefindr.app/map" } },
     })
-    expect(entries.map((e) => e.url)).toContain("https://pokefindr.app/blog/first-post")
+    expect(entries).toContainEqual({ url: "https://pokefindr.app/blog/first-post" })
+    expect(entries).toContainEqual({ url: "https://pokefindr.app/privacy-policy" })
+    expect(entries.map((e) => e.url).filter((u) => /\/es\/(blog\/|privacy|terms)/.test(u))).toEqual([])
     expect(entries.map((e) => e.url).filter((u) => /\/(home|settings|admin)/.test(u))).toEqual([])
   })
 })

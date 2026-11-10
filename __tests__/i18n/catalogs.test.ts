@@ -74,16 +74,23 @@ function sources(dir = path.join(ROOT, "src")): string[] {
 
 /**
  * What one file can read: the namespaces it names (useTranslations("map"),
- * getTranslations({ namespace }), a useTranslations<"faq"> type, or the root
- * for useTranslations()), and its strings. A template's ${…} matches one key
+ * getTranslations({ namespace }), a useTranslations<"faq"> type, a
+ * Messages["auth"]["validation"] type, or the root for useTranslations()),
+ * and its strings. A template's ${…} matches one key
  * segment, and only in key-like templates with a word of their own
  * (`kinds.${kind}.name`, not `${a}.${b}`).
  */
+/** Helpers that hand back a translator for one namespace (src/i18n/seo.ts). */
+const TRANSLATOR_HELPERS: Record<string, string> = { ogTranslator: "og" }
+
 function readsOf(code: string) {
   const namespaces = new Set<string>()
   for (const m of code.matchAll(/(?:useTranslations|getTranslations)(?:<\s*["'`]([\w.-]+)["'`]\s*>|\(\s*["'`]([\w.-]+)["'`])/g)) namespaces.add((m[1] ?? m[2])!)
   for (const m of code.matchAll(/namespace:\s*["'`]([\w.-]+)["'`]/g)) namespaces.add(m[1])
-  if (/(?:useTranslations|getTranslations)\(\s*\)|getTranslations\(\{\s*locale[^}]*\}\)/.test(code)) namespaces.add("")
+  for (const [helper, namespace] of Object.entries(TRANSLATOR_HELPERS)) if (code.includes(`${helper}(`)) namespaces.add(namespace)
+  for (const m of code.matchAll(/\bMessages((?:\[\s*"\w+"\s*\])+)/g)) namespaces.add([...m[1].matchAll(/"(\w+)"/g)].map((k) => k[1]).join("."))
+  // The root: useTranslations(), or getTranslations({ locale }) with no namespace.
+  if (/(?:useTranslations|getTranslations)\(\s*\)|getTranslations\(\{\s*locale(?:\s*:\s*[\w.]+(?:\s+as\s+\w+)?)?\s*\}\)/.test(code)) namespaces.add("")
   const exact = new Set<string>()
   const patterns: RegExp[] = []
   for (const m of code.matchAll(/"([\w.-]+)"|'([\w.-]+)'|`([^`]*)`/g)) {
@@ -96,15 +103,20 @@ function readsOf(code: string) {
   }
   // t(failure), t(kind): a key from a variable holding one of a set of strings.
   const byVariable = /\bt\(\s*[A-Za-z_]\w*(?:\s+as\s+\w+)?\s*[,)]/.test(code)
-  // Object keys (`AK: { name: "Alaska" }`): where such a variable's values often come from.
-  const keys = new Set([...code.matchAll(/^\s*(\w+):\s/gm)].map((m) => m[1]))
-  return { namespaces, exact, patterns, byVariable, keys }
+  // The sets such a variable can come from: a union type ("webgl" | "crash"),
+  // an array of strings (["vending", "shop"]), or a table's code-like keys
+  // (`AK: { name: "Alaska" }`), in any file.
+  const members = new Set<string>()
+  for (const m of code.matchAll(/(?:\|\s*)(["'])([\w-]+)\1|(["'])([\w-]+)\3(?=\s*\|)/g)) members.add((m[2] ?? m[4])!)
+  for (const list of code.matchAll(/\[\s*(?:["'][\w-]+["']\s*,\s*)+["'][\w-]+["']\s*,?\s*\]/g)) for (const m of list[0].matchAll(/["']([\w-]+)["']/g)) members.add(m[1])
+  for (const m of code.matchAll(/^\s*([A-Z][A-Z0-9_]*):\s/gm)) members.add(m[1])
+  return { namespaces, exact, patterns, byVariable, members }
 }
 
 describe("unused messages", () => {
   it("every English message is read somewhere in src/", () => {
     const files = sources().map(readsOf)
-    const anywhere = new Set(files.flatMap((f) => [...f.exact, ...f.keys]))
+    const sets = new Set(files.flatMap((f) => [...f.members]))
     const used = (key: string) =>
       files.some(({ namespaces, exact, patterns, byVariable }) =>
         [...namespaces].some((ns) => {
@@ -112,7 +124,7 @@ describe("unused messages", () => {
           const rest = ns ? key.slice(ns.length + 1) : key
           if (exact.has(rest) || patterns.some((p) => p.test(rest))) return true
           // A last segment read through a variable that holds it ("webgl", "shop", a state's code).
-          return byVariable && !rest.includes(".") && anywhere.has(rest)
+          return byVariable && !rest.includes(".") && sets.has(rest)
         }),
       )
     expect([...en.keys()].filter((k) => !used(k))).toEqual([])
@@ -136,6 +148,20 @@ describe("the lint rule against hard-coded copy", () => {
     expect(await copyErrors(`export const A = () => <p>{"Hello"}</p>`)).toBe(1)
     expect(await copyErrors(`import { toast } from "sonner"\nexport const f = () => toast.error("It broke")`)).toBe(1)
     expect(await copyErrors(`export const A = () => <p>Hello</p>`, "src/app/[locale]/(visitor)/thing/page.tsx")).toBe(1)
+  })
+
+  it("flags words either side of a ternary or &&, in templates, and in a toast's options", async () => {
+    expect(await copyErrors(`export const A = ({ o }: { o: boolean }) => <p>{o ? "Open now" : "Closed"}</p>`)).toBe(2)
+    expect(await copyErrors(`export const A = ({ o }: { o: boolean }) => <p>{o && "Open now"}</p>`)).toBe(1)
+    expect(await copyErrors("export const A = ({ n }: { n: number }) => <p>{`${n} reviews`}</p>")).toBe(1)
+    expect(await copyErrors(`export const A = ({ o }: { o: boolean }) => <button aria-label={o ? "Close menu" : "Open menu"} />`)).toBe(2)
+    expect(await copyErrors("import { toast } from \"sonner\"\nexport const f = (n: number) => toast(`${n} saved`)")).toBe(1)
+    expect(await copyErrors(`import { toast } from "sonner"\nexport const f = () => toast.error("x", { description: "Something went wrong" })`)).toBe(1)
+    expect(await copyErrors(`import { toast } from "sonner"\nexport const f = () => toast.error("It broke")`, "src/lib/example.ts")).toBe(1)
+  })
+
+  it("leaves braced class names, links and other attributes alone", async () => {
+    expect(await copyErrors(`export const A = () => <a className={"flex items-center"} href={"/about"} type={"button"}>{" · "}</a>`)).toBe(0)
   })
 
   it("leaves catalog reads, symbols and English-only pages alone", async () => {

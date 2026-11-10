@@ -26,10 +26,10 @@ export const routing = defineRouting({
   // Reading the cookie and Accept-Language would send visitors to a language
   // that isn't public yet.
   localeDetection: PUBLIC_LOCALES.length > 1,
-  // Kept when someone visits or switches to another language (#182). It's
-  // read once languages are detected (the first visit to a page without a
-  // prefix): until then the URL alone decides.
-  localeCookie: { name: LOCALE_COOKIE, maxAge: LOCALE_COOKIE_MAX_AGE },
+  // Kept when someone visits or switches to another language (#182), once
+  // languages are detected. Before that it isn't written either: it would
+  // save English for a year for browsers that ask for another language.
+  localeCookie: PUBLIC_LOCALES.length > 1 ? { name: LOCALE_COOKIE, maxAge: LOCALE_COOKIE_MAX_AGE } : false,
   // hreflang goes in each page's metadata, for public languages only (#183).
   alternateLinks: false,
 })

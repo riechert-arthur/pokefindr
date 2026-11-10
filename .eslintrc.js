@@ -111,13 +111,31 @@ const COLOR_RULES = [
  */
 const COPY_HINT = "Put user-facing copy in messages/en.yml (and the other catalogs) and read it with useTranslations (docs/i18n.md)."
 const WORDS = "/^(?!https?:\\x2F\\x2F$).*[A-Za-z]{2,}/s"
-const COPY_RULES = [
-  { selector: `JSXText[value=${WORDS}]`, message: COPY_HINT },
-  { selector: `JSXAttribute[name.name=/^(aria-label|aria-description|aria-roledescription|aria-valuetext|title|placeholder|alt|label)$/] > Literal[value=${WORDS}]`, message: COPY_HINT },
-  { selector: `JSXExpressionContainer > Literal[value=${WORDS}]`, message: COPY_HINT },
-  { selector: `CallExpression[callee.name="toast"] > Literal[value=${WORDS}]`, message: COPY_HINT },
-  { selector: `CallExpression[callee.object.name="toast"] > Literal[value=${WORDS}]`, message: COPY_HINT },
+const READ_ATTRIBUTE = "JSXAttribute[name.name=/^(aria-label|aria-description|aria-roledescription|aria-valuetext|title|placeholder|alt|label)$/]"
+/** Where a braced value is shown or read: a child of an element, or a read attribute (not className or href). */
+const SHOWN = ["JSXElement > JSXExpressionContainer", "JSXFragment > JSXExpressionContainer", `${READ_ATTRIBUTE} > JSXExpressionContainer`]
+/** The value itself, either side of a ternary or `&&`/`??`, and the words around a template's ${}. */
+const shownText = (at) => [
+  `${at} > Literal[value=${WORDS}]`,
+  `${at} > ConditionalExpression > Literal[value=${WORDS}]`,
+  `${at} > LogicalExpression > Literal[value=${WORDS}]`,
+  `${at} > TemplateLiteral > TemplateElement[value.raw=${WORDS}]`,
+  `${at} > ConditionalExpression > TemplateLiteral > TemplateElement[value.raw=${WORDS}]`,
 ]
+const TOAST = ['CallExpression[callee.name="toast"]', 'CallExpression[callee.object.name="toast"]']
+const COPY_RULES = [
+  `JSXText[value=${WORDS}]`,
+  `${READ_ATTRIBUTE} > Literal[value=${WORDS}]`,
+  ...SHOWN.flatMap(shownText),
+  // A toast's title, and the description and action label in its options.
+  ...TOAST.flatMap((call) => [
+    ...shownText(call),
+    `${call} > ObjectExpression Property[key.name=/^(description|label)$/] > Literal[value=${WORDS}]`,
+    `${call} > ObjectExpression Property[key.name=/^(description|label)$/] > TemplateLiteral > TemplateElement[value.raw=${WORDS}]`,
+  ]),
+].map((selector) => ({ selector, message: COPY_HINT }))
+/** Toasts from hooks and helpers (.ts files), which have no JSX. */
+const TOAST_RULES = COPY_RULES.filter(({ selector }) => TOAST.some((call) => selector.startsWith(call)))
 
 /**
  * Only src/components/map/engine.ts may import the map library (#46), nothing imports Supabase (PA-3),
@@ -167,6 +185,12 @@ module.exports = {
     {
       files: ["src/app/**/*.{jsx,tsx}", "src/components/**/*.{jsx,tsx}"],
       rules: { "no-restricted-syntax": ["error", ...ENV_RULES, ...COLOR_RULES, ...COPY_RULES] },
+    },
+    {
+      // Its English toasts are replaced with the catalog's in #185.
+      files: ["src/**/*.ts"],
+      excludedFiles: ["src/lib/forms.ts"],
+      rules: { "no-restricted-syntax": ["error", ...ENV_RULES, ...COLOR_RULES, ...TOAST_RULES] },
     },
     {
       // English only (docs/i18n.md): the admin pages, and the privacy policy

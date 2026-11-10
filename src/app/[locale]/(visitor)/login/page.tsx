@@ -3,16 +3,10 @@ import { LoginForm, type LoginNotice } from "@/components/forms/LoginForm"
 import { oauthProviders } from "@/server/auth/providers"
 import { getServerConfig } from "@/server/config"
 import { authorizeContinuation } from "@/lib/auth/oauth-continue"
-import { pageMetadata } from "@/i18n/seo"
-import type { Metadata } from "next"
-import type { Locale } from "@/i18n/routing"
-import type { LocaleParams } from "@/i18n/static"
+import { localeMetadata } from "@/i18n/seo"
 
 /** Its address in each language, for search engines (#183). */
-export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
-  return pageMetadata("/login", (await params).locale as Locale)
-}
-
+export const generateMetadata = localeMetadata("/login")
 
 /**
  * A confirmation link lands here with ?verified=1, or with ?error= when it

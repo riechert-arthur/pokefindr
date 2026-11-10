@@ -6,13 +6,8 @@ import { NextIntlClientProvider } from "next-intl"
 import "../src/app/globals.css"
 import { ThemeProvider } from "../src/components/providers/ThemeProvider"
 import { TooltipProvider } from "../src/components/ui/tooltip"
-import { merge, type Messages, type Tree } from "../src/i18n/messages"
+import { MESSAGES } from "../src/i18n/all-messages"
 import { DEFAULT_LOCALE, LOCALES, type Locale } from "../src/i18n/routing"
-import en from "../src/i18n/generated/en.json"
-import es from "../src/i18n/generated/es.json"
-
-/** Each language's messages, with English under any it's missing, as in the app (src/i18n/messages.ts). */
-const MESSAGES: Record<Locale, Messages> = { en, es: merge(en, es as Tree) as Messages }
 
 /**
  * In stories where the component under test changes the theme (ThemeToggle),

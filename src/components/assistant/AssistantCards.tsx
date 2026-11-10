@@ -54,16 +54,33 @@ function PlaceRow({ p }: { p: AssistantPlace }) {
   )
 }
 
+type CardMessages = ReturnType<typeof useTranslations<"assistant.cards">>
+
+/** A card's heading in the page's language and units, or its English title for a card saved without its area. */
+function cardTitle(card: Extract<AssistantCard, { title: string }>, t: CardMessages, radius: (miles: number) => string): string {
+  const area = card.area
+  if (area === undefined) return card.title
+  if (card.type === "events") {
+    if (area === null) return t("titles.events")
+    return area.kind === "state" ? t("titles.eventsInState", { area: area.label }) : t("titles.eventsNear", { area: area.label, radius: radius(area.radiusMiles) })
+  }
+  if (area === null) return card.title
+  if (card.type === "stats") return area.kind === "state" ? area.label : t("titles.statsNear", { area: area.label, radius: radius(area.radiusMiles) })
+  return area.kind === "state"
+    ? t("titles.placesInState", { count: card.total, area: area.label })
+    : t("titles.placesNear", { count: card.total, area: area.label, radius: radius(area.radiusMiles) })
+}
+
 /** One tool result as the composer shows it: places, a route, counts or events. */
 export function AssistantCardView({ card }: { card: AssistantCard }) {
   const f = useFormat()
-  const { distance } = useDistance()
+  const { distance, radius } = useDistance()
   const t = useTranslations("assistant.cards")
   const tk = useTranslations("kinds")
   if (card.type === "places") {
     return (
       <Card
-        title={card.title}
+        title={cardTitle(card, t, radius)}
         footer={
           card.near && (
             <Button asChild variant="outline" size="sm">
@@ -121,7 +138,7 @@ export function AssistantCardView({ card }: { card: AssistantCard }) {
   if (card.type === "stats") {
     const max = Math.max(1, ...card.topRetailers.map((r) => r.count))
     return (
-      <Card title={card.title}>
+      <Card title={cardTitle(card, t, radius)}>
         <div className="flex flex-wrap gap-[18px] px-3 py-2.5 text-caption text-muted-foreground">
           {KIND_ORDER.map((k) => (
             <span key={k}>
@@ -148,7 +165,7 @@ export function AssistantCardView({ card }: { card: AssistantCard }) {
   }
 
   return (
-    <Card title={card.title}>
+    <Card title={cardTitle(card, t, radius)}>
       {card.events.length ? (
         card.events.map((e) => (
           <div key={e.id} className="flex items-center gap-2.5 border-b border-border px-3 py-2 text-body last:border-b-0">

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 import { fireEvent, message, render, screen } from "../../helpers/intl"
-import { authSchemas, registrationSchema } from "@/lib/schemas"
+import { authSchemas } from "@/lib/schemas"
+import { registrationSchema } from "@/server/auth/schemas"
 
 vi.mock("@/i18n/navigation", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/i18n/navigation")>()), useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }))
 
