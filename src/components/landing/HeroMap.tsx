@@ -8,6 +8,12 @@ import { useIsDark, useThemeKey } from "@/lib/design/useThemeKey"
 
 /** The lower 48 and DC: the background frames the conterminous US, as in the prototype. */
 const OUTSIDE = new Set<string>(OUTSIDE_LOWER_48)
+/**
+ * The lower 48's outlines, simplified for the hero (scripts/geo/hero_outlines.py):
+ * about 58 KB instead of us-states.json's 256 KB (#298). Fetched after hydration,
+ * so it never holds up the first paint.
+ */
+export const HERO_OUTLINES_URL = "/geo/us-lower48-hero.json"
 /** A new ping this often, each lasting PING_MS: about seven at a time. */
 const PING_EVERY_MS = 260
 const PING_MS = 1800
@@ -258,9 +264,9 @@ export function HeroMap({ cells, cellSize }: { cells: [number, number, number][]
     }
     motion.addEventListener("change", onMotion)
 
-    fetch("/geo/us-states.json", { signal: controller.signal })
+    fetch(HERO_OUTLINES_URL, { signal: controller.signal })
       .then((res) => {
-        if (!res.ok) throw new Error(`GET /geo/us-states.json failed (${res.status})`)
+        if (!res.ok) throw new Error(`GET ${HERO_OUTLINES_URL} failed (${res.status})`)
         return res.json() as Promise<Outlines>
       })
       .then((o) => {

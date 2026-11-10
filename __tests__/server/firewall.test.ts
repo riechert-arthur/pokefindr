@@ -46,8 +46,8 @@ describe("the Vercel firewall rules (#197, docs/scraping.md)", () => {
   it("covers every location data route, and only those", () => {
     const routes = apiRoutes()
     const data = routes.filter((p) => matches(rule("Location data: rate limit"), p))
-    expect(data).toEqual(expect.arrayContaining(["/api/locations", "/api/locations/near", "/api/locations/x", "/api/geocode", "/api/highlights"]))
-    expect(data.every((p) => /^\/api\/(locations|highlights|geocode)(\/|$)/.test(p))).toBe(true)
+    expect(data).toEqual(expect.arrayContaining(["/api/locations", "/api/locations/near", "/api/locations/x", "/api/geocode", "/api/highlights", "/api/route"]))
+    expect(data.every((p) => /^\/api\/(locations|highlights|geocode|route)(\/|$)/.test(p))).toBe(true)
     expect(routes.every((p) => matches(rule("API: rate limit"), p))).toBe(true)
   })
 

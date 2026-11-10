@@ -21,7 +21,7 @@ it's applied, so change the file instead, in a PR. `__tests__/server/firewall.te
 | --- | --- | --- | --- |
 | Machine clients: skip the browser checks | `/api/mcp*`, `/api/identity/*`, `/api/jobs/*`, `/api/queues/*`, `/.well-known/*` | — | bypass the rules below and Bot Protection |
 | Bot Protection (managed) | every other request | — | challenge non-browser traffic |
-| Location data: block heavy scrapers | `/api/locations*`, `/api/highlights`, `/api/geocode` | 240 a minute | deny for an hour |
+| Location data: block heavy scrapers | `/api/locations*`, `/api/highlights`, `/api/geocode`, `/api/route` | 240 a minute | deny for an hour |
 | Location data: rate limit | the same | 120 a minute | 429 until the minute is up |
 | API: rate limit | `/api/*` | 600 a minute | 429 until the minute is up |
 
@@ -60,6 +60,7 @@ too: they index pages, not the API.
 | `/api/locations?bbox=`, `/near`, `/search` | yes | in the browser only (30 s) |
 | `/api/highlights` | on a CDN miss | CDN, as before (a handful of places) |
 | `/api/geocode` | on a CDN miss | CDN, as before (it holds no PokeFindr data; a miss is what costs) |
+| `/api/route` | on a CDN miss | CDN, by the ordered ids (a few places, by ids only the checked routes give out; a miss can cost a routing call) |
 | `/api/locations/[id]`, `/[id]/reviews` | no | CDN (one place, by an id only the checked routes give out) |
 | `/api/locations/aggregates`, `/cities`, `/counts`, `/retailers` | no | CDN (counts only) |
 
@@ -90,6 +91,7 @@ route is guarded, side by side. Over the limit is a 429 with `Retry-After`.
 | --- | --- | --- |
 | `locations` | every `GET /api/locations*`, `/api/highlights` | 40 at once, 120 a minute |
 | `geocode` | `/api/geocode` | 20 at once, 60 a minute |
+| `route` | `/api/route` | 10 at once, 30 a minute |
 
 - **The client** is its IP, and an IPv6 address by its /64 (`rateLimitKey()`), since one home
   connection or server usually holds a whole /64. On Vercel the platform sets `X-Forwarded-For`,
@@ -123,6 +125,7 @@ to spot. No route returns every location: `queryFeatures()` always takes a limit
 | `/api/locations/cities` | 30 cities | one state | counts only |
 | `/api/locations/counts` | 10 points | a 50-mile radius each | counts only |
 | `/api/locations/[id]` | 1 | — | — |
+| `/api/route` | 9 (`MAX_STOPS`), by id only | — | ids that aren't active places are skipped |
 | `/api/highlights` | 4 hotspots, 3 events | — | — |
 | `/api/locations/aggregates`, `/retailers` | counts per region, retailer names | — | no places |
 
@@ -135,6 +138,39 @@ to spot. No route returns every location: `queryFeatures()` always takes a limit
   every location to open `?location=` links instantly; it now looks in the places in view, then
   asks `/api/locations/[id]`.
 - **The landing map** (#200) gets counts per 0.25° cell, rendered into the page, not points.
+
+## Street routes (#288)
+
+The assistant's "Show on map" draws its route with one `GET /api/route?ids=a,b,c` (the stops in
+visiting order). The server looks the stops up and asks a routing provider for the drive between
+them; `src/components/map/RouteOverlay.tsx` draws it as a solid line, or as the old dashed
+straight line when it couldn't be routed.
+
+- **Ids only.** The route takes 2 to 9 place ids (`MAX_STOPS`, as `plan_route`), never
+  coordinates, so it can't be used as free routing for any address, and it only returns places a
+  caller already had the ids of. Ids that aren't active places are skipped; fewer than 2 left is
+  a 404. The answer is an explicit shape (`StreetRoute`, `src/lib/types/routes.ts`): the line,
+  miles and minutes per leg and in total, `routed`, and each stop's id, retailer and point. No
+  `canary` or other column.
+- **Protection.** BotID and the `route` rate limit (`guardRoute`), and the firewall's location
+  data rules, like the other data routes. Answers are cached at the CDN by the ordered ids for a
+  day; straight-line answers for 5 minutes only, so streets come back when the provider does.
+- **The provider** is the `Router` port (`src/server/ports/router.ts`), chosen by
+  `ROUTER_PROVIDER` in `src/server/container.ts`:
+  - `openrouteservice`: HeiGIT's [OpenRouteService](https://openrouteservice.org), driving, on
+    `api.heigit.org` (the old `api.openrouteservice.org` host is shut off), on OpenStreetMap data
+    like the map. It needs `ROUTER_API_KEY` (a free key from account.heigit.org), which stays on the
+    server. `ROUTER_BASE_URL` points it at a self-hosted instance. Unset, `ROUTER_PROVIDER` is
+    `openrouteservice` whenever the key is set.
+  - `fake`: straight lines, no account. The default without a key, so dev and CI need none.
+- **Quota.** The free plan allows 2,000 routes a day and 40 a minute. Two server-wide buckets in
+  the shared limiter keep under it: 30 a minute, and `ROUTER_DAILY_CAP` (default 1,800) over any
+  24 hours, as a bucket of half the cap that refills half the cap a day. With the CDN caching
+  each route for a day, that's room for about 900 different routes a day.
+- **Fallback.** When the provider fails, takes over 4 s, or the server is over its cap, the
+  answer is straight lines with `routed: false` (and straight-line miles, no minutes), and the
+  map says "Couldn't get street directions, showing straight lines." The route never disappears.
+  A failure is logged as `[route] routing failed`, the cap as `[route] over the routing budget`.
 
 ## Canaries, the Terms and robots.txt (#202)
 

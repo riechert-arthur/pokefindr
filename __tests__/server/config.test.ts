@@ -72,6 +72,19 @@ describe("getServerConfig", () => {
     expect(getServerConfig().GEOCODER_PROVIDER).toBe("photon")
   })
 
+  it("routes with straight lines unless an OpenRouteService key is set, even in production", () => {
+    vi.stubEnv("NODE_ENV", "production")
+    expect(getServerConfig()).toMatchObject({ ROUTER_PROVIDER: "fake", ROUTER_DAILY_CAP: 1800 })
+    resetServerConfigForTests()
+    vi.stubEnv("ROUTER_API_KEY", "key")
+    expect(getServerConfig().ROUTER_PROVIDER).toBe("openrouteservice")
+  })
+
+  it("requires ROUTER_API_KEY for openrouteservice", () => {
+    vi.stubEnv("ROUTER_PROVIDER", "openrouteservice")
+    expect(() => getServerConfig()).toThrowError(/ROUTER_API_KEY: required when ROUTER_PROVIDER is openrouteservice/)
+  })
+
   it.each([["mapbox"], ["maptiler"]])("requires GEOCODER_API_KEY for %s", (provider) => {
     vi.stubEnv("GEOCODER_PROVIDER", provider)
     expect(() => getServerConfig()).toThrowError(/GEOCODER_API_KEY: required when GEOCODER_PROVIDER is/)

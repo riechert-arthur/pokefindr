@@ -47,6 +47,9 @@ map:
     keywords: máquinas expendedoras Pokémon, mapa Pokémon, ubicaciones de máquinas expendedoras, mapa de productos Pokémon, PokeFindr, máquinas expendedoras Pokémon cerca de mí, mapa de máquinas expendedoras Pokémon, máquina expendedora Pokémon más cercana
     ogTitle: Encuentra todas las máquinas expendedoras de Pokémon cerca de ti | PokeFindr
     ogDescription: Explora un mapa completo de máquinas expendedoras de Pokémon. ¡Encuentra fácilmente cómo llegar a la más cercana!
+    # The page's heading and intro, in the server-rendered HTML for search engines and screen readers (visually hidden: the map fills the page).
+    heading: Mapa de máquinas expendedoras de Pokémon
+    intro: Un mapa gratis de máquinas expendedoras de cartas Pokémon, tiendas de cartas y eventos en EE. UU. Busca una ciudad o dirección para ver los que tienes cerca, cómo llegar y las reseñas de otros coleccionistas.
   loading: Cargando el mapa…
   reload: Recargar
   failure:
@@ -112,6 +115,7 @@ map:
     someGoneBody: Ya no están en el mapa, así que la ruta las omite.
     shown: Ruta en el mapa
     shownBody: "{count, plural, one {# parada, en el orden de visita.} other {# paradas, en el orden de visita.}}"
+    straight: No se pudieron obtener indicaciones por calles; se muestran líneas rectas.
     clear: Quitar
     stop: "Parada {n}: {name}"
   controls:
@@ -464,6 +468,7 @@ dashboard:
       title: Próximos eventos
       error: No pudimos cargar los eventos. Revisa tu conexión y recarga la página.
       empty: Las ferias de cartas y las noches de liga aparecen aquí cuando se agregan.
+      seeOnMap: Ver eventos en el mapa
   reviews:
     loadingProfile: Cargando perfil..
     validation:
@@ -550,19 +555,21 @@ assistant:
 
 settings:
   title: Configuración general
-  loadingProfile: Cargando perfil..
-  loading: Cargando configuración...
+  loadingProfile: Cargando tu perfil…
+  loadFailed: No pudimos cargar tu perfil. Revisa tu conexión y vuelve a cargar la página.
   openNav: Abrir navegación
   profile:
     title: Perfil
-    body: Esta información se mostrará públicamente, así que ten cuidado con lo que compartes.
+    body: Tu nombre de usuario aparece junto a tus reseñas. Tu nombre y tu correo son privados.
   fields:
     fullName: Nombre completo
     email: Correo electrónico
     username: Nombre de usuario
   save: Guardar
+  saving: Guardando…
   cancel: Cancelar
   update: Cambiar
+  saved: Tus cambios se guardaron.
   email:
     pending: Enviamos a {current} un enlace para aprobar el cambio a {next}. Después, confírmalo desde esa bandeja de entrada.
     approved: Gracias. Si aprobaste el cambio desde tu dirección anterior, confírmalo desde la bandeja de entrada de la nueva. El correo de abajo es el actual.
@@ -582,6 +589,11 @@ auth:
     forgotPassword: Restablece tu contraseña
     resetPassword: Elige una contraseña nueva
     consent: Conectar una app
+    login: Inicia sesión | PokeFindr
+    signup: Regístrate | PokeFindr
+    # Descriptions for search engines.
+    loginDescription: Inicia sesión en PokeFindr para guardar tus reseñas y agregar tiendas de cartas y eventos al mapa.
+    signupDescription: Crea una cuenta gratis de PokeFindr para reseñar máquinas expendedoras de Pokémon y agregar tiendas de cartas y eventos al mapa.
   terms: "Al hacer clic en continuar, aceptas nuestros <terms>Términos del servicio</terms> y nuestra <privacy>Política de privacidad</privacy>."
   fields:
     email: Correo electrónico
@@ -792,6 +804,10 @@ content:
     title: Del blog
     intro: Aprende detalles interesantes sobre cómo conseguir cartas Pokémon para tu colección.
   changelog:
+    # The page's title and description for search engines.
+    meta:
+      title: "Novedades de PokeFindr"
+      description: "Cada versión de PokeFindr y lo que cambió: mejoras del mapa, cuentas, reseñas y más."
     title: Novedades de la versión {version}
     v1_1:
       released: Publicada el 10 de mayo de 2025
