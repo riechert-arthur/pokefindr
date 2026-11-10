@@ -1,25 +1,16 @@
 import { ImageResponse } from "next/og"
-import { createTranslator, hasLocale } from "next-intl"
-import { loadMessages } from "@/i18n/messages"
-import { DEFAULT_LOCALE, routing } from "@/i18n/routing"
+import { routing, type Locale } from "@/i18n/routing"
 import { BRAND_MARK_DATA_URI } from "../../brand-mark"
 import { ogFonts } from "../../og-fonts"
-import { SOCIAL_CARD_SIZE } from "@/i18n/seo"
+import { ogTranslator, SOCIAL_CARD_SIZE } from "@/i18n/seo"
 
 // Render at build time, once per language: brand-mark.ts reads public/ from disk.
 export const dynamic = "force-static"
+// Only the languages built below; the middleware sends any other prefix to the 404.
+export const dynamicParams = false
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }))
-}
-
-/**
- * The "og" messages for a language. A route handler isn't a Server
- * Component, so this reads the catalog instead of getTranslations.
- */
-async function ogMessages(requested: string) {
-  const locale = hasLocale(routing.locales, requested) ? requested : DEFAULT_LOCALE
-  return createTranslator({ locale, messages: await loadMessages(locale), namespace: "og" })
 }
 
 /**
@@ -28,7 +19,7 @@ async function ogMessages(requested: string) {
  * src/i18n/seo.ts.
  */
 export async function GET(_request: Request, { params }: { params: Promise<{ locale: string }> }) {
-  const t = await ogMessages((await params).locale)
+  const t = await ogTranslator((await params).locale as Locale)
   return new ImageResponse(
     (
       <div

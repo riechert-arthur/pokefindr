@@ -80,10 +80,14 @@ function sources(dir = path.join(ROOT, "src")): string[] {
  * segment, and only in key-like templates with a word of their own
  * (`kinds.${kind}.name`, not `${a}.${b}`).
  */
+/** Helpers that hand back a translator for one namespace (src/i18n/seo.ts). */
+const TRANSLATOR_HELPERS: Record<string, string> = { ogTranslator: "og" }
+
 function readsOf(code: string) {
   const namespaces = new Set<string>()
   for (const m of code.matchAll(/(?:useTranslations|getTranslations)(?:<\s*["'`]([\w.-]+)["'`]\s*>|\(\s*["'`]([\w.-]+)["'`])/g)) namespaces.add((m[1] ?? m[2])!)
   for (const m of code.matchAll(/namespace:\s*["'`]([\w.-]+)["'`]/g)) namespaces.add(m[1])
+  for (const [helper, namespace] of Object.entries(TRANSLATOR_HELPERS)) if (code.includes(`${helper}(`)) namespaces.add(namespace)
   for (const m of code.matchAll(/\bMessages((?:\[\s*"\w+"\s*\])+)/g)) namespaces.add([...m[1].matchAll(/"(\w+)"/g)].map((k) => k[1]).join("."))
   // The root: useTranslations(), or getTranslations({ locale }) with no namespace.
   if (/(?:useTranslations|getTranslations)\(\s*\)|getTranslations\(\{\s*locale(?:\s*:\s*[\w.]+(?:\s+as\s+\w+)?)?\s*\}\)/.test(code)) namespaces.add("")

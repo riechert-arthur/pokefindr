@@ -33,7 +33,7 @@ export const config = {
     // Every page, for the language (docs/i18n.md). Not the API, Next's own
     // files, /.well-known, the generated icons and images, or anything with a
     // file extension.
-    '/((?!api|_next|_vercel|\\.well-known|opengraph-image|twitter-image|icon|apple-icon|.*\\..*).*)',
+    '/((?!api|_next|_vercel|\\.well-known|social-card|\\w+/social-card|icon|apple-icon|.*\\..*).*)',
   ],
 }
 
