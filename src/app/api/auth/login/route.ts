@@ -30,13 +30,13 @@ export async function POST(req: NextRequest) {
   if (!res.ok) return loginFailed()
 
   const { user } = (await res.json()) as { user: { id: string; email: string } }
-  const profile = await getProfile(user.id)
+  const [profile, tier] = await Promise.all([getProfile(user.id), getSessionTier(user.id)])
   if (!profile) return loginFailed()
 
   // The language they picked on another device (#182): the form opens the next page in it.
   const response = NextResponse.json({ ok: true, locale: profileLocale(profile.locale) })
   for (const cookie of identityCookies(res)) response.headers.append("Set-Cookie", cookie)
-  response.headers.append("Set-Cookie", createSessionCookie({ sub: user.id, email: user.email, tier: await getSessionTier(user.id) }))
+  response.headers.append("Set-Cookie", createSessionCookie({ sub: user.id, email: user.email, tier }))
   const locale = profileLocaleCookie(profile.locale)
   if (locale) response.headers.append("Set-Cookie", locale)
   return response
