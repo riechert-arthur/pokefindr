@@ -678,6 +678,16 @@ assistant:
     # The colored dot next to an event.
     event: Event
     noEvents: No upcoming events.
+    # A card's heading, for the area the assistant searched. {area} is a state,
+    # a city, or "you" (near the viewer). {radius} is a distance like "15 mi".
+    # {count} is how many places matched.
+    titles:
+      placesInState: "{count, number} in {area}"
+      placesNear: "{count, number} within {radius} of {area, select, you {you} other {{area}}}"
+      statsNear: "Within {radius} of {area, select, you {you} other {{area}}}"
+      events: Upcoming events
+      eventsInState: "Events in {area}"
+      eventsNear: "Events within {radius} of {area, select, you {you} other {{area}}}"
   # Settings' button to delete the stored text of your conversations.
   clearHistory:
     button: Clear assistant history

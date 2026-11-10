@@ -10,6 +10,8 @@ import { setPageLocale, type LocaleParams } from "@/i18n/static"
 import type { Locale } from "@/i18n/routing"
 import type { Metadata } from "next"
 import { getTranslations } from "next-intl/server"
+import { getPathname } from "@/i18n/navigation"
+import { PRODUCTION_URL } from "@/server/site-url"
 
 // The counts change only after an import; rebuild the page at most hourly.
 export const revalidate = 3600
@@ -66,7 +68,7 @@ export default async function LandingPage({ params }: LocaleParams) {
     "@type": "WebPage",
     name: t("pageName"),
     description: t("pageDescription"),
-    url: "https://pokefindr.app/",
+    url: new URL(getPathname({ href: "/", locale }), PRODUCTION_URL).toString(),
   }
   return (
     <>

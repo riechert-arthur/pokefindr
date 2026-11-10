@@ -2,7 +2,7 @@ import type { FC, ReactNode } from "react"
 import { ContentPageHeader } from "@/components/ContentPageHeader"
 import { type NavigationLink } from "@/components/ContentPageHeader"
 import { getTranslations } from "next-intl/server"
-import { SUPPORT_URL } from "@/components/ErrorPage"
+import { SUPPORT_URL } from "@/lib/links"
 import { setPageLocale, type LocaleParams } from "@/i18n/static"
 
 interface ContentPageLayoutProps extends LocaleParams {
