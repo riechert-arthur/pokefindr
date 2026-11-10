@@ -50,6 +50,20 @@ function useAdsHidden(): boolean {
   return useSyncExternalStore(subscribe, () => memoryHidden || readHidden(), () => true)
 }
 
+const noSubscribe = () => () => {}
+
+/** False while the server renders and the page hydrates, then true. */
+const useHydrated = () => useSyncExternalStore(noSubscribe, () => true, () => false)
+
+/**
+ * The landing strip's band. Its min-height is the strip's, so the space
+ * reserved before hydration (`reserve`) is what the banner then fills, and
+ * the sections below don't move (#298, CLS ≤ 0.01). Measured with the
+ * TCGplayer banner at 360–1350 px wide; a banner with longer copy needs
+ * these checked again.
+ */
+const STRIP_BAND = "flex min-h-[16.5rem] flex-col justify-center border-t border-border px-6 py-8 min-[400px]:min-h-[14rem] sm:min-h-[9.5rem]"
+
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 /** The first focusable element after `el` in the page, else the last one before it: where focus goes when `el` goes away. */
@@ -62,17 +76,25 @@ function focusAfter(el: HTMLElement): HTMLElement | null {
 /**
  * `listItem`: render as an <li>, so a list gets an item only when a card
  * shows (an empty one would be read as a blank place).
+ *
+ * `reserve` (the landing strip): the server knows the placement is on and
+ * has a banner, so the band is rendered empty with its height until the
+ * banner is picked in the browser. Without it the strip would appear after
+ * hydration and push the page down. It's also the placement's first answer,
+ * until /api/ads/placements gives the current one.
  */
-export function SponsoredPlacement({ placement, className, listItem = false }: { placement: SponsorPlacement; className?: string; listItem?: boolean }) {
+export function SponsoredPlacement({ placement, className, listItem = false, reserve = false }: { placement: SponsorPlacement; className?: string; listItem?: boolean; reserve?: boolean }) {
   const t = useTranslations("ads")
+  const hydrated = useHydrated()
   const hidden = useAdsHidden()
   // An admin can switch a placement off (#159).
-  const on = usePlacementOn(placement)
+  const on = usePlacementOn(placement, reserve || undefined)
   const ref = useRef<HTMLElement>(null)
   // Picked once per view, in the browser.
   const [banner] = useState(() => (typeof window === "undefined" ? null : pickBanner(placement)))
-  if (hidden || on !== true || !banner || !banner.href) return null
   const strip = placement === "landing"
+  if (strip && reserve && !hydrated) return <div aria-hidden data-placement={placement} className={cn(STRIP_BAND, className)} />
+  if (hidden || on !== true || !banner || !banner.href) return null
   const slot = (
     <>
       {/* The sponsor's impression pixel, in production only. */}
@@ -100,8 +122,8 @@ export function SponsoredPlacement({ placement, className, listItem = false }: {
   // The landing strip is a band between sections, like the prototype's.
   if (strip)
     return (
-      <div ref={ref as React.RefObject<HTMLDivElement>} data-placement={placement} className={cn("border-t border-border px-6 py-8", className)}>
-        <div className="mx-auto max-w-[1040px]">{slot}</div>
+      <div ref={ref as React.RefObject<HTMLDivElement>} data-placement={placement} className={cn(STRIP_BAND, className)}>
+        <div className="mx-auto w-full max-w-[1040px]">{slot}</div>
       </div>
     )
   if (listItem)

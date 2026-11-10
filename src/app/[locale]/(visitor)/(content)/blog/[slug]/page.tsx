@@ -64,7 +64,8 @@ const BlogPostPage: FC<BlogPostPageProps> = async ({ params }) => {
           ),
           img: ({ src, alt }) => (
             <div className="flex justify-center">
-              <img src={src} alt={alt} className="w-auto max-w-full mx-auto my-4" />
+              {/* Below the hero, from hosts that don't all allow resizing: lazy, so they don't compete with it (#298). */}
+              <img src={src} alt={alt} loading="lazy" decoding="async" className="w-auto max-w-full mx-auto my-4" />
             </div>
           )
         }}

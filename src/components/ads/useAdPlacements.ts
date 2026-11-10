@@ -18,10 +18,12 @@ function loadFlags(): Promise<Flags> {
 
 /**
  * Whether an admin has `placement` switched on (#159): null until known,
- * so a slot that's switched off never flashes on.
+ * so a slot that's switched off never flashes on. `initial` is what the
+ * server read when it rendered the page, if it did, until this page load's
+ * answer arrives.
  */
-export function usePlacementOn(placement: SponsorPlacement): boolean | null {
-  const [on, setOn] = useState<boolean | null>(null)
+export function usePlacementOn(placement: SponsorPlacement, initial?: boolean): boolean | null {
+  const [on, setOn] = useState<boolean | null>(initial ?? null)
   useEffect(() => {
     let live = true
     void loadFlags().then((f) => live && setOn(f[placement] === true))

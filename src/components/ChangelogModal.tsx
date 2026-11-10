@@ -16,21 +16,31 @@ const RELEASE = {
   items: ["modal.items.accounts", "v1_2.items.reviews", "modal.items.settings", "modal.items.sso", "v1_2.items.ratings"],
 } as const
 const CURRENT_CHANGELOG_VERSION = RELEASE.version
+const SEEN_KEY = "changelog_seen_version"
 
 const ChangelogModal: FC = () => {
   const t = useTranslations("content.changelog")
   const [isOpen, setIsOpen] = useState(false)
 
+  // Only for someone who has been here before a release: a first visit has
+  // nothing to catch up on, and a pop-up over the map would be the first
+  // thing it painted (its largest element, #298). Storage blocked: no pop-up.
   useEffect(() => {
-    if (typeof window === "undefined") return
-    const seen = localStorage.getItem("changelog_seen_version")
-    if (seen !== CURRENT_CHANGELOG_VERSION) {
-      setIsOpen(true)
+    try {
+      const seen = localStorage.getItem(SEEN_KEY)
+      if (seen === null) localStorage.setItem(SEEN_KEY, CURRENT_CHANGELOG_VERSION)
+      else if (seen !== CURRENT_CHANGELOG_VERSION) setIsOpen(true)
+    } catch {
+      // Private mode or blocked storage.
     }
   }, [])
 
   const handleClose = () => {
-    localStorage.setItem("changelog_seen_version", CURRENT_CHANGELOG_VERSION)
+    try {
+      localStorage.setItem(SEEN_KEY, CURRENT_CHANGELOG_VERSION)
+    } catch {
+      // It shows again next visit.
+    }
     setIsOpen(false)
   }
 
