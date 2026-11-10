@@ -3,6 +3,7 @@
 import { useRef, useState, type FormEvent } from "react"
 import { Link } from "@/i18n/navigation"
 import { StarRating } from "@/components/pokefindr/StarRating"
+import { UserAvatar } from "@/components/pokefindr/UserAvatar"
 import type { LocationKind } from "@/components/pokefindr/kinds"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -128,9 +129,7 @@ export function ReviewsSection({ kind, reviews, username, placeName }: ReviewsSe
           {reviews.reviews.map((r) => (
             <li key={r.id} className="rounded-lg border border-border px-3 py-2.5 text-body">
               <div className="flex items-center gap-2">
-                <span aria-hidden className="grid size-[22px] place-items-center rounded-full bg-muted text-overline font-bold tracking-normal">
-                  {r.username.charAt(0).toUpperCase()}
-                </span>
+                <UserAvatar size="xs" name={r.username} />
                 <b className="font-semibold">{r.username}</b>
                 <StarRating rating={r.rating} starSize={13} />
                 <span className="grow" />

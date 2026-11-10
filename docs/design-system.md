@@ -133,7 +133,8 @@ Three folders (a test enforces the naming rules and that each component has a st
 | `StarRating` | Read-only stars ("4.5 out of 5 stars", half-star steps), or a 1–5 radio group with arrow keys when given `onChange` |
 | `ResponsivePanel` | Side sheet on desktop, bottom drawer on mobile (see below) |
 | `ThemeToggle` | Light / dark / system (`segmented`, in settings) or a one-click light/dark switch (`toggle`, in the sidebar) |
-| `UserMenu` | The signed-in user's avatar: a dropdown with Settings and Log out, or `variant="list"` for the mobile nav drawer |
+| `UserAvatar` | **The only way to show a person.** Their picture (`imageUrl`), or the first letter of their name on `bg-brand`, or a person icon when the name doesn't start with a letter. Sizes `xs` (22px, review rows), `sm` (28px, sidebars), `md` (36px, headers, the default) and `lg` (64px, settings). Decorative (`aria-hidden`): always show the name next to it. A test in `__tests__/design/ui-convention.test.ts` fails on `AvatarFallback` or a hand-made initial anywhere else. |
+| `UserMenu` | The signed-in user's avatar (a `UserAvatar`): a dropdown with Settings and Log out, or `variant="list"` for the mobile nav drawer |
 | `brand/Logo` | The mark (`variant="mark"`) or mark + wordmark (`"full"`) |
 
 ## Which overlay?

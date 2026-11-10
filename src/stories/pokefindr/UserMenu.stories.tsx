@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/sonner"
 const meta = {
   title: "PokeFindr/UserMenu",
   component: UserMenu,
-  args: { size: 40, userName: "misty" },
+  args: { userName: "misty" },
   // Answer the logout POST locally, so Log out shows the success path instead
   // of a 404 from the Storybook server.
   beforeEach: () => {
