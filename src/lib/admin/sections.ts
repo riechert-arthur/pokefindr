@@ -51,6 +51,11 @@ export const ADMIN_GROUPS: readonly AdminGroup[] = [
       { id: "ads", label: "Ads", sub: "Turn sponsored placements on or off.", entitlement: "admin.ads" },
     ],
   },
+  {
+    id: "people",
+    label: "People",
+    sections: [{ id: "users", label: "Users", sub: "Find someone and change their role. Super admins only.", entitlement: "users.manage" }],
+  },
 ]
 
 export const ADMIN_SECTIONS: readonly AdminSection[] = ADMIN_GROUPS.flatMap((g) => g.sections)

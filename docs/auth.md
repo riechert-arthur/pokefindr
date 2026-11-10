@@ -91,7 +91,20 @@ in the app.
 
 ## Roles and entitlements
 
-Everyone signed in has a role in `profiles.role`: `member`, `moderator` or `admin` (migration 0012). It's read from the database on each request, not stored in the session, so a change applies on the person's next request.
+Everyone signed in has a role in `profiles.role` (migrations 0012 and 0022). It's read from the database on each request, not stored in the session, so a change applies on the person's next request (the client's `SessionProvider` keeps showing the old role until it fetches the session again, e.g. on the next page load).
+
+| Role | Can | Who grants it |
+| --- | --- | --- |
+| `member` | everything a signed-in person can: reviews, reports, submissions | sign-up; a super admin |
+| `moderator` | the review queue and Reports, but not deciding their own submissions | a super admin, in Admin → Users |
+| `admin` | all of `/admin` except Users, and deciding their own submissions | a super admin, in Admin → Users |
+| `super_admin` | everything an admin can, plus Admin → Users (`users.manage`) | SQL or the dev seed only |
+
+**User management** (`/admin?section=users`, #294) lists users with their email (only super admins see emails), searches by username, name or the start of an email, filters by role, and changes a role after a confirm step (`src/server/services/user-admin.ts`, `GET /api/admin/users`, `PATCH /api/admin/users/:id`). A super admin can set member, moderator or admin, never their own role, and never `super_admin`, so a hijacked session can't create another one. Taking away the last super admin is refused too. Every change is written to `role_changes`. To make someone a super admin:
+
+```sql
+update profiles set role = 'super_admin' where username = '…';
+```
 
 What each role may do is decided in one place, `src/lib/auth/entitlements.ts` (#299). It maps each **entitlement**, named after what it allows (`moderation.decide`, `admin.jobs`), to the roles that have it:
 
@@ -139,7 +152,8 @@ when someone signs up with them; an upload replaces it. With none, `UserAvatar` 
 
 | Email | Username | Role | For testing |
 | --- | --- | --- | --- |
-| `dev@pokefindr.local` | `dev` | admin | every section of `/admin` |
+| `superadmin@pokefindr.local` | `superadmin` | super_admin | Admin → Users, plus everything an admin has |
+| `dev@pokefindr.local` | `dev` | admin | every section of `/admin` except Users |
 | `moderator@pokefindr.local` | `moderator` | moderator | opens `/admin`, but sees only the review queue and Reports (and their counts); can't decide its own submissions; gets the review emails |
 | `ash@pokefindr.local` | `ash` | member | a plain member: no Admin link, `/admin` is a 404 |
 | `misty@pokefindr.local` | `misty` | member | the same |
