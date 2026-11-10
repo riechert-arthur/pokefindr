@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/sonner"
 const meta = {
   title: "PokeFindr/UserMenu",
   component: UserMenu,
-  args: { size: 40, userName: "misty" },
+  args: { userName: "misty" },
   // Answer the logout POST locally, so Log out shows the success path instead
   // of a 404 from the Storybook server.
   beforeEach: () => {
@@ -19,6 +19,10 @@ const meta = {
 } satisfies Meta<typeof UserMenu>
 export default meta
 export const Default: StoryObj<typeof meta> = {}
+/** With a profile picture (#290). */
+export const WithImage: StoryObj<typeof meta> = { args: { imageUrl: "/pokeballpinicon.jpeg" } }
+/** The picture fails to load: the initial shows instead. */
+export const BrokenImage: StoryObj<typeof meta> = { args: { imageUrl: "/does-not-exist.webp" } }
 /** Inline Settings and Log out, for the mobile nav drawer. */
 export const List: StoryObj<typeof meta> = { args: { variant: "list" } }
 /** Log out fails: the menu stays and a toast explains. */

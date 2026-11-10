@@ -206,10 +206,34 @@
 .maplibregl-map .maplibregl-ctrl-attrib a {
   color: hsl(var(--muted-foreground));
 }
-/* Phones: the map panel (MapPanel) sits at the bottom; lift the bottom-right controls above it. */
+/*
+ * The bottom-right controls stack up from the corner in a box the size of
+ * the map, so the box itself never moves. MapLibre's own box hugs them and
+ * grew upward as each control was added and as the attribution filled in,
+ * which counted as layout shift (CLS, #298). It ignores the pointer; the
+ * controls in it don't.
+ */
+.maplibregl-map .maplibregl-ctrl-bottom-right {
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+/* Phones: the map panel (MapPanel) sits at the bottom; lift the bottom-right controls above it.
+   A transform, not `bottom`: the panel grows as its list loads, and moving
+   the controls by layout counted as layout shift (CLS, #298). */
 @media (max-width: 639px) {
   .maplibregl-map .maplibregl-ctrl-bottom-right {
-    bottom: var(--map-panel-h, 0px);
+    transform: translateY(calc(-1 * var(--map-panel-h, 0px)));
+  }
+  /* The open attribution takes its full width and two lines from the start,
+     before the basemap's credits fill it in, so the controls above don't move. */
+  .maplibregl-map .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib[open] {
+    box-sizing: border-box;
+    width: calc(100% - 20px);
+    min-height: 44px;
   }
 }
 /* The control icons are dark SVGs; invert them on the dark card. */
@@ -313,7 +337,9 @@
 .hero-bg::before {
   content: "";
   position: absolute;
-  inset: -20% -10% 0;
+  /* A fixed top, not a percentage of the hero's height: when the hero grows
+     (fonts, hydration) the glow only gets taller instead of moving (CLS, #298). */
+  inset: -9rem -10% 0;
   filter: blur(60px);
   opacity: 0.5;
   background:

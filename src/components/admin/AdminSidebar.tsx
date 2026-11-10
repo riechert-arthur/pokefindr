@@ -5,7 +5,7 @@ import { useEffect, useState, type ComponentType, type SVGProps } from "react"
 import { ChartBarIcon, ChevronDownIcon, FlagIcon, HouseIcon, InboxIcon, MapPinIcon, MegaphoneIcon, RefreshCwIcon, SquarePlusIcon, UsersIcon } from "lucide-react"
 import { Logo } from "@/components/brand/Logo"
 import { CountBadge } from "@/components/admin/CountBadge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { UserAvatar } from "@/components/pokefindr/UserAvatar"
 import type { AdminGroup } from "@/lib/admin/sections"
 import { ROLE_LABELS, type Role } from "@/lib/auth/roles"
 import { cn } from "@/lib/utils"
@@ -58,7 +58,7 @@ export function AdminSidebar({
   current: string
   counts: Partial<Record<string, SectionCount>>
   onSelect: (section: string) => void
-  user: { username: string; role: Role }
+  user: { username: string; role: Role; image?: string | null }
 }) {
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
   // Read after mount: the server doesn't know this browser's choice.
@@ -142,9 +142,7 @@ export function AdminSidebar({
           <span className="whitespace-nowrap">Open the map</span>
         </Link>
         <div className="hidden items-center gap-2.5 px-2.5 py-2 md:flex">
-          <Avatar className="size-7">
-            <AvatarFallback className="bg-primary text-caption font-semibold text-primary-foreground">{user.username.slice(0, 1).toUpperCase()}</AvatarFallback>
-          </Avatar>
+          <UserAvatar size="sm" name={user.username} imageUrl={user.image} />
           <span className="min-w-0 leading-tight">
             <span className="block truncate text-body text-foreground">{user.username}</span>
             <span className="block text-caption text-muted-foreground">{ROLE_LABELS[user.role]}</span>

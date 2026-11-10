@@ -1,5 +1,8 @@
+import { readFileSync, statSync } from "fs"
+import path from "path"
 import { describe, expect, it } from "vitest"
-import { albers, dotsFor, fitAlbers, onLand, scatter } from "@/components/landing/HeroMap"
+import { albers, dotsFor, fitAlbers, HERO_OUTLINES_URL, onLand, scatter } from "@/components/landing/HeroMap"
+import { OUTSIDE_LOWER_48, STATES } from "@/lib/map/states"
 
 describe("fitAlbers", () => {
   // As in the prototype, the far northwest can tuck a little under the top
@@ -75,5 +78,22 @@ describe("scatter", () => {
     for (const [lng] of dots) expect(lng).toBeLessThan(-122.375)
     // Nowhere on land: no dots.
     expect(scatter([[-122.5, 47.5, 9]], 0.25, () => false)).toEqual([])
+  })
+})
+
+describe("the hero's outlines (#298)", () => {
+  const file = path.join(__dirname, "../../../public", HERO_OUTLINES_URL)
+  const outlines = JSON.parse(readFileSync(file, "utf8")) as Parameters<typeof onLand>[0]
+
+  it("are the lower 48 and DC, a fraction of the full file", () => {
+    const lower48 = Object.keys(STATES).filter((code) => !(OUTSIDE_LOWER_48 as readonly string[]).includes(code))
+    expect(outlines.features.map((f) => f.properties.region).sort()).toEqual(lower48.sort())
+    expect(statSync(file).size).toBeLessThan(80_000)
+  })
+
+  it("still tell land from water", () => {
+    const inside = onLand(outlines)
+    for (const [lng, lat] of [[-98, 39], [-122.42, 37.77], [-73.95, 40.7], [-80.2, 25.8], [-77.03, 38.9]]) expect(inside(lng, lat)).toBe(true)
+    for (const [lng, lat] of [[-125.5, 40], [-70, 38], [-88, 27], [-68.5, 43]]) expect(inside(lng, lat)).toBe(false)
   })
 })

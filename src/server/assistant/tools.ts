@@ -3,6 +3,7 @@ import { z } from "zod/v3"
 import { zodToJsonSchema } from "zod-to-json-schema"
 import type { Database } from "@/server/db/client"
 import type { Geocoder } from "@/server/ports/geocoder"
+import { MAX_ROUTE_STOPS } from "@/lib/types/routes"
 import { getLocationFeature, getLocationsNear } from "@/server/services/locations"
 import { getAreaStats, getLocationsInState, matchRetailers, sampleIds, type Area } from "@/server/services/areas"
 import { getUpcomingEvents } from "@/server/services/highlights"
@@ -27,7 +28,7 @@ import { USER_WRITTEN_NOTE, plainUserText } from "./untrusted"
 /** Most places one call returns. */
 export const MAX_PLACES = 10
 /** Most stops a route orders. */
-export const MAX_STOPS = 9
+export const MAX_STOPS = MAX_ROUTE_STOPS
 export const MAX_RADIUS_MILES = 50
 /** Events are few and people travel for them: a wider circle. */
 export const MAX_EVENT_RADIUS_MILES = 250

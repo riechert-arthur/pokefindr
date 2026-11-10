@@ -11,11 +11,12 @@ describe("entitlements", () => {
   it("gives each role exactly these", () => {
     expect(Object.fromEntries(ROLES.map((r) => [r, entitlementsOf(r)]))).toEqual({
       member: [],
-      moderator: ["moderation.view", "moderation.decide", "moderation.notify"],
+      moderator: ["moderation.view", "moderation.decide", "moderation.avatars", "moderation.notify"],
       admin: [
         "moderation.view",
         "moderation.decide",
         "moderation.decideOwn",
+        "moderation.avatars",
         "moderation.notify",
         "admin.open",
         "admin.summary.all",
@@ -28,6 +29,7 @@ describe("entitlements", () => {
         "moderation.view",
         "moderation.decide",
         "moderation.decideOwn",
+        "moderation.avatars",
         "moderation.notify",
         "admin.open",
         "admin.summary.all",
