@@ -69,6 +69,7 @@
     "@vis.gl/react-maplibre": "^8.1.3",
     "axios": "^1.9.0",
     "better-auth": "^1.7.18",
+    "botid": "1.5.11",
     "class-variance-authority": "^0.7.1",
     "cmdk": "^1.1.1",
     "cookie": "^1.0.2",

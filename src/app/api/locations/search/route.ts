@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { searchLocations } from "@/server/services/locations"
 import { searchQuerySchema } from "@/lib/locations/search"
+import { refuseBots } from "@/server/bot-check"
 
 export const dynamic = "force-dynamic"
 
@@ -11,6 +12,8 @@ export const dynamic = "force-dynamic"
  *   FeatureCollection.
  */
 export async function GET(request: NextRequest) {
+  const refused = await refuseBots()
+  if (refused) return refused
   const params = request.nextUrl.searchParams
   const parsed = searchQuerySchema.safeParse({
     q: params.get("q") ?? "",
@@ -26,7 +29,8 @@ export async function GET(request: NextRequest) {
   try {
     const { retailer, ...query } = parsed.data
     return NextResponse.json(await searchLocations({ ...query, retailers: retailer }), {
-      headers: { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" },
+      // Only the browser keeps it: a CDN copy would reach bots without BotID's check (#198).
+      headers: { "Cache-Control": "private, max-age=30" },
     })
   } catch (err) {
     console.error("[api/locations/search] failed to search locations", err)

@@ -36,3 +36,29 @@ it's applied, so change the file instead, in a PR. `__tests__/server/firewall.te
   To check a rule, loop requests from one machine (`for i in $(seq 300); do curl -s -o /dev/null
   -w "%{http_code}\n" "https://pokefindr.app/api/locations?bbox=…"; done | sort | uniq -c`)
   and expect 429s after 120 and 403s after 240.
+
+## BotID (#198)
+
+Firewall rules key on IP addresses, which scrapers rotate. [BotID](https://vercel.com/docs/botid)
+checks the client itself, invisibly: `src/instrumentation-client.ts` runs it in the browser and
+attaches its header to the app's own requests for location data, and each of those routes calls
+`refuseBots()` (`src/server/bot-check.ts`) first. A request without a valid header, `curl` or a
+headless script, gets a 403 with the code `botBlocked`. Verified bots (search engines) get one
+too: they index pages, not the API.
+
+| Route | Checked | Cached |
+| --- | --- | --- |
+| `/api/locations?bbox=`, `/near`, `/search` | yes | in the browser only (30 s) |
+| `/api/locations/[id]`, `/api/highlights` | yes | CDN, as before |
+| `/api/geocode` | yes | CDN, as before (it holds no PokeFindr data) |
+| `/api/locations/aggregates`, `/cities`, `/counts`, `/retailers` | no | CDN (counts only) |
+
+- **Why some caching moved to the browser.** BotID runs in our function, and a response the CDN
+  serves never reaches it. A shared CDN copy of the map's bulk queries would go to any script that
+  asked for the same box, so those are cached in the browser only. The details route needs an id
+  from one of them, and highlights is a handful of places, so they keep the CDN.
+- **Outside Vercel** (local dev, tests, CI) there's nothing to check against: `refuseBots()` lets
+  every request through. The list of guarded paths is `src/lib/bot-checked-paths.ts`; a new data
+  route needs adding there and a `refuseBots()` call.
+- **BotID's script** is proxied through our domain under `/149e9513-…` (`withBotId` in
+  `next.config.ts`); the middleware's matcher skips that path.

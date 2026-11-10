@@ -3,6 +3,7 @@ import { getGeocoder } from "@/server/container"
 import { GeocoderError } from "@/server/ports/geocoder"
 import { geocodeQuerySchema } from "@/lib/geocode/query"
 import { clientIp, rateLimitKey, tokenBucket } from "@/server/lib/rate-limit"
+import { refuseBots } from "@/server/bot-check"
 
 // Answers vary by query; the CDN caches each one (below).
 export const dynamic = "force-dynamic"
@@ -16,6 +17,8 @@ const limiter = tokenBucket({ perMinute: 60, burst: 20 })
  *   provider and its key stay on the server.
  */
 export async function GET(request: NextRequest) {
+  const refused = await refuseBots()
+  if (refused) return refused
   const params = request.nextUrl.searchParams
   const parsed = geocodeQuerySchema.safeParse({
     q: params.get("q") ?? "",

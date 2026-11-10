@@ -11,3 +11,9 @@ export function getJwtSecret(): string {
   }
   return secret
 }
+
+/**
+ * Whether this runs on Vercel (it sets VERCEL=1). Read on its own so routes
+ * that need nothing else from the config don't fail on an unrelated variable.
+ */
+export const onVercel = (): boolean => Boolean(process.env.VERCEL)
