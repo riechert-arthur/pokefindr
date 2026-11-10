@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { albers, fitAlbers } from "@/components/landing/HeroMap"
+import { albers, fitAlbers, scatter } from "@/components/landing/HeroMap"
 
 describe("fitAlbers", () => {
   // As in the prototype, the far northwest can tuck a little under the top
@@ -29,5 +29,34 @@ describe("fitAlbers", () => {
     const [x1] = albers(-96, 30)
     const [x2] = albers(-96, 45)
     expect(x1).toBeCloseTo(x2, 10)
+  })
+})
+
+describe("scatter", () => {
+  const cells: [number, number, number][] = [
+    [-122.5, 47.5, 3],
+    [-105, 39.5, 1],
+  ]
+
+  it("draws each cell's count of dots inside the cell", () => {
+    const dots = scatter(cells, 0.25)
+    expect(dots).toHaveLength(4)
+    dots.slice(0, 3).forEach(([lng, lat]) => {
+      expect(lng).toBeGreaterThanOrEqual(-122.5)
+      expect(lng).toBeLessThan(-122.25)
+      expect(lat).toBeGreaterThanOrEqual(47.5)
+      expect(lat).toBeLessThan(47.75)
+    })
+    const [lng, lat] = dots[3]
+    expect(lng).toBeGreaterThanOrEqual(-105)
+    expect(lng).toBeLessThan(-104.75)
+    expect(lat).toBeGreaterThanOrEqual(39.5)
+    expect(lat).toBeLessThan(39.75)
+  })
+
+  it("spreads a cell's dots apart, the same way every time", () => {
+    const dots = scatter(cells, 0.25)
+    expect(new Set(dots.map(String)).size).toBe(4)
+    expect(scatter(cells, 0.25)).toEqual(dots)
   })
 })

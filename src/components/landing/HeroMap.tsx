@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { OUTSIDE_LOWER_48 } from "@/lib/map/states"
 import type { FeatureCollection, MultiPolygon, Polygon, Position } from "geojson"
 import { readTokens } from "@/lib/design/tokens"
@@ -42,22 +42,39 @@ export function fitAlbers(width: number, height: number): Project {
   }
 }
 
-async function getJson<T>(url: string, signal: AbortSignal): Promise<T> {
-  const res = await fetch(url, { signal })
-  if (!res.ok) throw new Error(`GET ${url} failed (${res.status})`)
-  return (await res.json()) as T
+/**
+ * Grid cells (`[lng, lat, count]`, south-west corners, `size`° on a side)
+ * as `count` dots each, spread over the cell. The spread is seeded by the
+ * cell, so it's the same on every paint: it only looks like the machines.
+ */
+export function scatter(cells: readonly (readonly [number, number, number])[], size: number): [number, number][] {
+  const dots: [number, number][] = []
+  for (const [lng, lat, count] of cells) {
+    let seed = (Math.round(lng / size) * 73856093) ^ (Math.round(lat / size) * 19349663)
+    // mulberry32
+    const random = () => {
+      seed = (seed + 0x6d2b79f5) | 0
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+    }
+    for (let k = 0; k < count; k++) dots.push([lng + random() * size, lat + random() * size])
+  }
+  return dots
 }
 
 /**
  * The landing hero's background, as in the prototype: the lower 48's state
- * outlines and every vending machine as a dot, with soft pings at random
- * machines. Two canvases: the outlines and dots are drawn once (again on
+ * outlines and a dot per vending machine, with soft pings at random dots.
+ * The dots come from `cells`, machine counts per `cellSize`° grid cell
+ * (from the server, at render), scattered within each cell: no machine's
+ * own location reaches the browser. Two canvases: the outlines and dots are drawn once (again on
  * resize or a theme change, without fetching again), and only the pings
  * redraw each frame. Static under prefers-reduced-motion, which it follows
  * live; paused while off-screen or in a hidden tab.
  * Purely decorative and absolutely positioned, so it can't shift layout.
  */
-export function HeroMap() {
+export function HeroMap({ cells, cellSize }: { cells: [number, number, number][]; cellSize: number }) {
   const baseRef = useRef<HTMLCanvasElement>(null)
   const pingRef = useRef<HTMLCanvasElement>(null)
   const themeKey = useThemeKey()
@@ -65,6 +82,8 @@ export function HeroMap() {
   // The mount effect owns the canvases and data; a theme change only repaints.
   const darkRef = useRef(dark)
   const repaintRef = useRef<() => void>(() => {})
+  // Scattered once: the page's data doesn't change while it's open.
+  const [points] = useState(() => scatter(cells, cellSize))
 
   useEffect(() => {
     const base = baseRef.current
@@ -78,7 +97,6 @@ export function HeroMap() {
     let colors = readTokens(["brand", "brand-2"])
 
     let outlines: Outlines | null = null
-    let points: [number, number][] = []
     let project: Project | null = null
     let dpr = 1
     let width = 0
@@ -203,13 +221,13 @@ export function HeroMap() {
     }
     motion.addEventListener("change", onMotion)
 
-    Promise.all([
-      getJson<Outlines>("/geo/us-states.json", controller.signal),
-      getJson<{ points: [number, number][] }>("/api/locations/points", controller.signal).catch(() => ({ points: [] })),
-    ])
-      .then(([o, p]) => {
+    fetch("/geo/us-states.json", { signal: controller.signal })
+      .then((res) => {
+        if (!res.ok) throw new Error(`GET /geo/us-states.json failed (${res.status})`)
+        return res.json() as Promise<Outlines>
+      })
+      .then((o) => {
         outlines = o
-        points = p.points
         redraw()
       })
       .catch((err: unknown) => {
@@ -237,7 +255,7 @@ export function HeroMap() {
       motion.removeEventListener("change", onMotion)
       repaintRef.current = () => {}
     }
-  }, [])
+  }, [points])
 
   // A theme change: new colors on the same data. (Declared after the mount
   // effect, so it runs after it; before the data arrives it paints nothing.)
