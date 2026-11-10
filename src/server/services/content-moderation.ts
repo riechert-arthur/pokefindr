@@ -32,6 +32,8 @@ export async function moderate(
     ])
   } catch (err) {
     const timedOut = timeout.aborted
+    // The caller gave up on it (a refused request): nothing to report.
+    if (outer?.aborted && !timedOut) return failedResult(fallback, "error")
     console.error(JSON.stringify({ event: "moderation_failed", kind: rest.kind, timedOut, error: err instanceof Error ? err.name : String(err) }))
     return failedResult(fallback, timedOut ? "timeout" : "error")
   }

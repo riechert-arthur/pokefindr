@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest"
-import { checkGrounding, checkLinks, checkListed, checkMentions, checkStockClaims, checkTools, gradeCase, type ToolTrace } from "../../evals/assistant/grade"
+import { checkBlocked, checkGrounding, checkLinks, checkListed, checkMentions, checkStockClaims, checkTools, gradeCase, type ToolTrace } from "../../evals/assistant/grade"
 
 const known = ["Greenleaf Market", "Sunny Mart", "101 Alder St", "200 Birch St", "Prerelease night"]
 const found: ToolTrace[] = [{ name: "find_places", input: { near: "Portland, OR" }, ok: true, data: { total: 3, places: [{ name: "Greenleaf Market", address: "101 Alder St", miles: 0.4 }] } }]
@@ -72,5 +72,18 @@ describe("expectations", () => {
   it("an empty answer fails a case that needs one (the null baseline)", () => {
     const checks = gradeCase({ id: "x", category: "find", question: "near Portland?", expect: { tools: [{ name: "find_places" }], mentions: ["greenleaf"] } }, "", [], known)
     expect(checks.filter((c) => !c.pass).map((c) => c.name)).toEqual(["tools", "mentions"])
+  })
+})
+
+describe("the question check (#253)", () => {
+  it("passes a blocked case that was blocked and a normal one that wasn't, and is skipped without a moderator", () => {
+    expect(checkBlocked({ blocked: true }, true).pass).toBe(true)
+    expect(checkBlocked({}, false).pass).toBe(true)
+    expect(checkBlocked({ blocked: true }, undefined).pass).toBe(true)
+  })
+
+  it("fails a missed block and a block that shouldn't have happened", () => {
+    expect(checkBlocked({ blocked: true }, false).reasons).toEqual(["the input check should have blocked this question"])
+    expect(checkBlocked({}, true).reasons).toEqual(["the input check blocked a question it should have let through"])
   })
 })

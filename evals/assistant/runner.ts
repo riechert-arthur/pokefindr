@@ -17,6 +17,8 @@ import { PROMPT_VERSION, emptyUsage, runAssistantTurn, type ClaudeStreamer } fro
 import { costMicros } from "@/server/assistant/pricing"
 import type { AssistantEvent, AssistantUsage } from "@/lib/types/assistant-stream"
 import { FIXTURE_NAMES } from "./fixtures"
+import type { ContentModerator } from "@/server/ports/moderator"
+import { addCheckUsage, checkQuestion, emitBlocked } from "@/server/assistant/moderation"
 import { gradeCase, type CheckResult, type EvalCase, type ToolTrace } from "./grade"
 
 export const CASES_FILE = new URL("./cases.yaml", import.meta.url)
@@ -100,6 +102,8 @@ export interface EvalRow {
   /** "truncated" answers hit max_tokens: shown, but not counted as wrong. */
   status: "graded" | "truncated"
   stop: string
+  /** The input check blocked the question; undefined when the run had no moderator. */
+  blocked?: boolean
   checks: CheckResult[]
   answer: string
   tools: ToolTrace[]
@@ -148,6 +152,8 @@ export interface RunOptions {
   now?: Date
   /** Per (case, rep) wall-clock ceiling. */
   timeoutMs?: number
+  /** Checks each question first, as /api/assistant does (#253); blocked ones never reach the model. None skips the check. */
+  moderator?: ContentModerator | null
   /** Stops before starting another case once spend passes this. */
   maxCostMicros?: number
   onRow?: (row: EvalRow | EvalError) => void
@@ -188,22 +194,29 @@ export async function runEval(o: RunOptions): Promise<EvalReport> {
       let failure: string | null = null
       const signal = AbortSignal.timeout(o.timeoutMs ?? 90_000)
       const started = Date.now()
+      let blocked: boolean | undefined
+      const emit = (e: AssistantEvent) => {
+        if (e.type === "text") answer += e.text
+        if (e.type === "done") done = e
+        if (e.type === "error") failure = e.message
+      }
       try {
-        await runAssistantTurn({
-          claude: o.claude,
-          model: o.model,
-          effort: o.effort,
-          history: [...history, { role: "user", content: c.question }],
-          tools: { db: o.db, geocoder: o.geocoder, viewer: c.viewer ?? null, now, signal },
-          emit: (e) => {
-            if (e.type === "text") answer += e.text
-            if (e.type === "done") done = e
-            if (e.type === "error") failure = e.message
-          },
-          signal,
-          usage,
-          onTool: (t) => tools.push(t),
-        })
+        const check = o.moderator ? await checkQuestion(c.question, { moderator: o.moderator }) : null
+        if (check) addCheckUsage(usage, check)
+        blocked = check ? check.verdict === "block" && !check.failed : undefined
+        if (blocked) emitBlocked(emit, usage, check!.model)
+        else
+          await runAssistantTurn({
+            claude: o.claude,
+            model: o.model,
+            effort: o.effort,
+            history: [...history, { role: "user", content: c.question }],
+            tools: { db: o.db, geocoder: o.geocoder, viewer: c.viewer ?? null, now, signal },
+            emit,
+            signal,
+            usage,
+            onTool: (t) => tools.push(t),
+          })
       } catch (err) {
         failure = err instanceof Error ? err.message : String(err)
       }
@@ -215,7 +228,7 @@ export async function runEval(o: RunOptions): Promise<EvalReport> {
         continue
       }
       const stop = (done as Extract<AssistantEvent, { type: "done" }>).stop
-      const checks = gradeCase(c, answer, tools, FIXTURE_NAMES)
+      const checks = gradeCase(c, answer, tools, FIXTURE_NAMES, blocked)
       const row: EvalRow = {
         id: c.id,
         category: c.category,
@@ -223,6 +236,7 @@ export async function runEval(o: RunOptions): Promise<EvalReport> {
         pass: checks.every((x) => x.pass),
         status: stop === "max_tokens" ? "truncated" : "graded",
         stop,
+        blocked,
         checks,
         answer,
         tools,

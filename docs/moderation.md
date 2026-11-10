@@ -12,6 +12,7 @@ works, and why it's built this way.
 | Reviews: check on write, public reads | `src/server/services/reviews.ts` |
 | Held-review queue, decisions, recheck job | `src/server/services/review-moderation.ts` |
 | The Reviews tab in /admin | `src/components/admin/HeldReviews.tsx` |
+| The assistant's question check | `src/server/assistant/moderation.ts`, `src/app/api/assistant/route.ts` |
 | Labelled eval set and script | `evals/moderation/cases.yaml`, `scripts/moderation/eval.ts` |
 
 ## Policy
@@ -70,6 +71,28 @@ one with text is a paid check.
 New card shops and events already wait for a moderator. Their name, venue, hours and links get the
 same check when they're sent, stored on `location_submissions.text_check`, and shown as a "Text looks
 fine" / "Text flagged" line among the queue's checks. Nothing is rejected automatically.
+
+## The assistant's questions
+
+The newest question in each `/api/assistant` request is checked as the turn starts, alongside the
+limit checks (it starts once the in-memory per-minute checks pass, so a script hammering the
+endpoint doesn't pay for checks).
+
+- **"Block"** (clear abuse, threats, personal details, injection): the assistant's model is never
+  called. The viewer gets a short, polite canned reply (`BLOCKED_REPLY`), and the turn is logged with
+  outcome `blocked` and the flag `moderated` (migration 0025).
+- **"Hold"**: the turn goes ahead as usual, flagged `moderated` for review.
+- **A failure or a check slower than 1.5 s** fails open: the turn goes ahead, flagged
+  `moderation_error`. An outage never breaks the assistant.
+- **Cost:** the check's tokens and cost are added to the turn's usage, so they count in the turn
+  log's `cost_micros` and the daily budget (`ASSISTANT_DAILY_BUDGET_USD`). At about $0.0001 a
+  question it adds roughly 1% to an Opus turn.
+- The assistant's answers aren't checked: they come from our own tool results, and review text, the
+  main way bad text gets in, is already filtered.
+
+`evals/assistant/cases.yaml` has a `blocked` category; `npm run eval:assistant` runs the same check
+before each case (`--moderation claude|fake|off`), and fails a case the check blocks that it
+shouldn't.
 
 ## Why Claude Haiku, behind a port
 
