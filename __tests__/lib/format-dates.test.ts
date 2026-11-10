@@ -13,6 +13,8 @@ describe("formatEventWhen", () => {
     expect(formatEventWhen("2026-12-06T18:00:00Z", null, "es")).toBe("dom, 6 dic")
     expect(formatEventWhen("2026-12-19T18:00:00Z", "2026-12-21T18:00:00Z", "es")).toBe("19–21 dic")
     expect(formatEventWhen("2026-11-30T18:00:00Z", "2026-12-02T18:00:00Z", "es")).toBe("30 nov–2 dic")
+    expect(formatEventWhen("2026-12-30T18:00:00Z", "2027-01-02T18:00:00Z", "en")).toBe("Dec 30–Jan 2")
+    expect(formatEventWhen("2026-12-30T18:00:00Z", "2027-01-02T18:00:00Z", "es")).toBe("30 dic–2 ene")
     expect(formatEventWhen("2026-12-19T18:00:00Z", "2026-12-21T18:00:00Z", "en-GB")).toBe("19–21 Dec")
   })
 })

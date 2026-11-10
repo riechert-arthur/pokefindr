@@ -6,10 +6,30 @@ import { distanceUnit, formatDistance, formatRadius, type DistanceUnit } from "@
 
 const noSubscribe = () => () => {}
 
-/** The browser's region, from its first language that has one ("es-MX" → kilometers). */
+function hasRegion(tag: string): boolean {
+  try {
+    return Boolean(new Intl.Locale(tag).region)
+  } catch {
+    return false
+  }
+}
+
+let cachedUnit: DistanceUnit | undefined
+
+/**
+ * The browser's region, from its first language that has one ("es-MX" →
+ * kilometers; "zh-Hant" has a script, not a region). Worked out once: the
+ * browser's languages don't change while the page is open.
+ */
 function viewerUnit(): DistanceUnit {
+  if (cachedUnit) return cachedUnit
   const tags = [...(navigator.languages ?? []), navigator.language].filter((tag): tag is string => typeof tag === "string")
-  return distanceUnit(tags.find((tag) => tag.includes("-")))
+  return (cachedUnit = distanceUnit(tags.find(hasRegion)))
+}
+
+/** For tests that change the browser's languages. */
+export function resetViewerUnit() {
+  cachedUnit = undefined
 }
 
 /**
