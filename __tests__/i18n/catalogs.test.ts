@@ -80,26 +80,31 @@ function sources(dir = path.join(ROOT, "src")): string[] {
  * segment, and only in key-like templates with a word of their own
  * (`kinds.${kind}.name`, not `${a}.${b}`).
  */
-/** Helpers that hand back a translator for one namespace (src/i18n/seo.ts). */
-const TRANSLATOR_HELPERS: Record<string, string> = { ogTranslator: "og" }
+/**
+ * Helpers that read the catalog: a translator for one namespace (src/i18n/seo.ts),
+ * apiError's codes and the ApiErrorCode type (src/server/api-error.ts), or
+ * the whole catalog (serverTranslator, src/server/i18n.ts), whose keys then
+ * have to appear in full ("email.verify.subject").
+ */
+const TRANSLATOR_HELPERS: Record<string, string> = { ogTranslator: "og", serverTranslator: "", apiError: "apiErrors", ApiErrorCode: "apiErrors" }
 
 function readsOf(code: string) {
   const namespaces = new Set<string>()
   for (const m of code.matchAll(/(?:useTranslations|getTranslations)(?:<\s*["'`]([\w.-]+)["'`]\s*>|\(\s*["'`]([\w.-]+)["'`])/g)) namespaces.add((m[1] ?? m[2])!)
   for (const m of code.matchAll(/namespace:\s*["'`]([\w.-]+)["'`]/g)) namespaces.add(m[1])
-  for (const [helper, namespace] of Object.entries(TRANSLATOR_HELPERS)) if (code.includes(`${helper}(`)) namespaces.add(namespace)
+  for (const [helper, namespace] of Object.entries(TRANSLATOR_HELPERS)) if (new RegExp(`\\b${helper}\\b`).test(code)) namespaces.add(namespace)
   for (const m of code.matchAll(/\bMessages((?:\[\s*"\w+"\s*\])+)/g)) namespaces.add([...m[1].matchAll(/"(\w+)"/g)].map((k) => k[1]).join("."))
   // The root: useTranslations(), or getTranslations({ locale }) with no namespace.
   if (/(?:useTranslations|getTranslations)\(\s*\)|getTranslations\(\{\s*locale(?:\s*:\s*[\w.]+(?:\s+as\s+\w+)?)?\s*\}\)/.test(code)) namespaces.add("")
   const exact = new Set<string>()
   const patterns: RegExp[] = []
-  for (const m of code.matchAll(/"([\w.-]+)"|'([\w.-]+)'|`([^`]*)`/g)) {
-    if (m[1] ?? m[2]) exact.add((m[1] ?? m[2])!)
-    else if (m[3]?.includes("${")) {
-      const parts = m[3].split(/\$\{[^}]*\}/)
-      if (!parts.every((p) => /^[\w.-]*$/.test(p)) || !parts.some((p) => /[A-Za-z]{2,}/.test(p))) continue
-      patterns.push(new RegExp(`^${parts.map((p) => p.replace(/\./g, "\\.")).join("[\\w-]+")}$`))
-    } else if (m[3]) exact.add(m[3])
+  // Quoted strings anywhere, including inside a template's ${…}, and plain templates (`form.failed`).
+  for (const m of code.matchAll(/"([\w.-]+)"|'([\w.-]+)'|`([\w.-]+)`/g)) exact.add((m[1] ?? m[2] ?? m[3])!)
+  // Key-shaped templates, with a word of their own (`kinds.${kind}.name`, not `${a}.${b}`).
+  for (const m of code.matchAll(/`([\w.-]*(?:\$\{[^}`]*\}[\w.-]*)+)`/g)) {
+    const parts = m[1].split(/\$\{[^}]*\}/)
+    if (!parts.some((p) => /[A-Za-z]{2,}/.test(p))) continue
+    patterns.push(new RegExp(`^${parts.map((p) => p.replace(/\./g, "\\.")).join("[\\w-]+")}$`))
   }
   // t(failure), t(kind): a key from a variable holding one of a set of strings.
   const byVariable = /\bt\(\s*[A-Za-z_]\w*(?:\s+as\s+\w+)?\s*[,)]/.test(code)

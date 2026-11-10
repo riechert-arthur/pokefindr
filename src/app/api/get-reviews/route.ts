@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { z } from 'zod/v3'
 import { listLocationReviews } from '@/server/services/reviews'
+import { apiError } from "@/server/api-error"
 
 const locationIdSchema = z.string().uuid()
 
@@ -15,6 +16,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ reviews }, { status: 200 })
   } catch (err) {
     console.error('[api/get-reviews] failed to load reviews', err)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return apiError("serverError", "Server error", 500)
   }
 }

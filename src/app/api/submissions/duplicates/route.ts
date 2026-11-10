@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod/v3"
 import { SUBMISSION_KINDS } from "@/lib/submissions/constants"
 import { findDuplicates } from "@/server/services/submissions"
+import { apiError } from "@/server/api-error"
 
 export const dynamic = "force-dynamic"
 
@@ -26,6 +27,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ duplicates: await findDuplicates({ ...query.data, userId }) })
   } catch (err) {
     console.error("[api/submissions/duplicates] failed", err)
-    return NextResponse.json({ error: "Server error" }, { status: 500 })
+    return apiError("serverError", "Server error", 500)
   }
 }

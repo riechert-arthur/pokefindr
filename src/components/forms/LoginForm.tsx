@@ -22,7 +22,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod/v3"
 import { useForm } from "react-hook-form"
-import { handleSubmitError } from "@/lib/forms"
+import { useSubmitError } from "@/lib/forms"
 import { LoadingButton } from "@/components/wrappers/LoadingButton"
 import type { AuthSchemas } from "@/lib/schemas"
 import { useTranslations } from "next-intl"
@@ -59,6 +59,7 @@ export function LoginForm({
   /** Where to go once logged in: an MCP client's authorization (#134). */
   next?: string | null
 }) {
+  const handleSubmitError = useSubmitError()
   const router = useRouter()
   const t = useTranslations("auth")
   const { loginSchema } = useAuthSchemas()

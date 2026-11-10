@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod/v3"
 import { REPORT_REASONS } from "@/lib/locations/reports"
 import { addLocationReport } from "@/server/services/reports"
+import { apiError } from "@/server/api-error"
 
 export const dynamic = "force-dynamic"
 
@@ -32,6 +33,6 @@ export async function POST(request: NextRequest, context: Context) {
     return NextResponse.json({ success: true, duplicate: result === "duplicate" })
   } catch (err) {
     console.error("[api/locations/id/reports] failed to store the report", err)
-    return NextResponse.json({ error: "Server error" }, { status: 500 })
+    return apiError("serverError", "Server error", 500)
   }
 }

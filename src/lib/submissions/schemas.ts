@@ -104,11 +104,12 @@ export type EventSubmission = z.infer<typeof eventSubmissionSchema>
  * nor more than a year out, and not already over. Checked on the server
  * with its clock; the field it's about comes with the message.
  */
-export function eventDateProblem(startsAt: string, endsAt?: string, now = new Date()): { field: "startsAt" | "endsAt"; error: string } | null {
+export function eventDateProblem(startsAt: string, endsAt?: string, now = new Date()): { field: "startsAt" | "endsAt"; error: string; key: string } | null {
   const t = Date.parse(startsAt)
-  if (t < now.getTime() - DAY_MS) return { field: "startsAt", error: "That date has passed." }
-  if (t > now.getTime() + 366 * DAY_MS) return { field: "startsAt", error: "Pick a date within the next year." }
-  if (endsAt && Date.parse(endsAt) < now.getTime()) return { field: "endsAt", error: "That event has already ended." }
+  // `key` names the form's message for it (addPlace.errors), as `say` does above.
+  if (t < now.getTime() - DAY_MS) return { field: "startsAt", error: "That date has passed.", key: "datePassed" }
+  if (t > now.getTime() + 366 * DAY_MS) return { field: "startsAt", error: "Pick a date within the next year.", key: "dateTooFar" }
+  if (endsAt && Date.parse(endsAt) < now.getTime()) return { field: "endsAt", error: "That event has already ended.", key: "alreadyEnded" }
   return null
 }
 

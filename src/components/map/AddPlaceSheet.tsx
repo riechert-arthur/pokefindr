@@ -16,12 +16,16 @@ import { cn } from "@/lib/utils"
 import { STATE_ZONES, browserZone, formatInZone, zoneName, zonedToIso } from "@/lib/time/zones"
 import { track } from "@/lib/analytics"
 import { useLocale, useTranslations } from "next-intl"
+import { useApiError } from "@/i18n/useApiError"
 
 type InputProps = ComponentProps<typeof Input>
 
 /** The schema's messages the form shows in the page's language (addPlace.errors); any other is "Check this field." */
 const ERROR_KEYS = SUBMISSION_ERROR_KEYS
 type ErrorKey = SubmissionErrorKey
+/** The server's own checks (eventDateProblem) and the schema's: what a 400 from POST /api/submissions can name. */
+const SERVER_ERROR_KEYS = [...ERROR_KEYS, "datePassed", "dateTooFar", "alreadyEnded"] as const
+type ServerErrorKey = (typeof SERVER_ERROR_KEYS)[number]
 
 export interface Pin {
   lng: number
@@ -99,6 +103,7 @@ interface AddPlaceSheetProps {
 export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindChange, onStepChange, initialKind = null }: AddPlaceSheetProps) {
   const locale = useLocale()
   const t = useTranslations("addPlace")
+  const apiError = useApiError()
   // Coordinates keep a decimal point in every language, as maps and GPS show them:
   // a decimal comma would run into the comma between the two.
   const coordinate = (n: number) => n.toFixed(5)
@@ -194,11 +199,13 @@ export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindC
         return setErrors({ form: t("form.duplicates") })
       }
       if (res.status === 400 && body.field && body.field in EMPTY) {
-        setErrors({ [body.field]: body.error })
+        // The server's checks (dates) name the form's message for the problem.
+        const known = typeof body.key === "string" && (SERVER_ERROR_KEYS as readonly string[]).includes(body.key)
+        setErrors({ [body.field]: known ? t(`errors.${body.key as ServerErrorKey}`, body.values ?? {}) : body.error })
         return setStep(2)
       }
       if (res.status === 401) return setErrors({ form: t("form.sessionEnded") })
-      setErrors({ form: body.error ?? t("form.failed") })
+      setErrors({ form: apiError(body, t("form.failed")) })
     } catch {
       track("add_place_submit", { kind, outcome: "error" })
       setErrors({ form: t("form.offline") })

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Link } from "@/i18n/navigation"
+import { getPathname, Link } from "@/i18n/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod/v3"
@@ -11,23 +11,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { LoadingButton } from "@/components/wrappers/LoadingButton"
-import { handleSubmitError } from "@/lib/forms"
+import { useSubmitError } from "@/lib/forms"
 import type { AuthSchemas } from "@/lib/schemas"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { useAuthSchemas } from "./useAuthSchemas"
 
 type ForgotPasswordValues = z.infer<AuthSchemas["forgotPasswordSchema"]>
 
 /** Asks for a password reset link. Says the same whether or not the email has an account. */
 export function ForgotPasswordForm() {
+  const handleSubmitError = useSubmitError()
   const t = useTranslations("auth")
+  const locale = useLocale()
   const { forgotPasswordSchema } = useAuthSchemas()
   const [sentTo, setSentTo] = useState<string | null>(null)
   const form = useForm<ForgotPasswordValues>({ resolver: zodResolver(forgotPasswordSchema), defaultValues: { email: "" } })
 
   async function onSubmit({ email }: ForgotPasswordValues) {
     try {
-      await axios.post("/api/identity/request-password-reset", { email, redirectTo: "/reset-password" })
+      // The reset page in this page's language (#185); the email follows the same language.
+      await axios.post("/api/identity/request-password-reset", { email, redirectTo: getPathname({ href: "/reset-password", locale }) })
       setSentTo(email)
     } catch (err) {
       handleSubmitError(err)

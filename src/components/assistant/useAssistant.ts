@@ -6,6 +6,7 @@ import type { AssistantCard } from "@/lib/types/assistant"
 import type { AssistantEvent, AssistantTurn } from "@/lib/types/assistant-stream"
 import { clipHistory, memoryOf } from "@/lib/assistant/memory"
 import { track } from "@/lib/analytics"
+import { useApiError, type ApiErrorBody } from "@/i18n/useApiError"
 
 export type ChatMessage =
   | { id: number; role: "user"; text: string }
@@ -60,11 +61,11 @@ async function* lines(body: ReadableStream<Uint8Array>): AsyncGenerator<string> 
 
 type ChatMessages = ReturnType<typeof useTranslations<"assistant.chat">>
 
-/** What to say when /api/assistant answers with an error status. The API's own message is in English for now (#185). */
-async function refusalNote(res: Response, t: ChatMessages): Promise<string> {
+/** What to say when /api/assistant answers with an error status, in the page's language (#185). */
+async function refusalNote(res: Response, t: ChatMessages, apiError: ReturnType<typeof useApiError>): Promise<string> {
   if (res.status === 401) return t("sessionEnded")
-  const body = (await res.json().catch(() => null)) as { error?: string } | null
-  return body?.error ?? t("failed")
+  const body = (await res.json().catch(() => null)) as ApiErrorBody | null
+  return apiError(body, t("failed"))
 }
 
 /**
@@ -75,6 +76,7 @@ async function refusalNote(res: Response, t: ChatMessages): Promise<string> {
  */
 export function useAssistant() {
   const t = useTranslations("assistant.chat")
+  const apiError = useApiError()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [busy, setBusy] = useState(false)
   const ctl = useRef<AbortController | null>(null)
@@ -105,7 +107,7 @@ export function useAssistant() {
         signal: abort.signal,
       })
       if (!res.ok || !res.body) {
-        const note = await refusalNote(res, t)
+        const note = await refusalNote(res, t, apiError)
         update(() => ({ status: null, note, done: true }))
         return
       }
@@ -119,7 +121,7 @@ export function useAssistant() {
         if (event.type === "text") update((m) => ({ text: m.text + event.text, status: null }))
         else if (event.type === "status") update(() => ({ status: event.text }))
         else if (event.type === "card") update((m) => ({ cards: [...m.cards, event.card] }))
-        else if (event.type === "error") update((m) => ({ status: null, note: event.message, done: true, memory: partialMemory(m) }))
+        else if (event.type === "error") update((m) => ({ status: null, note: apiError({ code: event.code, error: event.message }), done: true, memory: partialMemory(m) }))
         else if (event.type === "done")
           update(() => ({
             status: null,
@@ -141,7 +143,7 @@ export function useAssistant() {
       ctl.current = null
       setBusy(false)
     }
-  }, [t])
+  }, [t, apiError])
 
   const stop = useCallback(() => ctl.current?.abort(), [])
   const reset = useCallback(() => {

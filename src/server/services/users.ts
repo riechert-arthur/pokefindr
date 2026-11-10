@@ -122,7 +122,7 @@ export async function releaseUsername(username: string, db: Database = getDb()):
 
 /** Creates a user's profile. Throws UsernameTakenError on a duplicate username. */
 export async function createProfile(
-  profile: { id: string; username: string; fullName?: string | null; onboarded: boolean },
+  profile: { id: string; username: string; fullName?: string | null; onboarded: boolean; locale?: Locale | null },
   db: Database = getDb(),
 ): Promise<void> {
   await clearExpiredClaim(profile.username, db)

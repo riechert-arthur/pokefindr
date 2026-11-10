@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { z } from 'zod/v3'
 import { addReview } from '@/server/services/reviews'
+import { apiError } from "@/server/api-error"
 
 const bodySchema = z.object({
   locationId: z.string().uuid(),
@@ -26,6 +27,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, id }, { status: 200 })
   } catch (err) {
     console.error('[api/reviews] failed to add review', err)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    return apiError("serverError", "Server error", 500)
   }
 }

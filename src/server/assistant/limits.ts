@@ -4,6 +4,7 @@ import type { Database } from "@/server/db/client"
 import { assistantPlaceViews, assistantUsage } from "@/server/db/schema"
 import { tokenBucket } from "@/server/lib/rate-limit"
 import type { AssistantUsage } from "@/lib/types/assistant-stream"
+import type { ApiErrorCode } from "@/server/api-error"
 
 /**
  * The assistant's limits (#209) and its cap on places (#211). Daily counts
@@ -28,11 +29,14 @@ export const secondsToNextDay = (now: Date) => Math.max(1, Math.ceil((Date.UTC(n
 const perMinute = tokenBucket({ perMinute: MESSAGES_PER_MINUTE, burst: MESSAGES_PER_MINUTE })
 const openTurns = new Set<string>()
 
+/** `code` and `values` name the page's message for it (apiErrors in messages/*.yml, #185). */
 export type Refusal =
-  | { kind: "paused"; message: string }
+  | { kind: "paused"; message: string; code: ApiErrorCode }
   | {
       kind: "limited"
       message: string
+      code: ApiErrorCode
+      values?: Record<string, number>
       retryAfter: number
       /** Turned away by the in-memory checks (per minute, one open turn), before any database read: not worth a log row. */
       quick?: true
@@ -48,8 +52,8 @@ export async function startTurn(
   { userId, now, dailyBudgetMicros }: { userId: string; now: Date; dailyBudgetMicros: number },
   db: Database,
 ): Promise<{ ok: true; spentToday: number } | { ok: false; refusal: Refusal }> {
-  if (!perMinute.take(userId)) return { ok: false, refusal: { kind: "limited", message: "You're sending messages quickly. Wait a minute and try again.", retryAfter: 60, quick: true } }
-  if (openTurns.has(userId)) return { ok: false, refusal: { kind: "limited", message: "Wait for the current answer to finish.", retryAfter: 5, quick: true } }
+  if (!perMinute.take(userId)) return { ok: false, refusal: { kind: "limited", message: "You're sending messages quickly. Wait a minute and try again.", code: "tooFast", retryAfter: 60, quick: true } }
+  if (openTurns.has(userId)) return { ok: false, refusal: { kind: "limited", message: "Wait for the current answer to finish.", code: "answerInProgress", retryAfter: 5, quick: true } }
   // Claimed before the first await, so requests sent at once can't all get past this.
   openTurns.add(userId)
   try {
@@ -59,12 +63,12 @@ export async function startTurn(
       db.select({ cost: sql<number>`coalesce(sum(${assistantUsage.costMicros}), 0)::bigint` }).from(assistantUsage).where(eq(assistantUsage.day, day)),
     ])
     const tomorrow = secondsToNextDay(now)
-    const overMessages = { ok: false as const, refusal: { kind: "limited" as const, message: `You've reached today's limit of ${MESSAGES_PER_DAY} messages. It resets at midnight UTC.`, retryAfter: tomorrow } }
+    const overMessages = { ok: false as const, refusal: { kind: "limited" as const, message: `You've reached today's limit of ${MESSAGES_PER_DAY} messages. It resets at midnight UTC.`, code: "dailyMessages" as const, values: { limit: MESSAGES_PER_DAY }, retryAfter: tomorrow } }
     if ((mine?.messages ?? 0) >= MESSAGES_PER_DAY) return release(userId, overMessages)
     if ((mine?.inputTokens ?? 0) + (mine?.outputTokens ?? 0) >= TOKENS_PER_DAY)
-      return release(userId, { ok: false, refusal: { kind: "limited", message: "You've used today's assistant allowance. It resets at midnight UTC.", retryAfter: tomorrow } })
+      return release(userId, { ok: false, refusal: { kind: "limited", message: "You've used today's assistant allowance. It resets at midnight UTC.", code: "dailyAllowance", retryAfter: tomorrow } })
     const spent = Number(all.cost)
-    if (spent >= dailyBudgetMicros) return release(userId, { ok: false, refusal: { kind: "paused", message: "The assistant is paused for today. The map and search still work." } })
+    if (spent >= dailyBudgetMicros) return release(userId, { ok: false, refusal: { kind: "paused", message: "The assistant is paused for today. The map and search still work.", code: "assistantPaused" } })
     // Counted only while under the cap, in one statement, so other instances can't push past it either.
     const counted = await db
       .insert(assistantUsage)

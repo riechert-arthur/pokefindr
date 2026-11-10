@@ -2,6 +2,7 @@ import "server-only"
 import { NextResponse, type NextRequest } from "next/server"
 import { getAuth, IDENTITY_BASE_PATH } from "@/server/auth/auth"
 import { getServerConfig } from "@/server/config"
+import { LOCALE_HEADER, requestLocale } from "@/server/i18n"
 
 /**
  * The client's IP as the host reports it: Vercel sets x-real-ip and the
@@ -46,6 +47,8 @@ export async function identityRequest(req: NextRequest | Request, path: `/${stri
   if (cookie) headers.set("cookie", cookie)
   const userAgent = req.headers.get("user-agent")
   if (userAgent) headers.set("user-agent", userAgent)
+  // The page's language, for the emails Better Auth sends from this request (#185).
+  headers.set(LOCALE_HEADER, requestLocale(req))
   return getAuth().handler(
     new Request(new URL(`${IDENTITY_BASE_PATH}${path}`, APP_URL), { method: "POST", headers, body: JSON.stringify(body ?? {}) }),
   )

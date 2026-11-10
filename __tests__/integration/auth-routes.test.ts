@@ -41,7 +41,7 @@ describe("sign-up", () => {
     await post(signup, form)
     const res = await post(signup, { ...form, email: "other@example.com", username: "ASH" })
     expect(res.status).toBe(409)
-    expect(await res.json()).toEqual({ error: "That username is already taken" })
+    expect(await res.json()).toEqual({ error: "That username is already taken", code: "usernameTaken" })
     expect(await getDb().select().from(users)).toHaveLength(1)
   })
 

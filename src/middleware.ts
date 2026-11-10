@@ -4,6 +4,7 @@ import createIntlMiddleware from 'next-intl/middleware'
 import { SESSION_COOKIE_NAME } from '@/server/auth/cookie'
 import { getJwtSecret } from '@/server/edge-config'
 import { routing, type Locale } from '@/i18n/routing'
+import { apiError } from '@/server/api-error'
 
 const encoder     = new TextEncoder()
 const intl        = createIntlMiddleware(routing)
@@ -63,7 +64,8 @@ function redirectToLogin(req: NextRequest, locale: Locale | null) {
   // An API call gets a 401 it can act on. A redirect would make fetch follow
   // it (a POST re-sent to /login) and get the login page back.
   if (req.nextUrl.pathname.startsWith('/api/')) {
-    return NextResponse.json({ error: 'Log in to continue' }, { status: 401 })
+    // `code` is the page's message for it (apiErrors in messages/*.yml).
+    return apiError('loginRequired', 'Log in to continue', 401)
   }
   const url = req.nextUrl.clone()
   url.pathname = locale && locale !== routing.defaultLocale ? `/${locale}/login` : '/login'

@@ -30,7 +30,7 @@ import { useAuthSchemas } from "./useAuthSchemas"
 type CallbackValues = z.infer<AuthSchemas["callbackSchema"]>
 import { z } from "zod/v3"
 import { broadcastAuth } from "@/lib/auth/broadcast"
-import { handleSubmitError } from "@/lib/forms"
+import { useSubmitError } from "@/lib/forms"
 import { Input } from "@/components/ui/input"
 
 export function CallbackForm({
@@ -38,6 +38,7 @@ export function CallbackForm({
   next = null,
   ...props
 }: React.ComponentProps<"div"> & { next?: string | null }) {
+  const handleSubmitError = useSubmitError()
   const router = useRouter()
   const t = useTranslations("auth")
   const { callbackSchema } = useAuthSchemas()

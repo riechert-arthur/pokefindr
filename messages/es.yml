@@ -352,6 +352,9 @@ addPlace:
     city: Escribe una ciudad.
     endBeforeStart: Tiene que terminar después de empezar.
     tooManyDays: "Un evento puede durar como máximo {days} días."
+    datePassed: Esa fecha ya pasó.
+    dateTooFar: Elige una fecha dentro del próximo año.
+    alreadyEnded: Ese evento ya terminó.
   form:
     duplicates: Hay lugares parecidos cerca. Revísalos y marca la casilla para enviarlo de todos modos.
     sessionEnded: Tu sesión terminó. Vuelve a iniciar sesión para enviarlo.
@@ -955,3 +958,82 @@ states:
   WI: Wisconsin
   WV: Virginia Occidental
   WY: Wyoming
+
+email:
+  hi: "Hola, {name}:"
+  hiAnonymous: "Hola:"
+  footer: Recibes este correo por una acción en tu cuenta de PokeFindr.
+  pasteLink: "O pega este enlace en tu navegador:"
+  verify:
+    subject: Confirma tu cuenta de PokeFindr
+    text: "Confirma tu correo para terminar de crear tu cuenta de PokeFindr:"
+    html: Confirma tu correo para terminar de crear tu cuenta de PokeFindr.
+    button: Confirmar correo
+    note: El enlace funciona durante 24 horas. Si no te registraste, puedes ignorar este correo.
+  reset:
+    subject: Restablece tu contraseña de PokeFindr
+    text: "Alguien pidió restablecer la contraseña de tu cuenta de PokeFindr. Para elegir una nueva, abre:"
+    html: Alguien pidió restablecer la contraseña de tu cuenta de PokeFindr.
+    button: Elegir una contraseña nueva
+    note: "El enlace funciona durante 1 hora. Si no fuiste tú, ignora este correo: tu contraseña no cambia."
+  confirmChange:
+    subject: Confirma tu nuevo correo de PokeFindr
+    text: "Confirma que {email} es el nuevo correo de tu cuenta de PokeFindr:"
+    html: "Confirma que <b>{email}</b> es el nuevo correo de tu cuenta de PokeFindr."
+    button: Confirmar nuevo correo
+    note: Nada cambia hasta que abras el enlace, que funciona durante 24 horas. Si no lo pediste, ignora este correo.
+  approveChange:
+    subject: Aprueba el cambio de correo de PokeFindr
+    text: "Alguien pidió cambiar el correo de tu cuenta de PokeFindr a {email}. Si fuiste tú, apruébalo aquí y luego confirma la nueva dirección desde su bandeja de entrada:"
+    html: "Alguien pidió cambiar el correo de tu cuenta de PokeFindr a <b>{email}</b>. Si fuiste tú, apruébalo y luego confirma la nueva dirección desde su bandeja de entrada."
+    button: Aprobar el cambio
+    note: "Si no fuiste tú, ignora este correo y cambia tu contraseña: nada cambia a menos que lo apruebes."
+  toReview:
+    subject: "{kind, select, shop {Nueva tienda de cartas} other {Nuevo evento}} para revisar: {name}"
+    body: "{submitter} agregó {kind, select, shop {una tienda de cartas} other {un evento}}: <b>{name}</b>{place}."
+    text: "Revísalo aquí:"
+    button: Abrir la cola de revisión
+    unnamed: Un lugar nuevo
+  approved:
+    subject: "{name} ya está en PokeFindr"
+    text: "Gracias por agregar {name}. Un moderador lo revisó y {kind, select, shop {la tienda de cartas} other {el evento}} ya está en el mapa para todos:"
+    html: "Gracias por agregar <b>{name}</b>. Un moderador lo revisó y {kind, select, shop {la tienda de cartas} other {el evento}} ya está en el mapa para todos."
+    button: Verlo en el mapa
+    unnamed: Tu lugar
+  rejected:
+    subject: "{name} no se agregó a PokeFindr"
+    thanks: "Gracias por enviar <b>{name}</b>. Un moderador no lo agregó al mapa."
+    reason: "El motivo: {reason}."
+    text: "Si algo estaba mal, puedes agregarlo de nuevo con los datos correctos:"
+    html: Si algo estaba mal, agrégalo de nuevo con los datos correctos.
+    button: Agregarlo de nuevo
+    noReason: no pasó la revisión
+
+apiErrors:
+  loginRequired: Inicia sesión para continuar
+  wrongPassword: Correo o contraseña incorrectos. Si todavía no confirmaste tu correo, te enviamos un enlace nuevo.
+  credentialsMissing: Escribe tu correo y tu contraseña
+  tooManyAttempts: Demasiados intentos. Espera un minuto e inténtalo de nuevo.
+  usernameTaken: Ese nombre de usuario ya está en uso
+  signupFailed: No pudimos crear tu cuenta
+  accountNotFound: No encontramos la cuenta
+  emailUnconfirmed: Confirma tu correo actual antes de cambiarlo. Al iniciar sesión de nuevo te enviamos un enlace nuevo.
+  REAUTH: Vuelve a iniciar sesión para cambiar tu correo.
+  emailSame: Ese ya es tu correo.
+  emailChangeFailed: No se pudo iniciar el cambio de correo
+  tooManyPlaces: Ya agregaste todos los lugares que puedes por hoy. Inténtalo de nuevo mañana.
+  duplicatePlace: Puede que ya esté en el mapa.
+  serverError: Algo salió mal de nuestro lado. Inténtalo de nuevo.
+  assistantOff: El asistente no está disponible en este momento.
+  assistantPaused: El asistente está en pausa por hoy. El mapa y la búsqueda siguen funcionando.
+  assistantFailed: Algo salió mal con el asistente. Inténtalo de nuevo.
+  assistantBusy: El asistente está ocupado. Inténtalo de nuevo en un minuto.
+  assistantSlow: El asistente tardó demasiado. Inténtalo de nuevo o haz una pregunta más concreta.
+  tooFast: Estás enviando mensajes muy rápido. Espera un minuto e inténtalo de nuevo.
+  answerInProgress: Espera a que termine la respuesta actual.
+  dailyMessages: "Llegaste al límite de hoy de {limit} mensajes. Se reinicia a medianoche UTC."
+  dailyAllowance: Ya usaste la cuota del asistente de hoy. Se reinicia a medianoche UTC.
+  offline: No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.
+  status: "La solicitud falló con el código {status}"
+  unexpected: Ocurrió un error inesperado
+  invalidInput: Revisa lo que escribiste e inténtalo de nuevo.

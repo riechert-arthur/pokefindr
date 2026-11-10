@@ -187,9 +187,7 @@ module.exports = {
       rules: { "no-restricted-syntax": ["error", ...ENV_RULES, ...COLOR_RULES, ...COPY_RULES] },
     },
     {
-      // Its English toasts are replaced with the catalog's in #185.
       files: ["src/**/*.ts"],
-      excludedFiles: ["src/lib/forms.ts"],
       rules: { "no-restricted-syntax": ["error", ...ENV_RULES, ...COLOR_RULES, ...TOAST_RULES] },
     },
     {
