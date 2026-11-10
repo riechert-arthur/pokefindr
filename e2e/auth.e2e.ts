@@ -51,8 +51,16 @@ test("sign up, confirm the email, log in, review, log out", async ({ page }) => 
   const me = await page.request.get("/api/auth/user")
   expect((await me.json()).user.username).toBe(username)
 
-  const { features } = (await (await page.request.get("/api/locations")).json()) as { features: { id?: string; properties: { id?: string } }[] }
-  const locationId = features[0].id ?? features[0].properties.id
+  // Any place will do. There's no list of every place (#201), so look box by box, 300 square degrees at a time.
+  let locationId: string | undefined
+  for (let west = -125; west < -66 && !locationId; west += 20) {
+    for (let south = 24; south < 50 && !locationId; south += 15) {
+      const res = await page.request.get(`/api/locations?bbox=${west},${south},${west + 20},${south + 15}`)
+      const { features } = (await res.json()) as { features: { id?: string; properties: { id?: string } }[] }
+      locationId = features[0]?.id ?? features[0]?.properties.id
+    }
+  }
+  expect(locationId).toBeTruthy()
   const review = await page.request.post("/api/reviews", { data: { locationId, rating: 5, text: "Stocked today (e2e)" } })
   expect(review.status()).toBe(200)
 
