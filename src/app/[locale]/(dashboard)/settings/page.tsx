@@ -35,10 +35,13 @@ export default function SettingsPage() {
   const submitErrorMessage = useSubmitErrorMessage()
   const t = useTranslations('settings')
   const { isSidebarOpen, toggleSidebar } = useSidebar()
-  const { session } = useSessionContext()
+  const { session, setSession, isLoading: sessionLoading } = useSessionContext()
 
   const [settings, setSettings]     = useState<Settings>({ fullName: '', email: '', username: '' })
   const [loading, setLoading]       = useState(true)
+  const [loadFailed, setLoadFailed] = useState(false)
+  /** The field whose save is in flight; the other rows can't open until it answers. */
+  const [saving, setSaving]         = useState<keyof Settings | null>(null)
   const [editing, setEditing]       = useState<keyof Settings | null>(null)
   /** What's happening with an email change: sent for approval, or back from one of its links. */
   const [emailNote, setEmailNote] = useState<string | null>(null)
@@ -62,6 +65,7 @@ export default function SettingsPage() {
         setSettings(res.data)
       } catch (err) {
         console.error('Failed to load settings', err)
+        setLoadFailed(true)
       } finally {
         setLoading(false)
       }
@@ -71,6 +75,7 @@ export default function SettingsPage() {
   /** Saves one field; returns the error to show next to it, if any. */
   async function saveField(field: keyof Settings, value: string): Promise<string | void> {
     if (value === settings[field]) return void setEditing(null)
+    setSaving(field)
     try {
       const { data } = await axios.patch<{ emailPending?: boolean }>(
         '/api/user-settings',
@@ -82,11 +87,15 @@ export default function SettingsPage() {
         setEmailNote(t('email.pending', { current: settings.email, next: value }))
       } else {
         setSettings((s) => ({ ...s, [field]: value }))
+        // The header's UserMenu shows the session's username.
+        if (field === 'username') setSession((s) => (s ? { ...s, username: value } : s))
         toast.success(t('saved'))
       }
-      setEditing(null)
+      setEditing((open) => (open === field ? null : open))
     } catch (err) {
       return submitErrorMessage(err)
+    } finally {
+      setSaving(null)
     }
   }
 
@@ -99,7 +108,7 @@ export default function SettingsPage() {
           </Button>
           <div />
           <div className="flex items-center gap-x-8">
-            {session ? <UserMenu userName={session.username} /> : <Skeleton className="size-9 rounded-full" />}
+            {session ? <UserMenu userName={session.username} /> : sessionLoading && <Skeleton className="size-9 rounded-full" />}
           </div>
         </div>
       </header>
@@ -131,6 +140,10 @@ export default function SettingsPage() {
                     </div>
                   ))}
                 </div>
+              ) : loadFailed ? (
+                <Alert role="alert" className="mt-6">
+                  <AlertDescription className="text-body">{t("loadFailed")}</AlertDescription>
+                </Alert>
               ) : (
                 <dl className="mt-6 divide-y divide-border border-t border-border">
                   {FIELDS.map(({ field, type, autoComplete }) => (
@@ -141,6 +154,7 @@ export default function SettingsPage() {
                       type={type}
                       autoComplete={autoComplete}
                       editing={editing === field}
+                      locked={saving !== null && saving !== field}
                       onEdit={() => setEditing(field)}
                       onCancel={() => setEditing(null)}
                       onSave={(value) => saveField(field, value)}

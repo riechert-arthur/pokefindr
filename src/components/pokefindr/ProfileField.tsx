@@ -14,6 +14,8 @@ interface ProfileFieldProps {
   autoComplete?: string
   /** Whether this row is being edited. The page keeps one row open at a time. */
   editing: boolean
+  /** Disables Update, while another row is saving. */
+  locked?: boolean
   onEdit: () => void
   onCancel: () => void
   /**
@@ -29,7 +31,7 @@ interface ProfileFieldProps {
  * the value with an Update button, or an inline form. Enter saves, Escape cancels, and
  * focus moves into the field on Update and back to Update afterwards.
  */
-export function ProfileField({ label, value, type = "text", autoComplete, editing, onEdit, onCancel, onSave, className }: ProfileFieldProps) {
+export function ProfileField({ label, value, type = "text", autoComplete, editing, locked, onEdit, onCancel, onSave, className }: ProfileFieldProps) {
   const t = useTranslations("settings")
   const id = useId()
   const labelId = `${id}-label`
@@ -40,6 +42,7 @@ export function ProfileField({ label, value, type = "text", autoComplete, editin
   const [saving, setSaving] = useState(false)
   const input = useRef<HTMLInputElement>(null)
   const update = useRef<HTMLButtonElement>(null)
+  const row = useRef<HTMLDivElement>(null)
   // Only send focus back to Update after this row was open, not on first render.
   const wasEditing = useRef(false)
 
@@ -50,7 +53,10 @@ export function ProfileField({ label, value, type = "text", autoComplete, editin
       input.current?.focus()
       input.current?.select()
     } else if (wasEditing.current) {
-      update.current?.focus()
+      // Back to Update, unless focus already went elsewhere: Update on an earlier
+      // row opens that row in the same render, and its effect runs before this one.
+      const active = document.activeElement
+      if (!active || active === document.body || row.current?.contains(active)) update.current?.focus()
     }
     wasEditing.current = editing
     // Reset the draft when the row opens, not each time the saved value changes.
@@ -78,7 +84,7 @@ export function ProfileField({ label, value, type = "text", autoComplete, editin
   }
 
   return (
-    <div className={cn("py-6 sm:flex", className)}>
+    <div ref={row} className={cn("py-6 sm:flex", className)}>
       <dt className="sm:w-64 sm:flex-none sm:pr-6">
         <Label id={labelId} htmlFor={inputId} className="text-body font-medium leading-6 text-foreground">
           {label}
@@ -115,7 +121,7 @@ export function ProfileField({ label, value, type = "text", autoComplete, editin
         ) : (
           <div className="flex items-center justify-between gap-x-6">
             <span className="min-w-0 break-words text-body text-foreground">{value}</span>
-            <Button ref={update} variant="link" size="sm" type="button" onClick={onEdit} aria-describedby={labelId} className="h-auto px-0">
+            <Button ref={update} variant="link" size="sm" type="button" onClick={onEdit} disabled={locked} aria-describedby={labelId} className="h-auto px-0">
               {t("update")}
             </Button>
           </div>

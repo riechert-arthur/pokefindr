@@ -25,7 +25,33 @@ function Row({ onSave = async () => undefined }: { onSave?: (value: string) => P
   )
 }
 
+function TwoRows() {
+  const [editing, setEditing] = useState<"name" | "username" | null>("username")
+  return (
+    <dl>
+      {(["name", "username"] as const).map((field) => (
+        <ProfileField
+          key={field}
+          label={field === "name" ? "Full name" : "Username"}
+          value={field}
+          editing={editing === field}
+          onEdit={() => setEditing(field)}
+          onCancel={() => setEditing(null)}
+          onSave={async () => setEditing(null)}
+        />
+      ))}
+    </dl>
+  )
+}
+
 describe("ProfileField", () => {
+  it("keeps focus in an earlier row opened while a later one closes", () => {
+    render(<TwoRows />)
+    fireEvent.click(screen.getByRole("button", { name: "Update" }))
+    expect(screen.getByRole("textbox", { name: "Full name" })).toHaveFocus()
+  })
+
+
   it("links Update to its row's label", () => {
     render(<Row />)
     const update = screen.getByRole("button", { name: "Update" })
