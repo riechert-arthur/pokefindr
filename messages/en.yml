@@ -708,20 +708,23 @@ assistant:
 # /settings.
 settings:
   # Heading for screen readers.
-  title: General Settings
-  loadingProfile: Loading profile..
-  loading: Loading settings...
+  title: General settings
+  loadingProfile: Loading your profile…
   openNav: Open navigation
   profile:
     title: Profile
-    body: This information will be displayed publicly so be careful what you share.
+    body: Your username shows next to your reviews. Your name and email stay private.
   fields:
     fullName: Full name
     email: Email address
     username: Username
   save: Save
+  saving: Saving…
   cancel: Cancel
+  # Opens a row for editing. Each one is described by its row's label for screen readers.
   update: Update
+  # A toast after a name or username change is saved.
+  saved: Your changes are saved.
   # Notes about an email change, which needs approval from the old address and confirmation from the new one.
   email:
     # After saving a new address. {current} is the current address, {next} the new one.

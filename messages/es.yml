@@ -550,19 +550,20 @@ assistant:
 
 settings:
   title: Configuración general
-  loadingProfile: Cargando perfil..
-  loading: Cargando configuración...
+  loadingProfile: Cargando tu perfil…
   openNav: Abrir navegación
   profile:
     title: Perfil
-    body: Esta información se mostrará públicamente, así que ten cuidado con lo que compartes.
+    body: Tu nombre de usuario aparece junto a tus reseñas. Tu nombre y tu correo son privados.
   fields:
     fullName: Nombre completo
     email: Correo electrónico
     username: Nombre de usuario
   save: Guardar
+  saving: Guardando…
   cancel: Cancelar
   update: Cambiar
+  saved: Tus cambios se guardaron.
   email:
     pending: Enviamos a {current} un enlace para aprobar el cambio a {next}. Después, confírmalo desde esa bandeja de entrada.
     approved: Gracias. Si aprobaste el cambio desde tu dirección anterior, confírmalo desde la bandeja de entrada de la nueva. El correo de abajo es el actual.
