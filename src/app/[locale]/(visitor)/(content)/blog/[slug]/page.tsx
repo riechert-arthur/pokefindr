@@ -8,7 +8,10 @@ import { BlogPostHero } from "@/components/BlogPostHero"
 import type { Metadata } from "next"
 import type { Plugin } from "unified"
 import { setPageLocale } from "@/i18n/static"
-import { englishOnlyMetadata } from "@/i18n/seo"
+import { englishOnlyMetadata, localizedPath } from "@/i18n/seo"
+import { DEFAULT_LOCALE } from "@/i18n/routing"
+import { blogPostingJsonLd, jsonLd } from "@/lib/json-ld"
+import { PRODUCTION_URL } from "@/server/site-url"
 
 interface BlogPostPageProps {
   params: Promise<{
@@ -40,8 +43,15 @@ const BlogPostPage: FC<BlogPostPageProps> = async ({ params }) => {
   const markdown: string = await readBlogPostMarkdownFile(slug)
   const metadata: BlogPostMetadata = await readBlogPostMetadata(slug)
 
+  const posting = blogPostingJsonLd(PRODUCTION_URL, {
+    ...metadata,
+    // The English page is the canonical one (englishOnlyMetadata).
+    url: new URL(localizedPath(`/blog/${slug}`, DEFAULT_LOCALE), PRODUCTION_URL).toString(),
+  })
+
   return (
     <div className="flex flex-col items-center">
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(posting)} />
       <BlogPostHero metadata={metadata} />
       <Markdown
         className="px-8 relative top-20 text-xl max-w-prose prose dark:prose-invert"

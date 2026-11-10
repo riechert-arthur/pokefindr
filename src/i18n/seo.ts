@@ -70,12 +70,6 @@ export function pageMetadata(path: string, locale: Locale, metadata: Metadata = 
   return withLanguage(locale, url, { canonical: url, languages: languageAlternates(path) }, metadata)
 }
 
-/** `generateMetadata` for an indexable page with no metadata of its own: `export const generateMetadata = localeMetadata("/login")`. */
-export const localeMetadata =
-  (path: string) =>
-  async ({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> =>
-    pageMetadata(path, (await params).locale as Locale)
-
 /**
  * For a page whose content is English in every language (blog posts, the
  * privacy policy and terms): the English page is the canonical one, so search

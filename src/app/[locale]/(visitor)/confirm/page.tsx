@@ -3,6 +3,10 @@ import { buttonVariants } from "@/components/ui/button"
 import { getTranslations } from "next-intl/server"
 import { setPageLocale, type LocaleParams } from "@/i18n/static"
 import { SUPPORT_URL } from "@/lib/links"
+import type { Metadata } from "next"
+
+/** Where a confirmation email lands: a step of sign-up, not a page to find in search (#255). */
+export const metadata: Metadata = { robots: { index: false } }
 
 export default async function ConfirmEmailPage({ params }: LocaleParams) {
   const locale = await setPageLocale(params)

@@ -8,7 +8,8 @@ import { setPageLocale, type LocaleParams } from "@/i18n/static"
 export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
   const { locale } = await params
   const t = await getTranslations({ locale: locale as Locale, namespace: "auth.meta" })
-  return { title: t("forgotPassword") }
+  // A step of an account flow, not a page to find in search (#255).
+  return { title: t("forgotPassword"), robots: { index: false } }
 }
 
 export default async function ForgotPasswordPage({ params }: LocaleParams) {

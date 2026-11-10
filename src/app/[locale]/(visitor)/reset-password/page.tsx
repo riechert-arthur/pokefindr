@@ -8,7 +8,8 @@ import type { LocaleParams } from "@/i18n/static"
 export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
   const { locale } = await params
   const t = await getTranslations({ locale: locale as Locale, namespace: "auth.meta" })
-  return { title: t("resetPassword") }
+  // A step of an account flow, not a page to find in search (#255).
+  return { title: t("resetPassword"), robots: { index: false } }
 }
 
 /** Where a reset link lands: Better Auth adds ?token=, or ?error= when the link is bad or expired. */
