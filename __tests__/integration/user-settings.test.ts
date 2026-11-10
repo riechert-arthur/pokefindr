@@ -15,6 +15,7 @@ import { getAuth, resetAuthForTests, settleBackgroundForTests } from "@/server/a
 import { getDb } from "@/server/db/client"
 import { profiles, usernameHolds, users } from "@/server/db/schema"
 import { closeTestConnection, insertProfiles } from "./testDatabase"
+import { LOCALES, PUBLIC_LOCALES } from "@/i18n/routing"
 
 afterAll(closeTestConnection)
 beforeEach(() => {
@@ -146,21 +147,38 @@ describe("the language (#182)", () => {
   const logIn = (email = "ash@example.com") =>
     login(new NextRequest(`${APP}/api/auth/login`, { method: "POST", body: JSON.stringify({ email, password: PASSWORD }) }))
 
-  it("saves the language picked, and only a language the site has", async () => {
+  // The last public language (Spanish once it's public), and one that isn't public yet, if any.
+  const picked = PUBLIC_LOCALES[PUBLIC_LOCALES.length - 1]
+  const waiting = LOCALES.find((l) => !PUBLIC_LOCALES.includes(l))
+
+  it("saves the language picked, and only a public one", async () => {
     const { id } = await signedInUser()
     expect((await (await GET(settings(id))).json()).locale).toBeNull()
-    expect((await patch(id, { locale: "es" })).status).toBe(200)
-    expect((await (await GET(settings(id))).json()).locale).toBe("es")
+    expect((await patch(id, { locale: picked })).status).toBe(200)
+    expect((await (await GET(settings(id))).json()).locale).toBe(picked)
     expect((await patch(id, { locale: "fr" })).status).toBe(400)
-    expect((await getDb().select({ locale: profiles.locale }).from(profiles).where(eq(profiles.id, id)))[0].locale).toBe("es")
+    if (waiting) expect((await patch(id, { locale: waiting })).status).toBe(400)
+    expect((await getDb().select({ locale: profiles.locale }).from(profiles).where(eq(profiles.id, id)))[0].locale).toBe(picked)
   })
 
   it("sets the language cookie from the profile on login, so it follows them to another device", async () => {
     const { id } = await signedInUser()
     const before = await logIn()
     expect(before.headers.getSetCookie().some((c) => c.startsWith("NEXT_LOCALE="))).toBe(false)
-    await patch(id, { locale: "es" })
-    const after = (await logIn()).headers.getSetCookie().find((c) => c.startsWith("NEXT_LOCALE="))
-    expect(after).toMatch(/^NEXT_LOCALE=es; Max-Age=31536000; Path=\/; SameSite=Lax/)
+    expect((await before.json()).locale).toBeNull()
+    await patch(id, { locale: picked })
+    const after = await logIn()
+    expect(after.headers.getSetCookie().find((c) => c.startsWith("NEXT_LOCALE="))).toMatch(new RegExp(`^NEXT_LOCALE=${picked}; Max-Age=31536000; Path=/; SameSite=Lax`))
+    // The login form opens the next page in it.
+    expect((await after.json()).locale).toBe(picked)
+  })
+
+  it("ignores a saved language that isn't public", async () => {
+    if (!waiting) return
+    const { id } = await signedInUser()
+    await getDb().update(profiles).set({ locale: waiting }).where(eq(profiles.id, id))
+    const res = await logIn()
+    expect(res.headers.getSetCookie().some((c) => c.startsWith("NEXT_LOCALE="))).toBe(false)
+    expect((await res.json()).locale).toBeNull()
   })
 })

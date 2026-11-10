@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod/v3"
 import { VERIFIED_CALLBACK } from "@/lib/auth/paths"
 import { identityCookies, identityRequest, refuseCrossSite } from "@/server/auth/identity"
-import { profileLocaleCookie } from "@/server/auth/locale-cookie"
+import { profileLocale, profileLocaleCookie } from "@/server/auth/locale-cookie"
 import { createSessionCookie } from "@/server/auth/session"
 import { getProfile, getSessionTier } from "@/server/services/users"
 
@@ -33,10 +33,10 @@ export async function POST(req: NextRequest) {
   const profile = await getProfile(user.id)
   if (!profile) return loginFailed()
 
-  const response = NextResponse.json({ ok: true })
+  // The language they picked on another device (#182): the form opens the next page in it.
+  const response = NextResponse.json({ ok: true, locale: profileLocale(profile.locale) })
   for (const cookie of identityCookies(res)) response.headers.append("Set-Cookie", cookie)
   response.headers.append("Set-Cookie", createSessionCookie({ sub: user.id, email: user.email, tier: await getSessionTier(user.id) }))
-  // The language they picked on another device (#182).
   const locale = profileLocaleCookie(profile.locale)
   if (locale) response.headers.append("Set-Cookie", locale)
   return response

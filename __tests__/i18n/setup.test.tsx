@@ -6,7 +6,7 @@ import { parse } from "yaml"
 import { useTranslations } from "next-intl"
 import { render, screen, message } from "../helpers/intl"
 import { NotFoundContent } from "@/components/ErrorPage"
-import { loadMessages } from "@/i18n/messages"
+import { loadMessages, merge } from "@/i18n/messages"
 
 describe("the message catalogs (#177)", () => {
   it("renders the 404 page from the catalog in each language, with links that keep it", () => {
@@ -19,6 +19,9 @@ describe("the message catalogs (#177)", () => {
   })
 
   it("fills a message another language is missing with English", async () => {
+    const en = { errors: { notFound: { title: "Page not found", body: "Nothing here." } }, nav: { home: "Home" } }
+    const partial = { errors: { notFound: { title: "Página no encontrada" } } }
+    expect(merge(en, partial)).toEqual({ errors: { notFound: { title: "Página no encontrada", body: "Nothing here." } }, nav: { home: "Home" } })
     const es = await loadMessages("es")
     expect(es.errors.notFound.title).toBe("Página no encontrada")
     expect(Object.keys(es)).toEqual(Object.keys(await loadMessages("en")))

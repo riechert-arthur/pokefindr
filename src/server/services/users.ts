@@ -4,6 +4,7 @@ import { and, eq, gt, ne, sql, type SQLWrapper } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
 import { profiles, subscriptions, usernameHolds, users } from "@/server/db/schema"
 import type { SessionTier } from "@/server/auth/session"
+import type { Locale } from "@/i18n/routing"
 
 /** What the client's session context gets (the shape /api/auth/user has always returned). */
 export interface PublicProfile {
@@ -14,7 +15,7 @@ export interface PublicProfile {
   /** member, moderator or admin: what the app shows (an Admin link); the API checks it again. */
   role: Role
   /** The language they picked (#182), or null. */
-  locale: string | null
+  locale: Locale | null
 }
 
 export class UsernameTakenError extends Error {
@@ -136,7 +137,7 @@ export async function createProfile(
 /** Updates profile fields. Returns false if the profile doesn't exist. Throws UsernameTakenError on a duplicate username. */
 export async function updateProfile(
   userId: string,
-  changes: { username?: string; fullName?: string; onboarded?: boolean; locale?: string },
+  changes: { username?: string; fullName?: string; onboarded?: boolean; locale?: Locale },
   db: Database = getDb(),
 ): Promise<boolean> {
   const set = Object.fromEntries(Object.entries(changes).filter(([, v]) => v !== undefined))

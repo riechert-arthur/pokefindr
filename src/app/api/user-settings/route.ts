@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { eq } from "drizzle-orm"
 import { z } from "zod/v3"
-import { usernameField } from "@/lib/schemas"
-import { LOCALES } from "@/i18n/routing"
+import { usernameField } from "@/server/auth/schemas"
+import { PUBLIC_LOCALES, type Locale } from "@/i18n/routing"
 import { EMAIL_CHANGE_CALLBACK } from "@/lib/auth/paths"
 import { approveChangeToTakenEmail } from "@/server/auth/auth"
 import { identityRequest, refuseCrossSite } from "@/server/auth/identity"
@@ -15,8 +15,8 @@ const changes = z
     fullName: z.string().trim().min(1, "Enter a name").max(100),
     username: usernameField,
     email: z.string().trim().email("Enter a valid email").max(320),
-    /** The language they picked (#182). */
-    locale: z.enum(LOCALES),
+    /** The language they picked (#182): a public one, so a language still being written can't be saved. */
+    locale: z.string().refine((l): l is Locale => (PUBLIC_LOCALES as readonly string[]).includes(l), "Pick a language PokeFindr offers"),
   })
   .partial()
   .strict()

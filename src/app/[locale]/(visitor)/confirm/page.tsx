@@ -2,7 +2,7 @@ import { Link } from "@/i18n/navigation"
 import { buttonVariants } from "@/components/ui/button"
 import { getTranslations } from "next-intl/server"
 import { setPageLocale, type LocaleParams } from "@/i18n/static"
-import { SUPPORT_URL } from "@/components/ErrorPage"
+import { SUPPORT_URL } from "@/lib/links"
 
 export default async function ConfirmEmailPage({ params }: LocaleParams) {
   const locale = await setPageLocale(params)
