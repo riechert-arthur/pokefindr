@@ -2,11 +2,12 @@ import { afterAll, describe, expect, it } from "vitest"
 import postgres from "postgres"
 import { readSeedLocations, seedLocations } from "../../scripts/db/seedLocations"
 import { SAMPLE_EVENTS, SAMPLE_SOURCE, seedSampleHighlights } from "../../scripts/db/seedHighlights"
-import { DEV_ACCOUNTS, DEV_PASSWORD, DEV_USER, seedDevUsers } from "../../scripts/db/seedDevUsers"
+import { DEV_ACCOUNTS, DEV_MODERATOR, DEV_PASSWORD, DEV_USER, seedDevUsers } from "../../scripts/db/seedDevUsers"
 import { verifyPassword } from "better-auth/crypto"
 import { NextResponse } from "next/server"
 import { SAMPLE_REPORT, SAMPLE_SUBMISSIONS, seedSampleModeration } from "../../scripts/db/seedModeration"
 import { approveSubmission, listQueue } from "@/server/services/moderation"
+import { addLocationReport } from "@/server/services/reports"
 import { requireEntitlement, roleOf } from "@/server/admin/access"
 import { getDb } from "@/server/db/client"
 import { getLocationsNear } from "@/server/services/locations"
@@ -95,8 +96,8 @@ describe("seedSampleHighlights", () => {
 describe("seedDevUsers", () => {
   const outcomes = async () => (await seedDevUsers(sql)).map((r) => [r.account.email, r.outcome])
   const accounts = () =>
-    sql<{ email: string; username: string; role: string; onboarded: boolean; email_verified: boolean }[]>`
-      select u.email, p.username, p.role, p.onboarded, u.email_verified
+    sql<{ email: string; username: string; role: string; locale: string | null; onboarded: boolean; email_verified: boolean }[]>`
+      select u.email, p.username, p.role, p.locale, p.onboarded, u.email_verified
       from users u join profiles p on p.id = u.id order by u.email`
 
   it("adds every account once, then changes nothing", async () => {
@@ -107,8 +108,10 @@ describe("seedDevUsers", () => {
     expect(after).toEqual(
       [...DEV_ACCOUNTS]
         .sort((a, b) => a.email.localeCompare(b.email))
-        .map((a) => ({ email: a.email, username: a.username, role: a.role, onboarded: true, email_verified: true })),
+        .map((a) => ({ email: a.email, username: a.username, role: a.role, locale: "locale" in a ? a.locale : null, onboarded: true, email_verified: true })),
     )
+    expect(DEV_ACCOUNTS.filter((a) => a.role === "member").length).toBeGreaterThanOrEqual(3)
+    expect(after.filter((a) => a.locale === "es")).toHaveLength(1)
     const [{ count }] = await sql<{ count: number }[]>`select count(*)::int as count from accounts where provider_id = 'credential'`
     expect(count).toBe(DEV_ACCOUNTS.length)
   })
@@ -121,30 +124,36 @@ describe("seedDevUsers", () => {
 
   it("adds a moderator who can moderate but not open the admin-only sections", async () => {
     await seedDevUsers(sql)
-    const mod = DEV_ACCOUNTS.find((a) => a.email === "moderator@pokefindr.local")!
+    const mod = DEV_MODERATOR
     expect(await roleOf(mod.id)).toBe("moderator")
-    const as = () => new Request("http://localhost:3000/api/admin/jobs", { headers: { "x-user-id": mod.id } })
-    const jobs = await requireEntitlement(as(), "admin.jobs")
-    expect(jobs instanceof NextResponse && jobs.status).toBe(404)
-    expect(await requireEntitlement(as(), "moderation.view")).toEqual({ userId: mod.id, role: "moderator" })
-  })
-
-  it("adds every member once, as a member, one of them in Spanish", async () => {
-    const members = DEV_ACCOUNTS.filter((a) => a.role === "member")
-    expect(members.length).toBeGreaterThanOrEqual(3)
-    await seedDevUsers(sql)
-    await seedDevUsers(sql)
-    const rows = await sql<{ email: string; role: string; locale: string | null }[]>`
-      select u.email, p.role, p.locale from users u join profiles p on p.id = u.id where u.email in ${sql(members.map((m) => m.email))} order by u.email`
-    expect(rows.map((r) => [r.email, r.role])).toEqual(members.map((m) => [m.email, "member"]).sort())
-    expect(rows.filter((r) => r.locale === "es")).toHaveLength(1)
+    const as = (path: string) => new Request(`http://localhost:3000${path}`, { headers: { "x-user-id": mod.id } })
+    const jobs = await requireEntitlement(as("/api/admin/jobs"), "admin.jobs")
+    expect(jobs).toBeInstanceOf(NextResponse)
+    expect((jobs as NextResponse).status).toBe(404)
+    expect(await requireEntitlement(as("/api/admin/submissions"), "moderation.view")).toEqual({ userId: mod.id, role: "moderator" })
   })
 
   it("skips an account whose username someone signed up with, instead of failing", async () => {
-    const ash = DEV_ACCOUNTS.find((a) => a.username === "ash")!
-    await sql`insert into users (id, name, email) values (gen_random_uuid(), 'Other Ash', 'other@example.com')`
-    await sql`insert into profiles (id, username) select id, 'Ash' from users where email = 'other@example.com'`
-    expect((await seedDevUsers(sql, [ash]))[0].outcome).toBe("username taken")
+    await sql`insert into users (id, name, email) values (gen_random_uuid(), 'Other Dev', 'other@example.com')`
+    await sql`insert into profiles (id, username) select id, 'Dev' from users where email = 'other@example.com'`
+    expect((await seedDevUsers(sql, [DEV_USER]))[0].outcome).toBe("username taken")
+    expect(await sql`select 1 from users where id = ${DEV_USER.id}`).toHaveLength(0)
+  })
+
+  it("leaves an account someone signed up with a seeded email alone", async () => {
+    await sql`insert into users (id, name, email) values (gen_random_uuid(), 'Real Dev', ${DEV_USER.email})`
+    await sql`insert into profiles (id, username) select id, 'realdev' from users where email = ${DEV_USER.email}`
+    expect((await seedDevUsers(sql, [DEV_USER]))[0].outcome).toBe("email taken")
+    const [row] = await sql`select p.role from profiles p join users u on u.id = p.id where u.email = ${DEV_USER.email}`
+    expect(row.role).toBe("member")
+  })
+
+  it("adds the profile an older seed left out, with its role", async () => {
+    await seedDevUsers(sql)
+    await sql`delete from profiles where id = ${DEV_USER.id}`
+    expect((await seedDevUsers(sql, [DEV_USER]))[0].outcome).toBe("profile added")
+    const [row] = await sql`select role, onboarded from profiles where id = ${DEV_USER.id}`
+    expect(row).toEqual({ role: DEV_USER.role, onboarded: true })
   })
 
   it("puts a role changed by hand back to the seeded value", async () => {
@@ -178,6 +187,14 @@ describe("seedSampleModeration", () => {
     expect(await listQueue(undefined, getDb(), now)).toHaveLength(SAMPLE_SUBMISSIONS.length)
     const [report] = await sql`select reason, resolved_at, user_id from status_reports where id = ${SAMPLE_REPORT.id}`
     expect(report).toMatchObject({ reason: "gone", resolved_at: null, user_id: SAMPLE_REPORT.by })
+  })
+
+  it("doesn't count toward the members' daily limits", async () => {
+    await seedLocations(sql, readSeedLocations())
+    await seedDevUsers(sql)
+    await seedSampleModeration(sql)
+    const [machine] = await sql`select id from locations where "machineID" = ${SAMPLE_REPORT.machineID}`
+    expect(await addLocationReport({ locationId: machine.id, userId: SAMPLE_REPORT.by, reason: "gone" }, getDb())).toBe("added")
   })
 
   it("can be approved, and stays decided on re-seeding", async () => {

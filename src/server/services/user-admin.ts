@@ -5,17 +5,20 @@ import { profiles, roleChanges, users } from "@/server/db/schema"
 import { can, rolesWith } from "@/lib/auth/entitlements"
 import { GRANTABLE_ROLES, type GrantableRole, type Role } from "@/lib/auth/roles"
 import { USERS_PER_PAGE, type SetRoleResult, type UserPage } from "@/lib/admin/users"
+import { likeEscape } from "@/server/services/locations"
 
-/** `%` and `_` typed into the search match themselves, not any text. */
-const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`)
-
-/** The cursor is the last row's join time and id, so a page never repeats or skips someone who signed up meanwhile. */
-const encodeCursor = (at: Date, id: string) => Buffer.from(JSON.stringify([at.toISOString(), id])).toString("base64url")
-function decodeCursor(cursor: string): [Date, string] | null {
+/**
+ * The cursor is the last row's join time and id, so a page never repeats or
+ * skips someone who signed up meanwhile. The time keeps Postgres's
+ * microseconds: a JS Date would round them to milliseconds and skip rows.
+ */
+const encodeCursor = (at: string, id: string) => Buffer.from(JSON.stringify([at, id])).toString("base64url")
+const CURSOR_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/
+function decodeCursor(cursor: string): [string, string] | null {
   try {
     const [at, id] = JSON.parse(Buffer.from(cursor, "base64url").toString()) as unknown[]
-    if (typeof at !== "string" || typeof id !== "string" || !/^[0-9a-f-]{36}$/i.test(id) || Number.isNaN(Date.parse(at))) return null
-    return [new Date(at), id]
+    if (typeof at !== "string" || typeof id !== "string" || !/^[0-9a-f-]{36}$/i.test(id) || !CURSOR_TIME.test(at) || Number.isNaN(Date.parse(at))) return null
+    return [at, id]
   } catch {
     return null
   }
@@ -33,14 +36,17 @@ export async function listUsers(
   const where: (SQL | undefined)[] = []
   const term = q?.trim()
   if (term) {
-    const t = escapeLike(term)
+    const t = likeEscape(term)
     where.push(or(ilike(profiles.username, `%${t}%`), ilike(profiles.fullName, `%${t}%`), ilike(users.name, `%${t}%`), ilike(users.email, `${t}%`)))
   }
   if (role) where.push(eq(profiles.role, role))
   const after = cursor ? decodeCursor(cursor) : null
-  if (after) where.push(sql`(${users.createdAt}, ${users.id}) < (${after[0].toISOString()}::timestamptz, ${after[1]}::uuid)`)
+  if (after) where.push(sql`(${users.createdAt}, ${users.id}) < (${after[0]}::timestamptz, ${after[1]}::uuid)`)
   const rows = await db
-    .select({ id: users.id, username: profiles.username, fullName: profiles.fullName, accountName: users.name, email: users.email, role: profiles.role, joinedAt: users.createdAt })
+    .select({
+      id: users.id, username: profiles.username, fullName: profiles.fullName, accountName: users.name, email: users.email, role: profiles.role, joinedAt: users.createdAt,
+      cursorAt: sql<string>`to_char(${users.createdAt} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`,
+    })
     .from(profiles)
     .innerJoin(users, eq(users.id, profiles.id))
     .where(and(...where))
@@ -50,7 +56,7 @@ export async function listUsers(
   const last = page.at(-1)
   return {
     users: page.map((r) => ({ id: r.id, username: r.username, name: r.fullName || r.accountName, email: r.email, role: r.role, joinedAt: r.joinedAt.toISOString() })),
-    nextCursor: rows.length > USERS_PER_PAGE && last ? encodeCursor(last.joinedAt, last.id) : null,
+    nextCursor: rows.length > USERS_PER_PAGE && last ? encodeCursor(last.cursorAt, last.id) : null,
   }
 }
 

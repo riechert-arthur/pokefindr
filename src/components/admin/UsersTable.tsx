@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useId, useState } from "react"
+import { useCallback, useEffect, useId, useRef, useState } from "react"
 import { SearchIcon, TriangleAlertIcon, UsersIcon } from "lucide-react"
 import { toast } from "sonner"
 import { Badge, type BadgeProps } from "@/components/ui/badge"
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { EmptyState } from "@/components/pokefindr/EmptyState"
-import { useOptionalSession } from "@/components/providers/SessionProvider"
+import { useOptionalSession, useOptionalSessionLoading } from "@/components/providers/SessionProvider"
 import { can } from "@/lib/auth/entitlements"
 import { GRANTABLE_ROLES, ROLE_LABELS, ROLES, type GrantableRole, type Role } from "@/lib/auth/roles"
 import type { UserPage, UserRow } from "@/lib/admin/users"
@@ -45,6 +45,8 @@ const aRole = (role: Role) => {
 export function UsersTable() {
   const f = useFormat()
   const selfId = useOptionalSession()?.id
+  // Until the session is known, your own row can't be told apart, so no row offers a change yet.
+  const sessionLoading = useOptionalSessionLoading()
   const [query, setQuery] = useState("")
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState<Filter>("all")
@@ -54,6 +56,8 @@ export function UsersTable() {
   const [picked, setPicked] = useState<GrantableRole>("member")
   const [saving, setSaving] = useState(false)
   const pickerId = useId()
+  // Bumped by each new search or filter, so a slower answer to an older one is dropped.
+  const generation = useRef(0)
 
   useEffect(() => {
     const timer = setTimeout(() => setSearch(query.trim()), SEARCH_DELAY_MS)
@@ -74,23 +78,28 @@ export function UsersTable() {
   )
 
   const load = useCallback(async () => {
+    const mine = ++generation.current
     try {
-      setPage(await fetchPage())
+      const next = await fetchPage()
+      if (mine === generation.current) setPage(next)
     } catch (err) {
       console.error("[admin] couldn't load users", err)
-      setPage("error")
+      if (mine === generation.current) setPage("error")
     }
   }, [fetchPage])
   useEffect(() => void load(), [load])
 
   const loadMore = async () => {
     if (!page || page === "error" || !page.nextCursor) return
+    const mine = generation.current
     setLoadingMore(true)
     try {
       const next = await fetchPage(page.nextCursor)
-      setPage({ users: [...page.users, ...next.users], nextCursor: next.nextCursor })
+      // The search or filter changed meanwhile: this page belongs to the old list.
+      if (mine !== generation.current) return
+      setPage((p) => (p && p !== "error" ? { users: [...p.users, ...next.users], nextCursor: next.nextCursor } : p))
     } catch {
-      toast.error("Couldn't load more users. Try again.")
+      if (mine === generation.current) toast.error("Couldn't load more users. Try again.")
     } finally {
       setLoadingMore(false)
     }
@@ -112,8 +121,17 @@ export function UsersTable() {
         return
       }
       toast.success(`${editing.username} is now ${aRole(picked)}`)
-      setPage((p) => (p && p !== "error" ? { ...p, users: p.users.map((u) => (u.id === editing.id ? { ...u, role: picked } : u)) } : p))
+      // Under a role filter, someone who no longer has that role leaves the list.
+      const stays = filter === "all" || filter === picked
+      setPage((p) =>
+        p && p !== "error"
+          ? { ...p, users: stays ? p.users.map((u) => (u.id === editing.id ? { ...u, role: picked } : u)) : p.users.filter((u) => u.id !== editing.id) }
+          : p,
+      )
       setEditing(null)
+    } catch (err) {
+      console.error("[admin] couldn't change a role", err)
+      toast.error("That didn't work. Check your connection and try again.")
     } finally {
       setSaving(false)
     }
@@ -184,7 +202,7 @@ export function UsersTable() {
                     </td>
                     <td className={td}>{f.ago(u.joinedAt)}</td>
                     <td className={cn(td, "text-right")}>
-                      {u.id === selfId ? (
+                      {sessionLoading ? null : u.id === selfId ? (
                         <span className="text-caption text-muted-foreground">You</span>
                       ) : (
                         <Button size="sm" variant="outline" onClick={() => startEditing(u)} aria-label={`Change ${u.username}'s role`}>

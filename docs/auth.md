@@ -144,7 +144,9 @@ can(role, "admin.jobs") // true for admins only
 The accounts are `DEV_ACCOUNTS` in `scripts/db/seedDevUsers.ts`; add an entry to seed another.
 Each run adds missing accounts and sets an existing account's role back to the seeded value, so a
 seeded account always means the same thing, on new and existing branch databases alike. To try
-a role change, use an account you signed up yourself.
+a role change, use an account you signed up yourself. Accounts are matched by their fixed id, so
+one you signed up yourself is never changed: if its email or username is a seeded one, the seed
+skips that seeded account and says so (`email taken`, `username taken`).
 
 The seed also adds three pending submissions (from `ash`, `brock` and `serena`) and an open report
 (from `misty`), all named or marked as samples, so the review queue and Reports have something in
