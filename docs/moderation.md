@@ -12,6 +12,7 @@ works, and why it's built this way.
 | Reviews: check on write, public reads | `src/server/services/reviews.ts` |
 | Held-review queue, decisions, recheck job | `src/server/services/review-moderation.ts` |
 | The Reviews tab in /moderate and section in /admin | `src/components/admin/HeldReviews.tsx` |
+| The assistant's question check | `src/server/assistant/moderation.ts`, `src/app/api/assistant/route.ts` |
 | Labelled eval set and script | `evals/moderation/cases.yaml`, `scripts/moderation/eval.ts` |
 
 ## Policy
@@ -72,6 +73,33 @@ one with text is a paid check.
 New card shops and events already wait for a moderator. Their name, venue, hours and links get the
 same check when they're sent, stored on `location_submissions.text_check`, and shown as a "Text looks
 fine" / "Text flagged" line among the queue's checks. Nothing is rejected automatically.
+
+## The assistant's questions
+
+Each `/api/assistant` request is checked once its limit checks pass, so a refused request (a script
+hammering the endpoint, a viewer over their daily limit, the site over its budget) never pays for a
+check. The check reads every message of the viewer's the model will see, in one call, the newest
+last: the page sends the conversation, so anyone can write the earlier messages. The page leaves a
+blocked question and its reply out of what it sends next (the `done` event says `blocked: true`), so
+a conversation goes on after a block; a history with a blocked question in it is blocked again.
+
+- **"Block"** (clear abuse, threats, personal details, injection): the assistant's model is never
+  called. The viewer gets a short, polite canned reply (`BLOCKED_REPLY`, the same words as a model
+  refusal), and the turn is logged with
+  outcome `blocked` and the flag `moderated` (migration 0025).
+- **"Hold"**: the turn goes ahead as usual, flagged `moderated` for review.
+- **A failure or a check slower than 1.5 s** fails open: the turn goes ahead, flagged
+  `moderation_error`. An outage never breaks the assistant.
+- **Cost:** the check's tokens and cost are added to the turn's usage, so they count in the turn
+  log's `cost_micros` and the daily budget (`ASSISTANT_DAILY_BUDGET_USD`). At about $0.0001 a
+  question it adds roughly 1% to an Opus turn.
+- The assistant's answers aren't checked: they come from our own tool results, and review text, the
+  main way bad text gets in, is already filtered.
+
+`evals/assistant/cases.yaml` has a `blocked` category; `npm run eval:assistant` runs the same check
+before each case (`--moderation claude|fake|off`), and fails a case the check blocks that it
+shouldn't. The injection jailbreak cases expect a block too; with `--moderation off` the model's own
+refusal is graded instead. A check that doesn't run is an API error, not a wrong answer.
 
 ## Why Claude Haiku, behind a port
 

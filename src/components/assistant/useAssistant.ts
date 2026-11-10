@@ -24,16 +24,24 @@ export type ChatMessage =
       /** The turn's id in the server's log, for feedback. */
       turnId: string | null
       done: boolean
+      /** The input check blocked the question (#253): neither is sent back as history. */
+      blocked?: boolean
     }
 
 /** What a turn that ended without `done` remembers: what came, cards included, so follow-ups can still use its places. */
 const partialMemory = (m: { text: string; cards: AssistantCard[] }) => (m.text || m.cards.length ? memoryOf(m.text, m.cards) : null)
 
-/** The conversation as the API takes it: the viewer's words and each answer's memory, the last turns only. */
+/**
+ * The conversation as the API takes it: the viewer's words and each answer's
+ * memory, the last turns only. A blocked question and its reply are left
+ * out: the server checks every question it's sent and would block it again.
+ */
 function historyOf(messages: readonly ChatMessage[]): AssistantTurn[] {
   return clipHistory(
-    messages.flatMap((m): AssistantTurn[] => {
-      if (m.role === "user") return [{ role: "user", content: m.text }]
+    messages.flatMap((m, i): AssistantTurn[] => {
+      const next = messages[i + 1]
+      if (m.role === "user") return next?.role === "assistant" && next.blocked ? [] : [{ role: "user", content: m.text }]
+      if (m.blocked) return []
       const content = (m.memory ?? m.text).trim()
       return content ? [{ role: "assistant", content }] : []
     }),
@@ -128,6 +136,7 @@ export function useAssistant() {
             memory: event.memory,
             turnId: event.turnId ?? null,
             done: true,
+            blocked: event.blocked === true,
             note: event.stop === "max_tokens" ? t("cutShort") : null,
           }))
       }

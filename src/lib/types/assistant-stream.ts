@@ -30,6 +30,8 @@ export type AssistantEvent =
       type: "done"
       /** Why the turn ended: an answer, the output cap, a refusal, or too many tool rounds. */
       stop: "end_turn" | "max_tokens" | "refusal" | "tool_limit"
+      /** The input check blocked the question (#253): the page leaves this exchange out of the history it sends next. */
+      blocked?: true
       /** Send this back as the turn's assistant message. */
       memory: string
       usage: AssistantUsage

@@ -713,7 +713,8 @@ export const assistantPlaceViews = pgTable(
   (t) => [uniqueIndex("assistant_place_views_user_day_location_key").on(t.userId, t.day, t.locationId)],
 )
 
-export const ASSISTANT_OUTCOMES = ["answered", "refused", "tool_limit", "max_tokens", "error", "stopped", "limited", "paused"] as const
+/** `blocked`: the input check blocked the question, so the model never saw it (#253, migration 0025). */
+export const ASSISTANT_OUTCOMES = ["answered", "refused", "tool_limit", "max_tokens", "error", "stopped", "limited", "paused", "blocked"] as const
 export type AssistantOutcome = (typeof ASSISTANT_OUTCOMES)[number]
 
 /** One assistant turn, without its text (migration 0007): for cost, abuse review and feedback. */
@@ -734,7 +735,7 @@ export const assistantTurns = pgTable(
     latencyMs: integer("latency_ms"),
     /** The tools it ran, names only: `{ name, ok }[]` (inputs are text, kept in assistant_turn_texts). */
     tools: jsonb("tools").$type<{ name: string; ok: boolean }[]>().notNull().default(sql`'[]'::jsonb`),
-    /** Why it might need a look: refused, injection, place_cap, cost_outlier. */
+    /** Why it might need a look: refused, injection, place_cap, cost_outlier, moderated, moderation_error. */
     flags: text("flags").array().notNull(),
     /** Which system prompt and tools answered (migration 0008). */
     promptVersion: text("prompt_version"),
@@ -742,7 +743,7 @@ export const assistantTurns = pgTable(
   (t) => [
     index("assistant_turns_user_created_idx").on(t.userId, t.createdAt),
     index("assistant_turns_created_idx").on(t.createdAt),
-    check("assistant_turns_outcome_check", sql`${t.outcome} in ('answered', 'refused', 'tool_limit', 'max_tokens', 'error', 'stopped', 'limited', 'paused')`),
+    check("assistant_turns_outcome_check", sql`${t.outcome} in ('answered', 'refused', 'tool_limit', 'max_tokens', 'error', 'stopped', 'limited', 'paused', 'blocked')`),
   ],
 )
 
