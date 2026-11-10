@@ -21,7 +21,7 @@ import { useTranslations } from "next-intl"
 export const SUGGESTIONS = ["portland", "denver", "washington", "phoenix"] as const
 
 const chip =
-  "rounded-full border border-border bg-card/85 px-[11px] py-1 text-body text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+  "rounded-full border border-border bg-card/85 px-3 py-1 text-body text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 
 async function getJson<T>(url: string, signal: AbortSignal): Promise<T> {
   const res = await fetch(url, { signal })
@@ -133,7 +133,7 @@ export function Dashboard({ assistant }: DashboardProps) {
           <Button asChild variant="ghost" size="sm">
             <Link href="/map">{t("openMap")}</Link>
           </Button>
-          <UserMenu userName={session?.username ?? t("guest")} size={32} />
+          <UserMenu userName={session?.username ?? t("guest")} />
         </header>
 
         <main

@@ -4,7 +4,7 @@ import { Link } from "@/i18n/navigation"
 import { useEffect, useState, type ComponentType, type SVGProps } from "react"
 import { ChartBarIcon, ChevronDownIcon, FlagIcon, HouseIcon, InboxIcon, MapPinIcon, MegaphoneIcon, RefreshCwIcon, SquarePlusIcon } from "lucide-react"
 import { Logo } from "@/components/brand/Logo"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { UserAvatar } from "@/components/pokefindr/UserAvatar"
 import type { AdminGroup } from "@/lib/admin/sections"
 import { cn } from "@/lib/utils"
 import { useFormat } from "@/i18n/format"
@@ -156,9 +156,7 @@ export function AdminSidebar({
           <span className="whitespace-nowrap">Open the map</span>
         </Link>
         <div className="hidden items-center gap-2.5 px-2.5 py-2 md:flex">
-          <Avatar className="size-7">
-            <AvatarFallback className="bg-primary text-caption font-semibold text-primary-foreground">{user.username.slice(0, 1).toUpperCase()}</AvatarFallback>
-          </Avatar>
+          <UserAvatar size="sm" name={user.username} />
           <span className="min-w-0 leading-tight">
             <span className="block truncate text-body text-foreground">{user.username}</span>
             <span className="block text-caption capitalize text-muted-foreground">{user.role}</span>

@@ -70,6 +70,9 @@ map:
     keywords: Pokemon vending machines, Pokemon map, vending machine locations, Pokemon merchandise map, PokeFindr, pokemon vending machines near me, pokemon vending machine map, nearest pokemon vending machines
     ogTitle: Find all Pokemon Vending Machine Locations Near You | PokeFindr
     ogDescription: Explore a comprehensive map of Pokemon Vending Machine Locations. Easily find directions to your nearest vending machine!
+    # The page's heading and intro, in the server-rendered HTML for search engines and screen readers (visually hidden: the map fills the page).
+    heading: Pokémon vending machine map
+    intro: A free map of Pokémon card vending machines, card shops and events across the US. Search a city or address to see the ones near you, get directions and read reviews from other collectors.
   # While the map starts.
   loading: Loading the map…
   reload: Reload
@@ -598,6 +601,7 @@ dashboard:
       title: Upcoming events
       error: Couldn't load events. Check your connection and refresh.
       empty: Card shows and league nights show up here once they're added.
+      seeOnMap: See events on map
   # /home/reviews: the reviews you've written, to edit or delete.
   reviews:
     loadingProfile: Loading profile..
@@ -875,6 +879,10 @@ content:
   # The release notes: the /changelog page and the pop-up on the signed-in pages.
   # <b> is a feature's name, in bold, before its description.
   changelog:
+    # The page's title and description for search engines.
+    meta:
+      title: "PokeFindr changelog: what's new"
+      description: "Every PokeFindr release and what it changed: map updates, accounts, reviews and more."
     # The heading of each release.
     title: What's New in Version {version}
     v1_1:
@@ -999,6 +1007,11 @@ auth:
     forgotPassword: Reset your password
     resetPassword: Choose a new password
     consent: Connect an app
+    login: Log in | PokeFindr
+    signup: Sign up | PokeFindr
+    # Descriptions for search engines.
+    loginDescription: Log in to PokeFindr to save your reviews and add card shops and events to the map.
+    signupDescription: Create a free PokeFindr account to review Pokémon vending machines and add card shops and events to the map.
   # Under the login and sign-up cards. <terms> and <privacy> link to the documents.
   terms: "By clicking continue, you agree to our <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>."
   # Form field labels and example values.
