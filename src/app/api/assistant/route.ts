@@ -1,4 +1,4 @@
-import { NextResponse, type NextRequest } from "next/server"
+import type { NextRequest } from "next/server"
 import { z } from "zod/v3"
 import Anthropic from "@anthropic-ai/sdk"
 import { getGeocoder } from "@/server/container"
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
   const claude = getClaude()
   if (!claude || !config.ASSISTANT_ENABLED) return apiError("assistantOff", "The assistant isn't available right now.", 503, { paused: true })
   const body = bodySchema.safeParse(await request.json().catch(() => null))
-  if (!body.success) return NextResponse.json({ error: "Invalid request", issues: body.error.issues.map((i) => i.message) }, { status: 400 })
+  if (!body.success) return apiError("invalidInput", "Invalid request", 400, { issues: body.error.issues.map((i) => i.message) })
 
   const db = getDb()
   const now = new Date()

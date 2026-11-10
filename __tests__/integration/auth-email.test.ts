@@ -20,6 +20,7 @@ import { POST as login } from "@/app/api/auth/login/route"
 import { getAuth, resetAuthForTests, settleBackgroundForTests } from "@/server/auth/auth"
 import { getDb } from "@/server/db/client"
 import { profiles, sessions, users } from "@/server/db/schema"
+import { PUBLIC_LOCALES } from "@/i18n/routing"
 import { closeTestConnection } from "./testDatabase"
 
 afterAll(closeTestConnection)
@@ -84,11 +85,12 @@ describe("in the page's language (#185)", () => {
     expect(outbox[0].subject).toBe("Confirma tu cuenta de PokeFindr")
     expect(outbox[0].text.startsWith("Hola, Misty:")).toBe(true)
     const [profile] = await getDb().select({ locale: profiles.locale }).from(profiles)
-    expect(profile.locale).toBe("es")
+    // Saved once Spanish is public (#186); until then the profile keeps no language.
+    expect(profile.locale).toBe(PUBLIC_LOCALES.includes("es") ? "es" : null)
     // Later emails follow the profile, from any page.
     outbox.length = 0
     expect((await fromPage(login, { email: form.email, password: form.password }, "/login")).status).toBe(401)
-    expect(outbox[0].subject).toBe("Confirma tu cuenta de PokeFindr")
+    expect(outbox[0].subject).toBe(PUBLIC_LOCALES.includes("es") ? "Confirma tu cuenta de PokeFindr" : "Confirm your PokeFindr account")
   })
 
   it("writes in English from an English page", async () => {

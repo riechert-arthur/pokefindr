@@ -7,10 +7,9 @@ import { getMailer } from "@/server/container"
 import { getServerConfig } from "@/server/config"
 import { submissionApproved, submissionRejected, submissionToReview, type EmailContent } from "@/server/email/templates"
 import { defineJob } from "@/server/lib/jobs/types"
-import { hasLocale } from "next-intl"
 import { localizedPath } from "@/i18n/seo"
-import { DEFAULT_LOCALE, routing, type Locale } from "@/i18n/routing"
-import { serverTranslator } from "@/server/i18n"
+import type { Locale } from "@/i18n/routing"
+import { serverTranslator, toLocale } from "@/server/i18n"
 import { UNDO_MS } from "@/lib/submissions/moderation"
 
 /** How long after a decision the submitter hears about it: past the undo window, so an undone decision sends nothing. */
@@ -76,7 +75,6 @@ async function loadSubmission(id: string, db: Database) {
 type Payload = { name?: string; city?: string; state?: string }
 
 /** A profile's language, or English when they haven't one. */
-const asLocale = (locale: string | null): Locale => (hasLocale(routing.locales, locale) ? locale : DEFAULT_LOCALE)
 
 /**
  * Tells every moderator and admin about a new submission, once each. Skips
@@ -108,7 +106,7 @@ export async function notifySubmissionCreated(submissionId: string, db: Database
   for (const m of moderators) {
     if (m.id === row.s.submittedBy) continue
     try {
-      if (await sendOnce(`submission-created:${submissionId}:${m.id}`, m.email, email(asLocale(m.locale)), db)) sent++
+      if (await sendOnce(`submission-created:${submissionId}:${m.id}`, m.email, email(toLocale(m.locale)), db)) sent++
     } catch (err) {
       failed.push(err)
     }
@@ -127,7 +125,7 @@ export async function notifySubmissionReviewed(submissionId: string, reviewedAt:
   if (!row || row.s.status === "pending" || !row.s.reviewedAt || row.s.reviewedAt.toISOString() !== new Date(reviewedAt).toISOString()) return { sent: 0 }
   const p = row.s.payload as Payload
   // In the submitter's language, with links to the map in it (#185).
-  const locale = asLocale(row.locale)
+  const locale = toLocale(row.locale)
   const t = serverTranslator(locale)
   const name = p.name ?? t("email.approved.unnamed")
   const map = `${getServerConfig().APP_URL}${localizedPath("/map", locale)}`

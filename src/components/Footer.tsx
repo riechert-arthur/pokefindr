@@ -1,7 +1,7 @@
 import { Link } from "@/i18n/navigation"
 import { useTranslations } from "next-intl"
 import { Logo } from "@/components/brand/Logo"
-import { SUPPORT_URL } from "@/components/ErrorPage"
+import { SUPPORT_URL } from "@/lib/links"
 import { LanguageSwitcher } from "@/components/pokefindr/LanguageSwitcher"
 
 const LINKS = [

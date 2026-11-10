@@ -15,4 +15,10 @@ describe("API errors in the page's language (#185)", () => {
     expect(en(null, "Couldn't send it")).toBe("Couldn't send it")
     expect(en(undefined)).toBe("An unexpected error occurred")
   })
+
+  it("shows the API's own, more specific English on English pages, and the catalog's elsewhere", () => {
+    const body = { error: "Password is too short", code: "signupFailed" }
+    expect(renderHook(() => useApiError()).result.current(body)).toBe("Password is too short")
+    expect(renderHook(() => useApiError(), { locale: "es" }).result.current({ error: "Username must be 3 characters", code: "invalidInput" })).toBe("Revisa lo que escribiste e inténtalo de nuevo.")
+  })
 })

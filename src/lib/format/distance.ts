@@ -21,15 +21,24 @@ export function distanceUnit(tag: string | undefined): DistanceUnit {
   return !region || MILES_REGIONS.has(region) ? "mi" : "km"
 }
 
+const formatters = new Map<string, Intl.NumberFormat>()
+
 /** "0.4 mi", "0,6 km": a distance given in miles, in `unit`, written for `locale`. */
 export function formatDistance(miles: number, locale: string, unit: DistanceUnit, digits = 1): string {
-  return new Intl.NumberFormat(locale, {
-    style: "unit",
-    unit: unit === "km" ? "kilometer" : "mile",
-    unitDisplay: "short",
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  }).format(unit === "km" ? miles * KM_PER_MILE : miles)
+  // One formatter per language, unit and precision: every result row and marker calls this.
+  const key = `${locale}|${unit}|${digits}`
+  let format = formatters.get(key)
+  if (!format) {
+    format = new Intl.NumberFormat(locale, {
+      style: "unit",
+      unit: unit === "km" ? "kilometer" : "mile",
+      unitDisplay: "short",
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    })
+    formatters.set(key, format)
+  }
+  return format.format(unit === "km" ? miles * KM_PER_MILE : miles)
 }
 
 /** A search radius in whole units: "5 mi", or "8 km" for the same 5 miles. */

@@ -11,6 +11,9 @@ interface LogoProps {
   title?: string
 }
 
+/** The wordmark's two halves: the brand name, the same in every language, so not in the catalog. */
+const WORDMARK = { poke: "Poke", findr: "Findr" } as const
+
 /**
  * The PokeFindr mark: a map pin (brand → brand-2 gradient) holding a trading
  * card, with a spark. Colors come from the design tokens, so it follows the
@@ -56,13 +59,10 @@ export function Logo({ variant = "mark", size = 32, className, title = "PokeFind
   return (
     <span className={cn("inline-flex items-center gap-2 text-foreground", className)} role={title ? "img" : undefined} aria-label={title || undefined}>
       {mark}
-      {/* The wordmark is the brand name in every language. */}
-      {/* eslint-disable no-restricted-syntax */}
       <span aria-hidden className="font-sans font-medium" style={{ fontSize: size * 0.6, letterSpacing: "-0.03em" }}>
-        Poke
-        <b className="bg-gradient-to-br from-brand to-brand-2 bg-clip-text font-extrabold text-transparent">Findr</b>
+        {WORDMARK.poke}
+        <b className="bg-gradient-to-br from-brand to-brand-2 bg-clip-text font-extrabold text-transparent">{WORDMARK.findr}</b>
       </span>
-      {/* eslint-enable no-restricted-syntax */}
     </span>
   )
 }

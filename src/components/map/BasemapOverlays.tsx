@@ -61,14 +61,14 @@ export function useLocalizedLabels() {
   useEffect(() => {
     if (!map) return
     const field = localizedTextField(locale)
-    const wanted = JSON.stringify(field)
     const apply = () => {
-      const layers = map.getStyle()?.layers
-      if (!layers?.length) return
-      for (const id of nameLabelIds(layers)) {
-        // Setting it fires styledata again: only when it isn't set yet.
-        if (JSON.stringify(map.getLayoutProperty(id, "text-field")) !== wanted) map.getMap().setLayoutProperty(id, "text-field", field)
-      }
+      const m = map.getMap()
+      if (!m.style) return
+      // The layers' ids, types and labels, without serializing the whole style.
+      // Only symbol layers have a text-field; MapLibre throws for the others.
+      const layers = m.getLayersOrder().flatMap((id) => (m.getLayer(id)?.type === "symbol" ? [{ id, type: "symbol", layout: { "text-field": m.getLayoutProperty(id, "text-field") } }] : []))
+      // MapLibre skips a value that's already set, so this settles after one pass.
+      for (const id of nameLabelIds(layers)) m.setLayoutProperty(id, "text-field", field)
     }
     apply()
     map.on("styledata", apply)

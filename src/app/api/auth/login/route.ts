@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod/v3"
-import { VERIFIED_CALLBACK } from "@/lib/auth/paths"
+import { VERIFIED_CALLBACK, localizedCallback } from "@/lib/auth/paths"
+import { requestLocale } from "@/server/i18n"
 import { identityCookies, identityRequest, refuseCrossSite } from "@/server/auth/identity"
-import { profileLocaleCookie } from "@/server/auth/locale-cookie"
+import { profileLocale, profileLocaleCookie } from "@/server/auth/locale-cookie"
 import { createSessionCookie } from "@/server/auth/session"
 import { getProfile, getSessionTier } from "@/server/services/users"
 import { apiError } from "@/server/api-error"
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
   const parsed = body.safeParse(await req.json().catch(() => null))
   if (!parsed.success) return apiError("credentialsMissing", "Enter your email and password", 400)
 
-  const res = await identityRequest(req, "/sign-in/email", { ...parsed.data, callbackURL: VERIFIED_CALLBACK })
+  const res = await identityRequest(req, "/sign-in/email", { ...parsed.data, callbackURL: localizedCallback(VERIFIED_CALLBACK, requestLocale(req)) })
   if (res.status === 429) return apiError("tooManyAttempts", "Too many attempts. Wait a minute and try again.", 429)
   // An unconfirmed email gets the same answer as a wrong password (Better Auth sends it a new
   // link): sign up with any email and a password you pick, and a different answer here would
@@ -31,13 +32,13 @@ export async function POST(req: NextRequest) {
   if (!res.ok) return loginFailed()
 
   const { user } = (await res.json()) as { user: { id: string; email: string } }
-  const profile = await getProfile(user.id)
+  const [profile, tier] = await Promise.all([getProfile(user.id), getSessionTier(user.id)])
   if (!profile) return loginFailed()
 
-  const response = NextResponse.json({ ok: true })
+  // The language they picked on another device (#182): the form opens the next page in it.
+  const response = NextResponse.json({ ok: true, locale: profileLocale(profile.locale) })
   for (const cookie of identityCookies(res)) response.headers.append("Set-Cookie", cookie)
-  response.headers.append("Set-Cookie", createSessionCookie({ sub: user.id, email: user.email, tier: await getSessionTier(user.id) }))
-  // The language they picked on another device (#182).
+  response.headers.append("Set-Cookie", createSessionCookie({ sub: user.id, email: user.email, tier }))
   const locale = profileLocaleCookie(profile.locale)
   if (locale) response.headers.append("Set-Cookie", locale)
   return response

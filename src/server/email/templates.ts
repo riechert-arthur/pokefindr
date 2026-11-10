@@ -31,7 +31,6 @@ export const EMAIL_COLORS = {
 } as const
 
 /** Our own copy in a text node (the catalog's): apostrophes can stay as they are. */
-const escapeText = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!)
 
 type T = ReturnType<typeof serverTranslator>
 
@@ -52,18 +51,18 @@ function layout(t: T, locale: Locale, body: string): string {
 <tr><td style="padding:28px 28px 8px;font-size:18px;font-weight:700;letter-spacing:-0.01em">PokeFindr</td></tr>
 <tr><td style="padding:8px 28px 28px">${body}</td></tr>
 </table>
-<p style="max-width:480px;margin:16px auto 0;color:${EMAIL_COLORS.muted};font-size:12px">${escapeText(t("email.footer"))}</p>
+<p style="max-width:480px;margin:16px auto 0;color:${EMAIL_COLORS.muted};font-size:12px">${escapeHtml(t("email.footer"))}</p>
 </td></tr></table>
 </body></html>`
 }
 
 const button = (t: T, url: string, label: string) =>
   `<p style="margin:24px 0"><a href="${escapeHtml(url)}" style="display:inline-block;background:${EMAIL_COLORS.primary};color:${EMAIL_COLORS.onPrimary};text-decoration:none;font-weight:600;padding:10px 18px;border-radius:8px">${escapeHtml(label)}</a></p>
-<p style="margin:0;color:${EMAIL_COLORS.muted};font-size:13px">${escapeText(t("email.pasteLink"))}<br><span style="word-break:break-all">${escapeHtml(url)}</span></p>`
+<p style="margin:0;color:${EMAIL_COLORS.muted};font-size:13px">${escapeHtml(t("email.pasteLink"))}<br><span style="word-break:break-all">${escapeHtml(url)}</span></p>`
 
 const hi = (t: T, name: string) => (name.trim() ? t("email.hi", { name: name.trim() }) : t("email.hiAnonymous"))
 
-const note = (text: string) => `<p style="margin:20px 0 0;color:${EMAIL_COLORS.muted};font-size:13px">${escapeText(text)}</p>`
+const note = (text: string) => `<p style="margin:20px 0 0;color:${EMAIL_COLORS.muted};font-size:13px">${escapeHtml(text)}</p>`
 
 /**
  * An account email: greeting, a sentence ending in the link (text) or a
@@ -140,7 +139,7 @@ export function submissionRejected({ name, reason, url, locale = DEFAULT_LOCALE 
     html: layout(
       t,
       locale,
-      `<p style="margin:0 0 12px">${html(t, "email.rejected.thanks", { name })}</p><p style="margin:0">${escapeText(t("email.rejected.reason", { reason }))}</p>${button(t, url, t("email.rejected.button"))}${note(t("email.rejected.html"))}`,
+      `<p style="margin:0 0 12px">${html(t, "email.rejected.thanks", { name })}</p><p style="margin:0">${escapeHtml(t("email.rejected.reason", { reason }))}</p>${button(t, url, t("email.rejected.button"))}${note(t("email.rejected.html"))}`,
     ),
   }
 }

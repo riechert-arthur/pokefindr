@@ -14,10 +14,9 @@ import { useDistance } from "@/i18n/useDistance"
 import { useTranslations } from "next-intl"
 import { useStateName } from "./useStateName"
 
-/** A state and its count for the shown kinds. */
+/** A state and its count for the shown kinds. Its name comes from the catalog (useStateName). */
 export interface StateTotal {
   code: string
-  name: string
   count: number
 }
 

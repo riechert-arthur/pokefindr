@@ -2,14 +2,15 @@
  * ISO 3166 numeric code → alpha-2 for the country outlines
  * (public/geo/countries-110m.json, whose features carry the numeric code as
  * `iso`), from Natural Earth 5.1.2's ISO_N3 and ISO_A2 (ISO_A2_EH where
- * ISO_A2 is -99). Two outlines have no code (N. Cyprus, Somaliland) and keep
- * their English name.
+ * ISO_A2 is -99; Taiwan is TW). Three outlines have no code: Kosovo goes by
+ * its name (XK, which Intl knows), and N. Cyprus and Somaliland keep their
+ * English name.
  */
 const ALPHA2: Record<string, string> = {
   "004": "AF", "008": "AL", "010": "AQ", "012": "DZ", "024": "AO", "031": "AZ", "032": "AR", "036": "AU", "040": "AT", "044": "BS",
   "050": "BD", "051": "AM", "056": "BE", "064": "BT", "068": "BO", "070": "BA", "072": "BW", "076": "BR", "084": "BZ", "090": "SB",
   "096": "BN", "100": "BG", "104": "MM", "108": "BI", "112": "BY", "116": "KH", "120": "CM", "124": "CA", "140": "CF", "144": "LK",
-  "148": "TD", "152": "CL", "156": "CN", "158": "CN-TW", "170": "CO", "178": "CG", "180": "CD", "188": "CR", "191": "HR", "192": "CU",
+  "148": "TD", "152": "CL", "156": "CN", "158": "TW", "170": "CO", "178": "CG", "180": "CD", "188": "CR", "191": "HR", "192": "CU",
   "196": "CY", "203": "CZ", "204": "BJ", "208": "DK", "214": "DO", "218": "EC", "222": "SV", "226": "GQ", "231": "ET", "232": "ER",
   "233": "EE", "238": "FK", "242": "FJ", "246": "FI", "250": "FR", "260": "TF", "262": "DJ", "266": "GA", "268": "GE", "270": "GM",
   "275": "PS", "276": "DE", "288": "GH", "300": "GR", "304": "GL", "320": "GT", "324": "GN", "328": "GY", "332": "HT", "340": "HN",
@@ -32,11 +33,23 @@ const ALPHA2: Record<string, string> = {
  * English name.
  */
 export function countryName(iso: string, englishName: string, locale: string): string {
-  const code = ALPHA2[iso]
+  const code = ALPHA2[iso] ?? BY_NAME[englishName]
   if (!code) return englishName
   try {
-    return new Intl.DisplayNames([locale], { type: "region", fallback: "none" }).of(code) ?? englishName
+    return regionNames(locale).of(code) ?? englishName
   } catch {
     return englishName
   }
+}
+
+/** Outlines without a numeric code that Intl still has a name for. */
+const BY_NAME: Record<string, string> = { Kosovo: "XK" }
+
+const names = new Map<string, Intl.DisplayNames>()
+
+/** One list of names per language: the tooltip asks on every pointer move. */
+function regionNames(locale: string): Intl.DisplayNames {
+  let list = names.get(locale)
+  if (!list) names.set(locale, (list = new Intl.DisplayNames([locale], { type: "region", fallback: "none" })))
+  return list
 }

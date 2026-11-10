@@ -24,6 +24,7 @@ import { toast } from "sonner"
 import { useRouter } from "@/i18n/navigation"
 import type { AuthSchemas } from "@/lib/schemas"
 import { useTranslations } from "next-intl"
+import type { Locale } from "@/i18n/routing"
 import { useAuthSchemas } from "./useAuthSchemas"
 
 type CallbackValues = z.infer<AuthSchemas["callbackSchema"]>
@@ -48,11 +49,11 @@ export function CallbackForm({
 
   async function onSubmit(values: CallbackValues) {
     try {
-      await axios.post("/api/auth/onboarding", { username: values.username }, { withCredentials: true })
+      const { data } = await axios.post<{ locale?: Locale | null }>("/api/auth/onboarding", { username: values.username }, { withCredentials: true })
       broadcastAuth("login")
       toast.success(t("callback.welcome"))
       if (next) window.location.assign(next)
-      else router.push("/home")
+      else router.push("/home", data.locale ? { locale: data.locale } : undefined)
     } catch (err: unknown) {
       handleSubmitError(err)
     }

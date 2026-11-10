@@ -36,10 +36,22 @@ export interface AssistantEvent {
  * route on the map). The model gets a shorter `data` object; cards carry
  * coordinates so the page needn't fetch again.
  */
+/**
+ * The area a card is about, so the page can write its heading in its own
+ * language and units. Cards saved before it existed have only `title`.
+ */
+export type CardArea = { kind: "state"; label: string } | { kind: "near"; label: string; radiusMiles: number }
+
+/**
+ * Each card's `title` is English, for the model's memory of the
+ * conversation; the page shows `area` in its language when the card has it.
+ */
 export type AssistantCard =
   | {
       type: "places"
       title: string
+      /** Missing for a single place, whose title is its name. */
+      area?: CardArea
       places: AssistantPlace[]
       /** Every match, not just the shown ones. */
       total: number
@@ -60,8 +72,10 @@ export type AssistantCard =
   | {
       type: "stats"
       title: string
+      area?: CardArea
       total: number
       byKind: Partial<Record<LocationKind, number>>
       topRetailers: { retailer: string; count: number }[]
     }
-  | { type: "events"; title: string; events: AssistantEvent[] }
+  /** `area` is null for events anywhere. */
+  | { type: "events"; title: string; area?: CardArea | null; events: AssistantEvent[] }

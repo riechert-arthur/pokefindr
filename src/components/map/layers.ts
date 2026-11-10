@@ -315,6 +315,7 @@ export function nameLabelIds(
 ): string[] {
   return layers
     .filter((l) => l.type === "symbol" && !own.has(l.id) && !l.id.startsWith(OVERLAY_PREFIX))
-    .filter((l) => /\["get","name(?:[_:][\w:-]+)?"\]/.test(JSON.stringify(l.layout?.["text-field"] ?? "")))
+    // An expression (["get", "name:latin"]) or a token string ("{name:latin}").
+    .filter((l) => /\["get","name(?:[_:][\w:-]+)?"\]|\{name(?:[_:][\w:-]+)?\}/.test(JSON.stringify(l.layout?.["text-field"] ?? "")))
     .map((l) => l.id)
 }
