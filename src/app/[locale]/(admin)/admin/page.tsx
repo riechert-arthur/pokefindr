@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { AdminApp } from "@/components/admin/AdminApp"
 import { groupsFor } from "@/lib/admin/sections"
 import { can } from "@/lib/auth/entitlements"
+import { moderateHref, tabFor } from "@/lib/moderate/tabs"
 import { roleOf } from "@/server/admin/access"
 import { getProfile } from "@/server/services/users"
 import { redirect } from "@/i18n/navigation"
@@ -23,7 +24,7 @@ export default async function AdminPage({ params, searchParams }: { params: Prom
   const role = await roleOf(userId)
   if (!can(role, "admin.open") && can(role, "moderation.view")) {
     const { section } = await searchParams
-    redirect({ href: section === "reports" ? "/moderate?tab=reports" : "/moderate", locale: (await params).locale as Locale })
+    redirect({ href: moderateHref(tabFor(section)), locale: (await params).locale as Locale })
   }
   // A role that may open /admin but no section in it gets no page either.
   if (!role || !can(role, "admin.open") || groupsFor(role).length === 0) notFound()

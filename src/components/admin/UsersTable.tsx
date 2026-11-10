@@ -22,7 +22,7 @@ const th = "px-3 py-2.5 text-left text-caption font-semibold text-muted-foregrou
 const td = "px-3 py-3 align-top text-body"
 
 /** Staff stand out from members; who can manage users stands out most. */
-const variantOf = (role: Role): BadgeProps["variant"] => (can(role, "users.manage") ? "default" : can(role, "admin.open") ? "secondary" : "outline")
+const variantOf = (role: Role): BadgeProps["variant"] => (can(role, "users.manage") ? "default" : can(role, "moderation.view") ? "secondary" : "outline")
 
 /** How long typing pauses before the search runs. */
 const SEARCH_DELAY_MS = 250

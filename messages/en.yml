@@ -717,7 +717,7 @@ moderate:
     queue: Review queue
     reports: Reports
     # The count beside a tab, for screen readers. {count} is a number.
-    waiting: "{count} waiting"
+    waiting: "{count, plural, one {# waiting} other {# waiting}}"
 
 # /settings.
 settings:

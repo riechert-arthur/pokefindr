@@ -6,19 +6,13 @@ import { useQueryState } from "nuqs"
 import { MenuIcon } from "lucide-react"
 import { ReviewQueue } from "@/components/admin/ReviewQueue"
 import { ReportsTable } from "@/components/admin/ReportsTable"
+import { CountBadge } from "@/components/admin/CountBadge"
 import { RefreshSummary } from "@/components/admin/useRefreshSummary"
 import { moderationCounts, useAdminSummary } from "@/components/admin/useAdminSummary"
 import { APP_NAV_ID } from "@/components/pokefindr/AppRail"
 import { useSidebar } from "@/components/providers/SidebarContextProvider"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useFormat } from "@/i18n/format"
-import { cn } from "@/lib/utils"
-
-export const MODERATE_TABS = ["queue", "reports"] as const
-export type ModerateTab = (typeof MODERATE_TABS)[number]
-
-/** `?tab=`: the one asked for, else the review queue. */
-export const tabFor = (param: string | null | undefined): ModerateTab => MODERATE_TABS.find((t) => t === param) ?? "queue"
+import { MODERATE_TABS, tabFor } from "@/lib/moderate/tabs"
 
 /**
  * /moderate (#293): the review queue and Reports as two tabs, picked with
@@ -28,7 +22,6 @@ export const tabFor = (param: string | null | undefined): ModerateTab => MODERAT
  */
 export function ModerateDashboard() {
   const t = useTranslations("moderate")
-  const f = useFormat()
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const [param, setParam] = useQueryState("tab", { history: "push" })
   const tab = tabFor(param)
@@ -65,17 +58,7 @@ export function ModerateDashboard() {
               return (
                 <TabsTrigger key={id} value={id} className="gap-1.5">
                   {t(`tabs.${id}`)}
-                  {c && (
-                    <span
-                      aria-label={t("tabs.waiting", { count: c.count })}
-                      className={cn(
-                        "min-w-5 rounded-full px-1.5 text-center text-caption font-semibold tabular-nums",
-                        c.hot ? "bg-destructive text-destructive-foreground" : "bg-muted text-muted-foreground",
-                      )}
-                    >
-                      {f.count(c.count)}
-                    </span>
-                  )}
+                  {c && c.count > 0 && <CountBadge count={c.count} hot={c.hot} label={t("tabs.waiting", { count: c.count })} />}
                 </TabsTrigger>
               )
             })}

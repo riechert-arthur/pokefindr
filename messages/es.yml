@@ -557,7 +557,7 @@ moderate:
   tabs:
     queue: Cola de revisión
     reports: Reportes
-    waiting: "{count} pendientes"
+    waiting: "{count, plural, one {# pendiente} other {# pendientes}}"
 
 settings:
   title: Configuración general
