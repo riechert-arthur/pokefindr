@@ -174,6 +174,8 @@ describe("seedDevUsers", () => {
   })
 })
 
+const DAY_MS = 24 * 60 * 60 * 1000
+
 describe("seedSampleModeration", () => {
   it("fills the review queue and Reports once, with samples from the seeded members", async () => {
     await seedLocations(sql, readSeedLocations())
@@ -185,11 +187,14 @@ describe("seedSampleModeration", () => {
     expect(queue.map((q) => q.status)).toEqual(SAMPLE_SUBMISSIONS.map(() => "pending"))
     expect(queue.every((q) => q.name.endsWith("(sample)"))).toBe(true)
     expect(await listQueue(undefined, getDb(), now)).toHaveLength(SAMPLE_SUBMISSIONS.length)
+    // Not late on a new database (late is older than a day).
+    const [{ oldest }] = await sql<{ oldest: Date }[]>`select min(created_at) as oldest from location_submissions`
+    expect(now.getTime() - oldest.getTime()).toBeLessThan(DAY_MS)
     const [report] = await sql`select reason, resolved_at, user_id from status_reports where id = ${SAMPLE_REPORT.id}`
     expect(report).toMatchObject({ reason: "gone", resolved_at: null, user_id: SAMPLE_REPORT.by })
   })
 
-  it("doesn't count toward the members' daily limits", async () => {
+  it("doesn't make misty's own report of the sample machine a duplicate", async () => {
     await seedLocations(sql, readSeedLocations())
     await seedDevUsers(sql)
     await seedSampleModeration(sql)
