@@ -1,3 +1,6 @@
+/** The most stops in a route: what the assistant's plan_route orders and /api/route takes. */
+export const MAX_ROUTE_STOPS = 9
+
 /** A stop as /api/route returns it (#288): only what the map draws. */
 export interface RouteStop {
   id: string

@@ -4,7 +4,7 @@ import { getDb, type Database } from "@/server/db/client"
 import { getRouter } from "@/server/container"
 import { getServerConfig } from "@/server/config"
 import { withinServerBudget } from "@/server/api-rate-limit"
-import { FakeRouter, straightLine } from "@/server/adapters/router/fake"
+import { straightLine } from "@/server/adapters/router/fake"
 import type { RateRule } from "@/server/ports/rate-limiter"
 import type { RoutePoint, Router } from "@/server/ports/router"
 import type { RouteStop, StreetRoute } from "@/lib/types/routes"
@@ -57,7 +57,7 @@ export async function streetRoute(
   const points: RoutePoint[] = stops.map((s) => [s.lng, s.lat])
   const fallback = () => ({ ...straightLine(points), stops })
   // Not set up (dev, CI): straight lines, without spending the budget.
-  if (router instanceof FakeRouter) return fallback()
+  if (router.free) return fallback()
   if (!(await underBudget(providerBudget(getServerConfig().ROUTER_DAILY_CAP)))) {
     console.warn("[route] over the routing budget; drawing straight lines")
     return fallback()

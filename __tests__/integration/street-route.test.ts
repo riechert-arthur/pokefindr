@@ -58,7 +58,7 @@ describe("GET /api/route (#288)", () => {
     const [a, b, c] = await seed()
     const res = await get([c.id, a.id, b.id])
     expect(res.status).toBe(200)
-    expect(res.headers.get("Cache-Control")).toBe("public, s-maxage=86400, stale-while-revalidate=604800")
+    expect(res.headers.get("Cache-Control")).toBe("public, s-maxage=86400, stale-while-revalidate=3600")
     const body = await res.json()
     expect(Object.keys(body).sort()).toEqual(["legs", "line", "miles", "minutes", "routed", "stops"])
     expect(body).toMatchObject({ routed: true, miles: 5, minutes: 12, legs: [{ miles: 2.5, minutes: 6 }, { miles: 2.5, minutes: 6 }] })
@@ -132,6 +132,9 @@ describe("GET /api/route (#288)", () => {
     expect(limited.status).toBe(429)
     expect(Number(limited.headers.get("Retry-After"))).toBeGreaterThan(0)
     expect((await get([a.id, b.id], "203.0.113.51")).status).toBe(200)
+    // Malformed requests spend the limit too, so they can't probe the validation for free.
+    for (let i = 0; i < 10; i++) expect((await get("bad", "203.0.113.52")).status).toBe(400)
+    expect((await get("bad", "203.0.113.52")).status).toBe(429)
   })
 
   // Last: the server's daily bucket stays refused in this instance's memory once it runs dry.

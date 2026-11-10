@@ -1,6 +1,7 @@
 import "server-only"
 import { RouterError, type RouteOptions, type RoutePoint, type RouteResult, type Router } from "@/server/ports/router"
 import { endpoint } from "@/server/adapters/geocoder/shared"
+import { round } from "@/lib/map/geo"
 
 interface OrsResponse {
   features?: {
@@ -16,7 +17,6 @@ const METERS_PER_MILE = 1609.344
 /** How far a stop may be from a road and still be routed to it. ORS's default, 350 m, misses machines deep in a mall's lot. */
 const SNAP_METERS = 1000
 
-const round = (n: number, places: number) => Math.round(n * 10 ** places) / 10 ** places
 const finite = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n)
 
 /**

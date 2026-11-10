@@ -4,9 +4,11 @@ import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { Layer, Marker, Source, useMap } from "./engine"
 import { SOURCES, routeLineLayer, type MapColors } from "./layers"
-import type { StreetRoute } from "@/lib/types/routes"
+import { MAX_ROUTE_STOPS, type StreetRoute } from "@/lib/types/routes"
 import { cameraPadding } from "./camera"
 import { useTranslations } from "next-intl"
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 interface RouteOverlayProps {
   /** Location ids in visiting order (the URL's `route=`). */
@@ -32,19 +34,25 @@ export function RouteOverlay({ ids, colors, onClear }: RouteOverlayProps) {
   useEffect(() => {
     const ctl = new AbortController()
     setRoute(null)
-    const count = key.split(",").length
-    fetch(`/api/route?ids=${key.split(",").map(encodeURIComponent).join(",")}`, { signal: ctl.signal })
+    const all = key.split(",")
+    const gone = () => {
+      toast.error(t("failed"), { description: t("gone") })
+      onClear()
+    }
+    // A hand-edited link can hold a bad id or too many stops: draw the ones the API takes.
+    const ids = all.filter((id) => UUID.test(id)).slice(0, MAX_ROUTE_STOPS)
+    if (ids.length < 2) {
+      gone()
+      return
+    }
+    fetch(`/api/route?ids=${ids.join(",")}`, { signal: ctl.signal })
       .then(async (r) => {
-        // Only a 404 means the places are gone; anything else is a failure to retry later.
-        if (r.status === 404) {
-          toast.error(t("failed"), { description: t("gone") })
-          onClear()
-          return
-        }
+        // Only a 404 (or a 400 for a link it can't route) means the places are gone; anything else is a failure to retry later.
+        if (r.status === 404 || r.status === 400) return gone()
         if (!r.ok) throw new Error(`GET /api/route failed (${r.status})`)
         const found = (await r.json()) as StreetRoute
         // Gone stops are skipped, so say so: the numbers no longer match the route card.
-        if (found.stops.length < count) toast(t("someGone"), { description: t("someGoneBody") })
+        if (found.stops.length < all.length) toast(t("someGone"), { description: t("someGoneBody") })
         setRoute(found)
       })
       .catch((err) => {
@@ -60,13 +68,18 @@ export function RouteOverlay({ ids, colors, onClear }: RouteOverlayProps) {
   // Frame the route once, when it arrives: the whole line, which can bulge past the stops.
   useEffect(() => {
     if (!route || !map) return
-    const points = [...route.line.coordinates, ...route.stops.map((s) => [s.lng, s.lat])]
-    const lngs = points.map((p) => p[0])
-    const lats = points.map((p) => p[1])
+    // One pass, not Math.min(...): a long routed line can have more points than a call takes arguments.
+    let [w, s, e, n] = [Infinity, Infinity, -Infinity, -Infinity]
+    for (const [lng, lat] of [...route.line.coordinates, ...route.stops.map((p) => [p.lng, p.lat])]) {
+      if (lng < w) w = lng
+      if (lng > e) e = lng
+      if (lat < s) s = lat
+      if (lat > n) n = lat
+    }
     map.fitBounds(
       [
-        [Math.min(...lngs), Math.min(...lats)],
-        [Math.max(...lngs), Math.max(...lats)],
+        [w, s],
+        [e, n],
       ],
       { padding: cameraPadding(map.getContainer(), { sheet: true }), maxZoom: 14, duration: 1000 },
     )

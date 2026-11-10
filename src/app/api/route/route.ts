@@ -21,10 +21,11 @@ const idsSchema = z
  *   `routed` is false.
  */
 export async function GET(request: NextRequest) {
-  const parsed = idsSchema.safeParse(request.nextUrl.searchParams.get("ids") ?? "")
-  if (!parsed.success) return NextResponse.json({ error: `Invalid query. ids: 2 to ${MAX_STOPS} place ids, comma-separated` }, { status: 400 })
+  // Limits first, so malformed requests spend tokens too.
   const blocked = await guardRoute(request, RATE_RULES.route, { bots: true })
   if (blocked) return blocked
+  const parsed = idsSchema.safeParse(request.nextUrl.searchParams.get("ids") ?? "")
+  if (!parsed.success) return NextResponse.json({ error: `Invalid query. ids: 2 to ${MAX_STOPS} place ids, comma-separated` }, { status: 400 })
 
   let stops
   try {
@@ -40,9 +41,11 @@ export async function GET(request: NextRequest) {
     const body = { routed: route.routed, line: route.line, legs: route.legs, miles: route.miles, minutes: route.minutes, stops: route.stops }
     return NextResponse.json(body, {
       headers: {
-        // The same ids give the same route: a day at the CDN. Straight lines
-        // only briefly, so the streets come back once the router does.
-        "Cache-Control": route.routed ? "public, s-maxage=86400, stale-while-revalidate=604800" : "public, s-maxage=300",
+        // The same ids give the same route: a day at the CDN, and stale for
+        // at most an hour more, so a closed or moved place drops out within
+        // about a day. Straight lines only briefly, so the streets come back
+        // once the router does.
+        "Cache-Control": route.routed ? "public, s-maxage=86400, stale-while-revalidate=3600" : "public, s-maxage=300",
       },
     })
   } catch (err) {

@@ -1,5 +1,5 @@
 import type { RoutePoint, RouteResult, Router } from "@/server/ports/router"
-import { milesBetween } from "@/lib/map/geo"
+import { milesBetween, round } from "@/lib/map/geo"
 
 /**
  * Straight lines between the stops, never `routed`. The default in dev and
@@ -7,12 +7,13 @@ import { milesBetween } from "@/lib/map/geo"
  * provider fails, is slow or is over the daily cap.
  */
 export class FakeRouter implements Router {
+  /** Costs no provider quota, so the route service doesn't spend its budget on it. */
+  readonly free = true
+
   async route(stops: readonly RoutePoint[]): Promise<RouteResult> {
     return straightLine(stops)
   }
 }
-
-const round = (n: number, places: number) => Math.round(n * 10 ** places) / 10 ** places
 
 export function straightLine(stops: readonly RoutePoint[]): RouteResult {
   const legs = stops.slice(1).map((to, i) => {

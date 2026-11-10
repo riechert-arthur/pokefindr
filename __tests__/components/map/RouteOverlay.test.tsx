@@ -101,4 +101,24 @@ describe("RouteOverlay (#288)", () => {
     await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(2))
     expect(keep).not.toHaveBeenCalled()
   })
+
+  it("draws the ids the API takes from a hand-edited link, and clears one it can't route", async () => {
+    const fetchMock = answer(200, route())
+    show([A, "not-an-id", B, ...Array.from({ length: 9 }, () => C)])
+    await screen.findByRole("img", { name: "Stop 2: Target" })
+    const sent = new URL(String(fetchMock.mock.calls[0][0]), "http://x").searchParams.get("ids")!.split(",")
+    expect(sent).toEqual([A, B, ...Array.from({ length: 7 }, () => C)])
+    expect(toast).toHaveBeenCalledWith("Some stops are gone", expect.anything())
+
+    const none = answer(200, route())
+    const cleared = vi.fn()
+    show(["nope", A], cleared)
+    await waitFor(() => expect(cleared).toHaveBeenCalled())
+    expect(none).not.toHaveBeenCalled()
+
+    answer(400, { error: "Invalid query" })
+    const bad = vi.fn()
+    show([A, B], bad)
+    await waitFor(() => expect(bad).toHaveBeenCalled())
+  })
 })

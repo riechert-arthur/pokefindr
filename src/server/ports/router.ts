@@ -27,6 +27,11 @@ export interface RouteOptions {
 }
 
 export interface Router {
+  /**
+   * True when a call costs no provider quota (straight lines), so the route
+   * service skips the server-wide budget. Unset counts as metered.
+   */
+  readonly free?: boolean
   /** A route through `stops` (2 or more) in the order given. */
   route(stops: readonly RoutePoint[], opts?: RouteOptions): Promise<RouteResult>
 }

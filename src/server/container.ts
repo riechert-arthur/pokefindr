@@ -45,6 +45,8 @@ export function makeRouter(config: ServerConfig): Router {
     case "openrouteservice":
       return new OpenRouteServiceRouter(config.ROUTER_API_KEY!, config.ROUTER_BASE_URL)
     case "fake":
+      // Allowed, so a deploy without the key still works, but say so: every route is straight.
+      if (config.NODE_ENV === "production") console.warn("[router] no ROUTER_API_KEY in production; assistant routes are straight lines")
       return new FakeRouter()
   }
 }
