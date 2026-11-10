@@ -1,13 +1,11 @@
 import "server-only"
 import { and, eq, sql } from "drizzle-orm"
-import { z } from "zod/v3"
 import { getDb, type Database } from "@/server/db/client"
 import { locationRatings, locations, profiles, reviewModerationChecks } from "@/server/db/schema"
 import { can } from "@/lib/auth/entitlements"
 import { UNDO_MS } from "@/lib/submissions/moderation"
 import type { HeldReview, ModerationCategory, ModerationVerdict, ReviewStatus } from "@/lib/reviews/moderation"
 import type { ContentModerator } from "@/server/ports/moderator"
-import { defineJob } from "@/server/lib/jobs/types"
 import { enqueueJob } from "@/server/lib/jobs/enqueue"
 import { moderate } from "./content-moderation"
 import { recordReviewCheck, reviewContext } from "./reviews"
@@ -180,11 +178,3 @@ export function recheckSoon(now = Date.now()) {
   )
 }
 
-/** Runs daily (vercel.json), and a few minutes after a check fails. Safe to repeat. */
-export const recheckHeldReviewsJob = defineJob({
-  description: "Checks again held reviews whose moderation check failed",
-  schema: z.unknown(),
-  async run() {
-    return recheckFailedReviews()
-  },
-})
