@@ -3,7 +3,7 @@ import { jwtVerify } from 'jose'
 import createIntlMiddleware from 'next-intl/middleware'
 import { SESSION_COOKIE_NAME } from '@/server/auth/cookie'
 import { getJwtSecret } from '@/server/edge-config'
-import { routing, type Locale } from '@/i18n/routing'
+import { LOCALE_COOKIE, PUBLIC_LOCALES, routing, type Locale } from '@/i18n/routing'
 import { apiError } from '@/server/api-error'
 
 const encoder     = new TextEncoder()
@@ -119,5 +119,29 @@ export async function middleware(req: NextRequest) {
     user = await verifiedUser(req)
     if (!user) return redirectToLogin(req, locale)
   }
-  return intl(new NextRequest(req, { headers: identityHeaders(req, user) }))
+  return intl(new NextRequest(req, { headers: publicDetection(identityHeaders(req, user)) }))
+}
+
+const isPublic = (tag: string) => (PUBLIC_LOCALES as readonly string[]).includes(tag.trim().split(/[-;]/)[0].toLowerCase())
+
+/**
+ * next-intl detects from every language in LOCALES. Before it looks, drop
+ * the languages that aren't public from Accept-Language and a cookie naming
+ * one, so a language still being written is only reached by its URL
+ * (docs/i18n.md).
+ */
+export function publicDetection(headers: Headers): Headers {
+  const accept = headers.get('accept-language')
+  if (accept) {
+    const kept = accept.split(',').filter((part) => part.split(';')[0].trim() === '*' || isPublic(part))
+    if (kept.length) headers.set('accept-language', kept.join(','))
+    else headers.delete('accept-language')
+  }
+  const cookie = headers.get('cookie')
+  if (cookie) {
+    const kept = cookie.split(/;\s*/).filter((c) => !c.startsWith(`${LOCALE_COOKIE}=`) || isPublic(c.slice(LOCALE_COOKIE.length + 1)))
+    if (kept.length) headers.set('cookie', kept.join('; '))
+    else headers.delete('cookie')
+  }
+  return headers
 }

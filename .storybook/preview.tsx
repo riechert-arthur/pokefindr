@@ -9,6 +9,14 @@ import { TooltipProvider } from "../src/components/ui/tooltip"
 import { MESSAGES } from "../src/i18n/all-messages"
 import { DEFAULT_LOCALE, LOCALES, type Locale } from "../src/i18n/routing"
 
+/** Sets <html lang> as the app's layout does, so screen readers (and axe) know the language. */
+function DocumentLanguage({ locale }: { locale: Locale }) {
+  useEffect(() => {
+    document.documentElement.lang = locale
+  }, [locale])
+  return null
+}
+
 /**
  * In stories where the component under test changes the theme (ThemeToggle),
  * keep the toolbar and next-themes in step both ways.
@@ -70,13 +78,12 @@ const preview: Preview = {
       const [globals, updateGlobals] = useGlobals()
       const toggle = Boolean(parameters.themeToggle)
       const locale: Locale = LOCALES.includes(globals.locale) ? globals.locale : DEFAULT_LOCALE
-      // As the app's layout sets it, so screen readers (and axe) know the language.
-      if (typeof document !== "undefined") document.documentElement.lang = locale
       return (
         <NextIntlClientProvider locale={locale} messages={MESSAGES[locale]}>
           <ThemeProvider storageKey="storybook-theme" forcedTheme={toggle ? undefined : globals.theme}>
             {toggle && <SyncThemeWithToolbar toolbar={globals.theme} setToolbar={(theme) => updateGlobals({ theme })} />}
             <TooltipProvider>
+              <DocumentLanguage locale={locale} />
               <Story />
             </TooltipProvider>
           </ThemeProvider>

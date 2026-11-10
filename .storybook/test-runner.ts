@@ -32,6 +32,16 @@ const LOCALES = ["en", "es"] as const
 type Locale = (typeof LOCALES)[number]
 
 /**
+ * English in both themes, and each other language in light: colors don't
+ * change with the language, so its dark pass would repeat English's.
+ */
+const A11Y_PASSES: (readonly [Locale, "light" | "dark"])[] = [
+  ["en", "light"],
+  ["en", "dark"],
+  ...LOCALES.filter((l) => l !== "en").map((l) => [l, "light"] as const),
+]
+
+/**
  * Switches the theme and language the way the toolbar does (the `theme` and
  * `locale` globals in .storybook/preview.tsx), so next-themes, color-scheme,
  * theme-aware components like the Toaster and next-intl all follow, then
@@ -109,7 +119,7 @@ const config: TestRunnerConfig = {
 
     const failures: string[] = []
     try {
-      for (const [locale, theme] of LOCALES.flatMap((l) => (["light", "dark"] as const).map((t) => [l, t] as const))) {
+      for (const [locale, theme] of A11Y_PASSES) {
         await setGlobals(page, theme, locale)
         const args = { spec: a11y.config, options: a11y.options, rules, context: a11y.context ?? DEFAULT_CONTEXT }
         const results = (await page.evaluate(async (a: typeof args) => {

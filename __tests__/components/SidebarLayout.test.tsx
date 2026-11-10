@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen } from "../helpers/intl"
 import { SidebarProvider, useSidebar } from "@/components/providers/SidebarContextProvider"
 
 vi.mock("@/i18n/navigation", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/i18n/navigation")>()), usePathname: () => "/map", useRouter: () => ({ replace: () => {} }) }))
-vi.mock("@/components/providers/SessionProvider", () => ({ useSessionContext: () => ({ session: null }), useOptionalSession: () => null }))
+vi.mock("@/components/providers/SessionProvider", () => ({ useSessionContext: () => ({ session: null }), useOptionalSession: () => null, useOptionalSessionLoading: () => false }))
 vi.mock("@/components/pokefindr/ThemeToggle", () => ({ ThemeToggle: () => <button type="button">theme</button> }))
 
 import { SidebarLayout } from "@/components/SidebarLayout"
