@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server'
 import { z } from 'zod/v3'
 import { deleteReview, updateReview } from '@/server/services/reviews'
 import { apiError } from "@/server/api-error"
+import { log } from "@/server/log"
 
 const reviewIdSchema = z.string().uuid()
 const patchSchema = z.object({
@@ -25,7 +26,7 @@ export async function DELETE(req: NextRequest, context: Context) {
     if (!deleted) return NextResponse.json({ error: 'Review not found' }, { status: 404 })
     return NextResponse.json({ success: true })
   } catch (err) {
-    console.error('[api/reviews/:id] failed to delete review', err)
+    log.forRequest(req, "/api/reviews/[id]").logError("db.write_failed", err, { write: "review", step: "failed to delete review" })
     return apiError("serverError", "Server error", 500)
   }
 }
@@ -51,7 +52,7 @@ export async function PATCH(req: NextRequest, context: Context) {
     if (!updated) return NextResponse.json({ error: 'Review not found' }, { status: 404 })
     return NextResponse.json({ success: true })
   } catch (err) {
-    console.error('[api/reviews/:id] failed to update review', err)
+    log.forRequest(req, "/api/reviews/[id]").logError("db.write_failed", err, { write: "review", step: "failed to update review" })
     return apiError("serverError", "Server error", 500)
   }
 }

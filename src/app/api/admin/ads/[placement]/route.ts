@@ -3,6 +3,7 @@ import { z } from "zod/v3"
 import { requireEntitlement } from "@/server/admin/access"
 import { setPlacement } from "@/server/services/ad-placements"
 import { SPONSOR_PLACEMENTS } from "@/config/banners"
+import { audit, log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -16,9 +17,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ pl
   if (!body.success) return NextResponse.json({ error: "Send { enabled: true | false }" }, { status: 400 })
   try {
     await setPlacement(placement.data, body.data.enabled, staff.userId)
+    audit(log.forRequest(request, "/api/admin/ads/[placement]"), "ads.set", { actorId: staff.userId, target: placement.data, outcome: body.data.enabled ? "enabled" : "disabled" })
     return NextResponse.json({ ok: true })
   } catch (err) {
-    console.error("[api/admin/ads] failed", err)
+    log.forRequest(request, "/api/admin/ads/[placement]").logError("api.failed", err)
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }

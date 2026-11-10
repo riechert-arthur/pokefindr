@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { requireEntitlement } from "@/server/admin/access"
 import { getAdminSummary } from "@/server/services/admin-summary"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
   try {
     return NextResponse.json(await getAdminSummary(staff.role), { headers: { "Cache-Control": "no-store" } })
   } catch (err) {
-    console.error("[api/admin/summary] failed", err)
+    log.forRequest(request, "/api/admin/summary").logError("api.failed", err)
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }

@@ -32,6 +32,7 @@ import { getServerConfig, type ServerConfig } from "@/server/config"
 import { MCP_ACCOUNT_PATH, MCP_SCOPES } from "@/lib/mcp/scopes"
 import { requestLocale, userLocale } from "@/server/i18n"
 import type { Locale } from "@/i18n/routing"
+import { log } from "@/server/log"
 
 /** Where Better Auth's own endpoints live. Not /api/auth, which holds our routes (login, signup, ...). */
 export const IDENTITY_BASE_PATH = "/api/identity"
@@ -99,12 +100,29 @@ export function identitySecret(config: Pick<ServerConfig, "BETTER_AUTH_SECRET" |
  * the sign-up or reset that asked for it, and logging in again sends a new
  * confirmation link.
  */
-async function sendAccountEmail(to: string, email: EmailContent): Promise<void> {
+async function sendAccountEmail(to: string, email: EmailContent, template: string): Promise<void> {
   try {
     await getMailer().send({ to, ...email })
   } catch (err) {
-    console.error(`[auth] couldn't send "${email.subject}"`, err)
+    // The template and the SMTP code; never the address (logError drops it from the message too).
+    log.logError("auth.email_failed", err, { template })
   }
+}
+
+/**
+ * Better Auth's unexpected errors (#254), logged without the raw error,
+ * whose message can carry the query's values; setting this also stops
+ * Better Auth logging it raw. Its refusals (wrong password, expired link)
+ * are answers, not errors, so they don't reach this: our login route logs
+ * those (security.auth_failed). One that does is logged the same way.
+ */
+function onAuthError(err: unknown) {
+  const e = err as { name?: string; statusCode?: unknown; body?: { code?: unknown } }
+  if (e?.name === "APIError" && typeof e.statusCode === "number" && e.statusCode < 500) {
+    log.info("security.auth_failed", { type: typeof e.body?.code === "string" ? e.body.code : "unknown", status: e.statusCode })
+    return
+  }
+  log.logError("auth.error", err)
 }
 
 /**
@@ -126,7 +144,7 @@ const pending = new Set<Promise<unknown>>()
  * doesn't, and the timing can't tell whether an address has an account.
  */
 function runInBackground(task: Promise<unknown>) {
-  const tracked = task.catch((err) => console.error("[auth] background task failed", err)).finally(() => pending.delete(tracked))
+  const tracked = task.catch((err) => log.logError("auth.background_failed", err)).finally(() => pending.delete(tracked))
   pending.add(tracked)
   try {
     after(tracked)
@@ -154,7 +172,7 @@ export async function approveChangeToTakenEmail(user: { id: string; name: string
   const { secret, baseURL } = await getAuth().$context
   const token = await createEmailVerificationToken(secret, user.email, newEmail, VERIFY_LINK_SECONDS, { requestType: "change-email-confirmation", userId: user.id })
   const url = `${baseURL}/verify-email?token=${token}&callbackURL=${encodeURIComponent(callbackURL)}`
-  runInBackground(userLocale(user.id).then((locale) => sendAccountEmail(user.email, approveEmailChange({ name: user.name, newEmail, url, locale }))))
+  runInBackground(userLocale(user.id).then((locale) => sendAccountEmail(user.email, approveEmailChange({ name: user.name, newEmail, url, locale }), "approveEmailChange")))
 }
 
 /** Test helper: wait for the emails requests so far have started sending. */
@@ -243,7 +261,7 @@ function makeAuth(config: ServerConfig) {
       resetPasswordTokenExpiresIn: 60 * 60,
       revokeSessionsOnPasswordReset: true,
       sendResetPassword: async ({ user, url }, request) =>
-        sendAccountEmail(user.email, resetPassword({ name: user.name, url, locale: await emailLocale(user.id, request) })),
+        sendAccountEmail(user.email, resetPassword({ name: user.name, url, locale: await emailLocale(user.id, request) }), "resetPassword"),
       // Opening the reset link proves the address is theirs, so it counts as confirmed:
       // someone who signed up with your email and never confirmed can't keep you out.
       onPasswordReset: async ({ user }) => {
@@ -265,7 +283,11 @@ function makeAuth(config: ServerConfig) {
         const changing = current && current.email !== user.email
         // Changing to an address another account has: the change can't finish, so its owner gets nothing.
         if (changing && (await emailTakenByOther(user.email, user.id))) return
-        await sendAccountEmail(user.email, changing ? confirmEmailChange({ name: user.name, newEmail: user.email, url, locale }) : verifyEmail({ name: user.name, url, locale }))
+        await sendAccountEmail(
+          user.email,
+          changing ? confirmEmailChange({ name: user.name, newEmail: user.email, url, locale }) : verifyEmail({ name: user.name, url, locale }),
+          changing ? "confirmEmailChange" : "verifyEmail",
+        )
       },
     },
     user: {
@@ -273,12 +295,13 @@ function makeAuth(config: ServerConfig) {
       changeEmail: {
         enabled: true,
         sendChangeEmailConfirmation: async ({ user, newEmail, url }, request) =>
-          sendAccountEmail(user.email, approveEmailChange({ name: user.name, newEmail, url, locale: await emailLocale(user.id, request) })),
+          sendAccountEmail(user.email, approveEmailChange({ name: user.name, newEmail, url, locale: await emailLocale(user.id, request) }), "approveEmailChange"),
       },
     },
     // Signing in with Google or Discord links to an existing account with the same
     // email only when both sides have confirmed it (Better Auth's default).
     socialProviders: socialProviders(config),
+    onAPIError: { onError: onAuthError },
     databaseHooks: { user: { create: { before: async (user, endpoint) => (mayCreateUser(user, endpoint) ? undefined : false) } } },
     session: { expiresIn: 60 * 60 * 24 * 7 },
     // In the database, so limits hold across serverless instances. On everywhere but tests.

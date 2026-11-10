@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { getLocationsInBbox } from "@/server/services/locations"
 import { bboxQuerySchema } from "@/lib/locations/bbox"
 import { guardRoute, RATE_RULES } from "@/server/api-rate-limit"
+import { log } from "@/server/log"
 
 // Never prerendered or kept in the Next.js data cache: the location import runs
 // outside Next.js and couldn't clear it. Browsers keep each answer 30 seconds
@@ -35,7 +36,7 @@ export async function GET(request: NextRequest) {
       headers: { "Cache-Control": "private, max-age=30" },
     })
   } catch (err) {
-    console.error("[api/locations] failed to load locations", err)
+    log.forRequest(request, "/api/locations").logError("api.failed", err, { step: "failed to load locations" })
     return NextResponse.json({ error: "Failed to load locations" }, { status: 500 })
   }
 }

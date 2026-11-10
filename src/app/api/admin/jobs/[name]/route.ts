@@ -5,6 +5,7 @@ import { enqueueJob } from "@/server/lib/jobs/enqueue"
 import { pausedReason } from "@/server/lib/jobs/history"
 import { isJobName } from "@/server/lib/jobs/registry"
 import { jobCatalog, pauseJob, resumeJob } from "@/server/services/admin-jobs"
+import { audit, log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -30,17 +31,22 @@ export async function POST(request: NextRequest, context: { params: Promise<{ na
   if (!parsed.success) return NextResponse.json({ error: "action must be run, pause or resume" }, { status: 400 })
   try {
     const b = parsed.data
+    const trail = (outcome: string) => audit(log.forRequest(request, "/api/admin/jobs/[name]"), `job.${b.action}`, { actorId: staff.userId, target: name, outcome })
     if (b.action === "pause") await pauseJob(name, b.reason, staff.userId)
     else if (b.action === "resume") await resumeJob(name)
     else {
       if (!info.runnable) return NextResponse.json({ error: "This job runs on its own, per item. It can't be run by hand." }, { status: 409 })
       const paused = await pausedReason(name)
-      if (paused) return NextResponse.json({ error: `It's paused: ${paused}. Resume it first.` }, { status: 409 })
+      if (paused) {
+        trail("paused")
+        return NextResponse.json({ error: `It's paused: ${paused}. Resume it first.` }, { status: 409 })
+      }
       await enqueueJob(name, null)
     }
+    trail(b.action === "run" ? "queued" : "done")
     return NextResponse.json({ ok: true })
   } catch (err) {
-    console.error("[api/admin/jobs] failed", err)
+    log.forRequest(request, "/api/admin/jobs/[name]").logError("api.failed", err)
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }

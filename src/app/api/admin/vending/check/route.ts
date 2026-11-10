@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod/v3"
 import { requireEntitlement } from "@/server/admin/access"
 import { checkVendingOverlap } from "@/server/services/vending"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
   try {
     return NextResponse.json({ overlaps: await checkVendingOverlap(parsed.data) })
   } catch (err) {
-    console.error("[api/admin/vending/check] failed", err)
+    log.forRequest(request, "/api/admin/vending/check").logError("api.failed", err)
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }

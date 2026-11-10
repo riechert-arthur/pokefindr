@@ -7,6 +7,7 @@ import { profileLocale, profileLocaleCookie } from "@/server/auth/locale-cookie"
 import { createSessionCookie } from "@/server/auth/session"
 import { getProfile, getSessionTier } from "@/server/services/users"
 import { apiError } from "@/server/api-error"
+import { log } from "@/server/log"
 
 const body = z.object({ email: z.string().min(1).max(320), password: z.string().min(1).max(256) })
 
@@ -25,6 +26,11 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return apiError("credentialsMissing", "Enter your email and password", 400)
 
   const res = await identityRequest(req, "/sign-in/email", { ...parsed.data, callbackURL: localizedCallback(VERIFIED_CALLBACK, requestLocale(req)) })
+  if (!res.ok) {
+    // A security signal (#254): Better Auth's code, never the email.
+    const code = ((await res.clone().json().catch(() => null)) as { code?: unknown } | null)?.code
+    log.forRequest(req, "/api/auth/login").info("security.auth_failed", { type: "login", code: typeof code === "string" ? code : undefined, status: res.status })
+  }
   if (res.status === 429) return apiError("tooManyAttempts", "Too many attempts. Wait a minute and try again.", 429)
   // An unconfirmed email gets the same answer as a wrong password (Better Auth sends it a new
   // link): sign up with any email and a password you pick, and a different answer here would

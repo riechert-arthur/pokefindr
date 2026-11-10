@@ -2,6 +2,7 @@ import "server-only"
 import { eq } from "drizzle-orm"
 import { getDb } from "@/server/db/client"
 import { jobPauses, jobRuns, type JobRunStatus } from "@/server/db/schema"
+import { log } from "@/server/log"
 
 /**
  * Job run history and pauses (#157), for the admin's Jobs page. Recording
@@ -15,7 +16,7 @@ export async function pausedReason(job: string): Promise<string | null> {
     const [row] = await getDb().select({ reason: jobPauses.reason }).from(jobPauses).where(eq(jobPauses.job, job))
     return row?.reason ?? null
   } catch (err) {
-    console.warn("[jobs] couldn't read the pause flag; running", { job }, err)
+    log.logError("job.pause_check_failed", err, { job }, "warn")
     return null
   }
 }
@@ -26,7 +27,7 @@ export async function startRun(job: string, trigger: string, startedAt = new Dat
     const [row] = await getDb().insert(jobRuns).values({ job, trigger, status: "running", startedAt }).returning({ id: jobRuns.id })
     return row.id
   } catch (err) {
-    console.warn("[jobs] couldn't record the run", { job }, err)
+    log.logError("job.record_failed", err, { job }, "warn")
     return null
   }
 }
@@ -40,7 +41,7 @@ export async function finishRun(id: string | null, status: Exclude<JobRunStatus,
       .set({ status, finishedAt: new Date(), result: outcome.result ?? null, error: outcome.error?.slice(0, 2000) ?? null })
       .where(eq(jobRuns.id, id))
   } catch (err) {
-    console.warn("[jobs] couldn't record how the run ended", { id, status }, err)
+    log.logError("job.record_failed", err, { runId: id, status }, "warn")
   }
 }
 

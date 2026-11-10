@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { countLocationsNear } from "@/server/services/locations"
 import { countsQuerySchema } from "@/lib/locations/search"
 import { guardRoute, RATE_RULES } from "@/server/api-rate-limit"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
       { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=3600" } },
     )
   } catch (err) {
-    console.error("[api/locations/counts] failed to count locations", err)
+    log.forRequest(request, "/api/locations/counts").logError("api.failed", err, { step: "failed to count locations" })
     return NextResponse.json({ error: "Failed to count locations" }, { status: 500 })
   }
 }

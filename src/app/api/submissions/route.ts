@@ -4,6 +4,7 @@ import { eventDateProblem, submissionSchema } from "@/lib/submissions/schemas"
 import { createSubmission, listMySubmissions } from "@/server/services/submissions"
 import { enqueueJob } from "@/server/lib/jobs/enqueue"
 import { apiError } from "@/server/api-error"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -47,11 +48,11 @@ export async function POST(request: NextRequest) {
     }
     // Moderators hear about it by email; a failure to queue doesn't lose the submission.
     await enqueueJob("submission-created", { submissionId: result.id }, { idempotencyKey: `submission-created:${result.id}` }).catch((err) =>
-      console.error("[api/submissions] couldn't queue the email to moderators", err),
+      log.forRequest(request, "/api/submissions").logError("api.failed", err, { step: "couldn't queue the email to moderators" }),
     )
     return NextResponse.json({ id: result.id, status: "pending" }, { status: 201 })
   } catch (err) {
-    console.error("[api/submissions] failed to store the submission", err)
+    log.forRequest(request, "/api/submissions").logError("db.write_failed", err, { write: "submission", step: "failed to store the submission" })
     return apiError("serverError", "Server error", 500)
   }
 }
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
   try {
     return NextResponse.json({ submissions: await listMySubmissions(userId) })
   } catch (err) {
-    console.error("[api/submissions] failed to list submissions", err)
+    log.forRequest(request, "/api/submissions").logError("api.failed", err, { step: "failed to list submissions" })
     return apiError("serverError", "Server error", 500)
   }
 }

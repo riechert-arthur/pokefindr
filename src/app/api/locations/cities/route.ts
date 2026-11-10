@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { getTopCities } from "@/server/services/locations"
 import { citiesQuerySchema } from "@/lib/locations/search"
 import { guardRoute, RATE_RULES } from "@/server/api-rate-limit"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
       headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=3600" },
     })
   } catch (err) {
-    console.error("[api/locations/cities] failed to load cities", err)
+    log.forRequest(request, "/api/locations/cities").logError("api.failed", err, { step: "failed to load cities" })
     return NextResponse.json({ error: "Failed to load cities" }, { status: 500 })
   }
 }

@@ -5,6 +5,7 @@ import { approveSubmission, rejectSubmission, undoDecision, type DecisionResult 
 import { REVIEWED_EMAIL_DELAY_SECONDS } from "@/server/services/submission-notifications"
 import { enqueueJob } from "@/server/lib/jobs/enqueue"
 import { requireEntitlement } from "@/server/admin/access"
+import { audit, log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest, context: Context) {
     const b = body.data
     const result =
       b.action === "approve" ? await approveSubmission(id.data, userId) : b.action === "reject" ? await rejectSubmission(id.data, userId, b.reason) : await undoDecision(id.data, userId)
+    audit(log.forRequest(request, "/api/admin/submissions/[id]"), `submission.${b.action}`, { actorId: userId, target: id.data, outcome: result.status })
     if (result.status !== "done") {
       const [status, error] = ANSWERS[result.status]
       return NextResponse.json({ error }, { status })
@@ -52,11 +54,11 @@ export async function POST(request: NextRequest, context: Context) {
       await enqueueJob("submission-reviewed", { submissionId: id.data, reviewedAt }, {
         idempotencyKey: `submission-reviewed:${id.data}:${reviewedAt}`,
         delaySeconds: REVIEWED_EMAIL_DELAY_SECONDS,
-      }).catch((err) => console.error("[api/admin/submissions/id] couldn't queue the email to the submitter", err))
+      }).catch((err) => log.forRequest(request, "/api/admin/submissions/[id]").logError("api.failed", err, { step: "couldn't queue the email to the submitter" }))
     }
     return NextResponse.json({ ok: true, locationId: result.locationId ?? null })
   } catch (err) {
-    console.error("[api/admin/submissions/id] decision failed", err)
+    log.forRequest(request, "/api/admin/submissions/[id]").logError("api.failed", err, { step: "decision failed" })
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }

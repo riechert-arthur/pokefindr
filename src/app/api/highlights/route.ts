@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getHighlights } from "@/server/services/highlights"
 import { guardRoute, RATE_RULES } from "@/server/api-rate-limit"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -17,7 +18,7 @@ export async function GET(request: Request) {
       headers: { "Cache-Control": "public, s-maxage=600, stale-while-revalidate=3600" },
     })
   } catch (err) {
-    console.error("[api/highlights] failed to load highlights", err)
+    log.forRequest(request, "/api/highlights").logError("api.failed", err, { step: "failed to load highlights" })
     return NextResponse.json({ error: "Failed to load highlights" }, { status: 500 })
   }
 }

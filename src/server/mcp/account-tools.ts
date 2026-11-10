@@ -10,6 +10,7 @@ import { createSubmission, listMySubmissions } from "@/server/services/submissio
 import { enqueueJob } from "@/server/lib/jobs/enqueue"
 import { ToolInputError, type ToolContext } from "@/server/assistant/tools"
 import { USER_WRITTEN_NOTE, plainUserText } from "@/server/assistant/untrusted"
+import { log } from "@/server/log"
 
 /**
  * The tools that act as the signed-in person (#134): their reviews and
@@ -166,7 +167,7 @@ export const submitPlace = tool({
     }
     // Moderators hear about it by email; a failure to queue doesn't lose the submission.
     await enqueueJob("submission-created", { submissionId: result.id }, { idempotencyKey: `submission-created:${result.id}` }).catch((err) =>
-      console.error("[mcp] couldn't queue the email to moderators", err),
+      log.logError("mcp.step_failed", err, { tool: "submit_place", step: "couldn't queue the email to moderators" }),
     )
     return {
       status: "pending",

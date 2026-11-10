@@ -5,14 +5,14 @@ import { getDb, type Database } from "@/server/db/client"
 import { locationRegionCounts, locations } from "@/server/db/schema"
 import { defineJob } from "@/server/lib/jobs/types"
 import type { RegionCount } from "@/lib/types/locations"
+import { timed } from "@/server/log"
 
 /** Every row of the `location_region_counts` view, sorted by country, region and kind (or, with retailers, the same counts filtered by them). */
 export async function getRegionCounts(db: Database = getDb(), retailers: readonly string[] = []): Promise<RegionCount[]> {
-  if (retailers.length) return getRegionCountsFor(retailers, db)
-  return db
-    .select()
-    .from(locationRegionCounts)
-    .orderBy(asc(locationRegionCounts.country), asc(locationRegionCounts.region), asc(locationRegionCounts.kind))
+  if (retailers.length) return timed("getRegionCounts", () => getRegionCountsFor(retailers, db))
+  return timed("getRegionCounts", async () =>
+    db.select().from(locationRegionCounts).orderBy(asc(locationRegionCounts.country), asc(locationRegionCounts.region), asc(locationRegionCounts.kind)),
+  )
 }
 
 /**

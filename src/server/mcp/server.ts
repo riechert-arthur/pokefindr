@@ -3,6 +3,7 @@ import { McpServer, fromJsonSchema, requireScopes, type CallToolResult, type Jso
 import { ASSISTANT_TOOLS, ToolInputError, inputJsonSchema, runTool, type AssistantTool, type ToolContext } from "@/server/assistant/tools"
 import { USER_WRITTEN_NOTE } from "@/server/assistant/untrusted"
 import { ACCOUNT_TOOLS, accountInputJsonSchema, type AccountTool, type AccountToolContext } from "./account-tools"
+import { log } from "@/server/log"
 
 /**
  * PokeFindr's MCP server (#133): the in-app assistant's tools (A-2), served to
@@ -100,7 +101,7 @@ function registerReadTool(server: McpServer, t: AssistantTool, withCtx: WithCont
       } catch (err) {
         // runTool throws only what the model can't fix (the database, the geocoder). The SDK would send
         // err.message to the client as is, so log it here and answer something generic.
-        console.error(`[mcp] ${t.name} failed`, err)
+        log.logError("mcp.tool_failed", err, { tool: t.name })
         return { isError: true, content: [{ type: "text", text: "PokeFindr couldn't answer that right now. Try again in a moment." }] }
       }
     },
@@ -144,7 +145,7 @@ function registerAccountTool(server: McpServer, t: AccountTool, ctx: () => Accou
       } catch (err) {
         if (err instanceof ToolInputError) return { isError: true, content: [{ type: "text", text: err.message }] }
         // As for the read tools: log the real failure, answer something generic.
-        console.error(`[mcp] ${t.name} failed`, err)
+        log.logError("mcp.tool_failed", err, { tool: t.name })
         return { isError: true, content: [{ type: "text", text: "PokeFindr couldn't do that right now. Try again in a moment." }] }
       }
     },

@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server'
 import { z } from 'zod/v3'
 import { addReview } from '@/server/services/reviews'
 import { apiError } from "@/server/api-error"
+import { log } from "@/server/log"
 
 const bodySchema = z.object({
   locationId: z.string().uuid(),
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
     if (!id) return NextResponse.json({ error: 'Location not found' }, { status: 404 })
     return NextResponse.json({ success: true, id }, { status: 200 })
   } catch (err) {
-    console.error('[api/reviews] failed to add review', err)
+    log.forRequest(req, "/api/reviews").logError("db.write_failed", err, { write: "review", step: "failed to add review" })
     return apiError("serverError", "Server error", 500)
   }
 }

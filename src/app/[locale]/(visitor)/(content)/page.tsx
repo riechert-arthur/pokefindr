@@ -15,6 +15,7 @@ import { getTranslations } from "next-intl/server"
 import { pageMetadata } from "@/i18n/seo"
 import { getPathname } from "@/i18n/navigation"
 import { PRODUCTION_URL } from "@/server/site-url"
+import { log } from "@/server/log"
 
 // The counts change only after an import; rebuild the page at most hourly.
 export const revalidate = 3600
@@ -42,7 +43,7 @@ async function orNullWithoutDb<T>(what: string, load: () => Promise<T>): Promise
     return await load()
   } catch (err) {
     if (process.env.NODE_ENV === "production" && process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD) throw err
-    console.error(`[landing] couldn't load the ${what}; building the page without them`, err)
+    log.with({ route: "/" }).logError("page.failed", err, { step: `couldn't load the ${what}; building the page without them` })
     return null
   }
 }

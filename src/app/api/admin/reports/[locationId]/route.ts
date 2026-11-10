@@ -4,6 +4,7 @@ import { REPORT_ACTIONS } from "@/lib/locations/reports"
 import { requireEntitlement } from "@/server/admin/access"
 import { enqueueJob } from "@/server/lib/jobs/enqueue"
 import { actOnReports } from "@/server/services/report-admin"
+import { audit, log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -30,17 +31,18 @@ export async function POST(request: NextRequest, context: { params: Promise<{ lo
   if (!body.success) return NextResponse.json({ error: `action must be one of ${REPORT_ACTIONS.join(", ")}` }, { status: 400 })
   try {
     const result = await actOnReports(id.data, body.data.action, staff.userId)
+    audit(log.forRequest(request, "/api/admin/reports/[locationId]"), `reports.${body.data.action}`, { actorId: staff.userId, target: id.data, outcome: result.status, reports: result.status === "done" ? result.reports : 0 })
     if (result.status !== "done") {
       const [status, error] = ANSWERS[result.status]
       return NextResponse.json({ error }, { status })
     }
     if (body.data.action === "hide" || body.data.action === "reopen") {
       // The state and region counts are a materialized view: refresh it so they match the map.
-      await enqueueJob("refresh-region-counts", {}).catch((err) => console.error("[api/admin/reports] couldn't queue the counts refresh", err))
+      await enqueueJob("refresh-region-counts", {}).catch((err) => log.forRequest(request, "/api/admin/reports/[locationId]").logError("api.failed", err, { step: "couldn't queue the counts refresh" }))
     }
     return NextResponse.json({ ok: true, reports: result.reports })
   } catch (err) {
-    console.error("[api/admin/reports] failed to act", err)
+    log.forRequest(request, "/api/admin/reports/[locationId]").logError("api.failed", err, { step: "failed to act" })
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }
