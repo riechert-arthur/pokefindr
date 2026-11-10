@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { formatFor, render, renderHook, screen } from "../helpers/intl"
-import { useDistance } from "@/i18n/useDistance"
+import { resetViewerUnit, useDistance } from "@/i18n/useDistance"
 import { LocationRow } from "@/components/map/LocationRow"
 import type { LocationFeature } from "@/lib/types/locations"
 
@@ -35,7 +35,10 @@ describe("counts and times in each language (#181)", () => {
 })
 
 describe("useDistance", () => {
-  const languages = (tags: string[]) => vi.stubGlobal("navigator", { ...navigator, languages: tags, language: tags[0] })
+  const languages = (tags: string[]) => {
+    vi.stubGlobal("navigator", { ...navigator, languages: tags, language: tags[0] })
+    resetViewerUnit()
+  }
 
   it("shows miles to a browser in the US or without a region", () => {
     languages(["en-US", "en"])
@@ -50,6 +53,11 @@ describe("useDistance", () => {
     expect(result.current.unit).toBe("km")
     expect(result.current.distance(0.4)).toBe("0,6 km")
     expect(result.current.radius(5)).toBe("8 km")
+  })
+
+  it("skips a tag with a script but no region", () => {
+    languages(["zh-Hant", "zh-TW"])
+    expect(renderHook(() => useDistance()).result.current.unit).toBe("km")
   })
 
   it("shows a result's distance in those units", () => {

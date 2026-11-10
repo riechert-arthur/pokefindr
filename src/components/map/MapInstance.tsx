@@ -105,6 +105,9 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const { session, isLoading: sessionLoading } = useSessionContext()
   const router = useRouter()
   const t = useTranslations("map")
+  // For error toasts in effects, so a new translator doesn't refetch.
+  const tRef = useRef(t)
+  tRef.current = t
   // MapInstance is client-only (MapLoader uses ssr: false), so this is right on first render.
   const isDark = useIsDark()
   // MapLibre's own controls in the page's language. It reads these when the map
@@ -247,11 +250,11 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
       .catch((err: unknown) => {
         if (controller.signal.aborted) return
         console.error("[map] couldn't load the location", err)
-        toast.error(t("loadPlaceFailed"), { description: t("connection") })
+        toast.error(tRef.current("loadPlaceFailed"), { description: tRef.current("connection") })
         void setParams({ location: null }, { history: "replace" })
       })
     return () => controller.abort()
-  }, [params.location, knownLocations, setParams, t])
+  }, [params.location, knownLocations, setParams])
 
   // A new view (a pick, Back or Forward) puts its label in the search box.
   // Keyed on the label, so a pan (a camera-only URL write) keeps what the

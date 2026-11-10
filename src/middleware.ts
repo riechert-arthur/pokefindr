@@ -42,6 +42,16 @@ const SESSION_PAGES = /^\/(home|settings|admin)(\/|$)/
 
 const LOCALE_PREFIX = new RegExp(`^/(${routing.locales.join('|')})(?=/|$)`)
 
+/** The path as next-intl and the router see it: `/%68ome` is `/home`. */
+function decodedPath(pathname: string): string {
+  try {
+    return decodeURI(pathname)
+  } catch {
+    // Not valid percent-encoding: next-intl leaves it as it is too.
+    return pathname
+  }
+}
+
 /** The language prefix of a page's path, if any, and the path without it. */
 function splitLocale(pathname: string): { locale: Locale | null; path: string } {
   const match = pathname.match(LOCALE_PREFIX)
@@ -100,7 +110,8 @@ export async function middleware(req: NextRequest) {
 
   // Pages: check the session where one is needed, then let next-intl pick the
   // language. It passes these headers on to the page.
-  const { locale, path } = splitLocale(pathname)
+  // Matched on the decoded path, or an encoded one (`/%68ome`) would skip the check.
+  const { locale, path } = splitLocale(decodedPath(pathname))
   let user: SessionJWTPayload | null = null
   if (SESSION_PAGES.test(path)) {
     user = await verifiedUser(req)
