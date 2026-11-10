@@ -6,7 +6,6 @@ import { useRef, useState } from "react"
 import axios from "axios"
 import { toast } from "sonner"
 import { LogOutIcon, SettingsIcon } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,13 +15,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { broadcastAuth } from "@/lib/auth/broadcast"
+import { UserAvatar, type UserAvatarSize } from "@/components/pokefindr/UserAvatar"
 import { cn } from "@/lib/utils"
 
 interface UserMenuProps {
-  /** Avatar diameter in pixels. */
-  size: number
+  /** The avatar's size (UserAvatar); headers use the default, "md". */
+  size?: UserAvatarSize
   userName: string
-  imageUrl?: string
+  imageUrl?: string | null
   /** Classes for the outer element: the trigger button ("dropdown") or the wrapper ("list"). */
   className?: string
   /**
@@ -35,18 +35,8 @@ interface UserMenuProps {
   itemClassName?: string
 }
 
-function UserAvatar({ size, userName, imageUrl }: Pick<UserMenuProps, "size" | "userName" | "imageUrl">) {
-  return (
-    // primary-foreground on brand is checked at 4.5:1 in both themes (__tests__/design/tokens.test.ts).
-    <Avatar style={{ width: size, height: size }}>
-      {imageUrl && <AvatarImage src={imageUrl} alt="" />}
-      <AvatarFallback className="bg-brand text-lg font-semibold uppercase text-primary-foreground">{userName.charAt(0)}</AvatarFallback>
-    </Avatar>
-  )
-}
-
 /** The signed-in user's avatar with Settings and Log out. */
-export function UserMenu({ size, userName, imageUrl, className, variant = "dropdown", itemClassName }: UserMenuProps) {
+export function UserMenu({ size = "md", userName, imageUrl, className, variant = "dropdown", itemClassName }: UserMenuProps) {
   const t = useTranslations("nav.userMenu")
   const router = useRouter()
   // One logout at a time: a second click would fail (no session) and show a false
@@ -80,7 +70,7 @@ export function UserMenu({ size, userName, imageUrl, className, variant = "dropd
       // flex-col stretches each row, including the button, to the same width.
       <div className={cn("flex flex-col gap-1", className)}>
         <div className="flex items-center gap-3 pb-2">
-          <UserAvatar size={size} userName={userName} imageUrl={imageUrl} />
+          <UserAvatar size={size} name={userName} imageUrl={imageUrl} />
           <span className="truncate font-semibold text-foreground">{userName}</span>
         </div>
         <Link href="/settings" className={item}>
@@ -101,7 +91,7 @@ export function UserMenu({ size, userName, imageUrl, className, variant = "dropd
         className={cn("rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", className)}
         aria-label={t("trigger", { name: userName })}
       >
-        <UserAvatar size={size} userName={userName} imageUrl={imageUrl} />
+        <UserAvatar size={size} name={userName} imageUrl={imageUrl} />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
         <DropdownMenuLabel className="truncate">{userName}</DropdownMenuLabel>
