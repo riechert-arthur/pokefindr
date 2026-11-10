@@ -24,7 +24,6 @@ import { PlaceSearch, type PlacePick } from "@/components/search/PlaceSearch"
 import { APP_NAV_ID } from "@/components/pokefindr/AppRail"
 import { Button } from "@/components/ui/button"
 import { LOCATION_KINDS, type LocationFeature, type LocationFeatureProperties, type LocationKind } from "@/lib/types/locations"
-import { useLocations } from "./useLocations"
 import { LocationPopup, type LocationPopupProps } from "./LocationPinPopUps"
 import { useSidebar } from "../providers/SidebarContextProvider"
 import { UserMenu } from "@/components/pokefindr/UserMenu"
@@ -169,8 +168,6 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const area = useMemo(() => (place ? radiusCircle(place.lng, place.lat, place.radius) : EMPTY_AREA), [place])
   const radius = useMemo(() => radiusLayers(colors), [colors])
 
-  // Every location, for the search box only; the map draws what's in view.
-  const collection = useLocations()
   const { states, max, total, bounds, kindTotals } = useStateShading(kindSet, retailers)
   // The results list for the place (or the viewer), closest first.
   const nearby = useNearbyLocations(place, kinds, retailers)
@@ -215,9 +212,10 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const userMoving = useRef(false)
 
   // The details panel follows `location=` (a shared link, Back or Forward).
-  // A location the map hasn't loaded comes from /api/locations/<id>.
+  // A location in view opens at once; any other comes from /api/locations/<id>
+  // (the map no longer loads every location, #201).
   // globalThis: `Map` here is the map component from ./engine.
-  const knownLocations = useMemo(() => new globalThis.Map(collection.features.map((f) => [f.properties.id, f])), [collection])
+  const knownLocations = useMemo(() => new globalThis.Map(viewport.features.map((f) => [f.properties.id, f])), [viewport.features])
   useEffect(() => {
     const id = params.location
     if (!id) {

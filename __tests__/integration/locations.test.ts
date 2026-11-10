@@ -1,13 +1,16 @@
 import { describe, it, expect } from "vitest"
 import { getDb } from "@/server/db/client"
 import { locations } from "@/server/db/schema"
-import { countLocationsNear, getActiveLocationsGeoJSON, getLocationFeature, getLocationsInBbox, getLocationsNear, getTopCities, getVendingCells, searchLocations } from "@/server/services/locations"
+import { countLocationsNear, getLocationFeature, getLocationsInBbox, getLocationsNear, getTopCities, getVendingCells, searchLocations } from "@/server/services/locations"
 import { milesBetween } from "@/lib/map/geo"
 import type { Bbox } from "@/lib/locations/bbox"
 
-describe("getActiveLocationsGeoJSON", () => {
+describe("location features", () => {
+  // Arizona to North Carolina: both test points, under MAX_BBOX_AREA.
+  const features = () => getLocationsInBbox({ bbox: [-112, 32, -79, 36], types: ["vending", "shop", "event"] })
+
   it("returns an empty collection when there are no locations", async () => {
-    expect(await getActiveLocationsGeoJSON()).toEqual({ type: "FeatureCollection", features: [] })
+    expect(await features()).toEqual({ type: "FeatureCollection", features: [], truncated: false })
   })
 
   it("returns active, positioned locations with ids and display fields", async () => {
@@ -29,7 +32,7 @@ describe("getActiveLocationsGeoJSON", () => {
       { name: "User-added spot", geog: { lng: -80, lat: 35 } },
     ])
 
-    const fc = await getActiveLocationsGeoJSON()
+    const fc = await features()
     expect(fc.features.map((f) => f.properties.machineID)).toEqual(["Q00350", ""])
 
     const [frys, userAdded] = fc.features

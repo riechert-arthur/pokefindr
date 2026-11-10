@@ -7,7 +7,8 @@ import type { LocationFeature, LocationFeatureCollection, LocationKind, NearbyLo
 import type { Bbox } from "@/lib/locations/bbox"
 
 /** The most locations one viewport request returns. */
-export const BBOX_LIMIT = 2000
+/** The most locations one viewport request returns (#201); `truncated` says when there were more. */
+export const BBOX_LIMIT = 500
 
 /**
  * One row of `locations` (as `p`) as a GeoJSON Feature, the shape the map
@@ -33,13 +34,14 @@ const featureJson = (extra: SQL = sql``) => sql`
 /**
  * Active, positioned locations matching `where`, as a GeoJSON
  * FeatureCollection built in one query. Postgres does the JSON assembly, so
- * this stays fast as the table grows. With `limit`, it returns at most that
- * many and sets `truncated` when more matched.
+ * this stays fast as the table grows. It returns at most `limit` and sets
+ * `truncated` when more matched: there's no uncapped form, so no caller can
+ * list every location (#201).
  */
 export async function queryFeatures(
   db: Database,
-  where: SQL = sql`true`,
-  limit?: number,
+  where: SQL,
+  limit: number,
   // Unqualified columns, so it applies to both CTEs below.
   orderBy: SQL = sql`"machineID", id`,
 ): Promise<LocationFeatureCollection> {
@@ -48,11 +50,11 @@ export async function queryFeatures(
       select l.* from ${locations} l
       where l.is_active and l.geog is not null and ${where}
       order by ${orderBy}
-      ${limit === undefined ? sql`` : sql`limit ${limit + 1}`}
+      limit ${limit + 1}
     ),
     page as (
       select * from matched
-      ${limit === undefined ? sql`` : sql`limit ${limit}`}
+      limit ${limit}
     )
     select json_build_object(
       'type', 'FeatureCollection',
@@ -66,17 +68,7 @@ export async function queryFeatures(
       'truncated', (select count(*) from matched) > (select count(*) from page)
     ) as fc
   `)
-  const fc = rows[0].fc
-  // `truncated` is only meaningful for capped queries.
-  if (limit === undefined) delete fc.truncated
-  return fc
-}
-
-/** All active locations as a GeoJSON FeatureCollection. */
-export async function getActiveLocationsGeoJSON(
-  db: Database = getDb(),
-): Promise<LocationFeatureCollection> {
-  return queryFeatures(db)
+  return rows[0].fc
 }
 
 /**
@@ -170,7 +162,8 @@ export async function searchLocations(
 }
 
 /** The most results one radius search returns; the list shows them all, closest first. */
-export const NEAR_LIMIT = 500
+/** The most rows one near request returns (#201); counts and the total still cover every match. */
+export const NEAR_LIMIT = 200
 
 export interface NearQuery {
   /** [lng, lat] of the place. */

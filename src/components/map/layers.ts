@@ -10,9 +10,10 @@ import { SUPPORTED_COUNTRY_NUMERIC } from "@/lib/map/countries"
 /**
  * Below this zoom the map shades states by count; at and above it, it draws
  * individual locations. One number per state costs the same at 1,500 or
- * 150,000 locations.
+ * 150,000 locations. 7 rather than 6 keeps a screen's worth of locations
+ * small (MAX_BBOX_AREA, #201).
  */
-export const POINT_ZOOM = 6
+export const POINT_ZOOM = 7
 
 export const SOURCES = {
   world: "world",

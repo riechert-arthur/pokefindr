@@ -5,11 +5,14 @@ import { LOCATION_KINDS, type LocationKind } from "@/lib/types/locations"
 export type Bbox = [west: number, south: number, east: number, north: number]
 
 /**
- * The largest area, in square degrees, one request may cover. The map asks
- * for locations from zoom 6, where even a 4K screen shows about 40° × 20°.
+ * The largest area, in square degrees, one request may cover (#201). The map
+ * asks for locations from zoom 7 (POINT_ZOOM), where a 1440p screen shows
+ * about 28° × 11°; a bigger screen's box is shrunk around its center to fit.
  * Anything bigger is a zoomed-out view, which uses region counts instead.
+ * Small on purpose: the more requests a full copy takes, the easier it is to
+ * spot (docs/scraping.md).
  */
-export const MAX_BBOX_AREA = 1500
+export const MAX_BBOX_AREA = 300
 
 /** A plain decimal number: no empty values (which would coerce to 0), hex or exponents. */
 const DECIMAL = /^-?\d+(\.\d+)?$/

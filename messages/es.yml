@@ -95,7 +95,6 @@ map:
     coverage: Por ahora, PokeFindr cubre EE. UU. Pronto habrá más países.
   attribution: "Contornos: Natural Earth, US Census"
   loadPlaceFailed: No se pudo cargar este lugar
-  loadLocationsFailed: No se pudieron cargar las máquinas expendedoras. Recarga la página para intentarlo de nuevo.
   connection: Revisa tu conexión e inténtalo de nuevo.
   addSignedOut:
     title: Inicia sesión para agregar un lugar

@@ -49,8 +49,8 @@ export const nearQuerySchema = z.object({
   types: kindsParam,
   /** Vending retailers, comma-separated, as in the map's URL. */
   retailer: retailerParam,
-  /** The most rows to return (the closest); 500 by default. Counts and the total still cover every match. */
-  limit: z.coerce.number().int().min(1).max(500).optional(),
+  /** The most rows to return (the closest); 200 at most, and by default (NEAR_LIMIT). Counts and the total still cover every match. */
+  limit: z.coerce.number().int().min(1).max(200).optional(),
 })
 
 /** GET /api/locations/cities?state=WA&types=… */

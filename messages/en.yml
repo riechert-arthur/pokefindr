@@ -137,7 +137,6 @@ map:
   # Credit for the outlines, in the map's attribution.
   attribution: "Outlines: Natural Earth, US Census"
   loadPlaceFailed: Couldn't load this place
-  loadLocationsFailed: Couldn't load vending machine locations. Please refresh to try again.
   connection: Check your connection and try again.
   # Adding a place while signed out.
   addSignedOut:
