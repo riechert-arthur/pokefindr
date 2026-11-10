@@ -11,6 +11,30 @@ interface Bucket {
 }
 
 /**
+ * Takes a token from `key`'s bucket in `buckets` at time `t`: `burst` at
+ * once, refilling at `perMinute`. The map is kept least recently used first
+ * and capped at `maxKeys`. Shared by tokenBucket and the memory rate limiter.
+ */
+export function takeToken(
+  buckets: Map<string, Bucket>,
+  key: string,
+  { perMinute, burst, maxKeys }: { perMinute: number; burst: number; maxKeys: number },
+  t: number,
+): { ok: boolean; retryAfter: number } {
+  const perMs = perMinute / 60_000
+  const b = buckets.get(key) ?? { tokens: burst, updated: t }
+  b.tokens = Math.min(burst, b.tokens + Math.max(0, t - b.updated) * perMs)
+  b.updated = t
+  // Re-insert so the Map's order is least recently used first.
+  buckets.delete(key)
+  buckets.set(key, b)
+  if (buckets.size > maxKeys) buckets.delete(buckets.keys().next().value!)
+  if (b.tokens < 1) return { ok: false, retryAfter: Math.ceil((1 - b.tokens) / perMs / 1000) }
+  b.tokens -= 1
+  return { ok: true, retryAfter: 0 }
+}
+
+/**
  * A token bucket per key, in this server instance's memory: each key gets
  * `burst` requests at once and `perMinute` sustained. With several instances
  * (serverless), each keeps its own buckets, so the real limit is a multiple
@@ -19,22 +43,7 @@ interface Bucket {
  */
 export function tokenBucket({ perMinute, burst, maxKeys = 10_000, now = Date.now }: { perMinute: number; burst: number; maxKeys?: number; now?: () => number }): RateLimiter {
   const buckets = new Map<string, Bucket>()
-  const refillPerMs = perMinute / 60_000
-  return {
-    take(key) {
-      const t = now()
-      const b = buckets.get(key) ?? { tokens: burst, updated: t }
-      b.tokens = Math.min(burst, b.tokens + (t - b.updated) * refillPerMs)
-      b.updated = t
-      // Re-insert so the Map's order is least recently used first.
-      buckets.delete(key)
-      buckets.set(key, b)
-      if (buckets.size > maxKeys) buckets.delete(buckets.keys().next().value!)
-      if (b.tokens < 1) return false
-      b.tokens -= 1
-      return true
-    },
-  }
+  return { take: (key) => takeToken(buckets, key, { perMinute, burst, maxKeys }, now()).ok }
 }
 
 /** The caller's IP: the first X-Forwarded-For entry (set by Vercel and most proxies), else X-Real-IP. */

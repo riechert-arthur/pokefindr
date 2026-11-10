@@ -13,7 +13,9 @@ export function getJwtSecret(): string {
 }
 
 /**
- * Whether this runs on Vercel (it sets VERCEL=1). Read on its own so routes
- * that need nothing else from the config don't fail on an unrelated variable.
+ * Whether this is a production build running on Vercel (it sets VERCEL=1;
+ * `vercel env pull` copies that into .env.local, so dev checks NODE_ENV too).
+ * Read on its own so routes that need nothing else from the config don't
+ * fail on an unrelated variable.
  */
-export const onVercel = (): boolean => Boolean(process.env.VERCEL)
+export const onVercelProduction = (): boolean => Boolean(process.env.VERCEL) && process.env.NODE_ENV === "production"
