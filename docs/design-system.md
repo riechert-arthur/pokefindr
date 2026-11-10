@@ -162,8 +162,8 @@ one in place of the current one.
   to the code that uses it (see `VendingMachineIcon` in `kinds.ts`).
 - Multi-color artwork (social logos, the map pins) lives in `src/components/icons/` as plain SVG
   components. It's exempt from the color lint because it uses fixed colors.
-- Sizes: `size-4` inline with body text and in buttons, `size-5` in toolbars and map controls,
-  `size-6` in the sidebar and nav.
+- Sizes: `size-4` inline with body text and in buttons, `size-5` in toolbars, map controls and
+  the app rail (`AppRail`), `size-6` for the menu button in phone page headers.
 - Decorative icons get `aria-hidden`. Icon-only buttons get an `aria-label` that says what happens
   ("Show my location"), plus a `Tooltip` on desktop.
 - No emoji in UI chrome.

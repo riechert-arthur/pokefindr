@@ -1,0 +1,49 @@
+name: Lighthouse
+
+# Lab scores for the main pages on every pull request (#298): the production
+# build under `next start`, three mobile runs each, with the targets in
+# lighthouserc.json. No database or secrets: pages that read one render
+# without it, as in the Tests workflow's build.
+#
+# The assertions are warnings for now: the job passes and the report says
+# what missed. After the first week, change "warn" to "error" in
+# lighthouserc.json so a page below its target fails the check.
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: lighthouse-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+      # Placeholders `next start` needs to boot. Nothing signs in.
+      APP_URL: http://localhost:4318
+      JWT_SECRET: lighthouse-ci-only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      # Run with npx, pinned, rather than as a devDependency nothing else uses.
+      - name: Lighthouse
+        run: npx --yes @lhci/cli@0.15.1 autorun
+      - name: Upload the reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci/
+          retention-days: 14

@@ -55,3 +55,6 @@ storybook-static
 
 # Built from messages/*.yml (npm run i18n:build)
 /src/i18n/generated/
+
+# Lighthouse CI reports (lighthouserc.json)
+/.lighthouseci/
