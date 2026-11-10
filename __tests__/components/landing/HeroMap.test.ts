@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { albers, fitAlbers } from "@/components/landing/HeroMap"
+import { albers, dotsFor, fitAlbers, onLand, scatter } from "@/components/landing/HeroMap"
 
 describe("fitAlbers", () => {
   // As in the prototype, the far northwest can tuck a little under the top
@@ -29,5 +29,51 @@ describe("fitAlbers", () => {
     const [x1] = albers(-96, 30)
     const [x2] = albers(-96, 45)
     expect(x1).toBeCloseTo(x2, 10)
+  })
+})
+
+describe("scatter", () => {
+  const cells: [number, number, number][] = [
+    [-122.5, 47.5, 3],
+    [-105, 39.5, 1],
+  ]
+
+  it("draws each cell's count of dots inside the cell", () => {
+    const dots = scatter(cells, 0.25)
+    expect(dots).toHaveLength(4)
+    dots.slice(0, 3).forEach(([lng, lat]) => {
+      expect(lng).toBeGreaterThanOrEqual(-122.5)
+      expect(lng).toBeLessThan(-122.25)
+      expect(lat).toBeGreaterThanOrEqual(47.5)
+      expect(lat).toBeLessThan(47.75)
+    })
+    const [lng, lat] = dots[3]
+    expect(lng).toBeGreaterThanOrEqual(-105)
+    expect(lng).toBeLessThan(-104.75)
+    expect(lat).toBeGreaterThanOrEqual(39.5)
+    expect(lat).toBeLessThan(39.75)
+  })
+
+  it("spreads a cell's dots apart, the same way every time", () => {
+    const dots = scatter(cells, 0.25)
+    expect(new Set(dots.map(String)).size).toBe(4)
+    expect(scatter(cells, 0.25)).toEqual(dots)
+  })
+
+  it("gives busy cells more dots, but not one per machine", () => {
+    expect([1, 2, 4, 25, 100].map(dotsFor)).toEqual([1, 2, 4, 9, 16])
+  })
+
+  it("keeps dots on land", () => {
+    // A square "state" covering the cell's west half only.
+    const half = onLand({
+      type: "FeatureCollection",
+      features: [{ type: "Feature", properties: { region: "WA" }, geometry: { type: "Polygon", coordinates: [[[-122.5, 47.5], [-122.375, 47.5], [-122.375, 47.75], [-122.5, 47.75], [-122.5, 47.5]]] } }],
+    })
+    const dots = scatter([[-122.5, 47.5, 9]], 0.25, half)
+    expect(dots.length).toBeGreaterThan(0)
+    for (const [lng] of dots) expect(lng).toBeLessThan(-122.375)
+    // Nowhere on land: no dots.
+    expect(scatter([[-122.5, 47.5, 9]], 0.25, () => false)).toEqual([])
   })
 })

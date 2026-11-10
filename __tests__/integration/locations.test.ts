@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { getDb } from "@/server/db/client"
 import { locations } from "@/server/db/schema"
-import { countLocationsNear, getActiveLocationsGeoJSON, getLocationFeature, getLocationsInBbox, getLocationsNear, getTopCities, getVendingPoints, searchLocations } from "@/server/services/locations"
+import { countLocationsNear, getActiveLocationsGeoJSON, getLocationFeature, getLocationsInBbox, getLocationsNear, getTopCities, getVendingCells, searchLocations } from "@/server/services/locations"
 import { milesBetween } from "@/lib/map/geo"
 import type { Bbox } from "@/lib/locations/bbox"
 
@@ -313,13 +313,14 @@ describe("getTopCities", () => {
   })
 })
 
-describe("getVendingPoints", () => {
-  it("returns each active vending machine's point to 0.01°, once", async () => {
+describe("getVendingCells", () => {
+  it("counts active vending machines in the lower 48 per 0.25° cell, by its south-west corner", async () => {
     await getDb()
       .insert(locations)
       .values([
         { machineId: "A", retailer: "QFC", geog: { lng: -122.3321, lat: 47.6062 } },
-        { machineId: "B", retailer: "QFC", geog: { lng: -122.3299, lat: 47.6071 } }, // rounds to the same point
+        { machineId: "B", retailer: "QFC", geog: { lng: -122.26, lat: 47.74 } }, // the same cell
+        { machineId: "C", retailer: "QFC", geog: { lng: -122.24, lat: 47.6 } }, // the next cell east
         { name: "Card shop", kind: "shop", geog: { lng: -104.99, lat: 39.74 } },
         { machineId: "OFF", retailer: "QFC", geog: { lng: -80, lat: 35 }, isActive: false },
         // Outside the lower 48: Anchorage, Honolulu, Vancouver BC.
@@ -327,6 +328,9 @@ describe("getVendingPoints", () => {
         { machineId: "HI", retailer: "Safeway", state: "HI", geog: { lng: -157.86, lat: 21.31 } },
         { machineId: "CA", retailer: "Save-On", state: "BC", countryCode: "CA", geog: { lng: -123.12, lat: 49.28 } },
       ])
-    expect(await getVendingPoints()).toEqual([[-122.33, 47.61]])
+    expect(await getVendingCells()).toEqual([
+      [-122.5, 47.5, 2],
+      [-122.25, 47.5, 1],
+    ])
   })
 })

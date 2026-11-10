@@ -1,10 +1,12 @@
 import { PHASE_PRODUCTION_BUILD } from "next/constants"
+import { unstable_cache } from "next/cache"
 import { Hero, type HeroStats } from "@/components/landing/Hero"
 import { HeroMap } from "@/components/landing/HeroMap"
 import { FaqSection, HowItWorks, LocationTypes } from "@/components/landing/LandingSections"
 import { faqJsonLd } from "@/lib/faq"
 import type { LocationKind } from "@/lib/types/locations"
 import { getRegionCounts } from "@/server/services/region-counts"
+import { getVendingCells, VENDING_CELL_DEG } from "@/server/services/locations"
 import { SponsoredPlacement } from "@/components/ads/SponsoredPlacement"
 import { setPageLocale, type LocaleParams } from "@/i18n/static"
 import type { Locale } from "@/i18n/routing"
@@ -30,13 +32,24 @@ export async function generateMetadata({ params }: LocaleParams): Promise<Metada
 }
 
 /**
- * Live counts for the hero and the location types, from the region counts
- * view. A build (or dev) without a database renders the page without them.
- * A failure while revalidating in production throws instead, so Next keeps
- * serving the last good page rather than caching one without counts for an hour.
+ * `load()`, or null for a build (or dev) without a database, which renders
+ * the page without that part. A failure while revalidating in production
+ * throws instead, so Next keeps serving the last good page rather than
+ * caching one without it for an hour.
  */
-async function landingCounts(): Promise<{ hero: HeroStats; kinds: Partial<Record<LocationKind, number>> } | null> {
+async function orNullWithoutDb<T>(what: string, load: () => Promise<T>): Promise<T | null> {
   try {
+    return await load()
+  } catch (err) {
+    if (process.env.NODE_ENV === "production" && process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD) throw err
+    console.error(`[landing] couldn't load the ${what}; building the page without them`, err)
+    return null
+  }
+}
+
+/** Live counts for the hero and the location types, from the region counts view. */
+function landingCounts(): Promise<{ hero: HeroStats; kinds: Partial<Record<LocationKind, number>> } | null> {
+  return orNullWithoutDb("counts", async () => {
     const counts = (await getRegionCounts()).filter((c) => c.country === "US")
     const kinds: Partial<Record<LocationKind, number>> = {}
     for (const c of counts) kinds[c.kind] = (kinds[c.kind] ?? 0) + c.count
@@ -47,20 +60,21 @@ async function landingCounts(): Promise<{ hero: HeroStats; kinds: Partial<Record
       },
       kinds,
     }
-  } catch (err) {
-    if (process.env.NODE_ENV === "production" && process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD) throw err
-    console.error("[landing] couldn't load the counts; building the page without them", err)
-    return null
-  }
+  })
 }
+
+/** The cells don't depend on the language: one query an hour for every locale's page. */
+const vendingCells = unstable_cache(() => getVendingCells(), ["landing-vending-cells"], { revalidate: 3600 })
 
 /** JSON-LD as a script tag; `<` is escaped so the data can't close the tag. */
 const jsonLd = (data: unknown) => ({ __html: JSON.stringify(data).replace(/</g, "\\u003c") })
 
 export default async function LandingPage({ params }: LocaleParams) {
   const locale = await setPageLocale(params)
-  const [counts, t, faq] = await Promise.all([
+  const [counts, cells, t, faq] = await Promise.all([
     landingCounts(),
+    // The background map's machines, per grid cell: rendered in, so there's no endpoint to scrape.
+    orNullWithoutDb("map cells", () => vendingCells()),
     getTranslations({ locale, namespace: "landing.meta" }),
     getTranslations({ locale, namespace: "faq" }),
   ])
@@ -76,7 +90,7 @@ export default async function LandingPage({ params }: LocaleParams) {
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(webPage)} />
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(faqJsonLd(faq))} />
       <div className="isolate">
-        <Hero stats={counts?.hero ?? null} background={<HeroMap />} />
+        <Hero stats={counts?.hero ?? null} background={<HeroMap cells={cells ?? []} cellSize={VENDING_CELL_DEG} />} />
         <HowItWorks />
         <SponsoredPlacement placement="landing" />
         <LocationTypes counts={counts?.kinds ?? null} />

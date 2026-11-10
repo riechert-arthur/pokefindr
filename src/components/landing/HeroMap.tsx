@@ -42,27 +42,81 @@ export function fitAlbers(width: number, height: number): Project {
   }
 }
 
-async function getJson<T>(url: string, signal: AbortSignal): Promise<T> {
-  const res = await fetch(url, { signal })
-  if (!res.ok) throw new Error(`GET ${url} failed (${res.status})`)
-  return (await res.json()) as T
+/** How many dots a cell of `count` machines gets: more for busier cells, but not one each, or a metro's cells fill in as solid squares. */
+export const dotsFor = (count: number) => Math.min(count, 1 + Math.round(1.5 * Math.sqrt(count)))
+
+/** Whether a point is inside a polygon's rings (even-odd, so holes are out). */
+function inRings(rings: Position[][], lng: number, lat: number): boolean {
+  let inside = false
+  for (const ring of rings) {
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i]
+      const [xj, yj] = ring[j]
+      if (yi > lat !== yj > lat && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) inside = !inside
+    }
+  }
+  return inside
+}
+
+/** A test for "on land in the lower 48", from the state outlines, with each polygon's box checked first. */
+export function onLand(outlines: Outlines): (lng: number, lat: number) => boolean {
+  const polys = outlines.features
+    .filter((f) => !OUTSIDE.has(f.properties.region))
+    .flatMap((f) => (f.geometry.type === "Polygon" ? [f.geometry.coordinates] : f.geometry.coordinates))
+    .map((rings) => {
+      const xs = rings[0].map((p) => p[0])
+      const ys = rings[0].map((p) => p[1])
+      return { rings, box: [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)] }
+    })
+  return (lng, lat) => polys.some(({ rings, box: [w, s, e, n] }) => lng >= w && lng <= e && lat >= s && lat <= n && inRings(rings, lng, lat))
+}
+
+/**
+ * Grid cells (`[lng, lat, count]`, south-west corners, `size`° on a side)
+ * as dots spread over the cell's land (`inside`), dotsFor(count) each. The
+ * spread is seeded by the cell, so it's the same on every paint: it only
+ * looks like the machines. A dot that keeps landing in water is dropped.
+ */
+export function scatter(cells: readonly (readonly [number, number, number])[], size: number, inside: (lng: number, lat: number) => boolean = () => true): [number, number][] {
+  const dots: [number, number][] = []
+  for (const [lng, lat, count] of cells) {
+    let seed = (Math.round(lng / size) * 73856093) ^ (Math.round(lat / size) * 19349663)
+    // mulberry32
+    const random = () => {
+      seed = (seed + 0x6d2b79f5) | 0
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+    }
+    for (let k = 0; k < dotsFor(count); k++) {
+      for (let tries = 0; tries < 12; tries++) {
+        const dot: [number, number] = [lng + random() * size, lat + random() * size]
+        if (!inside(...dot)) continue
+        dots.push(dot)
+        break
+      }
+    }
+  }
+  return dots
 }
 
 /**
  * The landing hero's background, as in the prototype: the lower 48's state
- * outlines and every vending machine as a dot, with soft pings at random
- * machines. Two canvases: the outlines and dots are drawn once (again on
+ * outlines and a dot per vending machine, with soft pings at random dots.
+ * The dots come from `cells`, machine counts per `cellSize`° grid cell
+ * (from the server, at render), scattered within each cell: no machine's
+ * own location reaches the browser. Two canvases: the outlines and dots are drawn once (again on
  * resize or a theme change, without fetching again), and only the pings
  * redraw each frame. Static under prefers-reduced-motion, which it follows
  * live; paused while off-screen or in a hidden tab.
  * Purely decorative and absolutely positioned, so it can't shift layout.
  */
-export function HeroMap() {
+export function HeroMap({ cells, cellSize }: { cells: [number, number, number][]; cellSize: number }) {
   const baseRef = useRef<HTMLCanvasElement>(null)
   const pingRef = useRef<HTMLCanvasElement>(null)
   const themeKey = useThemeKey()
   const dark = useIsDark()
-  // The mount effect owns the canvases and data; a theme change only repaints.
+  // The mount effect owns the canvases and data (again if the cells change); a theme change only repaints.
   const darkRef = useRef(dark)
   const repaintRef = useRef<() => void>(() => {})
 
@@ -78,6 +132,7 @@ export function HeroMap() {
     let colors = readTokens(["brand", "brand-2"])
 
     let outlines: Outlines | null = null
+    // Scattered over land once the outlines arrive (only in the browser).
     let points: [number, number][] = []
     let project: Project | null = null
     let dpr = 1
@@ -203,13 +258,14 @@ export function HeroMap() {
     }
     motion.addEventListener("change", onMotion)
 
-    Promise.all([
-      getJson<Outlines>("/geo/us-states.json", controller.signal),
-      getJson<{ points: [number, number][] }>("/api/locations/points", controller.signal).catch(() => ({ points: [] })),
-    ])
-      .then(([o, p]) => {
+    fetch("/geo/us-states.json", { signal: controller.signal })
+      .then((res) => {
+        if (!res.ok) throw new Error(`GET /geo/us-states.json failed (${res.status})`)
+        return res.json() as Promise<Outlines>
+      })
+      .then((o) => {
         outlines = o
-        points = p.points
+        points = scatter(cells, cellSize, onLand(o))
         redraw()
       })
       .catch((err: unknown) => {
@@ -237,7 +293,7 @@ export function HeroMap() {
       motion.removeEventListener("change", onMotion)
       repaintRef.current = () => {}
     }
-  }, [])
+  }, [cells, cellSize])
 
   // A theme change: new colors on the same data. (Declared after the mount
   // effect, so it runs after it; before the data arrives it paints nothing.)

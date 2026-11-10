@@ -267,21 +267,28 @@ export async function getTopCities(
   return { cities: [...cities], counts: byKind, total }
 }
 
+/** The landing map's grid: cells this many degrees on a side (~25 km). */
+export const VENDING_CELL_DEG = 0.25
+
 /**
- * Every active vending machine's point, rounded to 0.01° (~1 km), for the
- * landing page's background map: small enough to send whole.
+ * Active vending machines in the lower 48, counted per VENDING_CELL_DEG grid
+ * cell, for the landing page's background map: `[lng, lat, count]` with each
+ * cell's south-west corner. Coarse on purpose, so the page can't be read
+ * back into a list of machine locations.
  */
-export async function getVendingPoints(db: Database = getDb()): Promise<[number, number][]> {
-  const rows = await db.execute<{ lng: number; lat: number }>(sql`
-    select distinct round(ST_X(geog::geometry)::numeric, 2)::float8 as lng, round(ST_Y(geog::geometry)::numeric, 2)::float8 as lat
+export async function getVendingCells(db: Database = getDb()): Promise<[number, number, number][]> {
+  const perDeg = Math.round(1 / VENDING_CELL_DEG)
+  const rows = await db.execute<{ x: number; y: number; n: number }>(sql`
+    select floor(ST_X(geog::geometry) * ${perDeg})::int as x, floor(ST_Y(geog::geometry) * ${perDeg})::int as y, count(*)::int as n
     from ${locations}
     where is_active and geog is not null and kind = 'vending'
       -- The lower 48 and DC, as the map frames them (a row without a state counts by its point).
       and country_code = 'US' and coalesce(state, '') not in (${sql.join(OUTSIDE_LOWER_48.map((s) => sql`${s}`), sql`, `)})
       and ST_X(geog::geometry) between -125 and -66 and ST_Y(geog::geometry) between 24 and 50
+    group by 1, 2
     order by 1, 2
   `)
-  return rows.map((r) => [r.lng, r.lat])
+  return rows.map((r) => [r.x / perDeg, r.y / perDeg, r.n])
 }
 
 export interface BboxQuery {
