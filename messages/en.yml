@@ -490,6 +490,12 @@ ui:
     # The one-button version: what clicking it does.
     switchToLight: Switch to light theme
     switchToDark: Switch to dark theme
+  # The language switcher. Each language is listed in its own name ("English", "Español").
+  language:
+    label: Language
+    # When the choice couldn't be saved to their account.
+    saveFailed: Couldn't save your language
+    saveFailedBody: It's set on this device. Try again from settings to keep it on others.
   starRating:
     # Default accessible name of the star input.
     label: Rating
@@ -724,6 +730,9 @@ settings:
   appearance:
     title: Appearance
     body: Light, dark, or follow your device.
+  language:
+    title: Language
+    body: The language PokeFindr uses for you, on every device you sign in on.
   assistant:
     title: Assistant
     body: We keep the text of your assistant conversations for 30 days. Clear it now if you like.

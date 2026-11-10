@@ -3,6 +3,7 @@ import { beforeAll, describe, expect, it } from "vitest"
 import { NextRequest } from "next/server"
 import { SignJWT } from "jose"
 import { middleware } from "@/middleware"
+import { PUBLIC_LOCALES } from "@/i18n/routing"
 
 beforeAll(() => {
   process.env.JWT_SECRET ??= "test-secret-at-least-32-characters-long"
@@ -39,10 +40,22 @@ describe("middleware and the language (#177)", () => {
     expect(es.headers.get("location")).toBeNull()
   })
 
-  it("sets no cookie and no hreflang header while English is the only public language", async () => {
-    const res = await middleware(new NextRequest("http://localhost/map"))
+  it("sets no hreflang header, and no language cookie for a browser already in English", async () => {
+    const res = await middleware(new NextRequest("http://localhost/map", { headers: { "accept-language": "en-US,en;q=0.9" } }))
     expect(res.headers.get("set-cookie")).toBeNull()
     expect(res.headers.get("link")).toBeNull()
+  })
+
+  it("keeps a visit to another language in the language cookie for a year, once languages are detected (#182)", async () => {
+    // Spanish: no cookie while it isn't public, so nothing saves English for a year either.
+    const es = await middleware(new NextRequest("http://localhost/es/map", { headers: { "accept-language": "en-US,en;q=0.9" } }))
+    const en = await middleware(new NextRequest("http://localhost/map", { headers: { "accept-language": "es-ES,es;q=0.9" } }))
+    if (PUBLIC_LOCALES.includes("es")) {
+      expect(es.headers.get("set-cookie")).toMatch(/^NEXT_LOCALE=es; Path=\/; .*Max-Age=31536000/)
+    } else {
+      expect(es.headers.get("set-cookie")).toBeNull()
+      expect(en.headers.get("set-cookie")).toBeNull()
+    }
   })
 
   it("drops a prefix English doesn't need", async () => {

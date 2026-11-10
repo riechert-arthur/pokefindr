@@ -4,6 +4,7 @@
 import { useState, useEffect, Fragment } from 'react'
 import { MenuIcon } from "lucide-react"
 import { ThemeToggle } from "@/components/pokefindr/ThemeToggle"
+import { LanguageSwitcher } from "@/components/pokefindr/LanguageSwitcher"
 import axios from 'axios'
 import { useTranslations } from 'next-intl'
 import { useSidebar } from '@/components/providers/SidebarContextProvider'
@@ -13,6 +14,7 @@ import { LoadSpinner } from '@/components/wrappers/LoadSpinner'
 import { useSessionContext } from '@/components/providers/SessionProvider'
 import { ClearAssistantHistory } from '@/components/assistant/ClearAssistantHistory'
 import { handleSubmitError } from '@/lib/forms'
+import { PUBLIC_LOCALES } from '@/i18n/routing'
 
 interface Settings {
   fullName: string
@@ -183,6 +185,14 @@ export default function SettingsPage() {
               <p className="mt-1 text-sm/6 text-muted-foreground">{t("appearance.body")}</p>
               <ThemeToggle className="mt-4" />
             </section>
+
+            {PUBLIC_LOCALES.length > 1 && (
+              <section>
+                <h2 className="text-base/7 font-semibold text-foreground">{t("language.title")}</h2>
+                <p className="mt-1 text-sm/6 text-muted-foreground">{t("language.body")}</p>
+                <LanguageSwitcher className="mt-4" />
+              </section>
+            )}
 
             <section>
               <h2 className="text-base/7 font-semibold text-foreground">{t("assistant.title")}</h2>

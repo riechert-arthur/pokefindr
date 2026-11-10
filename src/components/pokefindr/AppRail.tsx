@@ -6,6 +6,7 @@ import type { ComponentType, Ref, SVGProps } from "react"
 import { BookOpenIcon, HouseIcon, MapPinIcon, SettingsIcon, ShieldIcon } from "lucide-react"
 import { Logo } from "@/components/brand/Logo"
 import { DiscordIcon } from "@/components/icons/DiscordIcon"
+import { LanguageSwitcher } from "@/components/pokefindr/LanguageSwitcher"
 import { ThemeToggle } from "@/components/pokefindr/ThemeToggle"
 import { SUPPORT_URL } from "@/lib/links"
 import { cn } from "@/lib/utils"
@@ -93,6 +94,8 @@ export function AppRail({ signedIn = false, isAdmin = false, className, ref }: A
       <div className="mt-auto flex flex-col items-center gap-2">
         <RailLink item={DISCORD} current={false} />
         {signedIn && <RailLink item={SETTINGS} current={isCurrent(SETTINGS.href)} />}
+        {/* The rail is 64px wide: the globe and code, no arrow. */}
+        <LanguageSwitcher variant="compact" chevron={false} className="px-1.5" />
         <ThemeToggle variant="toggle" className={cn(itemClass, "p-0 [&_svg]:size-5")} />
       </div>
     </nav>

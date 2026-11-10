@@ -60,6 +60,12 @@ export const SessionContextProvider: FC<{ children: React.ReactNode }> = ({
   );
 };
 
+/** The session where there may be no provider (a story, a test): null outside one. */
+export const useOptionalSession = () => useContext(SessionContext)?.session ?? null;
+
+/** Whether the session is still loading, where there may be no provider: false outside one. */
+export const useOptionalSessionLoading = () => useContext(SessionContext)?.isLoading ?? false;
+
 export const useSessionContext = (): SessionContextType => {
   const ctx = useContext(SessionContext);
   if (!ctx) throw new Error("useSessionContext must be inside provider");

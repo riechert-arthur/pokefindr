@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { eq } from "drizzle-orm"
 import { z } from "zod/v3"
 import { usernameField } from "@/server/auth/schemas"
+import { PUBLIC_LOCALES, type Locale } from "@/i18n/routing"
 import { EMAIL_CHANGE_CALLBACK } from "@/lib/auth/paths"
 import { approveChangeToTakenEmail } from "@/server/auth/auth"
 import { identityRequest, refuseCrossSite } from "@/server/auth/identity"
@@ -14,6 +15,8 @@ const changes = z
     fullName: z.string().trim().min(1, "Enter a name").max(100),
     username: usernameField,
     email: z.string().trim().email("Enter a valid email").max(320),
+    /** The language they picked (#182): a public one, so a language still being written can't be saved. */
+    locale: z.string().refine((l): l is Locale => (PUBLIC_LOCALES as readonly string[]).includes(l), "Pick a language PokeFindr offers"),
   })
   .partial()
   .strict()
@@ -23,12 +26,12 @@ export async function GET(req: NextRequest) {
   const userId = req.headers.get("x-user-id")
   if (!userId) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 })
   const [row] = await getDb()
-    .select({ fullName: profiles.fullName, username: profiles.username, email: users.email })
+    .select({ fullName: profiles.fullName, username: profiles.username, email: users.email, locale: profiles.locale })
     .from(profiles)
     .innerJoin(users, eq(users.id, profiles.id))
     .where(eq(profiles.id, userId))
   if (!row) return NextResponse.json({ error: "Account not found" }, { status: 404 })
-  return NextResponse.json({ fullName: row.fullName ?? "", username: row.username, email: row.email })
+  return NextResponse.json({ fullName: row.fullName ?? "", username: row.username, email: row.email, locale: row.locale })
 }
 
 /**
@@ -43,7 +46,7 @@ export async function PATCH(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: "Unauthenticated" }, { status: 401 })
   const parsed = changes.safeParse(await req.json().catch(() => null))
   if (!parsed.success) return NextResponse.json({ error: parsed.error.errors.map((e) => e.message).join(", ") }, { status: 400 })
-  const { fullName, username, email } = parsed.data
+  const { fullName, username, email, locale } = parsed.data
 
   // Better Auth asks the current address to approve a change only once it's confirmed:
   // without this, a stolen session could move an unconfirmed account to a new address in one step.
@@ -55,7 +58,7 @@ export async function PATCH(req: NextRequest) {
 
   if (username && (await usernameTaken(username, userId))) return NextResponse.json({ error: "That username is already taken" }, { status: 409 })
   try {
-    if (!(await updateProfile(userId, { fullName, username }))) return NextResponse.json({ error: "Account not found" }, { status: 404 })
+    if (!(await updateProfile(userId, { fullName, username, locale }))) return NextResponse.json({ error: "Account not found" }, { status: 404 })
   } catch (err) {
     if (err instanceof UsernameTakenError) return NextResponse.json({ error: err.message }, { status: 409 })
     throw err

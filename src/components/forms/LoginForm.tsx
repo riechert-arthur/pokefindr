@@ -26,6 +26,7 @@ import { handleSubmitError } from "@/lib/forms"
 import { LoadingButton } from "@/components/wrappers/LoadingButton"
 import type { AuthSchemas } from "@/lib/schemas"
 import { useTranslations } from "next-intl"
+import type { Locale } from "@/i18n/routing"
 import { useAuthSchemas } from "./useAuthSchemas"
 import { Terms } from "./Terms"
 import axios from "axios"
@@ -72,13 +73,14 @@ export function LoginForm({
 
   async function onSubmit(values: LoginValues) {
     try {
-      await axios.post("/api/auth/login", values, { withCredentials: true })
+      const { data } = await axios.post<{ locale?: Locale | null }>("/api/auth/login", values, { withCredentials: true })
       toast.success(t("login.success"))
       broadcastAuth("login")
       // An API route, not a page: a full navigation, so its redirects reach the app that asked.
       if (next) return window.location.assign(next)
       router.refresh()
-      router.push("/")
+      // In the language saved on their profile, if they picked one (#182).
+      router.push("/", data.locale ? { locale: data.locale } : undefined)
     } catch (err: unknown) {
       handleSubmitError(err)
     } finally {
