@@ -14,6 +14,7 @@ const blankAsUnset = <T extends z.ZodTypeAny>(schema: T) =>
   z.preprocess((value) => (value === "" ? undefined : value), schema)
 
 export const GEOCODER_PROVIDERS = ["fake", "photon", "mapbox", "maptiler", "nominatim"] as const
+export const ROUTER_PROVIDERS = ["fake", "openrouteservice"] as const
 
 const serverSchema = z.object({
   // Only compared to "production", so any other value (e.g. "staging") is allowed.
@@ -77,6 +78,23 @@ const serverSchema = z.object({
   GEOCODER_BASE_URL: blankAsUnset(z.string().url().optional()),
 
   /**
+   * Which router draws an assistant route along the streets (#288,
+   * /api/route). Unset, it's `openrouteservice` when ROUTER_API_KEY is set
+   * and `fake` (straight lines) otherwise, so dev and CI need no account.
+   */
+  ROUTER_PROVIDER: blankAsUnset(z.enum(ROUTER_PROVIDERS).optional()),
+  /** OpenRouteService's API key (HeiGIT). Required for openrouteservice; stays on the server. */
+  ROUTER_API_KEY: blankAsUnset(z.string().min(1).optional()),
+  /** A self-hosted OpenRouteService instead of api.heigit.org/openrouteservice. */
+  ROUTER_BASE_URL: blankAsUnset(z.string().url().optional()),
+  /**
+   * The most routes asked of the provider in any 24 hours, over the whole
+   * server. Past it, /api/route draws straight lines. Keep it under the
+   * provider's free quota (OpenRouteService: 2,000 a day).
+   */
+  ROUTER_DAILY_CAP: blankAsUnset(z.coerce.number().int().min(2).default(1800)),
+
+  /**
    * How email is sent (src/server/container.ts): "console" prints it (local
    * dev and CI, and it refuses to run in production), "smtp" sends it
    * through SMTP_URL.
@@ -132,12 +150,15 @@ const serverSchema = z.object({
   return {
     ...env,
     GEOCODER_PROVIDER: env.GEOCODER_PROVIDER ?? (env.NODE_ENV === "production" ? "photon" : "fake"),
+    ROUTER_PROVIDER: env.ROUTER_PROVIDER ?? (env.ROUTER_API_KEY ? "openrouteservice" : "fake"),
     RATE_LIMIT_STORE: env.RATE_LIMIT_STORE ?? (env.NODE_ENV === "production" ? "postgres" : "memory"),
     MAIL_FROM: env.MAIL_FROM ?? "PokeFindr <no-reply@localhost>",
   }
 }).superRefine((env, ctx) => {
   if ((env.GEOCODER_PROVIDER === "mapbox" || env.GEOCODER_PROVIDER === "maptiler") && !env.GEOCODER_API_KEY)
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["GEOCODER_API_KEY"], message: `required when GEOCODER_PROVIDER is ${env.GEOCODER_PROVIDER}` })
+  if (env.ROUTER_PROVIDER === "openrouteservice" && !env.ROUTER_API_KEY)
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["ROUTER_API_KEY"], message: "required when ROUTER_PROVIDER is openrouteservice" })
   if (Boolean(env.ANTHROPIC_FEDERATION_RULE_ID) !== Boolean(env.ANTHROPIC_ORGANIZATION_ID))
     ctx.addIssue({
       code: z.ZodIssueCode.custom,

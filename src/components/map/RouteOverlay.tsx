@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { Layer, Marker, Source, useMap } from "./engine"
 import { SOURCES, routeLineLayer, type MapColors } from "./layers"
-import type { LocationFeature } from "@/lib/types/locations"
+import type { StreetRoute } from "@/lib/types/routes"
 import { cameraPadding } from "./camera"
 import { useTranslations } from "next-intl"
 
@@ -17,40 +17,35 @@ interface RouteOverlayProps {
 }
 
 /**
- * An assistant route on the map, as the prototype draws it: a dashed line
- * through the stops in order and a numbered marker on each, framed once
- * they load. A toast offers to clear it.
+ * An assistant route on the map: the line from `/api/route` through the
+ * stops in order, along the streets (solid) or, when it couldn't be routed,
+ * straight (dashed), with a numbered marker on each stop, framed once it
+ * loads. A toast offers to clear it.
  */
 export function RouteOverlay({ ids, colors, onClear }: RouteOverlayProps) {
   const { current: map } = useMap()
   const t = useTranslations("map.route")
   const tm = useTranslations("map")
-  const [stops, setStops] = useState<LocationFeature[] | null>(null)
+  const [route, setRoute] = useState<StreetRoute | null>(null)
   const key = ids.join(",")
 
   useEffect(() => {
     const ctl = new AbortController()
-    setStops(null)
-    Promise.all(
-      key.split(",").map((id) =>
-        fetch(`/api/locations/${encodeURIComponent(id)}`, { signal: ctl.signal }).then((r) => {
-          // Only a 404 means the place is gone; anything else is a failure to retry later.
-          if (r.status === 404) return null
-          if (!r.ok) throw new Error(`GET /api/locations/${id} failed (${r.status})`)
-          return r.json() as Promise<LocationFeature>
-        }),
-      ),
-    )
-      .then((found) => {
-        const ok = found.filter((f): f is LocationFeature => f !== null)
-        if (ok.length < 2) {
+    setRoute(null)
+    const count = key.split(",").length
+    fetch(`/api/route?ids=${key.split(",").map(encodeURIComponent).join(",")}`, { signal: ctl.signal })
+      .then(async (r) => {
+        // Only a 404 means the places are gone; anything else is a failure to retry later.
+        if (r.status === 404) {
           toast.error(t("failed"), { description: t("gone") })
           onClear()
           return
         }
+        if (!r.ok) throw new Error(`GET /api/route failed (${r.status})`)
+        const found = (await r.json()) as StreetRoute
         // Gone stops are skipped, so say so: the numbers no longer match the route card.
-        if (ok.length < found.length) toast(t("someGone"), { description: t("someGoneBody") })
-        setStops(ok)
+        if (found.stops.length < count) toast(t("someGone"), { description: t("someGoneBody") })
+        setRoute(found)
       })
       .catch((err) => {
         if (ctl.signal.aborted) return
@@ -62,11 +57,12 @@ export function RouteOverlay({ ids, colors, onClear }: RouteOverlayProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key])
 
-  // Frame the route once, when it arrives.
+  // Frame the route once, when it arrives: the whole line, which can bulge past the stops.
   useEffect(() => {
-    if (!stops || !map) return
-    const lngs = stops.map((s) => s.geometry.coordinates[0])
-    const lats = stops.map((s) => s.geometry.coordinates[1])
+    if (!route || !map) return
+    const points = [...route.line.coordinates, ...route.stops.map((s) => [s.lng, s.lat])]
+    const lngs = points.map((p) => p[0])
+    const lats = points.map((p) => p[1])
     map.fitBounds(
       [
         [Math.min(...lngs), Math.min(...lats)],
@@ -74,32 +70,28 @@ export function RouteOverlay({ ids, colors, onClear }: RouteOverlayProps) {
       ],
       { padding: cameraPadding(map.getContainer(), { sheet: true }), maxZoom: 14, duration: 1000 },
     )
-    toast(t("shown"), { description: t("shownBody", { count: stops.length }), action: { label: t("clear"), onClick: onClear } })
+    toast(route.routed ? t("shown") : t("straight"), {
+      description: t("shownBody", { count: route.stops.length }),
+      action: { label: t("clear"), onClick: onClear },
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stops, map])
+  }, [route, map])
 
-  const line = useMemo(
-    () =>
-      stops && {
-        type: "Feature" as const,
-        properties: {},
-        geometry: { type: "LineString" as const, coordinates: stops.map((s) => s.geometry.coordinates) },
-      },
-    [stops],
-  )
-  const layer = useMemo(() => routeLineLayer(colors), [colors])
+  const line = useMemo(() => route && { type: "Feature" as const, properties: {}, geometry: route.line }, [route])
+  const routed = route?.routed ?? false
+  const layer = useMemo(() => routeLineLayer(colors, routed), [colors, routed])
 
-  if (!stops || !line) return null
+  if (!route || !line) return null
   return (
     <>
       <Source id={SOURCES.route} type="geojson" data={line}>
         <Layer {...layer} />
       </Source>
-      {stops.map((s, i) => (
-        <Marker key={s.properties.id} longitude={s.geometry.coordinates[0]} latitude={s.geometry.coordinates[1]}>
+      {route.stops.map((s, i) => (
+        <Marker key={`${s.id}-${i}`} longitude={s.lng} latitude={s.lat}>
           <span
             role="img"
-            aria-label={t("stop", { n: i + 1, name: s.properties.retailer })}
+            aria-label={t("stop", { n: i + 1, name: s.retailer })}
             className="grid size-[22px] place-items-center rounded-full border-2 border-card bg-primary text-caption font-bold text-primary-foreground shadow"
           >
             {i + 1}
