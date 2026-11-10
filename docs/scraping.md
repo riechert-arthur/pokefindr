@@ -135,3 +135,16 @@ to spot. No route returns every location: `queryFeatures()` always takes a limit
   every location to open `?location=` links instantly; it now looks in the places in view, then
   asks `/api/locations/[id]`.
 - **The landing map** (#200) gets counts per 0.25° cell, rendered into the page, not points.
+
+## Canaries, the Terms and robots.txt (#202)
+
+- **Canary locations** prove a copied dataset came from PokeFindr. They're plausible decoy
+  vending machines, stored as ordinary active locations with `locations.canary` set, so every
+  route returns them like any other place (the map, the results list, search, details, counts,
+  the assistant, MCP) and none sends the flag. Nothing in the public repo says where they are:
+  `npm run canary:plant` makes them from the real data at the time, with crypto randomness, and
+  the database is the only record. `npm run canary:plant -- --list` prints them, to search a
+  suspect copy for. Details are in `docs/database.md` under "Canary locations".
+- **The Terms of service** (section 11) forbid collecting or copying the data by automated means
+  and calling the API from outside the site, apart from search engines and the MCP server.
+- **robots.txt** (`src/app/robots.ts`) lets crawlers index the pages and keeps them off `/api/`.

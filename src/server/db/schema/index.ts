@@ -422,6 +422,12 @@ export const locations = pgTable(
     hiddenBy: uuid("hidden_by").references((): AnyPgColumn => profiles.id, { onDelete: "set null" }),
     /** The address compared for duplicates (#154): normalize_address(address), migration 0016. */
     addressNormalized: text("address_normalized").generatedAlwaysAs(sql`normalize_address(address)`),
+    /**
+     * A decoy (#202, migration 0021): a made-up vending machine, active and
+     * shown like any other place, so a copied dataset can be traced. Never
+     * sent to clients. scripts/canary/plant.ts adds them.
+     */
+    canary: boolean("canary").notNull().default(false),
   },
   (t) => [
     uniqueIndex("locations_machine_id_key").on(t.machineId),

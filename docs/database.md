@@ -293,6 +293,39 @@ npm run db:import-locations -- --apply
 `--file <geojson>` imports another file of the same shape; `--report <json>`
 saves the counts and verification.
 
+## Canary locations
+
+To recognize a copy of PokeFindr's data (#202), `locations` holds a few
+decoys: made-up vending machines of real retailers, on made-up addresses in
+towns where those retailers have machines. `locations.canary` marks them
+(migration 0021). A canary is an ordinary active location: the map, the
+results list, search, a place's own page, counts, the region counts, the
+landing map, the assistant and MCP all show it like any other place, so
+nothing a scraper can request tells one apart. The flag is never sent to a
+client (`featureJson()` lists the properties it sends); admin pages may show
+a canary like any machine.
+
+Nothing in the repo says where they are. `scripts/canary/plant.ts` makes them
+from the data at the time, with crypto randomness: a retailer and town with
+at least two active machines, an unused machine ID between Q00001 and the
+highest real one, and a street address 1 to 4 km from that retailer's
+machines there. The database is the only record of them:
+
+```bash
+npm run canary:plant               # make sure there are 6 (--count N, up to 32), adding only what's missing
+npm run canary:plant -- --list     # print them, tab-separated, from the database
+npm run canary:plant -- --remove   # delete them all
+```
+
+To check a dataset found elsewhere, run `--list` against production and
+search the copy for those machine IDs, addresses or coordinates. A decoy
+never lands within 250 m of a real location, on its machine ID or on its
+address in the same state (`checkVendingOverlap`'s rules, with a wider
+radius). A real machine always wins: if the location import brings one with a
+canary's machine ID, or an admin adds one with a canary's machine ID,
+address or spot, that row becomes the real machine (`canary` is cleared).
+Run `canary:plant` again afterwards to make up the number.
+
 ## Region counts
 
 `location_region_counts` (migration 0003) is a materialized view with one row

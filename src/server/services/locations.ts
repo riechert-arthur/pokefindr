@@ -36,7 +36,8 @@ const featureJson = (extra: SQL = sql``) => sql`
  * FeatureCollection built in one query. Postgres does the JSON assembly, so
  * this stays fast as the table grows. It returns at most `limit` and sets
  * `truncated` when more matched: there's no uncapped form, so no caller can
- * list every location (#201).
+ * list every location (#201). It never returns `canary` (#202): a decoy
+ * looks like any other place.
  */
 export async function queryFeatures(
   db: Database,
