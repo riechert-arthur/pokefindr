@@ -14,7 +14,8 @@ interface Bucket {
  * A token bucket per key, in this server instance's memory: each key gets
  * `burst` requests at once and `perMinute` sustained. With several instances
  * (serverless), each keeps its own buckets, so the real limit is a multiple
- * of this; a shared store (Redis, Postgres) would fix that if abuse shows up.
+ * of this: fine for per-user limits, while the public data routes use the
+ * shared limiter (src/server/api-rate-limit.ts, #199).
  */
 export function tokenBucket({ perMinute, burst, maxKeys = 10_000, now = Date.now }: { perMinute: number; burst: number; maxKeys?: number; now?: () => number }): RateLimiter {
   const buckets = new Map<string, Bucket>()

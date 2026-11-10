@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { getTopRetailers } from "@/server/services/region-counts"
+import { limitClient, RATE_RULES } from "@/server/api-rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -9,7 +10,9 @@ export const dynamic = "force-dynamic"
  *   most active machines in the US, for the map's filter. Changes only with
  *   imports, so the CDN keeps it for an hour.
  */
-export async function GET() {
+export async function GET(request: Request) {
+  const limited = await limitClient(request, RATE_RULES.locations)
+  if (limited) return limited
   try {
     return NextResponse.json({ retailers: await getTopRetailers() }, { headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" } })
   } catch (err) {

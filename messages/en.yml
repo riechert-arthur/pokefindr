@@ -1299,6 +1299,8 @@ apiErrors:
   # {status} is an HTTP status code, like 502.
   status: "Request failed with status code {status}"
   unexpected: An unexpected error occurred
+  # Too many map or search requests in a short time (#199).
+  tooManyRequests: Too many requests. Wait a moment and try again.
   # BotID took the request for a bot's (#198). A person who sees this can usually fix it by reloading.
   botBlocked: We couldn't confirm this came from your browser. Reload the page and try again.
   # A form the server turned down (in other languages; English pages show the server's own reason).

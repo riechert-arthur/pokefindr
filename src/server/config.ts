@@ -82,6 +82,11 @@ const serverSchema = z.object({
    * through SMTP_URL.
    */
   MAIL_PROVIDER: blankAsUnset(z.enum(["console", "smtp"]).default("console")),
+  /**
+   * Where API rate limits keep their buckets (#199): "postgres", shared by
+   * every instance, or "memory", per instance. Postgres in production.
+   */
+  RATE_LIMIT_STORE: blankAsUnset(z.enum(["postgres", "memory"]).optional()),
   /** e.g. smtps://user:pass@smtp.example.com:465. Required when MAIL_PROVIDER is smtp. */
   SMTP_URL: blankAsUnset(z.string().url().optional()),
   /**
@@ -127,6 +132,7 @@ const serverSchema = z.object({
   return {
     ...env,
     GEOCODER_PROVIDER: env.GEOCODER_PROVIDER ?? (env.NODE_ENV === "production" ? "photon" : "fake"),
+    RATE_LIMIT_STORE: env.RATE_LIMIT_STORE ?? (env.NODE_ENV === "production" ? "postgres" : "memory"),
     MAIL_FROM: env.MAIL_FROM ?? "PokeFindr <no-reply@localhost>",
   }
 }).superRefine((env, ctx) => {

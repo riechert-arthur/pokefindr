@@ -62,3 +62,26 @@ too: they index pages, not the API.
   route needs adding there and a `refuseBots()` call.
 - **BotID's script** is proxied through our domain under `/149e9513-…` (`withBotId` in
   `next.config.ts`); the middleware's matcher skips that path.
+
+## Shared rate limiter (#199)
+
+Behind the firewall, the data routes keep their own per-client limits, in a bucket every server
+instance shares, so the limit holds however many instances are running. `limitClient()`
+(`src/server/api-rate-limit.ts`) answers a 429 with `Retry-After` once a client's bucket is
+empty.
+
+| Rule | Routes | Limit |
+| --- | --- | --- |
+| `locations` | every `GET /api/locations*` | 40 at once, 120 a minute |
+| `geocode` | `/api/geocode` | 20 at once, 60 a minute |
+
+- **The client** is its IP, and an IPv6 address by its /64 (`rateLimitKey()`), since one home
+  connection or server usually holds a whole /64.
+- **The store** is the `SharedRateLimiter` port (`src/server/ports/rate-limiter.ts`), chosen by
+  `RATE_LIMIT_STORE` in `src/server/container.ts`: `postgres` in production (the
+  `api_rate_limits` table, one statement per request; idle rows are pruned after a day) and
+  `memory` for local dev and tests. A Redis adapter would slot in the same way if Postgres became
+  the bottleneck.
+- **If the store fails**, the request goes through and the error is logged: an outage of the
+  limiter shouldn't take the map down. The firewall's limits still apply.
+- The assistant, MCP and feedback limits are per user and stay in memory (`tokenBucket`).

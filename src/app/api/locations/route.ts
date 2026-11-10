@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { getActiveLocationsGeoJSON, getLocationsInBbox } from "@/server/services/locations"
 import { bboxQuerySchema } from "@/lib/locations/bbox"
 import { refuseBots } from "@/server/bot-check"
+import { limitClient, RATE_RULES } from "@/server/api-rate-limit"
 
 // Never prerendered or kept in the Next.js data cache: the location import runs
 // outside Next.js and couldn't clear it. The short CDN cache below is the only
@@ -18,6 +19,8 @@ export const dynamic = "force-dynamic"
 export async function GET(request: NextRequest) {
   const refused = await refuseBots()
   if (refused) return refused
+  const limited = await limitClient(request, RATE_RULES.locations)
+  if (limited) return limited
   const params = request.nextUrl.searchParams
   try {
     if (!params.has("bbox")) {
