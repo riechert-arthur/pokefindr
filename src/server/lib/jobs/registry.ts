@@ -6,7 +6,7 @@ import { assistantRetentionJob } from "@/server/assistant/log"
 import { submissionCreatedJob, submissionReviewedJob } from "@/server/services/submission-notifications"
 import { expireEventsJob } from "@/server/services/expire-events"
 import { pruneRateLimitsJob } from "@/server/adapters/rate-limiter/postgres"
-import { recheckHeldReviewsJob } from "@/server/services/review-moderation"
+import { recheckHeldReviewsJob } from "@/server/services/recheck-held-reviews"
 
 /** Does nothing. Exists so the cron, queue and CLI wiring can be tested on its own. */
 const noop = defineJob({
