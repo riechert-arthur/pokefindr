@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { callbackSchema } from "@/server/auth/schemas"
 import { identitySession, signedIn } from "@/server/auth/finish"
 import { createProfile, getProfile, usernameTaken, UsernameTakenError } from "@/server/services/users"
-import { requestLocale } from "@/server/i18n"
+import { signupLocale } from "@/server/i18n"
 import { apiError } from "@/server/api-error"
 
 /** A new OAuth user picks a username: creates their profile, then signs them in. */
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   const { username } = parsed.data
   if (await usernameTaken(username)) return apiError("usernameTaken", "That username is already taken", 409)
   try {
-    await createProfile({ id: session.user.id, username, fullName: session.user.name || null, onboarded: true, locale: requestLocale(req) })
+    await createProfile({ id: session.user.id, username, fullName: session.user.name || null, onboarded: true, locale: signupLocale(req) })
   } catch (err) {
     if (err instanceof UsernameTakenError) return apiError("usernameTaken", err.message, 409)
     throw err

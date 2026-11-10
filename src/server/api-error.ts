@@ -1,4 +1,3 @@
-import "server-only"
 import { NextResponse } from "next/server"
 import type { Messages } from "@/i18n/messages"
 

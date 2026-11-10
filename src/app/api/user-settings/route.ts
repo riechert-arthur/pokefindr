@@ -3,7 +3,8 @@ import { eq } from "drizzle-orm"
 import { z } from "zod/v3"
 import { usernameField } from "@/server/auth/schemas"
 import { PUBLIC_LOCALES, type Locale } from "@/i18n/routing"
-import { EMAIL_CHANGE_CALLBACK } from "@/lib/auth/paths"
+import { EMAIL_CHANGE_CALLBACK, localizedCallback } from "@/lib/auth/paths"
+import { requestLocale } from "@/server/i18n"
 import { approveChangeToTakenEmail } from "@/server/auth/auth"
 import { identityRequest, refuseCrossSite } from "@/server/auth/identity"
 import { getDb } from "@/server/db/client"
@@ -46,7 +47,7 @@ export async function PATCH(req: NextRequest) {
   const userId = req.headers.get("x-user-id")
   if (!userId) return apiError("loginRequired", "Unauthenticated", 401)
   const parsed = changes.safeParse(await req.json().catch(() => null))
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.errors.map((e) => e.message).join(", ") }, { status: 400 })
+  if (!parsed.success) return apiError("invalidInput", parsed.error.errors.map((e) => e.message).join(", "), 400)
   const { fullName, username, email, locale } = parsed.data
 
   // Better Auth asks the current address to approve a change only once it's confirmed:
@@ -66,7 +67,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (email) {
-    const res = await identityRequest(req, "/change-email", { newEmail: email, callbackURL: EMAIL_CHANGE_CALLBACK })
+    const res = await identityRequest(req, "/change-email", { newEmail: email, callbackURL: localizedCallback(EMAIL_CHANGE_CALLBACK, requestLocale(req)) })
     if (res.status === 401) return apiError("REAUTH", "Log in again to change your email.", 401)
     if (res.status === 429) return apiError("tooManyAttempts", "Too many attempts. Wait a minute and try again.", 429)
     if (!res.ok) {
@@ -77,7 +78,7 @@ export async function PATCH(req: NextRequest) {
     }
     // Better Auth sends no approval email for an address another account has; send the same one.
     const [current] = await getDb().select({ id: users.id, name: users.name, email: users.email }).from(users).where(eq(users.id, userId))
-    if (current) await approveChangeToTakenEmail(current, email, EMAIL_CHANGE_CALLBACK)
+    if (current) await approveChangeToTakenEmail(current, email, localizedCallback(EMAIL_CHANGE_CALLBACK, requestLocale(req)))
     return NextResponse.json({ ok: true, emailPending: true })
   }
   return NextResponse.json({ ok: true })

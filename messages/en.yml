@@ -1299,3 +1299,5 @@ apiErrors:
   # {status} is an HTTP status code, like 502.
   status: "Request failed with status code {status}"
   unexpected: An unexpected error occurred
+  # A form the server turned down (in other languages; English pages show the server's own reason).
+  invalidInput: Check what you entered and try again.

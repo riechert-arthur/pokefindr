@@ -4,6 +4,7 @@ import createIntlMiddleware from 'next-intl/middleware'
 import { SESSION_COOKIE_NAME } from '@/server/auth/cookie'
 import { getJwtSecret } from '@/server/edge-config'
 import { routing, type Locale } from '@/i18n/routing'
+import { apiError } from '@/server/api-error'
 
 const encoder     = new TextEncoder()
 const intl        = createIntlMiddleware(routing)
@@ -64,7 +65,7 @@ function redirectToLogin(req: NextRequest, locale: Locale | null) {
   // it (a POST re-sent to /login) and get the login page back.
   if (req.nextUrl.pathname.startsWith('/api/')) {
     // `code` is the page's message for it (apiErrors in messages/*.yml).
-    return NextResponse.json({ error: 'Log in to continue', code: 'loginRequired' }, { status: 401 })
+    return apiError('loginRequired', 'Log in to continue', 401)
   }
   const url = req.nextUrl.clone()
   url.pathname = locale && locale !== routing.defaultLocale ? `/${locale}/login` : '/login'

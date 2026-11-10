@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { registrationSchema } from "@/server/auth/schemas"
-import { VERIFIED_CALLBACK } from "@/lib/auth/paths"
+import { VERIFIED_CALLBACK, localizedCallback } from "@/lib/auth/paths"
 import { identityRequest, refuseCrossSite } from "@/server/auth/identity"
-import { requestLocale } from "@/server/i18n"
+import { requestLocale, signupLocale } from "@/server/i18n"
 import { clearExpiredClaim, createProfile, deleteUser, holdUsername, releaseUsername, userExists, usernameTaken, UsernameTakenError } from "@/server/services/users"
 import { apiError } from "@/server/api-error"
 
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const refused = refuseCrossSite(req)
   if (refused) return refused
   const parsed = registrationSchema.safeParse(await req.json().catch(() => null))
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.errors.map((e) => e.message).join(", ") }, { status: 400 })
+  if (!parsed.success) return apiError("invalidInput", parsed.error.errors.map((e) => e.message).join(", "), 400)
   const { email, password, name } = parsed.data
   const username = parsed.data.username
 
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   await clearExpiredClaim(username)
   if (!(await holdUsername(username))) return apiError("usernameTaken", "That username is already taken", 409)
 
-  const res = await identityRequest(req, "/sign-up/email", { email, password, name, callbackURL: VERIFIED_CALLBACK })
+  const res = await identityRequest(req, "/sign-up/email", { email, password, name, callbackURL: localizedCallback(VERIFIED_CALLBACK, requestLocale(req)) })
   if (!res.ok) await releaseUsername(username)
   if (res.status === 429) return apiError("tooManyAttempts", "Too many attempts. Wait a minute and try again.", 429)
   if (!res.ok) {
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   if (await userExists(user.id)) {
     try {
       // The language they signed up in is theirs until they pick another (#182, #185).
-      await createProfile({ id: user.id, username, fullName: name, onboarded: true, locale: requestLocale(req) })
+      await createProfile({ id: user.id, username, fullName: name, onboarded: true, locale: signupLocale(req) })
     } catch (err) {
       // Lost a race for the username: undo the account so it can be tried again.
       await deleteUser(user.id)
