@@ -90,14 +90,19 @@ export function radiusLayers(c: MapColors): { fill: LayerProps; line: LayerProps
   }
 }
 
-/** An assistant route between its stops, as in the prototype: a dashed primary line. */
-export function routeLineLayer(c: MapColors): LayerProps {
+/**
+ * An assistant route between its stops (#288): a solid primary line along the
+ * streets, or, when it couldn't be routed, the prototype's dashed straight one.
+ */
+export function routeLineLayer(c: MapColors, routed = false): LayerProps {
   return {
     id: LAYERS.routeLine,
     type: "line",
     source: SOURCES.route,
     layout: { "line-join": "round", "line-cap": "round" },
-    paint: { "line-color": c.primary, "line-width": 3, "line-opacity": 0.85, "line-dasharray": [2, 1.5] },
+    paint: routed
+      ? { "line-color": c.primary, "line-width": 4, "line-opacity": 0.85 }
+      : { "line-color": c.primary, "line-width": 3, "line-opacity": 0.85, "line-dasharray": [2, 1.5] },
   }
 }
 

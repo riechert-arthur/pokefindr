@@ -10,25 +10,29 @@
 import type { Role } from "./roles"
 
 export const ENTITLEMENTS = {
-  /** See the review queue, reports and their counts. */
-  "moderation.view": ["moderator", "admin"],
+  /** See the review queue, reports and their counts, in /moderate and /admin's Moderation group. */
+  "moderation.view": ["moderator", "admin", "super_admin"],
   /** Approve or reject submissions, and act on reports. */
-  "moderation.decide": ["moderator", "admin"],
-  /** See held reviews (#253) and approve or remove them. Your own need moderation.decideOwn too. */
-  "moderation.reviews": ["moderator", "admin"],
-  /** Decide a submission you sent, or a review you wrote, yourself. Moderators can't; admins can, so a site with one admin isn't stuck. */
-  "moderation.decideOwn": ["admin"],
+  "moderation.decide": ["moderator", "admin", "super_admin"],
+  /** See held reviews (#253) and approve or remove them, in /moderate and /admin. Your own need moderation.decideOwn too. */
+  "moderation.reviews": ["moderator", "admin", "super_admin"],
+  /** Decide a submission you sent, or a review you wrote, yourself. Moderators can't; admins (and super admins) can, so a site with one admin isn't stuck. */
+  "moderation.decideOwn": ["admin", "super_admin"],
+  /** Remove someone's profile picture, which shows publicly next to their reviews (#290). */
+  "moderation.avatars": ["moderator", "admin", "super_admin"],
   /** Get the "a submission needs review" email. */
-  "moderation.notify": ["moderator", "admin"],
-  /** Open /admin at all. */
-  "admin.open": ["moderator", "admin"],
+  "moderation.notify": ["moderator", "admin", "super_admin"],
+  /** Open /admin at all, and see its link. Moderators work in /moderate instead (#293). */
+  "admin.open": ["admin", "super_admin"],
   /** The admin-only summary counts: live locations and the sync job. */
-  "admin.summary.all": ["admin"],
-  "admin.coverage": ["admin"],
+  "admin.summary.all": ["admin", "super_admin"],
+  "admin.coverage": ["admin", "super_admin"],
   /** Add a missing vending machine, or undo one. */
-  "admin.vending": ["admin"],
-  "admin.jobs": ["admin"],
-  "admin.ads": ["admin"],
+  "admin.vending": ["admin", "super_admin"],
+  "admin.jobs": ["admin", "super_admin"],
+  "admin.ads": ["admin", "super_admin"],
+  /** List users and change their role (member, moderator or admin). Granting super_admin stays SQL- and seed-only. */
+  "users.manage": ["super_admin"],
 } as const satisfies Record<string, readonly Role[]>
 
 export type Entitlement = keyof typeof ENTITLEMENTS

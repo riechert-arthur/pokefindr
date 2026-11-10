@@ -121,7 +121,7 @@ describe("checking reviews", () => {
     expect(await updateReview(added!.id, AUTHOR, { rating: 1, text: ABUSIVE })).toEqual({ status: "held", checkFailed: false })
     expect(await listLocationReviews(store)).toEqual([])
     expect(await updateReview(added!.id, AUTHOR, { rating: 2, text: "Empty again." })).toEqual({ status: "published", checkFailed: false })
-    expect(await listLocationReviews(store)).toEqual([{ rating: 2, text: "Empty again.", username: "ash" }])
+    expect(await listLocationReviews(store)).toEqual([{ rating: 2, text: "Empty again.", username: "ash", image: null }])
     expect(await checksOf(added!.id)).toHaveLength(3)
   })
 
@@ -283,7 +283,7 @@ describe("the held-reviews queue", () => {
     await decideReview(a, "approve", MOD)
     const never: ContentModerator = { check: async () => Promise.reject(new Error("shouldn't be called")) }
     expect(await updateReview(a, AUTHOR, { rating: 2, text: ABUSIVE }, getDb(), never)).toEqual({ status: "published", checkFailed: false })
-    expect(await listLocationReviews(store)).toEqual([{ rating: 2, text: ABUSIVE, username: "ash" }])
+    expect(await listLocationReviews(store)).toEqual([{ rating: 2, text: ABUSIVE, username: "ash", image: null }])
     expect(await checksOf(a)).toHaveLength(1)
   })
 

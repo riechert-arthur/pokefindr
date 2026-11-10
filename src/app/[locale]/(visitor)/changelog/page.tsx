@@ -1,18 +1,17 @@
 import { Fragment, type FC } from "react"
 import { getTranslations } from "next-intl/server"
 import { setPageLocale, type LocaleParams } from "@/i18n/static"
-import { localeMetadata } from "@/i18n/seo"
+import { pageMetadata } from "@/i18n/seo"
+import type { Locale } from "@/i18n/routing"
+import type { Metadata } from "next"
+import { CHANGELOG_RELEASES as RELEASES } from "@/lib/changelog"
 
-/** Its address in each language, for search engines (#183). */
-export const generateMetadata = localeMetadata("/changelog")
-
-const ids = <K extends string, I extends string>(release: K, items: readonly I[]) => items.map((item) => `${release}.items.${item}` as const)
-
-/** Each release, oldest first, with the keys of its changes in order (`content.changelog`). */
-const RELEASES = [
-  { version: "1.1", key: "v1_1", items: ids("v1_1", ["load", "grouping", "precise", "data", "zoom", "search", "ui", "discord"]) },
-  { version: "1.2", key: "v1_2", items: ids("v1_2", ["accounts", "reviews", "settings", "sso", "ratings"]) },
-] as const
+/** Its title, description and address in each language, for search engines (#183, #255). */
+export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
+  const locale = (await params).locale as Locale
+  const t = await getTranslations({ locale, namespace: "content.changelog.meta" })
+  return pageMetadata("/changelog", locale, { title: t("title"), description: t("description") })
+}
 
 const ChangelogPage: FC<LocaleParams> = async ({ params }) => {
   const locale = await setPageLocale(params)
