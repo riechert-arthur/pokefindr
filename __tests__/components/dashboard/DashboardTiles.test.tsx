@@ -33,6 +33,19 @@ describe("ReviewsTile", () => {
     expect(screen.getAllByRole("link", { name: /Place/ })).toHaveLength(TILE_ROWS)
     expect(screen.getByRole("link", { name: "Manage your reviews" })).toHaveAttribute("href", "/home/reviews")
   })
+  it("keeps its manage action while the reviews load, so the footers line up", () => {
+    render(<ReviewsTile reviews={null} />)
+    expect(screen.getByRole("link", { name: "Manage your reviews" })).toHaveAttribute("href", "/home/reviews")
+  })
+})
+
+describe("NearYouTile", () => {
+  it("announces the button's 'Locating…' as well as the result", () => {
+    render(<NearYouTile near={{ status: "locating" }} onLocate={() => {}} />)
+    const tile = screen.getByRole("region", { name: "Near you" })
+    expect(tile).toHaveAttribute("aria-live", "polite")
+    expect(tile).toContainElement(screen.getByRole("button", { name: /Locating/ }))
+  })
 })
 
 describe("EventsTile", () => {

@@ -27,7 +27,7 @@ const meta = {
   title: "Dashboard/DashboardTiles",
   component: Tiles,
   parameters: { layout: "padded" },
-  // Nothing in a tile reaches past its border (#302). jsdom can't lay out, so
+  // Nothing in a tile reaches past its border or out of its own box (#302). jsdom can't lay out, so
   // this is the layout check; it runs in the browser under the test runner.
   play: async ({ canvasElement }) => {
     const outside: string[] = []
@@ -35,7 +35,10 @@ const meta = {
       const box = tile.getBoundingClientRect()
       for (const el of tile.querySelectorAll("*")) {
         const r = el.getBoundingClientRect()
-        if (r.width && (r.left < box.left - 0.5 || r.right > box.right + 0.5)) outside.push(`${tile.querySelector("h2")?.textContent}: ${el.outerHTML.slice(0, 120)}`)
+        // Its box, or its own text running out of its box (truncated text is clipped, so it's fine).
+        const hasText = [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim())
+        const spills = hasText && el.scrollWidth > el.clientWidth + 1 && getComputedStyle(el).overflowX === "visible"
+        if (r.width && (r.left < box.left - 0.5 || r.right > box.right + 0.5 || spills)) outside.push(`${tile.querySelector("h2")?.textContent}: ${el.outerHTML.slice(0, 120)}`)
       }
     }
     await expect(outside).toEqual([])

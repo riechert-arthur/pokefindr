@@ -24,17 +24,20 @@ export const TILE_ROWS = 3
  * `min-w-0` does nothing in the dashboard's own grid, whose tracks are
  * `minmax(0, 1fr)` too; it keeps the tile from growing if it's ever put in a
  * flex row or an `auto` track.
- * `live` makes the body a polite live region (Near you announces its count).
+ * `live` makes the tile a polite live region, footer included: Near you
+ * announces "Locating…" on its button, then the count or the refusal.
  */
 function Tile({ title, badge, footer, live, children }: { title: string; badge?: ReactNode; footer?: ReactNode; live?: boolean; children: ReactNode }) {
   const id = useId()
   return (
-    <section aria-labelledby={id} className="flex min-w-0 flex-col gap-1.5 rounded-xl border border-border bg-card p-3">
-      <div className="flex items-start justify-between gap-2">
-        <h2 id={id} className="min-w-0 text-subheading text-foreground">{title}</h2>
+    <section aria-labelledby={id} aria-live={live ? "polite" : undefined} className="flex min-w-0 flex-col gap-1.5 rounded-xl border border-border bg-card p-3">
+      {/* The title wraps beside the badge while each of its words fits there
+          (its basis is its min-content width); otherwise the badge moves under it. */}
+      <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+        <h2 id={id} className="grow basis-[min-content] text-subheading text-foreground">{title}</h2>
         {badge && <span className="shrink-0">{badge}</span>}
       </div>
-      <div aria-live={live ? "polite" : undefined} className="grid min-w-0 flex-1 grid-cols-1 content-start gap-1.5">
+      <div className="grid min-w-0 flex-1 grid-cols-1 content-start gap-1.5">
         {children}
       </div>
       {footer && <div className="pt-1.5">{footer}</div>}
@@ -48,14 +51,14 @@ const muted = "text-caption text-muted-foreground"
  * One review or event: a title line and a caption line, linking to the map.
  * The hover highlight has its own padding, so it doesn't touch the text.
  */
-function TileRow({ href, title, caption }: { href: ComponentProps<typeof Link>["href"]; title: ReactNode; caption: ReactNode }) {
+function TileRow({ href, title, caption }: { href: ComponentProps<typeof Link>["href"]; title: string; caption: ReactNode }) {
   return (
     <Link
       href={href}
       className="-mx-1.5 grid min-w-0 grid-cols-1 rounded-md px-1.5 py-1 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       {/* The whole title shows on hover once it's cut short. */}
-      <span className="block truncate text-body font-medium text-foreground" title={typeof title === "string" ? title : undefined}>{title}</span>
+      <span className="block truncate text-body font-medium text-foreground" title={title}>{title}</span>
       <span className={`flex min-w-0 items-center gap-1.5 ${muted}`}>{caption}</span>
     </Link>
   )
@@ -133,12 +136,11 @@ export function ReviewsTile({ reviews }: { reviews: MyReview[] | "error" | null 
   return (
     <Tile
       title={t("reviews.title")}
+      // Always there, so the footers line up while the reviews load too.
       footer={
-        reviews !== null && (
-          <Button asChild {...action}>
-            <Link href="/home/reviews">{t("reviews.manage")}</Link>
-          </Button>
-        )
+        <Button asChild {...action}>
+          <Link href="/home/reviews">{t("reviews.manage")}</Link>
+        </Button>
       }
     >
       {reviews === null ? (
