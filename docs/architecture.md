@@ -5,12 +5,14 @@ today. The [migration path](#migration-path) says how we get from one to the oth
 still open are marked **(open)** and collected at the end.
 
 PokeFindr is moving to the model Rippling uses. One shared core holds the data every feature
-needs, and features are **modules** that an **organization** turns on as its plan allows. Each
+needs, and features are **modules**. An **organization** can be anyone: a person, a shop, a
+company. It gets entitlements to specific modules through the **plan** it's on, starting with a
+simple `free` and `paid`. Each
 module brings its own permissions, screens, API, jobs and tools, and plugs into the core through
 named extension points. Two goals follow from that:
 
-1. **Mix and match.** A plan is a list of modules. A new plan, or a custom deal, is a new list,
-   with no code change.
+1. **Mix and match.** A plan is a bundle of modules. A new plan, or a custom deal, is a new
+   bundle, with no other code change.
 2. **Remove without side effects.** Deleting a module's folder and its line in the registry
    leaves the rest of the app building, passing its tests and working. CI proves this for every
    module, on every PR.
@@ -35,8 +37,8 @@ named extension points. Two goals follow from that:
 ```mermaid
 flowchart TB
   subgraph People
-    public["Visitors and members<br/>(the public map, free)"]
-    orgUser["Organization members<br/>(shops, operators, organizers, brands)"]
+    public["Signed-out visitors<br/>(public parts of the free plan)"]
+    orgUser["Signed-in people, acting for an organization<br/>(their own, or one they belong to)"]
     staff["PokeFindr staff"]
   end
 
@@ -87,13 +89,14 @@ flowchart TB
 | **Core** | Code and data every module may depend on. It never imports a module. |
 | **Module** | A feature with one manifest (`module.ts`) declaring its id, dependencies, entitlements, roles and contributions. |
 | **Registry** | `src/modules/registry.ts`, the only list of the modules that are built into the app. |
-| **Organization** | The customer: a shop, an operator, an event organizer or a brand. It has members, a plan and installed modules. |
-| **Plan** | A named list of modules, for example `free`, `shop`, `pro`. |
+| **Organization** | Whoever holds a plan. It has no type: a person (every account gets a personal organization), a shop, a company, anyone. It has members, a plan and installed modules. |
+| **Plan** | What we sell: a named bundle of modules, whose entitlements the organization gets. To start, `free` and `paid`. |
 | **Install** | A module turned on for one organization. The plan sets what can be installed; an organization admin installs it. |
 | **Entitlement** | One thing someone may do, owned by a module, e.g. `events.publish`. |
 | **Module role** | A bundle of one module's entitlements, assigned to a member within an organization, e.g. `events.editor`. |
 | **Platform role** | PokeFindr staff roles (`moderator`, `admin`, `super_admin`), for running the service itself, not a customer. |
 | **Slot** | A named extension point that core renders and modules fill, e.g. `location.details.section`. |
+| **Personal organization** | The one-member organization every account gets at sign-up, on the `free` plan. It's how an individual has a plan without a separate kind of customer. |
 | **Scope** | What a check is about: the public site, one organization, or one record. |
 
 ## Layers and dependency rules
@@ -178,7 +181,7 @@ export default defineModule({
 
   entitlements: {
     "events.view":     { audience: "public" },              // anyone, signed in or not
-    "events.submit":   { audience: "member" },              // any signed-in person
+    "events.submit":   { audience: "org" },                 // anyone signed in whose plan includes events
     "events.manage":   { audience: "org" },                 // within an organization that installed events
     "events.publish":  { audience: "org" },
     "events.moderate": { audience: "platform", roles: ["moderator", "admin"] },
@@ -299,8 +302,6 @@ erDiagram
   SUBSCRIPTIONS }o--|| PLANS : "of"
   ORGANIZATIONS ||--o{ MODULE_INSTALLS : installs
   MEMBERSHIPS ||--o{ MODULE_ROLE_GRANTS : holds
-  ORGANIZATIONS ||--o{ ORG_LOCATIONS : manages
-  LOCATIONS ||--o{ ORG_LOCATIONS : "managed by"
 
   USERS {
     uuid id PK
@@ -315,6 +316,7 @@ erDiagram
     uuid id PK
     text slug
     text name
+    boolean personal
   }
   MEMBERSHIPS {
     uuid id PK
@@ -341,43 +343,43 @@ erDiagram
     uuid membership_id FK
     text module_role
   }
-  ORG_LOCATIONS {
-    uuid org_id FK
-    uuid location_id FK
-    text relation
-  }
-  LOCATIONS {
-    uuid id PK
-    text kind
-  }
 ```
 
+- **Organizations have no type.** Nothing in core knows whether an organization is a person, a
+  shop or a brand. What it can do comes only from the modules its plan includes, so selling to a
+  new kind of customer is a new plan, not new code.
+- **Every account gets a personal organization** on the `free` plan when it signs up, with the
+  account as its owner. It's what a person acts as by default. They can also join or create other
+  organizations and switch between them in the shell.
 - **Plans are code, not rows.** `src/modules/plans.ts` maps each plan to its modules, reviewed in
   PRs. `PLANS` in the database only holds the ids, so subscriptions can reference them. A custom
   deal is a new plan entry.
 - **The plan sets what an organization *may* install, and installs say what it *has*.** That
   lets an organization keep a module off without changing plan, and lets us switch a module off
   for everyone (a kill switch in config or Edge Config) without touching plans.
+  An organization starts with every module in its plan installed, and gains new ones when it
+  changes plan, so a personal organization never has to install anything.
 - **Org roles are `owner`, `admin` and `member`.** Owners and admins manage members, installs and
   billing. Module roles are granted per member on top of that.
 - **Platform roles stay on `profiles`.** That's today's `profiles.role`, renamed `platform_role`
   once organizations exist. They're for PokeFindr staff and never come from a customer's plan.
-- **Organizations attach to the location graph** through `org_locations`, e.g. a shop that has
-  claimed its listing (`relation: "owner"`), or an operator's machines (`relation: "operator"`).
-  The location itself stays in core and stays public.
-- **The public is not an organization.** A signed-in person with no membership gets the
-  public plan: the modules in `PUBLIC_MODULES` (the map, reviews, events, the assistant, …).
+- **Links between an organization and locations belong to modules,** not core. For example,
+  `listings` would own a `listing_claims` table (org, location, status) for an organization that
+  manages a place's listing. The location itself stays in core and stays public.
+- **Signed-out visitors** have no organization. They get only the entitlements whose audience is
+  `public` (browsing the map, reading reviews and events, seeing sponsored cards).
 
 ```ts
 // src/modules/plans.ts (illustrative)
-export const PUBLIC_MODULES = ["reviews", "events", "contributions", "reports", "assistant", "ads"] as const
+// Everything the public can do today stays free.
+const FREE = ["reviews", "events", "contributions", "reports", "assistant", "routes", "mcp", "ads"] as const
 
 export const PLANS = {
-  shop:     ["listings", "events", "analytics"],
-  operator: ["listings", "analytics", "machines"],
-  partner:  ["ads", "analytics", "mcp"],
-  pro:      ["listings", "events", "analytics", "ads", "mcp"],
+  free: FREE,                                  // every personal organization starts here
+  paid: [...FREE, "listings", "analytics"],    // adds the organization modules
 } as const satisfies Record<string, readonly ModuleId[]>
+
+// Later: more plans are new bundles, e.g. a business tier, or a custom deal for one customer.
 ```
 
 ## Access checks
@@ -397,17 +399,14 @@ flowchart TD
   built -- no --> deny([false])
   built -- yes --> aud{"Entitlement audience"}
   aud -- public --> res
-  aud -- member --> signed{"Signed in?"}
-  signed -- no --> deny
-  signed -- yes --> pub{"Module in PUBLIC_MODULES?"}
-  pub -- no --> deny
-  pub -- yes --> res
   aud -- platform --> prole{"Platform role grants it?"}
   prole -- no --> deny
   prole -- yes --> res
-  aud -- org --> inst{"Org has the module installed<br/>and its plan allows it?"}
+  aud -- org --> signed{"Signed in?"}
+  signed -- no --> deny
+  signed -- yes --> inst{"The organization they're acting for<br/>has the module in its plan, installed?"}
   inst -- no --> deny
-  inst -- yes --> mem{"Viewer is a member,<br/>with an org role or module role<br/>that grants it?"}
+  inst -- yes --> mem{"Their org role or module role<br/>grants it?<br/>(personal org: owner, so yes)"}
   mem -- no --> deny
   mem -- yes --> res
   res{"Resource rule, if any<br/>(owner, same org, status)"} -- fails --> deny
@@ -417,7 +416,7 @@ flowchart TD
 - **Resource rules** live in the module, next to its entitlements. For example:
 
   ```ts
-  "reviews.edit": { audience: "member", resource: (viewer, review) => review.userId === viewer.id }
+  "reviews.edit": { audience: "org", resource: (viewer, review) => review.userId === viewer.id }
   ```
 
   This is the `ability.rb`/CASL idea: rules about one record live in the same table as the
@@ -435,7 +434,7 @@ flowchart TD
 ```mermaid
 sequenceDiagram
   autonumber
-  actor M as Shop admin
+  actor M as Org admin
   participant MW as middleware.ts
   participant R as app/api/o/[org]/events/route.ts
   participant A as core/access
@@ -447,7 +446,7 @@ sequenceDiagram
   MW->>R: request
   R->>A: requireEntitlement(req, "events.publish", { org: "card-castle" })
   A->>DB: membership, role grants, installs, subscription (once per request)
-  DB-->>A: member · events.admin · events installed · plan "shop"
+  DB-->>A: member · events.admin · events installed · plan "paid"
   A-->>R: allowed { userId, org }
   R->>E: createEvent(input, { orgId })
   E->>DB: insert into events (org_id = card-castle, ...)
@@ -501,22 +500,23 @@ failed. `scripts/modules/without.ts <id>` runs the same check locally.
 
 ## Module catalog
 
-How today's features would split. "Public" means it's in `PUBLIC_MODULES`.
+How today's features would split. **Plan** is where the module starts out in the example plans:
+`free` (everyone, including each personal organization) or `paid`.
 
-| Module | Today | Audience | Contributes | Notes |
+| Module | Today | Plan | Contributes | Notes |
 | --- | --- | --- | --- | --- |
-| **core: locations** | `services/locations.ts`, `lib/locations`, map data, search, region counts, coverage, vending, canaries | public | — | Not removable. The scraping protections (`docs/scraping.md`) stay here. |
-| **core: accounts** | `server/auth`, `services/users.ts`, settings, entitlements (#300) | public | — | Adds organizations and memberships. |
-| `reviews` | `services/reviews.ts`, `components/map/Reviews.tsx`, `/api/reviews*` | public | details section, dashboard tile, staff queue (#253), assistant and MCP tools | |
-| `contributions` | add a place, `services/submissions.ts`, `services/moderation.ts`, review queue | public | map action, dashboard tile, staff queue, MCP tools | |
-| `reports` | `services/reports.ts`, `report-admin.ts`, Reports table | public | details action, staff section | |
-| `events` | `services/highlights.ts`, `expire-events`, event markers | public, org | map layer, details section, tile, org and staff consoles, job | Organizations publish their own events. |
-| `assistant` | `server/assistant/*`, `components/assistant/*`, `/api/assistant*` | public | home, map routes, settings section | Collects tools from other modules. |
-| `routes` | assistant route cards, `RouteOverlay.tsx` (#288) | public | map layer, assistant tool | Requires `assistant`. |
-| `mcp` | `server/mcp/*`, `/api/mcp*`, OAuth consent | member, org | developers page, settings | Collects tools from other modules. |
-| `ads` | `SponsoredPlacement`, `ad-placements.ts`, Ads switches | public, org | slots in results, details and landing; org console | A plan can grant `ads.hidden` to turn them off. |
-| `listings` **(new)** | — | org | org console, details badge | Claim and manage a shop or machine listing. |
-| `analytics` **(new)** | — | org | org console | Views and reach for an organization's locations. Requires `listings`. |
+| **core: locations** | `services/locations.ts`, `lib/locations`, map data, search, region counts, coverage, vending, canaries | always | — | Not removable. The scraping protections (`docs/scraping.md`) stay here. |
+| **core: accounts** | `server/auth`, `services/users.ts`, settings, entitlements (#300) | always | — | Adds organizations and memberships. |
+| `reviews` | `services/reviews.ts`, `components/map/Reviews.tsx`, `/api/reviews*` | free | details section, dashboard tile, staff queue (#253), assistant and MCP tools | |
+| `contributions` | add a place, `services/submissions.ts`, `services/moderation.ts`, review queue | free | map action, dashboard tile, staff queue, MCP tools | |
+| `reports` | `services/reports.ts`, `report-admin.ts`, Reports table | free | details action, staff section | |
+| `events` | `services/highlights.ts`, `expire-events`, event markers | free | map layer, details section, tile, org and staff consoles, job | Anyone whose plan includes it can publish events from their org console. |
+| `assistant` | `server/assistant/*`, `components/assistant/*`, `/api/assistant*` | free | home, map routes, settings section | Collects tools from other modules. |
+| `routes` | assistant route cards, `RouteOverlay.tsx` (#288) | free | map layer, assistant tool | Requires `assistant`. |
+| `mcp` | `server/mcp/*`, `/api/mcp*`, OAuth consent | free | developers page, settings | Collects tools from other modules. |
+| `ads` | `SponsoredPlacement`, `ad-placements.ts`, Ads switches | free | slots in results, details and landing; org console | Serves sponsored cards to the public. A plan can grant `ads.hidden` to turn them off for its members. |
+| `listings` **(new)** | — | paid | org console, details badge | Claim and manage a place's listing. Owns the link between an organization and locations. |
+| `analytics` **(new)** | — | paid | org console | Views and reach for an organization's locations. Requires `listings`. |
 
 ## Migration path
 
@@ -554,14 +554,14 @@ is done.
 
 ## Open questions
 
-1. **Who are the organizations?** Assumed: card shops, vending operators and retailers, event
-   organizers, and brands or partners. This decides the first organization modules and what
-   `org_locations` means.
-2. **Can a person belong to several organizations?** Assumed: yes, with an organization switcher
-   in the shell. Rippling assumes one company per employee; here, one person may run two shops.
-3. **Is the public side free and ungated?** Assumed: yes. Members of the public get
-   `PUBLIC_MODULES` with no plan, and plans are for organizations. Individual plans (e.g. higher
-   assistant limits) could come later as a personal "organization of one".
+1. **Who are the organizations?** *Decided:* anyone. Organizations have no type, and what they
+   can do comes only from the modules in the plan they buy. Plans start as `free` and `paid`.
+   Every account gets a personal organization on `free`.
+2. **Can a person belong to several organizations?** Assumed: yes. Their personal organization,
+   plus any they create or are invited to, with a switcher in the shell. Rippling assumes one
+   company per employee.
+3. **What goes in `free` and `paid`?** The example in "Organizations, plans and installs" is a
+   starting point. Assumed: everything the public can do today stays in `free`.
 4. **Do plans gate reading, or only doing?** Assumed: only doing. Public content stays visible
    whatever the plan.
 5. **Row-level security from the start?** Recommendation: yes for organization-owned tables, as
