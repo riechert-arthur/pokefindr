@@ -11,7 +11,7 @@ import { KINDS } from "@/components/pokefindr/kinds"
 import { STATES } from "@/lib/map/states"
 import { milesBetween } from "@/lib/map/geo"
 import { LOCATION_KINDS, type LocationFeature, type LocationKind } from "@/lib/types/locations"
-import type { AssistantCard, AssistantEvent, AssistantPlace } from "@/lib/types/assistant"
+import type { AssistantCard, AssistantEvent, AssistantPlace, CardArea } from "@/lib/types/assistant"
 import type { PlaceBudget } from "./limits"
 import { USER_WRITTEN_NOTE, plainUserText } from "./untrusted"
 
@@ -72,6 +72,10 @@ const tool = <I extends z.ZodTypeAny>(t: AssistantTool<I>) => t
 type Where =
   | { kind: "point"; lng: number; lat: number; label: string }
   | { kind: "state"; code: string; label: string; asked: string }
+
+/** What a card is about, for its heading in the page's language. */
+const cardArea = (where: Where, radiusMiles: number): CardArea =>
+  where.kind === "state" ? { kind: "state", label: where.label } : { kind: "near", label: where.label, radiusMiles }
 
 const ME = /^(me|my location|near me|here|current location|around me)$/i
 const STATE_NAMES = new Map(Object.entries(STATES).map(([code, s]) => [s.name.toLowerCase(), code]))
@@ -216,7 +220,7 @@ export const findPlaces = tool({
           total > places.length && (where.kind === "state" ? "These are a few of the state's places by city, not the closest. The map shows the rest." : "Only the closest are listed. The map shows the rest."),
         ),
       },
-      card: { type: "places", title, places, total, near: where.kind === "point" ? { lng: where.lng, lat: where.lat, label: where.label, radiusMiles } : null },
+      card: { type: "places", title, area: cardArea(where, radiusMiles), places, total, near: where.kind === "point" ? { lng: where.lng, lat: where.lat, label: where.label, radiusMiles } : null },
     }
   },
 })
@@ -245,7 +249,7 @@ export const areaStats = tool({
         top_cities: stats.topCities.map((c) => ({ city: plainUserText(c.city, 60), state: plainUserText(c.state, 4), locations: c.count })),
         ...notesFor(where, input.radius_miles !== undefined),
       },
-      card: { type: "stats", title, total: stats.total, byKind: stats.byKind, topRetailers: stats.topRetailers.map((r) => ({ ...r, retailer: plainUserText(r.retailer, 100) })) },
+      card: { type: "stats", title, area: cardArea(where, radiusMiles), total: stats.total, byKind: stats.byKind, topRetailers: stats.topRetailers.map((r) => ({ ...r, retailer: plainUserText(r.retailer, 100) })) },
     }
   },
 })
@@ -372,7 +376,12 @@ export const listEvents = tool({
           ...(e.sample ? { sample_data: true } : {}),
         })),
       },
-      card: { type: "events", title: !where ? "Upcoming events" : where.kind === "state" ? `Events in ${where.label}` : `Events within ${radiusMiles} mi of ${where.label}`, events: shown },
+      card: {
+        type: "events",
+        title: !where ? "Upcoming events" : where.kind === "state" ? `Events in ${where.label}` : `Events within ${radiusMiles} mi of ${where.label}`,
+        area: where ? cardArea(where, radiusMiles) : null,
+        events: shown,
+      },
     }
   },
 })

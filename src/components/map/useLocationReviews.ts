@@ -38,12 +38,15 @@ async function send(url: string, method: string, body?: unknown): Promise<Respon
 
 type ReviewMessages = ReturnType<typeof useTranslations<"reviews">>
 
+/** What the log says, in English like the rest of it. */
+const LOG = { postFailed: "couldn't post the review", editFailed: "couldn't edit the review", deleteFailed: "couldn't delete the review" } as const
+
 /** "Check your connection", or "Log in again" when the session ran out. */
 function failed(t: ReviewMessages, title: "postFailed" | "editFailed" | "deleteFailed", err: unknown) {
   if (err instanceof SignedOutError) {
     toast.error(t(title), { description: t("sessionEnded") })
   } else {
-    console.error(`[map] ${title}`, err)
+    console.error(`[map] ${LOG[title]}`, err)
     toast.error(t(title), { description: t("connection") })
   }
 }
