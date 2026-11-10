@@ -45,13 +45,19 @@ export function isLocalDatabase(url: string | undefined): boolean {
   }
 }
 
-/** What seeding did to one account: added it, put its role back, or left it alone. */
-export type SeedOutcome = "added" | "role reset" | "unchanged"
+/**
+ * What seeding did to one account: added it, added the profile an older seed
+ * left out, put its role back, left it alone, or skipped it because someone
+ * signed up with its username or email (their account is left as it is).
+ */
+export type SeedOutcome = "added" | "profile added" | "role reset" | "unchanged" | "username taken" | "email taken"
 
 /**
  * Adds each missing account (user, credential account, onboarded profile) and
- * sets an existing one's role back to the seeded value. Safe to run again: a
- * second run reports every account unchanged.
+ * sets an existing one's role back to the seeded value. Accounts are matched
+ * by their fixed id only, so an account someone signed up with by hand is
+ * never changed. Safe to run again: a second run reports every account
+ * unchanged.
  */
 export async function seedDevUsers(
   sql: postgres.Sql,
@@ -60,23 +66,37 @@ export async function seedDevUsers(
   let hash: string | undefined
   const results: { account: DevAccount; outcome: SeedOutcome }[] = []
   for (const account of accounts) {
-    const [existing] = await sql<{ id: string }[]>`select id from users where id = ${account.id} or email = ${account.email}`
-    if (existing) {
-      const changed = await sql`update profiles set role = ${account.role} where id = ${existing.id} and role <> ${account.role}`
+    const [user] = await sql`select 1 from users where id = ${account.id}`
+    const [profile] = await sql<{ role: Role }[]>`select role from profiles where id = ${account.id}`
+    if (profile) {
+      const changed = await sql`update profiles set role = ${account.role} where id = ${account.id} and role <> ${account.role}`
       results.push({ account, outcome: changed.count > 0 ? "role reset" : "unchanged" })
       continue
     }
-    hash ??= await hashPassword(DEV_PASSWORD)
-    const passwordHash = hash
+    if (!user) {
+      const [taken] = await sql`select 1 from users where lower(email) = lower(${account.email})`
+      if (taken) {
+        results.push({ account, outcome: "email taken" })
+        continue
+      }
+    }
+    // Checked first, as the unique index on lower(username) would otherwise fail the whole seed.
+    const [taken] = await sql`select 1 from profiles where lower(username) = lower(${account.username})`
+    if (taken) {
+      results.push({ account, outcome: "username taken" })
+      continue
+    }
+    const passwordHash = user ? null : (hash ??= await hashPassword(DEV_PASSWORD))
     await sql.begin(async (tx) => {
-      await tx`insert into users (id, name, email, email_verified) values (${account.id}, ${account.name}, ${account.email}, true)`
-      await tx`insert into accounts (user_id, provider_id, account_id, password) values (${account.id}, 'credential', ${account.id}, ${passwordHash})`
+      if (passwordHash) {
+        await tx`insert into users (id, name, email, email_verified) values (${account.id}, ${account.name}, ${account.email}, true)`
+        await tx`insert into accounts (user_id, provider_id, account_id, password) values (${account.id}, 'credential', ${account.id}, ${passwordHash})`
+      }
       await tx`
         insert into profiles (id, username, full_name, onboarded, role, locale)
-        values (${account.id}, ${account.username}, ${account.name}, true, ${account.role}, ${account.locale ?? null})
-        on conflict (id) do update set role = excluded.role`
+        values (${account.id}, ${account.username}, ${account.name}, true, ${account.role}, ${account.locale ?? null})`
     })
-    results.push({ account, outcome: "added" })
+    results.push({ account, outcome: user ? "profile added" : "added" })
   }
   return results
 }
