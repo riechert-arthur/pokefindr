@@ -34,6 +34,7 @@ const ANSWERS: Record<Exclude<DecisionResult["status"], "done">, [number, string
 export async function POST(request: NextRequest, context: Context) {
   const staff = await requireEntitlement(request, "moderation.decide")
   if (staff instanceof NextResponse) return staff
+  const logger = log.forRequest(request, "/api/admin/submissions/[id]")
   const { userId } = staff
   const id = idSchema.safeParse((await context.params).id)
   if (!id.success) return NextResponse.json({ error: "Submission not found" }, { status: 404 })
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest, context: Context) {
     const b = body.data
     const result =
       b.action === "approve" ? await approveSubmission(id.data, userId) : b.action === "reject" ? await rejectSubmission(id.data, userId, b.reason) : await undoDecision(id.data, userId)
-    audit(log.forRequest(request, "/api/admin/submissions/[id]"), `submission.${b.action}`, { actorId: userId, target: id.data, outcome: result.status })
+    audit(logger, `submission.${b.action}`, { actorId: userId, target: id.data, outcome: result.status })
     if (result.status !== "done") {
       const [status, error] = ANSWERS[result.status]
       return NextResponse.json({ error }, { status })
@@ -54,11 +55,13 @@ export async function POST(request: NextRequest, context: Context) {
       await enqueueJob("submission-reviewed", { submissionId: id.data, reviewedAt }, {
         idempotencyKey: `submission-reviewed:${id.data}:${reviewedAt}`,
         delaySeconds: REVIEWED_EMAIL_DELAY_SECONDS,
-      }).catch((err) => log.forRequest(request, "/api/admin/submissions/[id]").logError("api.failed", err, { step: "couldn't queue the email to the submitter" }))
+      }).catch((err) => logger.logError("api.failed", err, { step: "couldn't queue the email to the submitter" }))
     }
     return NextResponse.json({ ok: true, locationId: result.locationId ?? null })
   } catch (err) {
-    log.forRequest(request, "/api/admin/submissions/[id]").logError("api.failed", err, { step: "decision failed" })
+    // Who tried what, even when it failed.
+    audit(logger, `submission.${body.data.action}`, { actorId: userId, target: id.data, outcome: "error" })
+    logger.logError("api.failed", err, { step: "decision failed" })
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }

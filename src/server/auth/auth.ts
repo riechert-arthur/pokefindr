@@ -110,19 +110,24 @@ async function sendAccountEmail(to: string, email: EmailContent, template: strin
 }
 
 /**
- * Better Auth's unexpected errors (#254), logged without the raw error,
- * whose message can carry the query's values; setting this also stops
- * Better Auth logging it raw. Its refusals (wrong password, expired link)
- * are answers, not errors, so they don't reach this: our login route logs
- * those (security.auth_failed). One that does is logged the same way.
+ * Better Auth's HTTP handler, logging what goes wrong ourselves (#254).
+ * With `onAPIError.throw` (below), its router turns refusals (APIErrors:
+ * wrong password, expired link) into responses as before, but hands any
+ * other error back to us instead of printing it raw (`# SERVER_ERROR:`),
+ * which, for a failed query, would print its values: emails, tokens. Call
+ * this, never `getAuth().handler` directly.
  */
-function onAuthError(err: unknown) {
-  const e = err as { name?: string; statusCode?: unknown; body?: { code?: unknown } }
-  if (e?.name === "APIError" && typeof e.statusCode === "number" && e.statusCode < 500) {
-    log.info("security.auth_failed", { type: typeof e.body?.code === "string" ? e.body.code : "unknown", status: e.statusCode })
-    return
+export async function authHandler(request: Request): Promise<Response> {
+  let res: Response
+  try {
+    res = await getAuth().handler(request)
+  } catch (err) {
+    log.logError("auth.error", err)
+    return new Response(null, { status: 500, statusText: "Internal Server Error" })
   }
-  log.logError("auth.error", err)
+  // Refusals are answers, not errors: our routes log the ones that matter (security.auth_failed on login).
+  if (res.status >= 500) log.error("auth.error", { status: res.status })
+  return res
 }
 
 /**
@@ -301,7 +306,8 @@ function makeAuth(config: ServerConfig) {
     // Signing in with Google or Discord links to an existing account with the same
     // email only when both sides have confirmed it (Better Auth's default).
     socialProviders: socialProviders(config),
-    onAPIError: { onError: onAuthError },
+    // Errors come back to authHandler, which logs them without their values.
+    onAPIError: { throw: true },
     databaseHooks: { user: { create: { before: async (user, endpoint) => (mayCreateUser(user, endpoint) ? undefined : false) } } },
     session: { expiresIn: 60 * 60 * 24 * 7 },
     // In the database, so limits hold across serverless instances. On everywhere but tests.

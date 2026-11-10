@@ -11,16 +11,19 @@ export const dynamic = "force-dynamic"
 export async function POST(request: NextRequest, context: { params: Promise<{ placement: string }> }) {
   const staff = await requireEntitlement(request, "admin.ads")
   if (staff instanceof NextResponse) return staff
+  const logger = log.forRequest(request, "/api/admin/ads/[placement]")
   const placement = z.enum(SPONSOR_PLACEMENTS).safeParse((await context.params).placement)
   if (!placement.success) return NextResponse.json({ error: "Unknown placement" }, { status: 404 })
   const body = z.object({ enabled: z.boolean() }).safeParse(await request.json().catch(() => null))
   if (!body.success) return NextResponse.json({ error: "Send { enabled: true | false }" }, { status: 400 })
   try {
     await setPlacement(placement.data, body.data.enabled, staff.userId)
-    audit(log.forRequest(request, "/api/admin/ads/[placement]"), "ads.set", { actorId: staff.userId, target: placement.data, outcome: body.data.enabled ? "enabled" : "disabled" })
+    audit(logger, "ads.set", { actorId: staff.userId, target: placement.data, outcome: body.data.enabled ? "enabled" : "disabled" })
     return NextResponse.json({ ok: true })
   } catch (err) {
-    log.forRequest(request, "/api/admin/ads/[placement]").logError("api.failed", err)
+    // Who tried what, even when it failed.
+    audit(logger, "ads.set", { actorId: staff.userId, target: placement.data, outcome: "error" })
+    logger.logError("api.failed", err)
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }

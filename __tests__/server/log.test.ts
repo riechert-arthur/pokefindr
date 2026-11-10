@@ -83,11 +83,22 @@ describe("log", () => {
     expect(lines(info)[0]).toEqual({ level: "info", event: "y", requestId: "iad1::abc-123", route: "/api/x" })
   })
 
-  it("stops after MAX_LINES_PER_REQUEST lines from one request's logger, saying so", () => {
-    const l = log.forRequest(new Request("https://pokefindr.test/"))
-    for (let i = 0; i < MAX_LINES_PER_REQUEST + 20; i++) l.info("spam")
-    expect(info).toHaveBeenCalledTimes(MAX_LINES_PER_REQUEST - 1)
+  it("stops after MAX_LINES_PER_REQUEST lines for one request, however many loggers it makes, saying so", () => {
+    const request = new Request("https://pokefindr.test/")
+    for (let i = 0; i < MAX_LINES_PER_REQUEST + 20; i++) log.forRequest(request, "/api/x").with({ i }).info("spam")
+    expect(info).toHaveBeenCalledTimes(MAX_LINES_PER_REQUEST)
     expect(lines(error)).toEqual([expect.objectContaining({ event: "log.capped" })])
+    // Another request has its own budget.
+    log.forRequest(new Request("https://pokefindr.test/")).info("other")
+    expect(info).toHaveBeenCalledTimes(MAX_LINES_PER_REQUEST + 1)
+  })
+
+  it("keeps the line's own level and event, and the caller's fields over the error's", () => {
+    log.info("x", { level: "debug", event: "y" })
+    expect(lines(info)[0]).toMatchObject({ level: "info", event: "x" })
+    log.logError("z", Object.assign(new Error("boom"), { code: "ECONNRESET" }), { code: "MY_CODE" })
+    expect(lines(error)[0]).toMatchObject({ code: "MY_CODE", msg: "boom" })
+    expect(Object.values(describeError(new Error("plain")))).not.toContain(undefined)
   })
 })
 
@@ -107,7 +118,7 @@ describe("logError", () => {
       code: "23505",
       constraint: "location_ratings_pkey",
       table: "location_ratings",
-      msg: 'duplicate key value violates unique constraint "location_ratings_pkey"',
+      msg: 'duplicate key value violates unique constraint "…"',
     })
     const out = all()
     expect(out).not.toContain("params:")
@@ -118,6 +129,15 @@ describe("logError", () => {
     expect(describeError(new Error('invalid input syntax for type uuid: "ash@example.com"\nmore'))).toMatchObject({ msg: 'invalid input syntax for type uuid: "…"' })
     expect(describeError(new Error("Can't send mail - all recipients were rejected: 550 <ash@example.com>"))).toMatchObject({ msg: "Can't send mail - all recipients were rejected: 550 <[email]>" })
     expect(describeError(new Error("fetch https://geo.test/search?q=12+Elm+St failed"))).toMatchObject({ msg: "fetch https://geo.test/search?… failed" })
+    // Values quoted without a colon before them.
+    expect(describeError(new Error('value "99999999999" is out of range for type integer'))).toMatchObject({ msg: 'value "…" is out of range for type integer' })
+    expect(describeError(new Error('Unexpected token \'a\', "ash@example.com" is not valid JSON'))).toMatchObject({ msg: 'Unexpected token \'a\', "…" is not valid JSON' })
+  })
+
+  it("logs a failed query wrapped in another error by its driver's code, never its SQL", () => {
+    log.logError("auth.error", new Error("Failed to create user", { cause: failedInsert() }))
+    expect(lines(error)[0]).toMatchObject({ errorName: "Error", msg: "Failed to create user", cause: { errorName: "DrizzleQueryError", code: "23505" } })
+    expect(all()).not.toMatch(/Failed query|insert into|example\.com|user-1/)
   })
 
   it("writes an SMTP error's code and response code", () => {

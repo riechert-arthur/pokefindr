@@ -7,7 +7,7 @@ vi.mock("@/server/container", () => ({ getRateLimiter: () => ({ take }) }))
 vi.mock("botid/server", () => ({ checkBotId }))
 vi.mock("@/server/edge-config", () => ({ onVercelProduction: () => false }))
 
-import { guardRoute, ipPrefix, limitClient, RATE_RULES } from "@/server/api-rate-limit"
+import { guardRoute, ipPrefix, limitClient, RATE_RULES, routeOf } from "@/server/api-rate-limit"
 
 let info: ReturnType<typeof vi.spyOn>
 beforeEach(() => {
@@ -40,6 +40,12 @@ describe("security lines (#254)", () => {
       { level: "info", event: "security.rate_limited", requestId: "r1", route: "/api/locations/near", rule: "locations", ipPrefix: "203.0.113.0/24", retryAfter: 3, sample: 10 },
     ])
     expect(JSON.stringify(info.mock.calls)).not.toMatch(/203\.0\.113\.77|47\.61/)
+  })
+
+  it("names the route as the other lines do, not by the id in its path", () => {
+    expect(routeOf(new Request("https://pokefindr.test/api/locations/3f2a6a8e-0000-4000-8000-000000000001/reviews?x=1"))).toBe("/api/locations/[id]/reviews")
+    expect(routeOf(new Request("https://pokefindr.test/api/locations/3F2A6A8E-0000-4000-8000-000000000001"))).toBe("/api/locations/[id]")
+    expect(routeOf(new Request("https://pokefindr.test/api/locations/near"))).toBe("/api/locations/near")
   })
 
   it("logs nothing for a request that goes through", async () => {

@@ -24,6 +24,7 @@ const body = z.discriminatedUnion("action", [
 export async function POST(request: NextRequest, context: { params: Promise<{ name: string }> }) {
   const staff = await requireEntitlement(request, "admin.jobs")
   if (staff instanceof NextResponse) return staff
+  const logger = log.forRequest(request, "/api/admin/jobs/[name]")
   const { name } = await context.params
   const info = jobCatalog().find((j) => j.name === name)
   if (!info || !isJobName(name)) return NextResponse.json({ error: "That job can't be changed here" }, { status: 404 })
@@ -31,11 +32,14 @@ export async function POST(request: NextRequest, context: { params: Promise<{ na
   if (!parsed.success) return NextResponse.json({ error: "action must be run, pause or resume" }, { status: 400 })
   try {
     const b = parsed.data
-    const trail = (outcome: string) => audit(log.forRequest(request, "/api/admin/jobs/[name]"), `job.${b.action}`, { actorId: staff.userId, target: name, outcome })
+    const trail = (outcome: string) => audit(logger, `job.${b.action}`, { actorId: staff.userId, target: name, outcome })
     if (b.action === "pause") await pauseJob(name, b.reason, staff.userId)
     else if (b.action === "resume") await resumeJob(name)
     else {
-      if (!info.runnable) return NextResponse.json({ error: "This job runs on its own, per item. It can't be run by hand." }, { status: 409 })
+      if (!info.runnable) {
+        trail("not_runnable")
+        return NextResponse.json({ error: "This job runs on its own, per item. It can't be run by hand." }, { status: 409 })
+      }
       const paused = await pausedReason(name)
       if (paused) {
         trail("paused")
@@ -46,7 +50,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ na
     trail(b.action === "run" ? "queued" : "done")
     return NextResponse.json({ ok: true })
   } catch (err) {
-    log.forRequest(request, "/api/admin/jobs/[name]").logError("api.failed", err)
+    // Who tried what, even when it failed.
+    audit(logger, `job.${parsed.data.action}`, { actorId: staff.userId, target: name, outcome: "error" })
+    logger.logError("api.failed", err)
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }

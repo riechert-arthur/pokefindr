@@ -1,3 +1,5 @@
+import { log } from "@/server/log"
+
 /**
  * The site's absolute URL, for metadata such as og:image. Server-only: it
  * reads VERCEL_ENV, which Vercel always sets on the server.
@@ -15,7 +17,7 @@ export function getSiteUrl(env: Record<string, string | undefined> = process.env
     try {
       return new URL(configured)
     } catch {
-      console.warn(`site-url: ignoring invalid SITE_URL "${configured}" (it needs a scheme, like https://)`)
+      log.warn("config.invalid_site_url", { msg: "ignoring SITE_URL: it needs a scheme, like https://" })
     }
   }
   if (env.NODE_ENV === "development") return undefined

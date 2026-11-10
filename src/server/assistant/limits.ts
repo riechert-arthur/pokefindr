@@ -5,6 +5,7 @@ import { assistantPlaceViews, assistantUsage } from "@/server/db/schema"
 import { tokenBucket } from "@/server/lib/rate-limit"
 import type { AssistantUsage } from "@/lib/types/assistant-stream"
 import type { ApiErrorCode } from "@/server/api-error"
+import { log } from "@/server/log"
 
 /**
  * The assistant's limits (#209) and its cap on places (#211). Daily counts
@@ -115,7 +116,7 @@ export function warnOnSpend(spentMicros: number, budgetMicros: number, now: Date
   const level = share >= 0.8 ? 80 : share >= 0.5 ? 50 : 0
   if (level && (warned.get(day) ?? 0) < level) {
     warned.set(day, level)
-    console.warn(`[assistant] spend today passed ${level}% of the daily ceiling ($${(spentMicros / 1e6).toFixed(2)} of $${(budgetMicros / 1e6).toFixed(2)})`)
+    log.warn("assistant.spend_ceiling", { percent: level, spentUsd: Number((spentMicros / 1e6).toFixed(2)), budgetUsd: Number((budgetMicros / 1e6).toFixed(2)) })
   }
 }
 

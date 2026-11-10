@@ -8,9 +8,10 @@ describe("getSiteUrl", () => {
   })
 
   it("ignores an invalid SITE_URL instead of throwing", () => {
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
+    // The logger writes warnings to console.error, as JSON.
+    const warn = vi.spyOn(console, "error").mockImplementation(() => {})
     expect(getSiteUrl({ SITE_URL: "pokefindr.app", NODE_ENV: "production" })?.href).toBe(`${PRODUCTION_URL}/`)
-    expect(warn).toHaveBeenCalled()
+    expect(JSON.parse(String(warn.mock.calls[0][0]))).toMatchObject({ level: "warn", event: "config.invalid_site_url" })
     warn.mockRestore()
   })
 

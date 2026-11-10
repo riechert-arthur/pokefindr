@@ -40,6 +40,13 @@ const LIMITER_TIMEOUT_MS = 300
  * null. If the store fails or is slow (LIMITER_TIMEOUT_MS), the request goes
  * through: a limiter outage shouldn't take the map down.
  */
+const UUID_SEGMENT = /\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?=\/|$)/gi
+
+/** The route a request is for, as the other log lines name it: `/api/locations/[id]`, not the id itself. */
+export function routeOf(request: Request): string {
+  return new URL(request.url).pathname.replace(UUID_SEGMENT, "/[id]")
+}
+
 export async function limitClient(request: Request, rule: RateRule): Promise<Response | null> {
   try {
     const timeout = new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`no answer in ${LIMITER_TIMEOUT_MS} ms`)), LIMITER_TIMEOUT_MS).unref?.())
@@ -47,7 +54,7 @@ export async function limitClient(request: Request, rule: RateRule): Promise<Res
     const { ok, retryAfter } = await Promise.race([getRateLimiter().take(rule, rateLimitKey(ip)), timeout])
     if (ok) return null
     // A scraper earns one a second: a sample is enough to see it.
-    if (sampled(LIMITED_SAMPLE)) log.forRequest(request, new URL(request.url).pathname).info("security.rate_limited", { rule: rule.name, ipPrefix: ipPrefix(ip), retryAfter, sample: LIMITED_SAMPLE })
+    if (sampled(LIMITED_SAMPLE)) log.forRequest(request, routeOf(request)).info("security.rate_limited", { rule: rule.name, ipPrefix: ipPrefix(ip), retryAfter, sample: LIMITED_SAMPLE })
     return apiError("tooManyRequests", "Too many requests. Wait a moment and try again.", 429, {}, { headers: { "Retry-After": String(retryAfter) } })
   } catch (err) {
     log.forRequest(request).logError("rate_limit.check_failed", err, { rule: rule.name })
@@ -61,6 +68,6 @@ export async function limitClient(request: Request, rule: RateRule): Promise<Res
  * BotID's 403, anyone else over the limit a 429; null means go ahead.
  */
 export async function guardRoute(request: Request, rule: RateRule, { bots = false }: { bots?: boolean } = {}): Promise<Response | null> {
-  const [refused, limited] = await Promise.all([bots ? refuseBots(new URL(request.url).pathname) : null, limitClient(request, rule)])
+  const [refused, limited] = await Promise.all([bots ? refuseBots(routeOf(request)) : null, limitClient(request, rule)])
   return refused ?? limited
 }

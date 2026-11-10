@@ -107,15 +107,23 @@ const SQLSTATE = /^[0-9A-Z]{5}$/
 const str = (v: unknown) => (typeof v === "string" && v ? v : undefined)
 
 /**
- * The first line of a message, without the values it might quote: Postgres
- * writes them after a colon (`invalid input syntax for type uuid: "…"`),
- * and SMTP errors quote recipients' addresses.
+ * The first line of a message, without the values it might quote:
+ * Postgres and JSON.parse put them in double quotes (`invalid input syntax
+ * for type uuid: "…"`, `value "…" is out of range`, `"abc" is not valid
+ * JSON`), and SMTP errors quote recipients' addresses. Every quoted run
+ * goes, names too: the constraint, table and column are logged on their own.
  */
 function firstLine(message: string): string {
-  return message.split("\n")[0].replace(/: "[^"]*"/g, ': "…"').replace(EMAIL, "[email]").replace(/\?[^\s"']+/g, "?…").slice(0, 300)
+  return message.split("\n")[0].replace(/"[^"]*"/g, '"…"').replace(EMAIL, "[email]").replace(/\?[^\s"']+/g, "?…").slice(0, 300)
 }
 
 const isDrizzleQueryError = (e: Error): e is Error & { query: string; cause?: unknown } => "query" in e && "params" in e && e.message.startsWith("Failed query:")
+
+/** An error's message, safe to log: for a failed query, its driver's message, never the SQL. */
+function safeMessage(e: Error): string {
+  if (!isDrizzleQueryError(e)) return firstLine(e.message)
+  return e.cause instanceof Error ? firstLine(e.cause.message) : "Failed query"
+}
 
 /**
  * What an error is, safe to log: its name, the Postgres code, constraint,
@@ -141,16 +149,24 @@ export function describeError(err: unknown): Fields {
     responseCode: typeof source.responseCode === "number" ? source.responseCode : undefined,
     msg: drizzle && !cause ? "Failed query" : firstLine(source.message),
   }
-  if (cause && !drizzle) out.cause = { errorName: cause.name, code: str((cause as PgLike).code), msg: firstLine(cause.message) }
+  if (cause && !drizzle) {
+    // The cause can itself be a failed query (an adapter's error wrapping Drizzle's): its driver's code, never its SQL.
+    const inner = isDrizzleQueryError(cause) && cause.cause instanceof Error ? (cause.cause as Error & PgLike) : undefined
+    out.cause = { errorName: isDrizzleQueryError(cause) ? "DrizzleQueryError" : cause.name, code: str((cause as PgLike).code) ?? str(inner?.code), msg: safeMessage(cause) }
+  }
   if (code && SQLSTATE.test(code)) out.db = true
   const at = err.stack?.split("\n").find((l) => l.trim().startsWith("at "))
   if (at) out.at = at.trim().slice(3, 200)
+  for (const k of Object.keys(out)) if (out[k] === undefined) delete out[k]
   return out
 }
 
 /** Writes one line. Exported for tests; use a {@link Logger}. */
 export function write(level: Level, event: string, fields: Fields = {}): void {
+  // A field can't stand in for the line's own level or event.
   const body = redact(fields) as Fields
+  delete body.level
+  delete body.event
   let line = JSON.stringify({ level, event, ...body })
   if (line.length > MAX_LINE) {
     const { requestId, route, ms, code } = body
@@ -160,22 +176,37 @@ export function write(level: Level, event: string, fields: Fields = {}): void {
   else console.error(line)
 }
 
+/**
+ * Each request's line budget, kept on the request itself, so every
+ * `log.forRequest(request, …)` for it, and every logger made from one,
+ * shares it.
+ */
+const budgets = new WeakMap<object, { left: number }>()
+
+function budgetFor(request: object): { left: number } {
+  let budget = budgets.get(request)
+  if (!budget) budgets.set(request, (budget = { left: MAX_LINES_PER_REQUEST }))
+  return budget
+}
+
 function makeLogger(base: Fields, budget?: { left: number }): Logger {
   const emit = (level: Level, event: string, fields?: Fields) => {
     if (budget) {
       if (budget.left <= 0) return
-      if (--budget.left === 0) return write("warn", "log.capped", { ...base, max: MAX_LINES_PER_REQUEST })
+      budget.left--
     }
     write(level, event, { ...base, ...fields })
+    if (budget?.left === 0) write("warn", "log.capped", { ...base, max: MAX_LINES_PER_REQUEST })
   }
   return {
     info: (event, fields) => emit("info", event, fields),
     warn: (event, fields) => emit("warn", event, fields),
     error: (event, fields) => emit("error", event, fields),
-    logError: (event, err, fields, level = "error") => emit(level, event, { ...fields, ...describeError(err) }),
+    // The caller's fields win over the error's: they're what the caller meant to say.
+    logError: (event, err, fields, level = "error") => emit(level, event, { ...describeError(err), ...fields }),
     with: (fields) => makeLogger({ ...base, ...fields }, budget),
     forRequest: (request, route) =>
-      makeLogger({ ...base, requestId: request.headers.get("x-vercel-id") ?? undefined, route: route ?? base.route }, { left: MAX_LINES_PER_REQUEST }),
+      makeLogger({ ...base, requestId: request.headers.get("x-vercel-id") ?? undefined, route: route ?? base.route }, budgetFor(request)),
   }
 }
 

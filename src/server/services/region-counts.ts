@@ -9,9 +9,10 @@ import { timed } from "@/server/log"
 
 /** Every row of the `location_region_counts` view, sorted by country, region and kind (or, with retailers, the same counts filtered by them). */
 export async function getRegionCounts(db: Database = getDb(), retailers: readonly string[] = []): Promise<RegionCount[]> {
-  if (retailers.length) return timed("getRegionCounts", () => getRegionCountsFor(retailers, db))
   return timed("getRegionCounts", async () =>
-    db.select().from(locationRegionCounts).orderBy(asc(locationRegionCounts.country), asc(locationRegionCounts.region), asc(locationRegionCounts.kind)),
+    retailers.length
+      ? getRegionCountsFor(retailers, db)
+      : db.select().from(locationRegionCounts).orderBy(asc(locationRegionCounts.country), asc(locationRegionCounts.region), asc(locationRegionCounts.kind)),
   )
 }
 

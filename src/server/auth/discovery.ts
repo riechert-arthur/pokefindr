@@ -1,6 +1,6 @@
 import "server-only"
 import { oauthProviderAuthServerMetadata, oauthProviderOpenIdConfigMetadata } from "@better-auth/oauth-provider"
-import { getAuth } from "@/server/auth/auth"
+import { authHandler, getAuth } from "@/server/auth/auth"
 import { getServerConfig } from "@/server/config"
 
 /**
@@ -25,7 +25,7 @@ export const openIdConfiguration = (request: Request) => oauthProviderOpenIdConf
  * plugin answers it by path, so the request goes to Better Auth as is.
  */
 export async function protectedResourceMetadata(request: Request): Promise<Response> {
-  const res = await getAuth().handler(new Request(new URL(new URL(request.url).pathname, getServerConfig().APP_URL), { method: request.method, headers: request.headers }))
+  const res = await authHandler(new Request(new URL(new URL(request.url).pathname, getServerConfig().APP_URL), { method: request.method, headers: request.headers }))
   const headers = new Headers(res.headers)
   for (const [k, v] of Object.entries(CORS)) headers.set(k, v)
   return new Response(res.body, { status: res.status, headers })
