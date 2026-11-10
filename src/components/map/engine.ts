@@ -6,6 +6,7 @@
  * a new major version) touches one file.
  */
 import "maplibre-gl/dist/maplibre-gl.css"
+import { TILE_ORIGIN } from "@/lib/map/tiles"
 
 export {
   default as Map,
@@ -40,8 +41,8 @@ export type { ExpressionSpecification, LayerSpecification, PaddingOptions } from
  * basemap from the design tokens) is #47.
  */
 export const MAP_STYLES = {
-  light: "https://tiles.openfreemap.org/styles/positron",
-  dark: "https://tiles.openfreemap.org/styles/dark",
+  light: `${TILE_ORIGIN}/styles/positron`,
+  dark: `${TILE_ORIGIN}/styles/dark`,
 } as const
 
 /**
