@@ -1,6 +1,6 @@
 import React from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, render } from "@testing-library/react"
+import { act, render } from "../helpers/intl"
 
 vi.mock("@/components/providers/SessionProvider", () => ({ useSessionContext: () => ({ session: null }) }))
 

@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { describe, expect, it, vi } from "vitest"
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "../../helpers/intl"
 import { SearchCommand, type SearchCommandItem, type SearchCommandStatus } from "@/components/pokefindr/SearchCommand"
 
 const ITEMS: SearchCommandItem[] = [

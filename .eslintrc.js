@@ -103,10 +103,18 @@ const COLOR_RULES = [
   ...VALUE_RULES.map((selector) => ({ selector, message: `Colors come from design tokens. ${TOKENS_HINT}` })),
 ]
 
-/** Only src/components/map/engine.ts may import the map library (#46), and nothing imports Supabase (PA-3). */
+/**
+ * Only src/components/map/engine.ts may import the map library (#46), nothing imports Supabase (PA-3),
+ * and links and redirects keep the page's language (docs/i18n.md).
+ */
+const NAVIGATION_HINT = "Import it from @/i18n/navigation, which keeps the page's language (docs/i18n.md)."
 const RESTRICTED_IMPORTS = [
   "error",
   {
+    paths: [
+      { name: "next/link", message: `Use Link from @/i18n/navigation. ${NAVIGATION_HINT}` },
+      { name: "next/navigation", importNames: ["useRouter", "usePathname", "redirect", "permanentRedirect"], message: NAVIGATION_HINT },
+    ],
     patterns: [
       {
         group: ["maplibre-gl", "maplibre-gl/*", "@vis.gl/react-maplibre", "react-map-gl", "react-map-gl/*", "mapbox-gl", "mapbox-gl/*"],
@@ -130,6 +138,11 @@ module.exports = {
     {
       files: ["src/components/map/engine.ts"],
       rules: { "no-restricted-imports": "off" },
+    },
+    {
+      // Where next-intl's navigation is made, and API routes (no language).
+      files: ["src/i18n/**", "src/app/api/**"],
+      rules: { "no-restricted-imports": ["error", { patterns: RESTRICTED_IMPORTS[1].patterns }] },
     },
     {
       files: ["src/**/*.{js,jsx,ts,tsx}"],

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { act, renderHook } from "@testing-library/react"
+import { act, renderHook } from "../../helpers/intl"
 import { resetSearchCacheForTests, SEARCH_DEBOUNCE_MS, useSearch } from "@/components/search/useSearch"
 
 const DENVER = { label: "Denver, CO", lng: -104.9849, lat: 39.7392, kind: "city", state: "CO" }

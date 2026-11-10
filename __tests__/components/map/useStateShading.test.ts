@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { renderHook, waitFor } from "@testing-library/react"
+import { renderHook, waitFor } from "../../helpers/intl"
 import { useStateShading } from "@/components/map/useStateShading"
 import type { LocationKind } from "@/lib/types/locations"
 

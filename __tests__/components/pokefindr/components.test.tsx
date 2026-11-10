@@ -1,6 +1,6 @@
 import React from "react"
 import { describe, expect, it, vi } from "vitest"
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "../../helpers/intl"
 import { InboxIcon } from "lucide-react"
 import { EmptyState } from "@/components/pokefindr/EmptyState"
 import { KindDot } from "@/components/pokefindr/KindDot"

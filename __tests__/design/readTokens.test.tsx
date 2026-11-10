@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from "@testing-library/react"
+import { act, renderHook, waitFor } from "../helpers/intl"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { readTokens } from "@/lib/design/tokens"
 import { useIsDark, useThemeKey } from "@/lib/design/useThemeKey"

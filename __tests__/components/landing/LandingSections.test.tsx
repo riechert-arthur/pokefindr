@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { fireEvent, render, screen, within } from "@testing-library/react"
+import { fireEvent, render, screen, within } from "../../helpers/intl"
 import { FaqSection, HowItWorks, LocationTypes } from "@/components/landing/LandingSections"
 import { Footer } from "@/components/Footer"
 import { FAQS } from "@/lib/faq"

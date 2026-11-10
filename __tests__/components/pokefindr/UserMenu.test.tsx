@@ -1,6 +1,6 @@
 import React from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor } from "../../helpers/intl"
 import { UserMenu } from "@/components/pokefindr/UserMenu"
 import axios from "axios"
 import { toast } from "sonner"
@@ -10,7 +10,7 @@ const mocks = vi.hoisted(() => ({
   push: vi.fn(),
 }))
 
-vi.mock("next/navigation", () => ({
+vi.mock("@/i18n/navigation", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/i18n/navigation")>()),
   useRouter: () => ({
     refresh: mocks.refresh,
     push: mocks.push,

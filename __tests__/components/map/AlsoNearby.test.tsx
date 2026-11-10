@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react"
+import { fireEvent, render, renderHook, screen, waitFor } from "../../helpers/intl"
 import { AlsoNearby, useAlsoNearby, type NearbyRow } from "@/components/map/AlsoNearby"
 
 const row = (id: string, retailer: string, distance: number): NearbyRow => ({

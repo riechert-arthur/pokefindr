@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import { fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { fireEvent, render, screen, waitFor } from "../../helpers/intl"
 import { DetailsSheet, directionsUrl, type DetailsLocation } from "@/components/map/DetailsSheet"
 
 const QFC: DetailsLocation = {

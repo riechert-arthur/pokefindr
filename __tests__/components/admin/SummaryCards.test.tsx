@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "../../helpers/intl"
 import { SummaryCards } from "@/components/admin/SummaryCards"
 import type { AdminSummary } from "@/lib/admin/summary"
 

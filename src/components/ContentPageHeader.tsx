@@ -6,7 +6,7 @@ import { Logo } from "@/components/brand/Logo"
 import { useEffect, useState } from "react"
 import { LG_UP, useMediaQuery } from "@/hooks/use-media-query"
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
 import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { useSessionContext } from "./providers/SessionProvider"
 
@@ -50,23 +50,23 @@ export const MobileMenu: FC<MobileMenuProps> = ({
           <div className="-my-6 divide-y divide-border">
             <div className="space-y-2 py-6">
               {navigation.map((item) => (
-                <a
+                <Link
                   key={item.name}
                   href={item.href}
                   className="-mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted/50"
                 >
                   {item.name}
-                </a>
+                </Link>
               ))}
             </div>
             <div className="py-6">
               {!session ? (
-                <a
+                <Link
                   href="/login"
                   className={NAV_ITEM}
                 >
                   Log in
-                </a>
+                </Link>
               ) : (
                 <UserMenu
                   variant="list"
@@ -126,12 +126,12 @@ export const ContentPageHeader: FC<HeaderProps> = ({ navigation }) => {
         <div className="hidden lg:flex lg:flex-1 lg:justify-end">
           <div className="py-4">
             {!session ? (
-              <a
+              <Link
                 href="/login"
                 className={NAV_ITEM}
               >
                 Log in &rarr;
-              </a>
+              </Link>
             ) : (
               <UserMenu 
                 size={42}

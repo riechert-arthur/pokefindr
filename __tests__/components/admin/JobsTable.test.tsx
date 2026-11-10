@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, render, screen, within } from "@testing-library/react"
+import { cleanup, render, screen, within } from "../../helpers/intl"
 import { JobsTable } from "@/components/admin/JobsTable"
 import { cronText, resultText, type JobRow } from "@/lib/admin/jobs"
 

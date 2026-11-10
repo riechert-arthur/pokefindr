@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { act, cleanup, fireEvent, render, screen } from "../../helpers/intl"
 
 const { banner } = vi.hoisted(() => ({
   banner: { current: { id: "t", sponsor: "TCGplayer", title: "Missed the restock?", body: "10% off.", cta: "See the deal", href: "https://partner.example/x", pixel: "https://pixel.example/p", weight: 1 } as Record<string, unknown> | null },

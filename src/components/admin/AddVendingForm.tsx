@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
 import { useEffect, useId, useMemo, useState } from "react"
 import { LocateFixedIcon, PlusIcon } from "lucide-react"
 import { toast } from "sonner"

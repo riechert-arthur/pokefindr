@@ -1,0 +1,12 @@
+# Mensajes en español. Mismas claves que messages/en.yml (docs/i18n.md).
+
+errors:
+  notFound:
+    code: "404"
+    title: Página no encontrada
+    body: Lo sentimos, no encontramos la página que buscas.
+  error:
+    code: Error
+    title: Algo salió mal
+  home: Volver al inicio
+  support: Contactar con soporte

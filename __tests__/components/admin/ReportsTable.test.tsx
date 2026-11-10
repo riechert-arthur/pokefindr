@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, waitFor, within } from "../../helpers/intl"
 import { ReportsTable } from "@/components/admin/ReportsTable"
 import { RefreshSummary } from "@/components/admin/useRefreshSummary"
 import type { ReportedLocation } from "@/lib/admin/reports"

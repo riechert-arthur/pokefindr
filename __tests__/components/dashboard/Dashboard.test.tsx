@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { act, fireEvent, render, screen, waitFor } from "../../helpers/intl"
 import { Dashboard, SUGGESTIONS } from "@/components/dashboard/Dashboard"
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/home", useRouter: () => ({ push: vi.fn() }) }))
+vi.mock("@/i18n/navigation", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/i18n/navigation")>()), usePathname: () => "/home", useRouter: () => ({ push: vi.fn() }) }))
 vi.mock("@/components/providers/SidebarContextProvider", () => ({ useSidebar: () => ({ isSidebarOpen: false, toggleSidebar: vi.fn() }) }))
 vi.mock("@/components/providers/SessionProvider", () => ({ useSessionContext: () => ({ session: { id: "u1", username: "ash" }, isLoading: false }) }))
 vi.mock("@/components/pokefindr/UserMenu", () => ({ UserMenu: () => null }))

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, render, screen } from "../../helpers/intl"
 
 vi.mock("@/config/banners", () => ({ pickBanner: () => ({ id: "t", sponsor: "S", title: "A deal", cta: "Go", href: "https://partner.example", weight: 1 }) }))
 

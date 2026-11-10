@@ -1,6 +1,6 @@
 import React from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { render } from "@testing-library/react"
+import { render } from "../../helpers/intl"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
 /** A ResizeObserver that fires once on observe, and fixed scroll and client heights. */

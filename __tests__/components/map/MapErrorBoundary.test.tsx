@@ -1,6 +1,6 @@
 import React from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen } from "../../helpers/intl"
 import { classifyMapError, MapErrorBoundary, MAP_FAILURE_MESSAGES } from "@/components/map/MapErrorBoundary"
 
 vi.mock("next/dynamic", () => ({

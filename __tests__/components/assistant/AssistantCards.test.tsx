@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen } from "../../helpers/intl"
 import { AssistantCardView } from "@/components/assistant/AssistantCards"
 
 const stop = (id: string, name: string) => ({ id, name, kind: "vending" as const, address: "1 Main", city: "Denver", state: "CO", lng: -104.99, lat: 39.74 })

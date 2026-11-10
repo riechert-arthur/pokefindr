@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { act, fireEvent, render, screen, waitFor } from "../../helpers/intl"
 import { AddPlaceSheet, type Pin } from "@/components/map/AddPlaceSheet"
 
 const { track } = vi.hoisted(() => ({ track: vi.fn() }))

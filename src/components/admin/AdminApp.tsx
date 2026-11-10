@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
 import { useCallback, useEffect, useState, type ReactNode } from "react"
 import { useQueryState } from "nuqs"
 import { MapPinIcon, PlusIcon } from "lucide-react"

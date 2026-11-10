@@ -1,6 +1,6 @@
 import React from "react"
 import { describe, expect, it } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen } from "../../helpers/intl"
 import { Button } from "@/components/ui/button"
 
 describe("Button", () => {

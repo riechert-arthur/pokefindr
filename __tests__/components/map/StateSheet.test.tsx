@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen } from "../../helpers/intl"
 import { StateSheet } from "@/components/map/StateSheet"
 import type { StateCitiesState } from "@/components/map/useStateCities"
 

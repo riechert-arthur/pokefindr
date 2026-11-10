@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { Link, useRouter } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -25,7 +25,6 @@ import { useForm } from "react-hook-form"
 import { handleSubmitError } from "@/lib/forms"
 import { LoadingButton } from "@/components/wrappers/LoadingButton"
 import { loginSchema } from "@/lib/schemas"
-import { useRouter } from "next/navigation"
 import axios from "axios"
 import { toast } from "sonner"
 import { broadcastAuth } from "@/lib/auth/broadcast"
@@ -154,9 +153,9 @@ export function LoginForm({
                 </div>
                 <div className="text-center text-sm">
                   Don&apos;t have an account?{" "}
-                  <a href="/signup" className="underline underline-offset-4">
+                  <Link href="/signup" className="underline underline-offset-4">
                     Sign up
-                  </a>
+                  </Link>
                 </div>
               </div>
             </form>
@@ -164,8 +163,8 @@ export function LoginForm({
         </CardContent>
       </Card>
       <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-        By clicking continue, you agree to our <a href="/terms-of-service">Terms of Service</a>{" "}
-        and <a href="/privacy-policy">Privacy Policy</a>.
+        By clicking continue, you agree to our <Link href="/terms-of-service">Terms of Service</Link>{" "}
+        and <Link href="/privacy-policy">Privacy Policy</Link>.
       </div>
     </div>
   )

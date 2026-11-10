@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, renderHook } from "@testing-library/react"
+import { act, renderHook } from "../helpers/intl"
 import { resetMediaQueryCache, useMediaQuery } from "@/hooks/use-media-query"
 import { SCREENS } from "@/lib/design/breakpoints"
 import tailwindConfig from "../../tailwind.config"

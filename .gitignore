@@ -52,3 +52,6 @@ storybook-static
 # Playwright (npx playwright test)
 /test-results/
 /playwright-report/
+
+# Built from messages/*.yml (npm run i18n:build)
+/src/i18n/generated/

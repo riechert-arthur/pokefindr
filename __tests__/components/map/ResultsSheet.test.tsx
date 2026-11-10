@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, within } from "../../helpers/intl"
 import { breakdown, ResultsSheet } from "@/components/map/ResultsSheet"
 import type { NearbyLocations } from "@/lib/types/locations"
 import type { NearbyState } from "@/components/map/useNearbyLocations"

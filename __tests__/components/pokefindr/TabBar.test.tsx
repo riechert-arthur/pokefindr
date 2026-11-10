@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen } from "../../helpers/intl"
 import { TabBar } from "@/components/pokefindr/TabBar"
 
 const nav = vi.hoisted(() => ({ pathname: "/home" }))
-vi.mock("next/navigation", () => ({ usePathname: () => nav.pathname }))
+vi.mock("@/i18n/navigation", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/i18n/navigation")>()), usePathname: () => nav.pathname }))
 
 afterEach(() => {
   nav.pathname = "/home"

@@ -9,9 +9,10 @@ vi.mock("@/components/map/MapLoader", () => ({ MapLoader: () => null }))
 const redirect = vi.fn((url: string) => {
   throw new Error(`REDIRECT ${url}`)
 })
-vi.mock("next/navigation", () => ({ redirect: (url: string) => redirect(url) }))
+vi.mock("next-intl/server", () => ({ getLocale: async () => "en" }))
+vi.mock("@/i18n/navigation", () => ({ redirect: ({ href }: { href: string }) => redirect(href) }))
 
-import MapPage from "@/app/(dashboard)/map/page"
+import MapPage from "@/app/[locale]/(dashboard)/map/page"
 
 const open = (query: Record<string, string>) => MapPage({ searchParams: Promise.resolve(query) })
 

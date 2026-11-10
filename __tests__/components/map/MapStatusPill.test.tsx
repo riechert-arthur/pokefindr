@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { render, screen } from "@testing-library/react"
+import { render, screen } from "../../helpers/intl"
 import { MapStatusPill, placesLabel, statusText } from "@/components/map/MapStatusPill"
 
 const base = { zoomedOut: false, total: 1457, inView: 0, truncated: false, kinds: ["vending", "shop", "event"] as const }

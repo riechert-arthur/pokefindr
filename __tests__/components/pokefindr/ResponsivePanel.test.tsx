@@ -1,6 +1,6 @@
 import React from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
+import { act, fireEvent, render, screen, waitFor } from "../../helpers/intl"
 import { renderToString } from "react-dom/server"
 import { ResponsivePanel } from "@/components/pokefindr/ResponsivePanel"
 import { resetMediaQueryCache } from "@/hooks/use-media-query"
