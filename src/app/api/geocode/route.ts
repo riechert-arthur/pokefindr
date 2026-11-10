@@ -3,6 +3,7 @@ import { getGeocoder } from "@/server/container"
 import { GeocoderError } from "@/server/ports/geocoder"
 import { geocodeQuerySchema } from "@/lib/geocode/query"
 import { clientIp, rateLimitKey, tokenBucket } from "@/server/lib/rate-limit"
+import { refuseBots } from "@/server/bot-check"
 
 // Answers vary by query; the CDN caches each one (below).
 export const dynamic = "force-dynamic"
@@ -29,6 +30,9 @@ export async function GET(request: NextRequest) {
   if (!limiter.take(rateLimitKey(clientIp(request.headers)))) {
     return NextResponse.json({ error: "Too many searches. Try again in a minute." }, { status: 429, headers: { "Retry-After": "60" } })
   }
+  // After the free checks: BotID is a call to Vercel.
+  const refused = await refuseBots()
+  if (refused) return refused
 
   const { q, near, limit } = parsed.data
   try {

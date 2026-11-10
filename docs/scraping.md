@@ -45,3 +45,36 @@ it's applied, so change the file instead, in a PR. `__tests__/server/firewall.te
   To check a rule, loop requests from one machine (`for i in $(seq 300); do curl -s -o /dev/null
   -w "%{http_code}\n" "https://pokefindr.app/api/locations?bbox=…"; done | sort | uniq -c`)
   and expect 429s after 120 and 403s after 240.
+
+## BotID (#198)
+
+Firewall rules key on IP addresses, which scrapers rotate. [BotID](https://vercel.com/docs/botid)
+checks the client itself, invisibly: `src/instrumentation-client.ts` runs it in the browser and
+attaches its header to the app's own requests for location data, and each of those routes calls
+`refuseBots()` (`src/server/bot-check.ts`) first. A request without a valid header, `curl` or a
+headless script, gets a 403 with the code `botBlocked`. Verified bots (search engines) get one
+too: they index pages, not the API.
+
+| Route | Checked | Cached |
+| --- | --- | --- |
+| `/api/locations?bbox=`, `/near`, `/search` | yes | in the browser only (30 s) |
+| `/api/highlights` | on a CDN miss | CDN, as before (a handful of places) |
+| `/api/geocode` | on a CDN miss | CDN, as before (it holds no PokeFindr data; a miss is what costs) |
+| `/api/locations/[id]`, `/[id]/reviews` | no | CDN (one place, by an id only the checked routes give out) |
+| `/api/locations/aggregates`, `/cities`, `/counts`, `/retailers` | no | CDN (counts only) |
+
+- **Why some caching moved to the browser.** BotID runs in our function, and a response the CDN
+  serves never reaches it. A shared CDN copy of the map's bulk queries would go to any script that
+  asked for the same box, so those are cached in the browser only. The CDN-cached routes are only
+  checked on a miss, which is fine for what they hold.
+- **Only on a production deployment on Vercel** (`onVercelProduction()`): local dev (even with
+  `vercel env pull`'s `VERCEL=1`), tests and CI let every request through, and so does a BotID
+  error, logged, so an outage can't take the map down. The rate limits still apply.
+- **Adding a route.** The list is `src/lib/bot-checked-paths.ts`, exact paths only (a wildcard
+  would make the browser run BotID for routes that don't check). Each listed route calls
+  `refuseBots()`, after its own validation; a test checks every listed route does.
+- **End-to-end tests** call the API without a browser's BotID header, so against a Vercel
+  deployment they'd get 403s. They run against `make run` locally and in CI, where BotID passes
+  everything.
+- **BotID's script** is proxied through our domain under `/149e9513-…` (`withBotId` in
+  `next.config.ts`); the middleware's matcher skips that path.

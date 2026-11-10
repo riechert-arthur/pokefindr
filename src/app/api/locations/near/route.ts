@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getLocationsNear } from "@/server/services/locations"
 import { nearQuerySchema } from "@/lib/locations/search"
+import { refuseBots } from "@/server/bot-check"
 
 export const dynamic = "force-dynamic"
 
@@ -10,6 +11,8 @@ export const dynamic = "force-dynamic"
  *   with `distance` in miles, plus `counts` per kind and the `total`.
  */
 export async function GET(request: NextRequest) {
+  const refused = await refuseBots()
+  if (refused) return refused
   const params = request.nextUrl.searchParams
   const parsed = nearQuerySchema.safeParse({
     lng: params.get("lng") ?? "",
@@ -26,8 +29,8 @@ export async function GET(request: NextRequest) {
   try {
     const { lng, lat, r, types, retailer, limit } = parsed.data
     return NextResponse.json(await getLocationsNear({ center: [lng, lat], radiusMiles: r, types, retailers: retailer, limit }), {
-      // Same as the viewport query: short, so a search lands on fresh data.
-      headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120" },
+      // Only the browser keeps it: a CDN copy would reach bots without BotID's check (#198).
+      headers: { "Cache-Control": "private, max-age=30" },
     })
   } catch (err) {
     console.error("[api/locations/near] failed to load locations", err)

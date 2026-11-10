@@ -33,8 +33,8 @@ export const config = {
     '/api/assistant/:path*',
     // Every page, for the language (docs/i18n.md). Not the API, Next's own
     // files, /.well-known, the generated icons and images, or anything with a
-    // file extension.
-    '/((?!api|_next|_vercel|\\.well-known|social-card|\\w+/social-card|icon|apple-icon|.*\\..*).*)',
+    // file extension, or BotID's proxy (#198).
+    '/((?!api|_next|_vercel|\\.well-known|social-card|\\w+/social-card|149e9513-01fa-4fb0-aad4-566afd725d1b|icon|apple-icon|.*\\..*).*)',
   ],
 }
 
