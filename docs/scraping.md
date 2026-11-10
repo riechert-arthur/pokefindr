@@ -139,14 +139,12 @@ to spot. No route returns every location: `queryFeatures()` always takes a limit
 ## Canaries, the Terms and robots.txt (#202)
 
 - **Canary locations** prove a copied dataset came from PokeFindr. They're plausible decoy
-  vending machines that only the map's viewport query returns (`GET /api/locations?bbox=`), so
-  they show up in anything copied from it but not in the results list, search, counts, the
-  assistant, MCP or a place's own page (which 404s). They're stored inactive with
-  `locations.canary` set, so every other query skips them without a filter of its own. The repo is
-  public, so the decoys aren't in it: `npm run canary:plant` makes them from the secret
-  `CANARY_SEED`, and `-- --list` prints them to search a suspect copy for. Details are in
-  `docs/database.md` under "Canary locations".
+  vending machines, stored as ordinary active locations with `locations.canary` set, so every
+  route returns them like any other place (the map, the results list, search, details, counts,
+  the assistant, MCP) and none sends the flag. Nothing in the public repo says where they are:
+  `npm run canary:plant` makes them from the real data at the time, with crypto randomness, and
+  the database is the only record. `npm run canary:plant -- --list` prints them, to search a
+  suspect copy for. Details are in `docs/database.md` under "Canary locations".
 - **The Terms of service** (section 11) forbid collecting or copying the data by automated means
   and calling the API from outside the site, apart from search engines and the MCP server.
-- **robots.txt** (`src/app/robots.ts`) lets crawlers index the pages and keeps them off `/api/` and
-  the signed-in pages.
+- **robots.txt** (`src/app/robots.ts`) lets crawlers index the pages and keeps them off `/api/`.

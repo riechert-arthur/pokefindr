@@ -32,7 +32,7 @@
     "db:studio": "drizzle-kit studio",
     "db:import-locations": "tsx scripts/one-off/import-locations.ts",
     "firewall": "tsx scripts/firewall/apply.ts",
-    "canary:plant": "tsx scripts/canary/plant.ts",
+    "canary:plant": "tsx --conditions=react-server scripts/canary/plant.ts",
     "test-storybook": "test-storybook --url http://127.0.0.1:6006",
     "test-storybook:local": "bash scripts/test-storybook-local.sh",
     "test:e2e": "playwright test",

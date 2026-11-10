@@ -183,9 +183,8 @@ const TermsOfServicePage: FC<LocaleParams> = async ({ params }) => {
         first.
       </p>
       <p className="mb-4">
-        The data contains markers that let us recognize a copy of it. If we
-        find our data collected against these Terms, we may block access and
-        take further action.
+        If we find our data collected against these Terms, we may block
+        access and take further action.
       </p>
 
       <h2 className="text-2xl font-semibold mt-8 mb-4">12. CONTACT US</h2>

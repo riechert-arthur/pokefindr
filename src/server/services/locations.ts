@@ -36,8 +36,8 @@ const featureJson = (extra: SQL = sql``) => sql`
  * FeatureCollection built in one query. Postgres does the JSON assembly, so
  * this stays fast as the table grows. It returns at most `limit` and sets
  * `truncated` when more matched: there's no uncapped form, so no caller can
- * list every location (#201). With `canaries`, the decoys too (#202; they're
- * inactive): only the map's viewport request asks.
+ * list every location (#201). It never returns `canary` (#202): a decoy
+ * looks like any other place.
  */
 export async function queryFeatures(
   db: Database,
@@ -45,13 +45,11 @@ export async function queryFeatures(
   limit: number,
   // Unqualified columns, so it applies to both CTEs below.
   orderBy: SQL = sql`"machineID", id`,
-  { canaries = false }: { canaries?: boolean } = {},
 ): Promise<LocationFeatureCollection> {
-  const shown = canaries ? sql`(l.is_active or l.canary)` : sql`l.is_active`
   const rows = await db.execute<{ fc: LocationFeatureCollection }>(sql`
     with matched as (
       select l.* from ${locations} l
-      where ${shown} and l.geog is not null and ${where}
+      where l.is_active and l.geog is not null and ${where}
       order by ${orderBy}
       limit ${limit + 1}
     ),
@@ -296,10 +294,10 @@ export interface BboxQuery {
 }
 
 /**
- * Active locations inside `bbox`, for the map from zoom 6 (POINT_ZOOM), with
- * any canaries there (#202). The retailer filter runs here, before the cap,
- * and a cut-off box keeps the places nearest its center, so a full view
- * still fills the screen evenly outward from the middle. The test is
+ * Active locations inside `bbox`, for the map from zoom 6 (POINT_ZOOM). The
+ * retailer filter runs here, before the cap, and a cut-off box keeps the
+ * places nearest its center, so a full view still fills the screen evenly
+ * outward from the middle. The test is
  * planar: `geog::geometry && envelope` keeps exactly the points between the
  * box's meridians and parallels, using the GiST index on `geog::geometry`.
  * (On geography, `&&` compares boxes on the sphere, which bow out: it
@@ -317,7 +315,6 @@ export async function getLocationsInBbox(
       and l.kind in (${kindsIn(types)}) ${retailerIn(retailers)}`,
     limit,
     sql`geog::geometry <-> ST_SetSRID(ST_MakePoint(${(west + east) / 2}, ${(south + north) / 2}), 4326), id`,
-    { canaries: true },
   )
 }
 

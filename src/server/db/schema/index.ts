@@ -423,9 +423,9 @@ export const locations = pgTable(
     /** The address compared for duplicates (#154): normalize_address(address), migration 0016. */
     addressNormalized: text("address_normalized").generatedAlwaysAs(sql`normalize_address(address)`),
     /**
-     * A decoy (#202, migration 0021): made up, always inactive, and returned
-     * only by the map's viewport request (getLocationsInBbox), so a copied
-     * dataset can be traced. scripts/canary/plant.ts adds them.
+     * A decoy (#202, migration 0021): a made-up vending machine, active and
+     * shown like any other place, so a copied dataset can be traced. Never
+     * sent to clients. scripts/canary/plant.ts adds them.
      */
     canary: boolean("canary").notNull().default(false),
   },
@@ -438,7 +438,6 @@ export const locations = pgTable(
     // What each kind's details table points at, so its rows match the location's kind (migration 0011).
     unique("locations_id_kind_key").on(t.id, t.kind),
     ...locationChecks("locations", t),
-    check("locations_canary_check", sql`not (${t.canary} and ${t.isActive})`),
   ],
 )
 
