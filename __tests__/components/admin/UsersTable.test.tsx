@@ -44,6 +44,9 @@ describe("UsersTable", () => {
     expect(within(misty).getByText("Member")).toBeInTheDocument()
     expect(within(misty).getByText("3 days ago")).toBeInTheDocument()
     expect(within(screen.getByText("superadmin").closest("tr")!).getByText("Super admin")).toBeInTheDocument()
+    // Staff stand out from members.
+    expect(within(screen.getByText("moderator").closest("tr")!).getByText("Moderator")).toHaveClass("bg-secondary")
+    expect(within(misty).getByText("Member")).not.toHaveClass("bg-secondary")
   })
 
   it("searches and filters by role through the API", async () => {

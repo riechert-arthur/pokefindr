@@ -16,6 +16,12 @@ type Story = StoryObj<typeof meta>
 /** On the map, signed out. */
 export const OnMap: Story = {}
 
+/** A moderator on /moderate: Moderate, but no Admin. */
+export const Moderator: Story = {
+  args: { signedIn: true, canModerate: true },
+  parameters: { nextjs: { navigation: { pathname: "/moderate" } } },
+}
+
 /** On the dashboard, signed in: Settings appears at the bottom. */
 export const SignedIn: Story = {
   args: { signedIn: true },

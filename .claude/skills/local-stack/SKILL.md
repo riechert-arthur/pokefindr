@@ -42,7 +42,7 @@ Next.js warnings in `web` (for example the metadata `viewport` notice) are noise
 
 ## Logging in
 
-The seed adds ready-made accounts, only on local databases, all with the password `pokefindr-dev-password!`: `superadmin@pokefindr.local` is a super admin (Admin → Users), `dev@pokefindr.local` an admin, `moderator@pokefindr.local` a moderator, and `ash@`, `misty@`, `brock@` and `serena@` (Spanish) are members, with a few sample submissions and a report to moderate. The list is `DEV_ACCOUNTS` in `scripts/db/seedDevUsers.ts`, and the accounts table is in `docs/auth.md` ("Local development"). Roles live in `profiles.role` (`member`, `moderator`, `admin`, `super_admin`); a super admin can change them in Admin → Users, and the seed sets seeded accounts' roles back on every run, so for a one-off role change use an account you signed up yourself:
+The seed adds ready-made accounts, only on local databases, all with the password `pokefindr-dev-password!`: `superadmin@pokefindr.local` is a super admin (Admin → Users), `dev@pokefindr.local` an admin, `moderator@pokefindr.local` a moderator (it works in `/moderate`), and `ash@`, `misty@`, `brock@` and `serena@` (Spanish) are members, with a few sample submissions and a report to moderate. The list is `DEV_ACCOUNTS` in `scripts/db/seedDevUsers.ts`, and the accounts table is in `docs/auth.md` ("Local development"). Roles live in `profiles.role` (`member`, `moderator`, `admin`, `super_admin`); a super admin can change them in Admin → Users, and the seed sets seeded accounts' roles back on every run, so for a one-off role change use an account you signed up yourself:
 
 ```bash
 docker compose exec db psql -U pokefindr -d "$(scripts/dev/db-name.sh)" \

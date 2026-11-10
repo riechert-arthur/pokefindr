@@ -10,7 +10,7 @@
 import type { Role } from "./roles"
 
 export const ENTITLEMENTS = {
-  /** See the review queue, reports and their counts. */
+  /** See the review queue, reports and their counts, in /moderate and /admin's Moderation group. */
   "moderation.view": ["moderator", "admin", "super_admin"],
   /** Approve or reject submissions, and act on reports. */
   "moderation.decide": ["moderator", "admin", "super_admin"],
@@ -20,8 +20,8 @@ export const ENTITLEMENTS = {
   "moderation.avatars": ["moderator", "admin", "super_admin"],
   /** Get the "a submission needs review" email. */
   "moderation.notify": ["moderator", "admin", "super_admin"],
-  /** Open /admin at all. */
-  "admin.open": ["moderator", "admin", "super_admin"],
+  /** Open /admin at all, and see its link. Moderators work in /moderate instead (#293). */
+  "admin.open": ["admin", "super_admin"],
   /** The admin-only summary counts: live locations and the sync job. */
   "admin.summary.all": ["admin", "super_admin"],
   "admin.coverage": ["admin", "super_admin"],

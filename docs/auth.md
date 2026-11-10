@@ -96,9 +96,11 @@ Everyone signed in has a role in `profiles.role` (migrations 0012 and 0022). It'
 | Role | Can | Who grants it |
 | --- | --- | --- |
 | `member` | everything a signed-in person can: reviews, reports, submissions | sign-up; a super admin |
-| `moderator` | the review queue and Reports, but not deciding their own submissions | a super admin, in Admin → Users |
-| `admin` | all of `/admin` except Users, and deciding their own submissions | a super admin, in Admin → Users |
+| `moderator` | `/moderate`: the review queue and Reports, but not deciding their own submissions | a super admin, in Admin → Users |
+| `admin` | `/moderate`, all of `/admin` except Users, and deciding their own submissions | a super admin, in Admin → Users |
 | `super_admin` | everything an admin can, plus Admin → Users (`users.manage`) | SQL or the dev seed only |
+
+**Moderators' dashboard** (`/moderate`, #293): the review queue and Reports as two tabs (`?tab=reports`), inside the normal app layout, for whoever has `moderation.view`. The rail and tab bar show "Moderate" for `moderation.view` and "Admin" for `admin.open`, which moderators don't have: `/admin` redirects them to `/moderate` (old emails and bookmarks point there), and the review email links to `/moderate`. Admins keep the same two sections in `/admin`'s Moderation group too.
 
 **User management** (`/admin?section=users`, #294) lists users with their email (only super admins see emails), searches by username, name or the start of an email, filters by role, and changes a role after a confirm step (`src/server/services/user-admin.ts`, `GET /api/admin/users`, `PATCH /api/admin/users/:id`). A super admin can set member, moderator or admin, never their own role, and never `super_admin`, so a hijacked session can't create another one. Taking away the last super admin is refused too. Every change is written to `role_changes`. To make someone a super admin:
 
@@ -154,7 +156,7 @@ when someone signs up with them; an upload replaces it. With none, `UserAvatar` 
 | --- | --- | --- | --- |
 | `superadmin@pokefindr.local` | `superadmin` | super_admin | Admin → Users, plus everything an admin has |
 | `dev@pokefindr.local` | `dev` | admin | every section of `/admin` except Users |
-| `moderator@pokefindr.local` | `moderator` | moderator | opens `/admin`, but sees only the review queue and Reports (and their counts); can't decide its own submissions; gets the review emails |
+| `moderator@pokefindr.local` | `moderator` | moderator | `/moderate` (`/admin` sends it there); can't decide its own submissions; gets the review emails |
 | `ash@pokefindr.local` | `ash` | member | a plain member: no Admin link, `/admin` is a 404 |
 | `misty@pokefindr.local` | `misty` | member | the same |
 | `brock@pokefindr.local` | `brock` | member | the same |

@@ -3,39 +3,42 @@
 import { useTranslations } from "next-intl"
 import { Link, usePathname } from "@/i18n/navigation"
 import { useEffect, type ComponentType, type SVGProps } from "react"
-import { CirclePlusIcon, HouseIcon, MapPinIcon, ShieldIcon } from "lucide-react"
+import { CirclePlusIcon, HouseIcon, InboxIcon, MapPinIcon, ShieldIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface Tab {
   href: string
   /** Its label in the catalog's `nav` messages. */
-  label: "home" | "map" | "addPlace" | "admin"
+  label: "home" | "map" | "addPlace" | "moderate" | "admin"
   icon: ComponentType<SVGProps<SVGSVGElement>>
 }
 
 const HOME: Tab = { href: "/home", label: "home", icon: HouseIcon }
 const MAP: Tab = { href: "/map", label: "map", icon: MapPinIcon }
 const ADD: Tab = { href: "/map?add=1", label: "addPlace", icon: CirclePlusIcon }
+const MODERATE: Tab = { href: "/moderate", label: "moderate", icon: InboxIcon }
 const ADMIN: Tab = { href: "/admin", label: "admin", icon: ShieldIcon }
 
 interface TabBarProps {
   /** Shows "Add a place", once the add flow exists (R4). */
   canAdd?: boolean
-  /** Shows "Admin", for admins (R8). */
+  /** Shows "Moderate" (/moderate), for whoever has `moderation.view` (#293). */
+  canModerate?: boolean
+  /** Shows "Admin" (/admin), for whoever has `admin.open`: admins, not moderators. */
   isAdmin?: boolean
   className?: string
 }
 
 /**
- * The phone's tab bar from the prototype (#160): Home, Map, Add a place and
- * Admin, in the layout below the page (not over it), above the bottom safe
+ * The phone's tab bar from the prototype (#160): Home, Map, Add a place,
+ * Moderate and Admin, in the layout below the page (not over it), above the bottom safe
  * area. Shown where the icon rail isn't (below `sm`). While it's there,
  * toasts sit above it (--toast-bottom, read by the Toaster).
  */
-export function TabBar({ canAdd = false, isAdmin = false, className }: TabBarProps) {
+export function TabBar({ canAdd = false, canModerate = false, isAdmin = false, className }: TabBarProps) {
   const t = useTranslations("nav")
   const pathname = usePathname()
-  const tabs = [HOME, MAP, ...(canAdd ? [ADD] : []), ...(isAdmin ? [ADMIN] : [])]
+  const tabs = [HOME, MAP, ...(canAdd ? [ADD] : []), ...(canModerate ? [MODERATE] : []), ...(isAdmin ? [ADMIN] : [])]
 
   useEffect(() => {
     document.documentElement.classList.add("has-tabbar")

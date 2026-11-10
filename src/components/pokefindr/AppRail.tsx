@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl"
 import { Link, usePathname } from "@/i18n/navigation"
 import { useEffect, useRef, useState, type ComponentType, type Ref, type SVGProps } from "react"
-import { BookOpenIcon, HouseIcon, MapPinIcon, SettingsIcon, ShieldIcon } from "lucide-react"
+import { BookOpenIcon, HouseIcon, InboxIcon, MapPinIcon, SettingsIcon, ShieldIcon } from "lucide-react"
 import { Logo } from "@/components/brand/Logo"
 import { DiscordIcon } from "@/components/icons/DiscordIcon"
 import { LanguageSwitcher } from "@/components/pokefindr/LanguageSwitcher"
@@ -12,7 +12,7 @@ import { minWidth } from "@/lib/design/breakpoints"
 import { SUPPORT_URL } from "@/lib/links"
 import { cn } from "@/lib/utils"
 
-type NavLabel = "home" | "blog" | "map" | "discord" | "settings" | "admin"
+type NavLabel = "home" | "blog" | "map" | "discord" | "settings" | "moderate" | "admin"
 
 interface RailItem {
   href: string
@@ -31,6 +31,7 @@ const MAIN: RailItem[] = [
 
 const DISCORD: RailItem = { href: SUPPORT_URL, label: "discord", icon: DiscordIcon, external: true }
 const SETTINGS: RailItem = { href: "/settings", label: "settings", icon: SettingsIcon }
+const MODERATE: RailItem = { href: "/moderate", label: "moderate", icon: InboxIcon }
 const ADMIN: RailItem = { href: "/admin", label: "admin", icon: ShieldIcon }
 
 /** Desktop rail widths: 64px collapsed (its place in the layout), 208px expanded. */
@@ -85,7 +86,9 @@ export const APP_NAV_ID = "app-navigation"
 interface AppRailProps {
   /** Shows Settings. */
   signedIn?: boolean
-  /** Shows Admin, for moderators and admins. */
+  /** Shows Moderate (/moderate), for whoever has `moderation.view`. */
+  canModerate?: boolean
+  /** Shows Admin (/admin), for whoever has `admin.open`. */
   isAdmin?: boolean
   /** Holds the rail expanded or collapsed instead of following hover and focus (stories). */
   expanded?: boolean
@@ -104,7 +107,7 @@ interface AppRailProps {
  * column, and the map beside it, don't move. Escape or moving focus out
  * collapses it. In the phone drawer (below `sm`) the labels always show.
  */
-export function AppRail({ signedIn = false, isAdmin = false, expanded: held, className, ref }: AppRailProps) {
+export function AppRail({ signedIn = false, canModerate = false, isAdmin = false, expanded: held, className, ref }: AppRailProps) {
   const t = useTranslations("nav")
   const pathname = usePathname()
   const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
@@ -200,6 +203,7 @@ export function AppRail({ signedIn = false, isAdmin = false, expanded: held, cla
         {MAIN.map((item) => (
           <RailLink key={item.href} item={item} current={isCurrent(item.href)} expanded={expanded} />
         ))}
+        {canModerate && <RailLink item={MODERATE} current={isCurrent(MODERATE.href)} expanded={expanded} />}
         {isAdmin && <RailLink item={ADMIN} current={isCurrent(ADMIN.href)} expanded={expanded} />}
         <div className="mt-auto flex flex-col items-start gap-2">
           <RailLink item={DISCORD} current={false} expanded={expanded} />
