@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getTopCities } from "@/server/services/locations"
 import { citiesQuerySchema } from "@/lib/locations/search"
-import { limitClient, RATE_RULES } from "@/server/api-rate-limit"
+import { guardRoute, RATE_RULES } from "@/server/api-rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -11,8 +11,8 @@ export const dynamic = "force-dynamic"
  *   middle of its locations), plus `counts` per kind and the `total`.
  */
 export async function GET(request: NextRequest) {
-  const limited = await limitClient(request, RATE_RULES.locations)
-  if (limited) return limited
+  const blocked = await guardRoute(request, RATE_RULES.locations)
+  if (blocked) return blocked
   const params = request.nextUrl.searchParams
   const parsed = citiesQuerySchema.safeParse({
     state: params.get("state") ?? "",

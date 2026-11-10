@@ -1,8 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { searchLocations } from "@/server/services/locations"
 import { searchQuerySchema } from "@/lib/locations/search"
-import { refuseBots } from "@/server/bot-check"
-import { limitClient, RATE_RULES } from "@/server/api-rate-limit"
+import { guardRoute, RATE_RULES } from "@/server/api-rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -13,10 +12,8 @@ export const dynamic = "force-dynamic"
  *   FeatureCollection.
  */
 export async function GET(request: NextRequest) {
-  const refused = await refuseBots()
-  if (refused) return refused
-  const limited = await limitClient(request, RATE_RULES.locations)
-  if (limited) return limited
+  const blocked = await guardRoute(request, RATE_RULES.locations, { bots: true })
+  if (blocked) return blocked
   const params = request.nextUrl.searchParams
   const parsed = searchQuerySchema.safeParse({
     q: params.get("q") ?? "",

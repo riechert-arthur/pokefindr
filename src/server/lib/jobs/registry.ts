@@ -5,6 +5,7 @@ import { refreshRegionCountsJob } from "@/server/services/region-counts"
 import { assistantRetentionJob } from "@/server/assistant/log"
 import { submissionCreatedJob, submissionReviewedJob } from "@/server/services/submission-notifications"
 import { expireEventsJob } from "@/server/services/expire-events"
+import { pruneRateLimitsJob } from "@/server/adapters/rate-limiter/postgres"
 
 /** Does nothing. Exists so the cron, queue and CLI wiring can be tested on its own. */
 const noop = defineJob({
@@ -29,6 +30,7 @@ export const jobs: Record<string, Job<any>> = {
   "submission-created": submissionCreatedJob,
   "submission-reviewed": submissionReviewedJob,
   "expire-events": expireEventsJob,
+  "prune-rate-limits": pruneRateLimitsJob,
 }
 
 export function isJobName(name: string): boolean {

@@ -1,19 +1,61 @@
 {
   "firewallEnabled": true,
   "managedRules": {
-    "bot_protection": { "active": true, "action": "challenge" }
+    "bot_protection": {
+      "active": true,
+      "action": "challenge"
+    }
   },
   "rules": [
+    {
+      "name": "Machine clients: skip the browser checks",
+      "description": "The MCP server, its OAuth endpoints, and Vercel's job and queue deliveries aren't browsers: no challenge or per-IP limit (they have their own limits; docs/scraping.md).",
+      "active": true,
+      "conditionGroup": [
+        {
+          "conditions": [
+            {
+              "type": "path",
+              "op": "re",
+              "value": "^/(api/(mcp|identity|jobs|queues)|\\.well-known)(/|$)"
+            }
+          ]
+        }
+      ],
+      "action": {
+        "mitigate": {
+          "action": "bypass"
+        }
+      }
+    },
     {
       "name": "Location data: block heavy scrapers",
       "description": "More than 240 requests a minute from one IP to the location data: denied for an hour (docs/scraping.md).",
       "active": true,
-      "conditionGroup": [{ "conditions": [{ "type": "path", "op": "re", "value": "^/api/(locations|highlights|geocode)(/|$)" }] }],
+      "conditionGroup": [
+        {
+          "conditions": [
+            {
+              "type": "path",
+              "op": "re",
+              "value": "^/api/(locations|highlights|geocode)(/|$)"
+            }
+          ]
+        }
+      ],
       "action": {
         "mitigate": {
-          "action": "deny",
+          "action": "rate_limit",
           "actionDuration": "1h",
-          "rateLimit": { "algo": "fixed_window", "window": 60, "limit": 240, "keys": ["ip"], "action": "deny" }
+          "rateLimit": {
+            "algo": "fixed_window",
+            "window": 60,
+            "limit": 240,
+            "keys": [
+              "ip"
+            ],
+            "action": "deny"
+          }
         }
       }
     },
@@ -21,11 +63,29 @@
       "name": "Location data: rate limit",
       "description": "More than 120 requests a minute from one IP to the location data: 429 for the rest of the minute (docs/scraping.md).",
       "active": true,
-      "conditionGroup": [{ "conditions": [{ "type": "path", "op": "re", "value": "^/api/(locations|highlights|geocode)(/|$)" }] }],
+      "conditionGroup": [
+        {
+          "conditions": [
+            {
+              "type": "path",
+              "op": "re",
+              "value": "^/api/(locations|highlights|geocode)(/|$)"
+            }
+          ]
+        }
+      ],
       "action": {
         "mitigate": {
           "action": "rate_limit",
-          "rateLimit": { "algo": "fixed_window", "window": 60, "limit": 120, "keys": ["ip"], "action": "rate_limit" }
+          "rateLimit": {
+            "algo": "fixed_window",
+            "window": 60,
+            "limit": 120,
+            "keys": [
+              "ip"
+            ],
+            "action": "rate_limit"
+          }
         }
       }
     },
@@ -33,11 +93,29 @@
       "name": "API: rate limit",
       "description": "More than 600 requests a minute from one IP to any API route: 429 for the rest of the minute (docs/scraping.md).",
       "active": true,
-      "conditionGroup": [{ "conditions": [{ "type": "path", "op": "pre", "value": "/api/" }] }],
+      "conditionGroup": [
+        {
+          "conditions": [
+            {
+              "type": "path",
+              "op": "pre",
+              "value": "/api/"
+            }
+          ]
+        }
+      ],
       "action": {
         "mitigate": {
           "action": "rate_limit",
-          "rateLimit": { "algo": "fixed_window", "window": 60, "limit": 600, "keys": ["ip"], "action": "rate_limit" }
+          "rateLimit": {
+            "algo": "fixed_window",
+            "window": 60,
+            "limit": 600,
+            "keys": [
+              "ip"
+            ],
+            "action": "rate_limit"
+          }
         }
       }
     }
