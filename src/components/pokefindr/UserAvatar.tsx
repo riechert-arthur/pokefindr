@@ -18,14 +18,20 @@ const SIZES: Record<UserAvatarSize, { box: string; text: string; icon: string }>
   lg: { box: "size-16", text: "text-title", icon: "size-8" },
 }
 
+const graphemes = new Intl.Segmenter(undefined, { granularity: "grapheme" })
+
 /**
  * The first character of a name, uppercased, if it's a letter in any script;
  * otherwise null, so the avatar shows a person icon instead of "_" or half an emoji.
  */
 export function avatarInitial(name: string | null | undefined): string | null {
-  // Array.from splits by code point, so an emoji or astral letter isn't cut in half.
-  const first = Array.from((name ?? "").trim())[0]
-  return first && /^\p{L}$/u.test(first) ? first.toUpperCase() : null
+  // NFC and a grapheme split keep an accent written as a separate mark ("E\u0301lodie")
+  // with its letter, and don't cut an emoji in half.
+  const first = graphemes.segment((name ?? "").trim().normalize("NFC"))[Symbol.iterator]().next().value?.segment
+  if (!first || !/^\p{L}\p{M}*$/u.test(first)) return null
+  // Keep letters whose capital is two letters ("ß" is "SS", "ﬁ" is "FI") as they are.
+  const upper = first.toUpperCase()
+  return Array.from(upper).length > Array.from(first).length ? first : upper
 }
 
 interface UserAvatarProps {
