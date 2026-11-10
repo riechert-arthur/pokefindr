@@ -211,6 +211,7 @@ module.exports = {
         "src/components/icons/**",
         "src/server/email/**",
         "src/app/**/{opengraph-image,twitter-image,icon,apple-icon}.{tsx,ts,jsx,js}",
+        "src/app/**/social-card/route.tsx",
         "src/lib/design/**",
       ],
       rules: { "no-restricted-syntax": ["error", ...ENV_RULES] },

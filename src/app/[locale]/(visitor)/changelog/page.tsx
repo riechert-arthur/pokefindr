@@ -1,6 +1,10 @@
 import { Fragment, type FC } from "react"
 import { getTranslations } from "next-intl/server"
 import { setPageLocale, type LocaleParams } from "@/i18n/static"
+import { localeMetadata } from "@/i18n/seo"
+
+/** Its address in each language, for search engines (#183). */
+export const generateMetadata = localeMetadata("/changelog")
 
 const ids = <K extends string, I extends string>(release: K, items: readonly I[]) => items.map((item) => `${release}.items.${item}` as const)
 

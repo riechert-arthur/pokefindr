@@ -96,7 +96,7 @@ describe("no raw colors outside globals.css", () => {
   // exceptions.
   const EXEMPT = [path.join("src", "app", "globals.css"), path.join("src", "components", "icons") + path.sep]
   // Generated image routes anywhere under src/app, as in .eslintrc.js (any extension Next accepts).
-  const IMAGE_ROUTE = /^src\/app\/(.+\/)?(opengraph-image|twitter-image|icon|apple-icon)\.(tsx|ts|jsx|js)$/
+  const IMAGE_ROUTE = /^src\/app\/(.+\/)?((opengraph-image|twitter-image|icon|apple-icon)|social-card\/route)\.(tsx|ts|jsx|js)$/
   const isExempt = (file: string) => {
     const rel = path.relative(ROOT, file)
     return EXEMPT.some((e) => rel.startsWith(e)) || IMAGE_ROUTE.test(rel.split(path.sep).join("/"))
@@ -217,6 +217,7 @@ describe("no raw colors outside globals.css", () => {
       ...["opengraph-image", "twitter-image", "icon", "apple-icon"].flatMap((route) =>
         ["tsx", "js"].flatMap((ext) => [`src/app/${route}.${ext}`, `src/app/(visitor)/blog/[slug]/${route}.${ext}`]),
       ),
+      "src/app/[locale]/social-card/route.tsx",
       "src/app/brand-mark.ts",
       "src/app/icons.tsx",
       "src/app/page.tsx",

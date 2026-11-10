@@ -3,6 +3,10 @@ import { LoginForm, type LoginNotice } from "@/components/forms/LoginForm"
 import { oauthProviders } from "@/server/auth/providers"
 import { getServerConfig } from "@/server/config"
 import { authorizeContinuation } from "@/lib/auth/oauth-continue"
+import { localeMetadata } from "@/i18n/seo"
+
+/** Its address in each language, for search engines (#183). */
+export const generateMetadata = localeMetadata("/login")
 
 /**
  * A confirmation link lands here with ?verified=1, or with ?error= when it

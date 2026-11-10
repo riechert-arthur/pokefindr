@@ -1133,3 +1133,12 @@ auth:
     usernameTooShort: Use at least 3 characters.
     usernameTooLong: Use at most 30 characters.
     usernameCharacters: Use letters, digits, dots, dashes and underscores.
+
+# The image link previews show (Open Graph), 1200×630. The headline is two
+# lines at a large size: keep each short. "accent" is colored, after line2.
+og:
+  alt: "PokeFindr: find Pokémon card vending machines near you"
+  line1: Find Pokémon Vending
+  line2: Machines
+  accent: Near You
+  subtitle: Card vending machines, card shops and events on one map.

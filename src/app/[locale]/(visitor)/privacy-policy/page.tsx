@@ -1,6 +1,14 @@
 import type { FC } from "react"
 import { setPageLocale, type LocaleParams } from "@/i18n/static"
 import { EnglishOnlyNotice } from "@/components/EnglishOnlyNotice"
+import { englishOnlyMetadata } from "@/i18n/seo"
+import type { Metadata } from "next"
+
+/** Its address in each language, for search engines (#183). */
+export async function generateMetadata(): Promise<Metadata> {
+  return englishOnlyMetadata("/privacy-policy")
+}
+
 
 const PrivacyPolicyPage: FC<LocaleParams> = async ({ params }) => {
   await setPageLocale(params)

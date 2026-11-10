@@ -1,15 +1,25 @@
 import { ImageResponse } from "next/og"
-import { BRAND_MARK_DATA_URI } from "./brand-mark"
-import { ogFonts } from "./og-fonts"
+import { routing, type Locale } from "@/i18n/routing"
+import { BRAND_MARK_DATA_URI } from "../../brand-mark"
+import { ogFonts } from "../../og-fonts"
+import { ogTranslator, SOCIAL_CARD_SIZE } from "@/i18n/seo"
 
-export const alt = "PokeFindr: find Pokémon card vending machines near you"
-export const size = { width: 1200, height: 630 }
-export const contentType = "image/png"
-// Render at build time: brand-mark.ts reads public/ from disk.
+// Render at build time, once per language: brand-mark.ts reads public/ from disk.
 export const dynamic = "force-static"
+// Only the languages built below; the middleware sends any other prefix to the 404.
+export const dynamicParams = false
 
-/** Social preview: the landing hero from the redesign prototype. */
-export default async function OpengraphImage() {
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }))
+}
+
+/**
+ * The social preview (/social-card, /es/social-card): the landing hero from
+ * the redesign prototype, in the page's language. Pages link it through
+ * src/i18n/seo.ts.
+ */
+export async function GET(_request: Request, { params }: { params: Promise<{ locale: string }> }) {
+  const t = await ogTranslator((await params).locale as Locale)
   return new ImageResponse(
     (
       <div
@@ -30,14 +40,14 @@ export default async function OpengraphImage() {
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", marginTop: 48, fontSize: 76, fontWeight: 700, lineHeight: 1.02, letterSpacing: "-0.035em" }}>
-          <span>Find Pokémon Vending</span>
+          <span>{t("line1")}</span>
           <span>
-            Machines&nbsp;<span style={{ color: "#c026d3" }}>Near You</span>
+            {t("line2")}&nbsp;<span style={{ color: "#c026d3" }}>{t("accent")}</span>
           </span>
         </div>
-        <div style={{ marginTop: 32, fontSize: 30, color: "#6b6b6b" }}>Card vending machines, card shops and events on one map.</div>
+        <div style={{ marginTop: 32, fontSize: 30, color: "#6b6b6b" }}>{t("subtitle")}</div>
       </div>
     ),
-    { ...size, fonts: await ogFonts() },
+    { ...SOCIAL_CARD_SIZE, fonts: await ogFonts() },
   )
 }

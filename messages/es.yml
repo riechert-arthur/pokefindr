@@ -890,3 +890,10 @@ content:
 
 legal:
   englishOnly: Esta página solo está disponible en inglés. <link>Leerla en inglés</link>.
+
+og:
+  alt: "PokeFindr: encuentra máquinas expendedoras de cartas Pokémon cerca de ti"
+  line1: Encuentra máquinas
+  line2: de Pokémon
+  accent: cerca de ti
+  subtitle: Máquinas de cartas, tiendas y eventos en un solo mapa.
