@@ -51,18 +51,19 @@ export const SAMPLE_REPORT = {
  * Adds the sample submissions and report if missing. A sample event that's
  * still pending gets its date moved to `now + inDays`, so it stays valid.
  * Skips a sample whose member isn't there (their username was taken).
- * The rows are dated two days back, so they don't count toward the members'
- * daily submission and report limits, or make misty's own report of that
- * machine a duplicate. Returns how many rows it added.
+ * The report is dated two days back, so it doesn't make misty's own report
+ * of that machine a duplicate or count toward her daily limit. The
+ * submissions keep the seed's time: older than a day, the queue would show
+ * as late on a new database. Returns how many rows it added.
  */
 export async function seedSampleModeration(sql: postgres.Sql, now = new Date()): Promise<number> {
-  const createdAt = new Date(now.getTime() - 2 * DAY_MS).toISOString()
+  const reportedAt = new Date(now.getTime() - 2 * DAY_MS).toISOString()
   let added = 0
   for (const s of SAMPLE_SUBMISSIONS) {
     const payload = "inDays" in s ? { ...s.payload, startsAt: new Date(now.getTime() + s.inDays * DAY_MS).toISOString() } : s.payload
     const rows = await sql`
-      insert into location_submissions (id, kind, payload, geog, submitted_by, created_at)
-      select ${s.id}, ${s.kind}, ${sql.json(payload)}, st_setsrid(st_makepoint(${s.lng}, ${s.lat}), 4326)::geography, ${s.by}, ${createdAt}
+      insert into location_submissions (id, kind, payload, geog, submitted_by)
+      select ${s.id}, ${s.kind}, ${sql.json(payload)}, st_setsrid(st_makepoint(${s.lng}, ${s.lat}), 4326)::geography, ${s.by}
       where exists (select 1 from profiles where id = ${s.by})
       on conflict (id) do update set payload = excluded.payload
         where location_submissions.status = 'pending' and location_submissions.payload is distinct from excluded.payload
@@ -71,7 +72,7 @@ export async function seedSampleModeration(sql: postgres.Sql, now = new Date()):
   }
   const report = await sql`
     insert into status_reports (id, location_id, user_id, reason, comment, created_at)
-    select ${SAMPLE_REPORT.id}, l.id, ${SAMPLE_REPORT.by}, 'gone', ${SAMPLE_REPORT.comment}, ${createdAt}
+    select ${SAMPLE_REPORT.id}, l.id, ${SAMPLE_REPORT.by}, 'gone', ${SAMPLE_REPORT.comment}, ${reportedAt}
     from locations l
     where l."machineID" = ${SAMPLE_REPORT.machineID} and exists (select 1 from profiles where id = ${SAMPLE_REPORT.by})
     on conflict (id) do nothing`
