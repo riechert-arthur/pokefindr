@@ -9,7 +9,9 @@ import {
   createMigrator,
   inRolledBackTransaction,
   loadMigrations,
+  MIGRATION_HASH_TABLE,
   MIGRATION_SCHEMA,
+  migrationFileHashes,
   MIGRATION_TABLE,
   throwIfFailed,
   type Migrations,
@@ -54,6 +56,13 @@ const recorded = async () =>
     (r) => r.name,
   )
 
+const hashes = async () =>
+  new Map(
+    (await sql<{ name: string; hash: string }[]>`select name, hash from ${sql(`${MIGRATION_SCHEMA}.${MIGRATION_HASH_TABLE}`)}`).map(
+      (r) => [r.name, r.hash],
+    ),
+  )
+
 /** Diffs public against the given migrations in a transaction that is rolled back. */
 const diffAgainst = (names: string[]) =>
   inRolledBackTransaction(db, (trx) =>
@@ -68,6 +77,9 @@ afterEach(async () => {
   await sql`alter table if exists locations drop column if exists fixture_note`
   await sql`drop table if exists round_trip_fixture`
   await sql`delete from ${sql(`${MIGRATION_SCHEMA}.${MIGRATION_TABLE}`)} where name in (${FIXTURE}, ${MERGED_LATE})`
+  // db:baseline tests drop the whole kysely schema, hash table included.
+  const [{ table }] = await sql<{ table: string | null }[]>`select to_regclass(${`${MIGRATION_SCHEMA}.${MIGRATION_HASH_TABLE}`})::text as table`
+  if (table) await sql`delete from ${sql(`${MIGRATION_SCHEMA}.${MIGRATION_HASH_TABLE}`)} where name in (${FIXTURE}, ${MERGED_LATE})`
   throwIfFailed(await createMigrator(sql).migrator.migrateToLatest())
 })
 
@@ -82,6 +94,22 @@ describe("migrator", () => {
       select count(*)::int as count from information_schema.tables
       where table_schema = 'public' and table_name like 'kysely%'`
     expect(count).toBe(0)
+  })
+
+  it("records the hash of each migration file it applies", async () => {
+    const files = migrationFileHashes()
+    const recordedHashes = await hashes()
+    // The baseline may be recorded by db:baseline, which has no file hash to give.
+    for (const name of Object.keys(real).filter((n) => n !== BASELINE)) expect(recordedHashes.get(name)).toBe(files.get(name))
+  })
+
+  it("records a hash as a migration runs, and forgets it when it's rolled back", async () => {
+    const { migrator } = createMigrator(sql, migrationsWith({ [FIXTURE]: { ...fixture, hash: "fixture-hash" } }))
+    throwIfFailed(await migrator.migrateToLatest())
+    expect((await hashes()).get(FIXTURE)).toBe("fixture-hash")
+
+    throwIfFailed(await migrator.migrateDown())
+    expect((await hashes()).has(FIXTURE)).toBe(false)
   })
 
   it("builds exactly the Drizzle schema", async () => {

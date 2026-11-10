@@ -84,16 +84,20 @@ branch never reaches another, even if you never merge it.
 - If `main`'s database already has a migration the branch doesn't (`main` moved
   on after the branch was cut), the branch starts from an empty database
   instead, built by its migrations and seed. Rebase to get `main`'s data.
+- If `main`'s database has a migration that differs from the branch's file,
+  the branch starts from an empty database too.
 - If a branch changes, renames or removes a migration after its database ran
-  it (say, in review), the next `make run` notices and rebuilds the branch's
-  database from scratch, as on its first run. It does this by keeping a hash
-  of each migration file as it was applied, in `kysely.dev_migration_hashes`.
-  Its local data goes with it. `main`'s database is never rebuilt
-  automatically; you get a warning instead.
+  it (say, in review), the next `make run` notices, drops the branch's
+  database and its data, and creates it again as on the branch's first run.
+  The migrator records a hash of each migration as it runs it, in
+  `kysely.kysely_migration_hash` (comments and formatting don't count), and
+  rolling back removes it. `main`'s database is never dropped automatically;
+  you get a warning instead.
 - `make fresh` drops the current branch's database (only that one) and runs,
-  rebuilding it. Use it for databases made before hashes were kept, which
-  can't be checked, or whenever `db:check` fails on a branch whose migrations
-  are right.
+  recreating it as on the branch's first run; on `main` it's built by the
+  migrations and seed. Use it for databases whose migrations ran before hashes
+  were kept, which can't be checked, or whenever `db:check` fails on a branch
+  whose migrations are right.
 - `make prune` drops the databases of local branches you've deleted.
 - `make run` prints the current branch's database URL for host tools. The
   `DATABASE_URL` in `.env.local` points at `main`'s database.

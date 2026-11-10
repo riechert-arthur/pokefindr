@@ -54,7 +54,7 @@ prune: preflight ## Drop databases of local git branches that no longer exist
 	@docker compose up --detach --wait db >/dev/null 2>&1
 	@scripts/dev/prune.sh
 
-fresh: preflight ## Delete this branch's database (only this one), then run, so it's rebuilt from the migrations
+fresh: preflight ## Delete this branch's database (only this one) and its data, then run, recreating it as on the branch's first run
 	@docker compose up --detach --wait db >/dev/null 2>&1
 	@echo "Dropping $(DB_NAME)..."
 	@docker compose exec -T db psql -U pokefindr -d postgres -v ON_ERROR_STOP=1 -qc 'drop database if exists "$(DB_NAME)" with (force)'
