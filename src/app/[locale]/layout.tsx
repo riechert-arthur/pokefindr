@@ -10,8 +10,10 @@ import { fontVariables } from "@/app/fonts"
 import { ContextProviders } from "@/components/providers/ContextProviders"
 import { ThemeProvider } from "@/components/providers/ThemeProvider"
 import { Analytics } from "@/components/Analytics"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner"
 import { getSiteUrl, PRODUCTION_URL } from "@/server/site-url"
+import { onVercelProduction } from "@/server/edge-config"
 
 const site = getSiteUrl() ?? new URL(PRODUCTION_URL)
 
@@ -53,6 +55,8 @@ export default async function LocaleLayout({ children, params }: { children: Rea
               <main>{children}</main>
               <Toaster />
               <Analytics />
+              {/* Real visitors' Core Web Vitals (#298, docs/analytics.md). Only on Vercel, which serves its script. */}
+              {onVercelProduction() && <SpeedInsights />}
             </ContextProviders>
           </ThemeProvider>
         </NextIntlClientProvider>

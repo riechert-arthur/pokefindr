@@ -1,4 +1,5 @@
 import type { FC } from "react"
+import Image from "next/image"
 import type { BlogPostMetadata } from "@/lib/blog-utils"
 
 interface BlogPostHeroProps {
@@ -23,9 +24,14 @@ export const BlogPostHero: FC<BlogPostHeroProps> = ({ metadata }) => {
                 {metadata.description}
               </p>
             </div>
-            <img
+            {/* Resized by next/image (hosts in next.config.ts) and loaded first: it's the post's largest element (#298). 6:5 like its box. */}
+            <Image
               alt=""
               src={metadata.heroImageURL}
+              width={1200}
+              height={1000}
+              priority
+              sizes="(min-width: 1024px) 40rem, (min-width: 560px) 32rem, 100vw"
               className="mt-10 aspect-[6/5] w-full max-w-lg rounded-2xl object-cover sm:mt-16 lg:mt-0 lg:max-w-none xl:row-span-2 xl:row-end-2 xl:mt-36"
             />
           </div>

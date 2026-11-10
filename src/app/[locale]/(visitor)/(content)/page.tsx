@@ -10,6 +10,8 @@ import type { LocationKind } from "@/lib/types/locations"
 import { getRegionCounts } from "@/server/services/region-counts"
 import { getVendingCells, VENDING_CELL_DEG } from "@/server/services/locations"
 import { SponsoredPlacement } from "@/components/ads/SponsoredPlacement"
+import { bannersFor } from "@/config/banners"
+import { AD_PLACEMENTS_TAG, readPlacementFlags } from "@/server/services/ad-placements"
 import { setPageLocale, type LocaleParams } from "@/i18n/static"
 import type { Locale } from "@/i18n/routing"
 import type { Metadata } from "next"
@@ -65,15 +67,28 @@ function landingCounts(): Promise<{ hero: HeroStats; kinds: Partial<Record<Locat
   })
 }
 
+/**
+ * The sponsored switches, kept as long as the page (getPlacementFlags' 5
+ * minutes would rebuild it 12 times as often). An admin's switch clears the
+ * tag, which rebuilds this page too.
+ */
+const adFlags = unstable_cache(() => readPlacementFlags(), ["landing-ad-placements"], { tags: [AD_PLACEMENTS_TAG], revalidate: 3600 })
+
 /** The cells don't depend on the language: one query an hour for every locale's page. */
 const vendingCells = unstable_cache(() => getVendingCells(), ["landing-vending-cells"], { revalidate: 3600 })
 
 export default async function LandingPage({ params }: LocaleParams) {
   const locale = await setPageLocale(params)
-  const [counts, cells, t, faq] = await Promise.all([
+  const [counts, cells, ads, t, faq] = await Promise.all([
     landingCounts(),
     // The background map's machines, per grid cell: rendered in, so there's no endpoint to scrape.
     orNullWithoutDb("map cells", () => vendingCells()),
+    // Whether the sponsored strip is on, so its space is kept from the first paint (#298).
+    // Optional: if it can't be read, the strip just isn't reserved (rather than the page failing to rebuild).
+    adFlags().catch((err: unknown) => {
+      console.error("[landing] couldn't read the ad placements; not reserving the strip", err)
+      return null
+    }),
     getTranslations({ locale, namespace: "landing.meta" }),
     getTranslations({ locale, namespace: "faq" }),
   ])
@@ -97,7 +112,7 @@ export default async function LandingPage({ params }: LocaleParams) {
       <div className="isolate">
         <Hero stats={counts?.hero ?? null} background={<HeroMap cells={cells ?? []} cellSize={VENDING_CELL_DEG} />} />
         <HowItWorks />
-        <SponsoredPlacement placement="landing" />
+        <SponsoredPlacement placement="landing" reserve={ads?.landing === true && bannersFor("landing").length > 0} />
         <LocationTypes counts={counts?.kinds ?? null} />
         <FaqSection />
       </div>

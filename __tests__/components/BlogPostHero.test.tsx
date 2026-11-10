@@ -27,6 +27,9 @@ describe("BlogPostHero", () => {
     expect(
       screen.getByText("A guide to finding nearby Pokemon Center machines.")
     ).toBeInTheDocument()
-    expect(container.querySelector("img")).toHaveAttribute("src", "/blog/hero.png")
+    // Through next/image, resized and loaded first (#298).
+    const img = container.querySelector("img")
+    expect(img?.getAttribute("src")).toContain(encodeURIComponent("/blog/hero.png"))
+    expect(img).not.toHaveAttribute("loading", "lazy")
   })
 })
