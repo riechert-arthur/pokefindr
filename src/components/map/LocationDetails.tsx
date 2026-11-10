@@ -3,6 +3,7 @@
 import { useRef, useState, type ComponentProps } from "react"
 import { FlagIcon } from "lucide-react"
 import { useSessionContext } from "@/components/providers/SessionProvider"
+import { can } from "@/lib/auth/entitlements"
 import { toKind } from "@/components/pokefindr/kinds"
 import { Button } from "@/components/ui/button"
 import { DetailsSheet } from "./DetailsSheet"
@@ -54,7 +55,7 @@ export function LocationDetails({ kinds, retailers, onOpen, ...props }: Location
     >
       {/* Never next to the report form (#136). */}
       {!reporting && <SponsoredPlacement placement="details" className="mt-3" />}
-      <ReviewsSection kind={kind} reviews={reviews} username={session?.username ?? null} placeName={props.location.retailer} />
+      <ReviewsSection kind={kind} reviews={reviews} username={session?.username ?? null} image={session?.image} moderate={can(session?.role, "moderation.avatars")} placeName={props.location.retailer} />
       <AlsoNearby rows={nearby} onOpen={onOpen} />
     </DetailsSheet>
   )

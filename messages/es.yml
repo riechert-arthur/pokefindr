@@ -243,6 +243,9 @@ reviews:
   deleteFailed: No se pudo eliminar tu reseña
   sessionEnded: Tu sesión terminó. Vuelve a iniciar sesión e inténtalo de nuevo.
   connection: Revisa tu conexión e inténtalo de nuevo.
+  removePhoto: Quitar la foto de {name}
+  photoRemoved: "Se quitó la foto de {name}. Sus reseñas muestran iniciales ahora."
+  removePhotoFailed: No se pudo quitar la foto. Inténtalo de nuevo.
 
 report:
   title: Reportar un problema
@@ -570,6 +573,17 @@ settings:
   cancel: Cancelar
   update: Cambiar
   saved: Tus cambios se guardaron.
+  avatar:
+    label: Foto de perfil
+    hint: JPEG, PNG o WebP, de hasta 2 MB. La recortamos en un cuadrado.
+    upload: Subir foto
+    uploading: Subiendo…
+    remove: Quitar foto
+    removing: Quitando…
+    uploaded: Tu foto se actualizó.
+    removed: Se quitó tu foto.
+    tooLarge: Ese archivo pesa más de 2 MB. Elige una foto más pequeña.
+    wrongType: Elige una foto JPEG, PNG o WebP.
   email:
     pending: Enviamos a {current} un enlace para aprobar el cambio a {next}. Después, confírmalo desde esa bandeja de entrada.
     approved: Gracias. Si aprobaste el cambio desde tu dirección anterior, confírmalo desde la bandeja de entrada de la nueva. El correo de abajo es el actual.
@@ -1025,6 +1039,10 @@ email:
     noReason: no pasó la revisión
 
 apiErrors:
+  avatarTooLarge: Ese archivo pesa más de 2 MB. Elige una foto más pequeña.
+  avatarWrongType: Elige una foto JPEG, PNG o WebP.
+  avatarRejected: No pudimos leer esa foto. Prueba con otra.
+  avatarsUnavailable: Las fotos de perfil no están disponibles ahora.
   loginRequired: Inicia sesión para continuar
   wrongPassword: Correo o contraseña incorrectos. Si todavía no confirmaste tu correo, te enviamos un enlace nuevo.
   credentialsMissing: Escribe tu correo y tu contraseña

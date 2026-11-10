@@ -1,12 +1,14 @@
 import "server-only"
 import { and, desc, eq, sql } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
-import { locationRatings, locations, profiles } from "@/server/db/schema"
+import { locationRatings, locations, profiles, users } from "@/server/db/schema"
 
 export interface LocationReview {
   rating: number
   text: string
   username: string
+  /** The reviewer's profile picture (#290), or null for initials. */
+  image: string | null
 }
 
 /** Reviews of one location, newest first. */
@@ -15,12 +17,13 @@ export async function listLocationReviews(
   db: Database = getDb(),
 ): Promise<LocationReview[]> {
   const rows = await db
-    .select({ rating: locationRatings.rating, text: locationRatings.text, username: profiles.username })
+    .select({ rating: locationRatings.rating, text: locationRatings.text, username: profiles.username, image: users.image })
     .from(locationRatings)
     .leftJoin(profiles, eq(profiles.id, locationRatings.userId))
+    .leftJoin(users, eq(users.id, locationRatings.userId))
     .where(eq(locationRatings.locationId, locationId))
     .orderBy(desc(locationRatings.createdAt))
-  return rows.map((r) => ({ rating: r.rating, text: r.text ?? "", username: r.username ?? "Unknown" }))
+  return rows.map((r) => ({ rating: r.rating, text: r.text ?? "", username: r.username ?? "Unknown", image: r.image ?? null }))
 }
 
 /** One review in the details panel; `mine` marks the viewer's own, which they can edit. */
@@ -29,6 +32,8 @@ export interface PanelReview {
   rating: number
   text: string
   username: string
+  /** The reviewer's profile picture (#290), or null for initials. */
+  image: string | null
   createdAt: string
   mine: boolean
 }
@@ -48,11 +53,13 @@ export async function getPanelReviews(locationId: string, viewerId: string | nul
       rating: locationRatings.rating,
       text: locationRatings.text,
       username: profiles.username,
+      image: users.image,
       createdAt: locationRatings.createdAt,
       mine: viewerId ? sql<boolean>`${locationRatings.userId} = ${viewerId}` : sql<boolean>`false`,
     })
     .from(locationRatings)
     .leftJoin(profiles, eq(profiles.id, locationRatings.userId))
+    .leftJoin(users, eq(users.id, locationRatings.userId))
     .where(eq(locationRatings.locationId, locationId))
     .orderBy(desc(locationRatings.createdAt), desc(locationRatings.id))
   const reviews = rows.map((r) => ({
@@ -60,6 +67,7 @@ export async function getPanelReviews(locationId: string, viewerId: string | nul
     rating: r.rating,
     text: r.text ?? "",
     username: r.username ?? "Unknown",
+    image: r.image ?? null,
     createdAt: (r.createdAt ?? new Date(0)).toISOString(),
     mine: Boolean(r.mine),
   }))

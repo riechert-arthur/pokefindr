@@ -57,7 +57,7 @@ const SECTIONS: Record<string, () => ReactNode> = {
  * The admin (#152): the sidebar, the section's title and description, and
  * the section, chosen by `?section=` (so each has a link and Back works).
  */
-export function AdminApp({ role, username }: { role: Role; username: string }) {
+export function AdminApp({ role, username, image = null }: { role: Role; username: string; image?: string | null }) {
   const [param, setParam] = useQueryState("section", { history: "push" })
   const section = sectionFor(param ?? DEFAULT_SECTION, role)!
   const [summary, refreshSummary] = useSummary()
@@ -75,7 +75,7 @@ export function AdminApp({ role, username }: { role: Role; username: string }) {
   return (
     <RefreshSummary.Provider value={refreshSummary}>
       <div className="flex min-h-svh flex-col bg-background md:flex-row">
-        <AdminSidebar groups={groupsFor(role)} current={section.id} counts={counts} onSelect={(id) => void setParam(id === DEFAULT_SECTION ? null : id)} user={{ username, role }} />
+        <AdminSidebar groups={groupsFor(role)} current={section.id} counts={counts} onSelect={(id) => void setParam(id === DEFAULT_SECTION ? null : id)} user={{ username, role, image }} />
         <div className="flex min-w-0 flex-1 flex-col gap-4 p-4 md:p-5">
           <header className="flex flex-wrap items-start gap-3">
             {/* A full row on phones, so the buttons wrap below the title instead of squeezing it. */}

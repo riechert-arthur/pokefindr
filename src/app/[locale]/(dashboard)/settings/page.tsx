@@ -11,18 +11,26 @@ import { useSidebar } from '@/components/providers/SidebarContextProvider'
 import { APP_NAV_ID } from '@/components/pokefindr/AppRail'
 import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { ProfileField } from "@/components/pokefindr/ProfileField"
+import { ProfilePictureField } from "@/components/pokefindr/ProfilePictureField"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSessionContext } from '@/components/providers/SessionProvider'
 import { ClearAssistantHistory } from '@/components/assistant/ClearAssistantHistory'
 import { useSubmitErrorMessage } from '@/lib/forms'
+import { broadcastAuth } from '@/lib/auth/broadcast'
 import { PUBLIC_LOCALES } from '@/i18n/routing'
 
 interface Settings {
   fullName: string
   email:    string
   username:    string
+}
+
+function toForm(file: File): FormData {
+  const form = new FormData()
+  form.append('file', file)
+  return form
 }
 
 const FIELDS = [
@@ -99,6 +107,20 @@ export default function SettingsPage() {
     }
   }
 
+  /** Uploads or removes the profile picture; the header updates at once, and other tabs re-read the session. */
+  async function changeAvatar(file: File | null): Promise<string | void> {
+    try {
+      const { data } = file
+        ? await axios.post<{ image: string }>('/api/user-settings/avatar', toForm(file), { withCredentials: true })
+        : await axios.delete<{ image: null }>('/api/user-settings/avatar', { withCredentials: true })
+      setSession((s) => (s ? { ...s, image: data.image } : s))
+      broadcastAuth('login')
+      toast.success(t(file ? 'avatar.uploaded' : 'avatar.removed'))
+    } catch (err) {
+      return submitErrorMessage(err)
+    }
+  }
+
   return (
     <div className={isSidebarOpen ? 'max-sm:ml-16' : undefined}>
       <header className="absolute inset-x-0 top-0 z-10 flex h-16 border-b border-border">
@@ -108,7 +130,7 @@ export default function SettingsPage() {
           </Button>
           <div />
           <div className="flex items-center gap-x-8">
-            {session ? <UserMenu userName={session.username} /> : sessionLoading && <Skeleton className="size-9 rounded-full" />}
+            {session ? <UserMenu userName={session.username} imageUrl={session.image} /> : sessionLoading && <Skeleton className="size-9 rounded-full" />}
           </div>
         </div>
       </header>
@@ -146,6 +168,14 @@ export default function SettingsPage() {
                 </Alert>
               ) : (
                 <dl className="mt-6 divide-y divide-border border-t border-border">
+                  {session && (
+                    <ProfilePictureField
+                      name={session.username}
+                      image={session.image}
+                      onUpload={(file) => changeAvatar(file)}
+                      onRemove={() => changeAvatar(null)}
+                    />
+                  )}
                   {FIELDS.map(({ field, type, autoComplete }) => (
                     <ProfileField
                       key={field}

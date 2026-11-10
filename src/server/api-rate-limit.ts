@@ -15,6 +15,10 @@ export const RATE_RULES = {
   locations: { name: "locations", perMinute: 120, burst: 40 },
   /** Type-ahead sends a request every few keystrokes: room for fast typing, not for scraping. */
   geocode: { name: "geocode", perMinute: 60, burst: 20 },
+  /** Uploading or removing a profile picture (#290), per account: a few tries, not a stream of files. */
+  avatar: { name: "avatar", perMinute: 4, burst: 6 },
+  /** A moderator removing pictures (#290), per staff member: a handful of reviews, not a sweep of every account. */
+  avatarModeration: { name: "avatarModeration", perMinute: 10, burst: 10 },
   /** "Show on map" on an assistant route: one request per click, so a handful at once (#288). */
   route: { name: "route", perMinute: 30, burst: 10 },
 } as const satisfies Record<string, RateRule>
@@ -24,12 +28,13 @@ const LIMITER_TIMEOUT_MS = 300
 
 /**
  * A 429 with Retry-After once the client's bucket for `rule` is empty, else
- * null. If the store fails or is slow (LIMITER_TIMEOUT_MS), the request goes
+ * null. The bucket is the client's IP unless `key` names another (a user
+ * id). If the store fails or is slow (LIMITER_TIMEOUT_MS), the request goes
  * through: a limiter outage shouldn't take the map down.
  */
-export async function limitClient(request: Request, rule: RateRule): Promise<Response | null> {
+export async function limitClient(request: Request, rule: RateRule, key?: string): Promise<Response | null> {
   try {
-    const { ok, retryAfter } = await takeInTime(rule, rateLimitKey(clientIp(request.headers)))
+    const { ok, retryAfter } = await takeInTime(rule, key ?? rateLimitKey(clientIp(request.headers)))
     if (ok) return null
     return apiError("tooManyRequests", "Too many requests. Wait a moment and try again.", 429, {}, { headers: { "Retry-After": String(retryAfter) } })
   } catch (err) {
