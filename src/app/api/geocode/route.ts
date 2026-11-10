@@ -17,8 +17,6 @@ const limiter = tokenBucket({ perMinute: 60, burst: 20 })
  *   provider and its key stay on the server.
  */
 export async function GET(request: NextRequest) {
-  const refused = await refuseBots()
-  if (refused) return refused
   const params = request.nextUrl.searchParams
   const parsed = geocodeQuerySchema.safeParse({
     q: params.get("q") ?? "",
@@ -29,6 +27,9 @@ export async function GET(request: NextRequest) {
     const message = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")
     return NextResponse.json({ error: `Invalid query. ${message}` }, { status: 400 })
   }
+  // After the free checks: BotID is a call to Vercel.
+  const refused = await refuseBots()
+  if (refused) return refused
   if (!limiter.take(rateLimitKey(clientIp(request.headers)))) {
     return NextResponse.json({ error: "Too many searches. Try again in a minute." }, { status: 429, headers: { "Retry-After": "60" } })
   }

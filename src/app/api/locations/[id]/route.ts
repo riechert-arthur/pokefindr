@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod/v3"
 import { getLocationFeature } from "@/server/services/locations"
-import { refuseBots } from "@/server/bot-check"
 
 export const dynamic = "force-dynamic"
 
@@ -15,8 +14,6 @@ type Context = { params: Promise<{ id: string }> }
  *   Forward). 404 when there's no active location with that id.
  */
 export async function GET(_request: NextRequest, context: Context) {
-  const refused = await refuseBots()
-  if (refused) return refused
   const parsed = idSchema.safeParse((await context.params).id)
   if (!parsed.success) return NextResponse.json({ error: "Not a location id" }, { status: 400 })
   try {

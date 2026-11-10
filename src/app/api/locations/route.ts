@@ -4,8 +4,8 @@ import { bboxQuerySchema } from "@/lib/locations/bbox"
 import { refuseBots } from "@/server/bot-check"
 
 // Never prerendered or kept in the Next.js data cache: the location import runs
-// outside Next.js and couldn't clear it. The short CDN cache below is the only
-// cache, so the map trails the database by about a minute at most.
+// outside Next.js and couldn't clear it. Browsers keep each answer 30 seconds
+// (below), so the map trails the database by about that much.
 export const dynamic = "force-dynamic"
 
 /**
