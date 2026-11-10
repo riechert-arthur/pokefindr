@@ -19,7 +19,7 @@ MAIL_SMTP_PORT ?= 1025
 DB_NAME ?= $(shell scripts/dev/db-name.sh)
 export DB_PORT WEB_PORT STORYBOOK_PORT MAIL_UI_PORT MAIL_SMTP_PORT DB_NAME
 
-.PHONY: help run stop logs shell prune reset preflight env
+.PHONY: help run stop logs shell prune fresh reset preflight env
 
 help: ## Show this help
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-6s %s\n", $$1, $$2}'
@@ -53,6 +53,12 @@ shell: ## Open a shell in the web container
 prune: preflight ## Drop databases of local git branches that no longer exist
 	@docker compose up --detach --wait db >/dev/null 2>&1
 	@scripts/dev/prune.sh
+
+fresh: preflight ## Delete this branch's database (only this one), then run, so it's rebuilt from the migrations
+	@docker compose up --detach --wait db >/dev/null 2>&1
+	@echo "Dropping $(DB_NAME)..."
+	@docker compose exec -T db psql -U pokefindr -d postgres -v ON_ERROR_STOP=1 -qc 'drop database if exists "$(DB_NAME)" with (force)'
+	@$(MAKE) --no-print-directory run
 
 reset: preflight ## DESTRUCTIVE: delete all local databases and installed dependencies, then run
 	@echo "Deleting the local database and dependency volumes..."

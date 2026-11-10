@@ -23,6 +23,7 @@ async function main() {
     console.error("The database doesn't match src/server/db/schema. drizzle-kit would run:\n")
     for (const statement of drift) console.error(`  ${statement}`)
     console.error("\nWrite a migration in database/migrations for this (or fix the schema).")
+    console.error("If the migrations are right but changed after this database ran them, `make fresh` rebuilds it.")
     process.exitCode = 1
   } finally {
     await sql.end({ timeout: 5 })

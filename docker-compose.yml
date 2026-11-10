@@ -71,7 +71,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    command: ["sh", "-c", "npx tsx scripts/db/branchDatabase.ts && npm run --silent db:migrate && npm run --silent db:check && npm run --silent db:seed"]
+    command: ["sh", "-c", "npx tsx scripts/db/branchDatabase.ts && npm run --silent db:migrate && npx tsx scripts/db/branchDatabase.ts --record && npm run --silent db:check && npm run --silent db:seed"]
     depends_on:
       db:
         condition: service_healthy

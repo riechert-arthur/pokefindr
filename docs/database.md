@@ -54,7 +54,7 @@ Workers will be services that share the app's definition (`x-app` in
 `make run` brings them up too.
 
 Other commands: `make stop`, `make logs`, `make shell` (a shell in the web
-container), `make prune` (see "Branch databases" below), and `make reset`,
+container), `make prune` and `make fresh` (see "Branch databases" below), and `make reset`,
 which **deletes** every local database and the dependency volume and starts
 again.
 
@@ -84,6 +84,16 @@ branch never reaches another, even if you never merge it.
 - If `main`'s database already has a migration the branch doesn't (`main` moved
   on after the branch was cut), the branch starts from an empty database
   instead, built by its migrations and seed. Rebase to get `main`'s data.
+- If a branch changes, renames or removes a migration after its database ran
+  it (say, in review), the next `make run` notices and rebuilds the branch's
+  database from scratch, as on its first run. It does this by keeping a hash
+  of each migration file as it was applied, in `kysely.dev_migration_hashes`.
+  Its local data goes with it. `main`'s database is never rebuilt
+  automatically; you get a warning instead.
+- `make fresh` drops the current branch's database (only that one) and runs,
+  rebuilding it. Use it for databases made before hashes were kept, which
+  can't be checked, or whenever `db:check` fails on a branch whose migrations
+  are right.
 - `make prune` drops the databases of local branches you've deleted.
 - `make run` prints the current branch's database URL for host tools. The
   `DATABASE_URL` in `.env.local` points at `main`'s database.
