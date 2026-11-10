@@ -2,6 +2,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Docs
 
+- [Architecture](docs/architecture.md): core, modules, organizations and plans (proposed)
 - [Design system](docs/design-system.md): tokens, type, components, and how to add one
 - [Database](docs/database.md) · [Background jobs](docs/jobs.md)
 - [Contributing](CONTRIBUTING.md)
