@@ -1,5 +1,5 @@
 import "server-only"
-import { and, eq, sql } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
 import { locationRatings, locations, profiles, reviewModerationChecks } from "@/server/db/schema"
 import { can } from "@/lib/auth/entitlements"
@@ -110,7 +110,8 @@ export async function decideReview(id: string, action: ReviewAction, moderatorId
     if (action === "undo") {
       if (row.status === "held") return { status: "not_held" }
       if (row.moderatedBy !== moderatorId || !row.moderatedAt || now.getTime() - row.moderatedAt.getTime() > UNDO_MS) return { status: "too_late" }
-      await tx.update(locationRatings).set({ status: "held", moderatedBy: null, moderatedAt: null }).where(eq(locationRatings.id, id))
+      // Who decided stays: the recheck job leaves a review a moderator has seen to a moderator.
+      await tx.update(locationRatings).set({ status: "held" }).where(eq(locationRatings.id, id))
       return { status: "done", review: "held" }
     }
     if (row.status !== "held") return { status: "not_held" }
@@ -150,17 +151,22 @@ export async function recheckFailedReviews(db: Database = getDb(), moderator?: C
       failed++
       break
     }
-    await recordReviewCheck(r.id, check, db)
-    if (check.verdict === "allow") {
-      const done = await db
-        .update(locationRatings)
-        .set({ status: "published" })
-        .where(and(eq(locationRatings.id, r.id), eq(locationRatings.status, "held"), eq(locationRatings.text, r.text), sql`${locationRatings.moderatedAt} is null`))
-        .returning({ id: locationRatings.id })
-      published += done.length
-    }
+    // Locked, and only for the text that was checked: an edit meanwhile has its own check, and a moderator's decision wins.
+    published += await db.transaction(async (tx) => {
+      const [row] = await tx
+        .select({ status: locationRatings.status, text: locationRatings.text, moderatedAt: locationRatings.moderatedAt })
+        .from(locationRatings)
+        .where(eq(locationRatings.id, r.id))
+        .for("update")
+      if (!row || row.status !== "held" || row.text !== r.text || row.moderatedAt) return 0
+      await recordReviewCheck(r.id, check, tx)
+      if (check.verdict !== "allow") return 0
+      await tx.update(locationRatings).set({ status: "published" }).where(eq(locationRatings.id, r.id))
+      return 1
+    })
   }
-  return { found: rows.length, published, stillFailing: failed }
+  // Still down, or more than one run's worth: run again soon rather than waiting for the daily cron.
+  return { found: rows.length, published, stillFailing: failed, again: failed > 0 || rows.length === limit }
 }
 
 /** How long after a failed check the recheck runs. */

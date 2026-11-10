@@ -40,7 +40,7 @@ two together, and run the eval after changing either.
 ## What happens to reviews
 
 - **On create and edit,** a review with text is checked before it's saved. A rating without text
-  skips the check.
+  skips the check, and so does an edit that only changes the rating: the text keeps its status.
 - **"Allow"** publishes it. **"Hold" or "block"** saves it as `held`: only its author sees it, marked
   "Pending review". Blocks are held too, never deleted, so a false positive only delays a review and
   a moderator can always reverse it.
@@ -48,7 +48,8 @@ two together, and run the eval after changing either.
   decides.
 - **An outage or a timeout (3 s)** holds the review and records a failed check. The
   `recheck-held-reviews` job checks those again ten minutes later (through the queue) and daily
-  (cron). Nothing goes up unchecked.
+  (cron), and queues itself again while the moderator is still down or more are left than one run
+  checks. It only publishes reviews no moderator has decided. Nothing goes up unchecked.
 - **Held reviews are left out of every public read:** the details panel
   (`/api/locations/<id>/reviews`), `/api/get-reviews`, the assistant's `get_place` and the MCP tools,
   which all read through `getPanelReviews` / `listLocationReviews`. The author still sees their own,
@@ -57,8 +58,9 @@ two together, and run the eval after changing either.
   first, with the model's verdict, categories and reason. **Approve** publishes; **Remove** keeps it
   from everyone but its author. Either can be undone for an hour by the moderator who made it, as in
   the submission queue. Deciding a review you wrote yourself needs `moderation.decideOwn` (admins).
-- **Editing a removed review** sends it back to the queue whatever the check says, so an edit can't
-  undo a moderator's decision on its own.
+- **Editing a removed review** sends it back to the queue whatever the check says, and keeps who
+  removed it (as does Undo), so neither an edit nor the recheck job can undo a moderator's decision on
+  its own. An edit made while a moderator decides is applied after their decision, not over it.
 - **Every check** is stored in `review_moderation_checks` (verdict, categories, reason, model, prompt
   version, failed, cost) and logged as a `review_moderation` line with its tokens and cost, no text.
 
