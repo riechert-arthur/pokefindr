@@ -56,6 +56,19 @@ describe("middleware and the language (#177)", () => {
     expect(res.headers.get("location")).toBe("http://localhost/es/login")
   })
 
+  it("checks the session on a percent-encoded path too", async () => {
+    for (const [path, login] of [["/%68ome", "/login"], ["/es/%73ettings", "/es/login"], ["/%61dmin/reports", "/login"]]) {
+      const res = await middleware(new NextRequest(`http://localhost${path}`))
+      expect(rewrite(res), path).toBeNull()
+      expect(res.headers.get("location"), path).toBe(`http://localhost${login}`)
+    }
+  })
+
+  it("lets a malformed percent-encoding through to the 404 instead of throwing", async () => {
+    const res = await middleware(new NextRequest("http://localhost/%E0%A4%A"))
+    expect(res.status).not.toBe(500)
+  })
+
   it("passes the verified user to signed-in pages in any language", async () => {
     const res = await middleware(new NextRequest("http://localhost/es/home", { headers: { cookie: await session("user-1") } }))
     expect(res.headers.get("x-middleware-request-x-user-id")).toBe("user-1")
