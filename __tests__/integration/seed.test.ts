@@ -5,6 +5,9 @@ import { SAMPLE_EVENTS, SAMPLE_SOURCE, seedSampleHighlights } from "../../script
 import { DEV_ACCOUNTS, DEV_MODERATOR, DEV_PASSWORD, DEV_USER, seedDevUsers } from "../../scripts/db/seedDevUsers"
 import { verifyPassword } from "better-auth/crypto"
 import { NextResponse } from "next/server"
+import { SAMPLE_REPORT, SAMPLE_SUBMISSIONS, seedSampleModeration } from "../../scripts/db/seedModeration"
+import { approveSubmission, listQueue } from "@/server/services/moderation"
+import { addLocationReport } from "@/server/services/reports"
 import { requireEntitlement, roleOf } from "@/server/admin/access"
 import { getDb } from "@/server/db/client"
 import { getLocationsNear } from "@/server/services/locations"
@@ -93,8 +96,8 @@ describe("seedSampleHighlights", () => {
 describe("seedDevUsers", () => {
   const outcomes = async () => (await seedDevUsers(sql)).map((r) => [r.account.email, r.outcome])
   const accounts = () =>
-    sql<{ email: string; username: string; role: string; onboarded: boolean; email_verified: boolean }[]>`
-      select u.email, p.username, p.role, p.onboarded, u.email_verified
+    sql<{ email: string; username: string; role: string; locale: string | null; onboarded: boolean; email_verified: boolean }[]>`
+      select u.email, p.username, p.role, p.locale, p.onboarded, u.email_verified
       from users u join profiles p on p.id = u.id order by u.email`
 
   it("adds every account once, then changes nothing", async () => {
@@ -105,8 +108,10 @@ describe("seedDevUsers", () => {
     expect(after).toEqual(
       [...DEV_ACCOUNTS]
         .sort((a, b) => a.email.localeCompare(b.email))
-        .map((a) => ({ email: a.email, username: a.username, role: a.role, onboarded: true, email_verified: true })),
+        .map((a) => ({ email: a.email, username: a.username, role: a.role, locale: "locale" in a ? a.locale : null, onboarded: true, email_verified: true })),
     )
+    expect(DEV_ACCOUNTS.filter((a) => a.role === "member").length).toBeGreaterThanOrEqual(3)
+    expect(after.filter((a) => a.locale === "es")).toHaveLength(1)
     const [{ count }] = await sql<{ count: number }[]>`select count(*)::int as count from accounts where provider_id = 'credential'`
     expect(count).toBe(DEV_ACCOUNTS.length)
   })
@@ -166,5 +171,45 @@ describe("seedDevUsers", () => {
     for (const { password } of rows) {
       expect(await verifyPassword({ hash: password, password: DEV_PASSWORD })).toBe(true)
     }
+  })
+})
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+describe("seedSampleModeration", () => {
+  it("fills the review queue and Reports once, with samples from the seeded members", async () => {
+    await seedLocations(sql, readSeedLocations())
+    await seedDevUsers(sql)
+    const now = new Date()
+    expect(await seedSampleModeration(sql, now)).toBe(SAMPLE_SUBMISSIONS.length + 1)
+    expect(await seedSampleModeration(sql, now)).toBe(0)
+    const queue = await sql<{ name: string; status: string }[]>`select payload->>'name' as name, status from location_submissions order by id`
+    expect(queue.map((q) => q.status)).toEqual(SAMPLE_SUBMISSIONS.map(() => "pending"))
+    expect(queue.every((q) => q.name.endsWith("(sample)"))).toBe(true)
+    expect(await listQueue(undefined, getDb(), now)).toHaveLength(SAMPLE_SUBMISSIONS.length)
+    // Not late on a new database (late is older than a day).
+    const [{ oldest }] = await sql<{ oldest: Date }[]>`select min(created_at) as oldest from location_submissions`
+    expect(now.getTime() - oldest.getTime()).toBeLessThan(DAY_MS)
+    const [report] = await sql`select reason, resolved_at, user_id from status_reports where id = ${SAMPLE_REPORT.id}`
+    expect(report).toMatchObject({ reason: "gone", resolved_at: null, user_id: SAMPLE_REPORT.by })
+  })
+
+  it("doesn't make misty's own report of the sample machine a duplicate", async () => {
+    await seedLocations(sql, readSeedLocations())
+    await seedDevUsers(sql)
+    await seedSampleModeration(sql)
+    const [machine] = await sql`select id from locations where "machineID" = ${SAMPLE_REPORT.machineID}`
+    expect(await addLocationReport({ locationId: machine.id, userId: SAMPLE_REPORT.by, reason: "gone" }, getDb())).toBe("added")
+  })
+
+  it("can be approved, and stays decided on re-seeding", async () => {
+    await seedLocations(sql, readSeedLocations())
+    await seedDevUsers(sql)
+    await seedSampleModeration(sql)
+    const event = SAMPLE_SUBMISSIONS.find((s) => s.kind === "event")!
+    expect((await approveSubmission(event.id, DEV_USER.id, getDb())).status).toBe("done")
+    await seedSampleModeration(sql)
+    const [row] = await sql`select status from location_submissions where id = ${event.id}`
+    expect(row.status).toBe("approved")
   })
 })

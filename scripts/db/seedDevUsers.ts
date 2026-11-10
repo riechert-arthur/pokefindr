@@ -30,6 +30,12 @@ export type DevAccount = {
 export const DEV_ACCOUNTS = [
   { id: "00000000-0000-4000-8000-00000000de70", email: "dev@pokefindr.local", username: "dev", name: "Dev User", role: "admin" },
   { id: "00000000-0000-4000-8000-0000000000d1", email: "moderator@pokefindr.local", username: "moderator", name: "Dev Moderator", role: "moderator" },
+  // Ordinary members, so moderators and admins have other people's submissions and reports to act on.
+  { id: "00000000-0000-4000-8000-0000000000a1", email: "ash@pokefindr.local", username: "ash", name: "Ash Ketchum", role: "member" },
+  { id: "00000000-0000-4000-8000-0000000000a2", email: "misty@pokefindr.local", username: "misty", name: "Misty Waterflower", role: "member" },
+  { id: "00000000-0000-4000-8000-0000000000a3", email: "brock@pokefindr.local", username: "brock", name: "Brock Harrison", role: "member" },
+  // Emails and pages in Spanish.
+  { id: "00000000-0000-4000-8000-0000000000a4", email: "serena@pokefindr.local", username: "serena", name: "Serena Yvonne", role: "member", locale: "es" },
 ] as const satisfies readonly DevAccount[]
 
 export const DEV_USER = DEV_ACCOUNTS[0]
