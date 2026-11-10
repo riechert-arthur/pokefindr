@@ -11,22 +11,24 @@ import type { Role } from "./roles"
 
 export const ENTITLEMENTS = {
   /** See the review queue, reports and their counts. */
-  "moderation.view": ["moderator", "admin"],
+  "moderation.view": ["moderator", "admin", "super_admin"],
   /** Approve or reject submissions, and act on reports. */
-  "moderation.decide": ["moderator", "admin"],
-  /** Decide a submission you sent yourself. Moderators can't; admins can, so a site with one admin isn't stuck. */
-  "moderation.decideOwn": ["admin"],
+  "moderation.decide": ["moderator", "admin", "super_admin"],
+  /** Decide a submission you sent yourself. Moderators can't; admins (and super admins) can, so a site with one admin isn't stuck. */
+  "moderation.decideOwn": ["admin", "super_admin"],
   /** Get the "a submission needs review" email. */
-  "moderation.notify": ["moderator", "admin"],
+  "moderation.notify": ["moderator", "admin", "super_admin"],
   /** Open /admin at all. */
-  "admin.open": ["moderator", "admin"],
+  "admin.open": ["moderator", "admin", "super_admin"],
   /** The admin-only summary counts: live locations and the sync job. */
-  "admin.summary.all": ["admin"],
-  "admin.coverage": ["admin"],
+  "admin.summary.all": ["admin", "super_admin"],
+  "admin.coverage": ["admin", "super_admin"],
   /** Add a missing vending machine, or undo one. */
-  "admin.vending": ["admin"],
-  "admin.jobs": ["admin"],
-  "admin.ads": ["admin"],
+  "admin.vending": ["admin", "super_admin"],
+  "admin.jobs": ["admin", "super_admin"],
+  "admin.ads": ["admin", "super_admin"],
+  /** List users and change their role (member, moderator or admin). Granting super_admin stays SQL- and seed-only. */
+  "users.manage": ["super_admin"],
 } as const satisfies Record<string, readonly Role[]>
 
 export type Entitlement = keyof typeof ENTITLEMENTS

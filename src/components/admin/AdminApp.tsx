@@ -13,6 +13,7 @@ import { CoverageView } from "@/components/admin/CoverageView"
 import { JobsTable } from "@/components/admin/JobsTable"
 import { SummaryCards } from "@/components/admin/SummaryCards"
 import { AdsSwitches } from "@/components/admin/AdsSwitches"
+import { UsersTable } from "@/components/admin/UsersTable"
 import { REPORTS_HOT } from "@/lib/admin/reports"
 import { RefreshSummary } from "@/components/admin/useRefreshSummary"
 import { DEFAULT_SECTION, groupsFor, sectionFor } from "@/lib/admin/sections"
@@ -51,6 +52,7 @@ const SECTIONS: Record<string, () => ReactNode> = {
   "add-vending": () => <AddVendingForm />,
   jobs: () => <JobsTable />,
   ads: () => <AdsSwitches />,
+  users: () => <UsersTable />,
 }
 
 /**

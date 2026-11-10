@@ -334,7 +334,7 @@ export const profiles = pgTable(
     onboarded: boolean("onboarded").notNull().default(false),
     rating: doublePrecision("rating"),
     metadata: jsonb("metadata"),
-    /** member, moderator (reviews submissions) or admin (migration 0012). */
+    /** member, moderator (reviews submissions), admin (migration 0012) or super_admin (an admin who manages users, migration 0022). */
     role: text("role").$type<Role>().notNull().default("member"),
     /** The language they picked, e.g. "es" (migration 0019); null until they pick one. */
     locale: text("locale").$type<Locale>(),
@@ -347,7 +347,7 @@ export const profiles = pgTable(
   (t) => [
     // One username per person, in any case (migration 0010).
     uniqueIndex("profiles_username_lower_key").on(sql`lower(${t.username})`),
-    check("profiles_role_check", sql`${t.role} in ('member', 'moderator', 'admin')`),
+    check("profiles_role_check", sql`${t.role} in ('member', 'moderator', 'admin', 'super_admin')`),
   ],
 )
 
@@ -565,6 +565,25 @@ export const reportActions = pgTable(
   (t) => [
     index("report_actions_location_created_idx").on(t.locationId, t.createdAt),
     check("report_actions_action_check", sql`${t.action} in ('dismiss', 'fix', 'hide', 'reopen')`),
+  ],
+)
+
+/** Every role change made in User management (#294, migration 0023): who changed whose role, from what, to what. */
+export const roleChanges = pgTable(
+  "role_changes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+    /** Null once the person who made the change is deleted. */
+    changedBy: uuid("changed_by").references(() => profiles.id, { onDelete: "set null" }),
+    fromRole: text("from_role").$type<Role>().notNull(),
+    toRole: text("to_role").$type<Role>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("role_changes_user_created_idx").on(t.userId, t.createdAt),
+    check("role_changes_from_role_check", sql`${t.fromRole} in ('member', 'moderator', 'admin', 'super_admin')`),
+    check("role_changes_to_role_check", sql`${t.toRole} in ('member', 'moderator', 'admin', 'super_admin')`),
   ],
 )
 

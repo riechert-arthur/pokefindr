@@ -340,6 +340,27 @@ canary's machine ID, or an admin adds one with a canary's machine ID,
 address or spot, that row becomes the real machine (`canary` is cleared).
 Run `canary:plant` again afterwards to make up the number.
 
+## Roles and role changes
+
+`profiles.role` is `member`, `moderator`, `admin` or `super_admin`
+(`profiles_role_check`, migrations 0012 and 0022); docs/auth.md, "Roles and
+entitlements", says what each may do. Rolling back 0022 turns super admins
+into admins first.
+
+`role_changes` (migration 0023) records every role change made in Admin →
+Users: `user_id` (whose role changed; the rows go when that profile does),
+`changed_by` (set to null if that profile is deleted), `from_role`,
+`to_role` and `created_at`. It's written in the same transaction as the
+change by `setRole` (`src/server/services/user-admin.ts`); roles set by SQL or
+the dev seed aren't recorded. To see someone's history:
+
+```sql
+select c.created_at, c.from_role, c.to_role, by.username as changed_by
+from role_changes c left join profiles by on by.id = c.changed_by
+where c.user_id = (select id from profiles where username = '…')
+order by c.created_at;
+```
+
 ## Region counts
 
 `location_region_counts` (migration 0003) is a materialized view with one row

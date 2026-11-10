@@ -2,10 +2,11 @@
 
 import { Link } from "@/i18n/navigation"
 import { useEffect, useState, type ComponentType, type SVGProps } from "react"
-import { ChartBarIcon, ChevronDownIcon, FlagIcon, HouseIcon, InboxIcon, MapPinIcon, MegaphoneIcon, RefreshCwIcon, SquarePlusIcon } from "lucide-react"
+import { ChartBarIcon, ChevronDownIcon, FlagIcon, HouseIcon, InboxIcon, MapPinIcon, MegaphoneIcon, RefreshCwIcon, SquarePlusIcon, UsersIcon } from "lucide-react"
 import { Logo } from "@/components/brand/Logo"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import type { AdminGroup } from "@/lib/admin/sections"
+import { ROLE_LABELS, type Role } from "@/lib/auth/roles"
 import { cn } from "@/lib/utils"
 import { useFormat } from "@/i18n/format"
 
@@ -16,6 +17,7 @@ const ICONS: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
   "add-vending": SquarePlusIcon,
   jobs: RefreshCwIcon,
   ads: MegaphoneIcon,
+  users: UsersIcon,
 }
 
 /** A section's count beside its name; red when something there is urgent. */
@@ -72,7 +74,7 @@ export function AdminSidebar({
   current: string
   counts: Partial<Record<string, SectionCount>>
   onSelect: (section: string) => void
-  user: { username: string; role: string }
+  user: { username: string; role: Role }
 }) {
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
   // Read after mount: the server doesn't know this browser's choice.
@@ -161,7 +163,7 @@ export function AdminSidebar({
           </Avatar>
           <span className="min-w-0 leading-tight">
             <span className="block truncate text-body text-foreground">{user.username}</span>
-            <span className="block text-caption capitalize text-muted-foreground">{user.role}</span>
+            <span className="block text-caption text-muted-foreground">{ROLE_LABELS[user.role]}</span>
           </span>
         </div>
       </div>
