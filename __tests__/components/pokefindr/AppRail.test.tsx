@@ -8,6 +8,8 @@ vi.mock("@/components/pokefindr/ThemeToggle", () => ({ ThemeToggle: () => <butto
 import { AppRail } from "@/components/pokefindr/AppRail"
 
 afterEach(() => {
+  // Here, not at the end of a test, so a failed assertion can't leave fake timers on for the next one.
+  vi.useRealTimers()
   pathname = "/map"
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
@@ -57,18 +59,19 @@ describe("AppRail", () => {
   })
 })
 
-/** A desktop with a mouse: from sm up, and hover works. */
-const desktop = () =>
-  vi.stubGlobal("matchMedia", (query: string) => ({ matches: /min-width: 640px|hover: hover/.test(query), media: query, addEventListener() {}, removeEventListener() {} }))
+/** A window from sm up, or (`phone`) below it, where the rail is the drawer. */
+const screenSize = (size: "desktop" | "phone") =>
+  vi.stubGlobal("matchMedia", (query: string) => ({ matches: size === "desktop" && /min-width: 640px/.test(query), media: query, addEventListener() {}, removeEventListener() {} }))
+const desktop = () => screenSize("desktop")
 
 describe("AppRail expanding", () => {
   const nav = () => screen.getByRole("navigation", { name: "App navigation" })
   /** The pointer coming in from (or going out to) the page; React builds enter and leave from over and out. */
-  const pointer = (type: "pointerover" | "pointerout", pointerType: string) => {
-    const event = new MouseEvent(type, { bubbles: true, relatedTarget: document.body })
+  const pointer = (type: "pointerover" | "pointerout", pointerType: string, target: Element = nav(), relatedTarget: Element | null = document.body) => {
+    const event = new MouseEvent(type, { bubbles: true, relatedTarget })
     Object.defineProperty(event, "pointerType", { value: pointerType })
     act(() => {
-      nav().dispatchEvent(event)
+      target.dispatchEvent(event)
     })
   }
   /** Keyboard focus: jsdom has no :focus-visible heuristics, so say it matches. */
@@ -122,9 +125,12 @@ describe("AppRail expanding", () => {
   })
 
   it("leaves Escape to the phone drawer below sm", async () => {
+    screenSize("phone")
     render(<AppRail />)
     const map = screen.getByRole("link", { name: "Map" })
     tabTo(map)
+    // Expanded, so it's the drawer check that lets Escape through, not the collapsed one.
+    await waitFor(() => expect(nav()).toHaveAttribute("data-expanded"))
     const onWindow = vi.fn()
     window.addEventListener("keydown", onWindow)
     fireEvent.keyDown(map, { key: "Escape" })
@@ -149,6 +155,72 @@ describe("AppRail expanding", () => {
     expect(nav()).toHaveAttribute("data-expanded")
     act(() => vi.advanceTimersByTime(100))
     expect(nav()).not.toHaveAttribute("data-expanded")
-    vi.useRealTimers()
+  })
+
+  it("expands for a mouse even when the device's main pointer is touch", () => {
+    // A tablet with a mouse: "(hover: hover) and (pointer: fine)" doesn't match.
+    desktop()
+    vi.useFakeTimers()
+    render(<AppRail />)
+    pointer("pointerover", "mouse")
+    act(() => vi.advanceTimersByTime(200))
+    expect(nav()).toHaveAttribute("data-expanded")
+  })
+
+  it("collapses when the pointer turns out to be outside without a pointerleave", () => {
+    // As when the language list unmounts under the pointer: React sends no leave.
+    desktop()
+    vi.useFakeTimers()
+    render(
+      <>
+        <AppRail />
+        <main>page</main>
+      </>,
+    )
+    pointer("pointerover", "mouse")
+    act(() => vi.advanceTimersByTime(200))
+    expect(nav()).toHaveAttribute("data-expanded")
+    pointer("pointerover", "mouse", screen.getByRole("main"), null)
+    act(() => vi.advanceTimersByTime(300))
+    expect(nav()).not.toHaveAttribute("data-expanded")
+  })
+
+  it("cancels a pending hover open on Escape", () => {
+    desktop()
+    vi.useFakeTimers()
+    render(<AppRail />)
+    pointer("pointerover", "mouse")
+    act(() => vi.advanceTimersByTime(100))
+    const onWindow = vi.fn()
+    window.addEventListener("keydown", onWindow)
+    fireEvent.keyDown(screen.getByRole("link", { name: "Map" }), { key: "Escape" })
+    window.removeEventListener("keydown", onWindow)
+    act(() => vi.advanceTimersByTime(500))
+    expect(nav()).not.toHaveAttribute("data-expanded")
+    expect(onWindow).not.toHaveBeenCalled()
+  })
+
+  it("brings the labels back when you tab on after Escape", async () => {
+    desktop()
+    render(<AppRail />)
+    const map = screen.getByRole("link", { name: "Map" })
+    tabTo(map)
+    await waitFor(() => expect(nav()).toHaveAttribute("data-expanded"))
+    fireEvent.keyDown(map, { key: "Escape" })
+    await waitFor(() => expect(nav()).not.toHaveAttribute("data-expanded"))
+    tabTo(screen.getByRole("link", { name: "Discord" }))
+    await waitFor(() => expect(nav()).toHaveAttribute("data-expanded"))
+  })
+
+  it("collapses after following a link with the keyboard, though focus stays on it", async () => {
+    desktop()
+    const { rerender } = render(<AppRail />)
+    const home = screen.getByRole("link", { name: "Home" })
+    tabTo(home)
+    await waitFor(() => expect(nav()).toHaveAttribute("data-expanded"))
+    pathname = "/home"
+    rerender(<AppRail />)
+    await waitFor(() => expect(nav()).not.toHaveAttribute("data-expanded"))
+    expect(home).toHaveFocus()
   })
 })

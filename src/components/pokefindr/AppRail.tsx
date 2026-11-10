@@ -2,12 +2,13 @@
 
 import { useTranslations } from "next-intl"
 import { Link, usePathname } from "@/i18n/navigation"
-import { useEffect, useState, type ComponentType, type Ref, type SVGProps } from "react"
+import { useEffect, useRef, useState, type ComponentType, type Ref, type SVGProps } from "react"
 import { BookOpenIcon, HouseIcon, MapPinIcon, SettingsIcon, ShieldIcon } from "lucide-react"
 import { Logo } from "@/components/brand/Logo"
 import { DiscordIcon } from "@/components/icons/DiscordIcon"
 import { LanguageSwitcher } from "@/components/pokefindr/LanguageSwitcher"
 import { ThemeToggle } from "@/components/pokefindr/ThemeToggle"
+import { minWidth } from "@/lib/design/breakpoints"
 import { SUPPORT_URL } from "@/lib/links"
 import { cn } from "@/lib/utils"
 
@@ -48,10 +49,8 @@ const linkClass =
 
 const matches = (query: string) => typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(query).matches
 
-/** Only a real pointer that can hover expands the rail; on touch, a tap goes straight to the link. */
-const canHover = () => matches("(hover: hover) and (pointer: fine)")
 /** From `sm` up the rail expands; below, it's the phone drawer, which always shows its labels. */
-const isDrawer = () => typeof window !== "undefined" && typeof window.matchMedia === "function" && !matches("(min-width: 640px)")
+const isDrawer = () => typeof window !== "undefined" && typeof window.matchMedia === "function" && !matches(minWidth("sm"))
 
 /** Keyboard focus, not focus from a click or tap (which shouldn't leave the rail open). */
 function focusVisible(el: EventTarget | null) {
@@ -117,6 +116,13 @@ export function AppRail({ signedIn = false, isAdmin = false, expanded: held, cla
   // Escape collapses it until focus or the pointer leaves.
   const [dismissed, setDismissed] = useState(false)
   const [open, setOpen] = useState(false)
+  // Following a link from the rail collapses it: focus stays on the link (the
+  // rail is in the layout), and the new page shouldn't open under the panel.
+  const [shownPath, setShownPath] = useState(pathname)
+  if (pathname !== shownPath) {
+    setShownPath(pathname)
+    setDismissed(true)
+  }
   const want = (hovered || focused || menuOpen) && !dismissed
   useEffect(() => {
     if (want === open) return
@@ -126,15 +132,34 @@ export function AppRail({ signedIn = false, isAdmin = false, expanded: held, cla
   }, [want, open, focused, menuOpen, dismissed])
   const expanded = held ?? open
 
+  // React sends no pointerleave when the language list (in a portal, so inside
+  // the rail as far as React knows) unmounts under the pointer. Follow where the
+  // pointer actually is instead. Only a mouse hovers: on touch, a tap goes
+  // straight to the link.
+  const navRef = useRef<HTMLElement | null>(null)
+  useEffect(() => {
+    const onOver = (e: PointerEvent) => {
+      const inside = navRef.current?.contains(e.target as Node) ?? false
+      if (!inside || e.pointerType === "mouse") setHovered(inside)
+    }
+    document.addEventListener("pointerover", onOver)
+    return () => document.removeEventListener("pointerover", onOver)
+  }, [])
+  const setRef = (el: HTMLElement | null) => {
+    navRef.current = el
+    if (typeof ref === "function") ref(el)
+    else if (ref) ref.current = el
+  }
+
   return (
     <nav
       id={APP_NAV_ID}
       aria-label={t("appNavigation")}
       data-expanded={expanded || undefined}
       className={cn("relative w-16 flex-none max-sm:w-52", className)}
-      ref={ref}
+      ref={setRef}
       onPointerEnter={(e) => {
-        if (e.pointerType !== "mouse" || !canHover()) return
+        if (e.pointerType !== "mouse") return
         setDismissed(false)
         setHovered(true)
       }}
@@ -142,7 +167,12 @@ export function AppRail({ signedIn = false, isAdmin = false, expanded: held, cla
         setHovered(false)
         if (!focused) setDismissed(false)
       }}
-      onFocus={(e) => setFocused(focusVisible(e.target))}
+      onFocus={(e) => {
+        const keyboard = focusVisible(e.target)
+        setFocused(keyboard)
+        // Tabbing on after Escape brings the labels back.
+        if (keyboard) setDismissed(false)
+      }}
       onBlur={(e) => {
         if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
         setFocused(false)
@@ -150,7 +180,8 @@ export function AppRail({ signedIn = false, isAdmin = false, expanded: held, cla
       }}
       onKeyDown={(e) => {
         // In the phone drawer, Escape is SidebarLayout's: it closes the drawer.
-        if (e.key !== "Escape" || !expanded || menuOpen || isDrawer()) return
+        // `want` too: Escape during the open delay cancels it.
+        if (e.key !== "Escape" || !(expanded || want) || menuOpen || isDrawer()) return
         e.stopPropagation()
         setDismissed(true)
       }}
