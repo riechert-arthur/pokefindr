@@ -84,7 +84,11 @@ export default async function LandingPage({ params }: LocaleParams) {
     // The background map's machines, per grid cell: rendered in, so there's no endpoint to scrape.
     orNullWithoutDb("map cells", () => vendingCells()),
     // Whether the sponsored strip is on, so its space is kept from the first paint (#298).
-    orNullWithoutDb("ad placements", () => adFlags()),
+    // Optional: if it can't be read, the strip just isn't reserved (rather than the page failing to rebuild).
+    adFlags().catch((err: unknown) => {
+      console.error("[landing] couldn't read the ad placements; not reserving the strip", err)
+      return null
+    }),
     getTranslations({ locale, namespace: "landing.meta" }),
     getTranslations({ locale, namespace: "faq" }),
   ])

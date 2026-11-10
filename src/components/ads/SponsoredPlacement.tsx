@@ -78,22 +78,24 @@ function focusAfter(el: HTMLElement): HTMLElement | null {
  * shows (an empty one would be read as a blank place).
  *
  * `reserve` (the landing strip): the server knows the placement is on and
- * has a banner, so the band is rendered empty with its height until the
- * banner is picked in the browser. Without it the strip would appear after
- * hydration and push the page down. It's also the placement's first answer,
- * until /api/ads/placements gives the current one.
+ * has a banner, so the band is rendered empty with its height until this
+ * page load's switches arrive and the banner is picked in the browser.
+ * Without it the strip would appear after hydration and push the page down.
+ * The banner (and its pixel) still waits for /api/ads/placements, so a strip
+ * switched off since the page was cached never shows; the band collapses
+ * then, as it does for a visitor who hid ads this visit.
  */
 export function SponsoredPlacement({ placement, className, listItem = false, reserve = false }: { placement: SponsorPlacement; className?: string; listItem?: boolean; reserve?: boolean }) {
   const t = useTranslations("ads")
   const hydrated = useHydrated()
   const hidden = useAdsHidden()
   // An admin can switch a placement off (#159).
-  const on = usePlacementOn(placement, reserve || undefined)
+  const on = usePlacementOn(placement)
   const ref = useRef<HTMLElement>(null)
   // Picked once per view, in the browser.
   const [banner] = useState(() => (typeof window === "undefined" ? null : pickBanner(placement)))
   const strip = placement === "landing"
-  if (strip && reserve && !hydrated) return <div aria-hidden data-placement={placement} className={cn(STRIP_BAND, className)} />
+  if (strip && reserve && (!hydrated || (on === null && !hidden))) return <div aria-hidden data-placement={placement} className={cn(STRIP_BAND, className)} />
   if (hidden || on !== true || !banner || !banner.href) return null
   const slot = (
     <>

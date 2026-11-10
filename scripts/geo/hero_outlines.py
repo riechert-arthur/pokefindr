@@ -56,8 +56,10 @@ def main(src, dst):
         for poly in polys:
             # Each state keeps its main polygon (DC is smaller than MIN_AREA).
             if area(poly[0]) < MIN_AREA and area(poly[0]) < largest: continue
-            rings = [r for r in map(ring, poly) if r]
-            if rings: out.append(rings)
+            outer = ring(poly[0])
+            # No outline left: drop the polygon, holes and all (a hole on its own would read as land).
+            if not outer: continue
+            out.append([outer] + [r for r in map(ring, poly[1:]) if r])
         if out:
             features.append({"type": "Feature", "properties": {"region": f["properties"]["region"]}, "geometry": {"type": "MultiPolygon", "coordinates": out}})
     with open(dst, "w") as fh:
