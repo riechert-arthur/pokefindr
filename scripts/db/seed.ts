@@ -3,8 +3,9 @@
  * sample events (labelled as samples, each at an event location) so a local
  * database isn't empty, then refreshes the per-state counts. On a local
  * database it also adds the dev accounts, one per role
- * (scripts/db/seedDevUsers.ts). Safe to run repeatedly (see seedLocations,
- * seedSampleHighlights and seedDevUsers).
+ * (scripts/db/seedDevUsers.ts), and a few sample submissions and a report
+ * from them (scripts/db/seedModeration.ts). Safe to run repeatedly (see
+ * seedLocations, seedSampleHighlights, seedDevUsers and seedSampleModeration).
  *
  *   npm run db:seed    (make run runs it in the init container)
  */
@@ -12,6 +13,7 @@ import { loadDevEnv, migrationClient, migrationDatabaseUrl } from "./env"
 import { readSeedLocations, seedLocations } from "./seedLocations"
 import { seedSampleHighlights } from "./seedHighlights"
 import { DEV_PASSWORD, isLocalDatabase, seedDevUsers } from "./seedDevUsers"
+import { seedSampleModeration } from "./seedModeration"
 
 loadDevEnv()
 
@@ -31,6 +33,7 @@ async function main() {
       for (const { account, outcome } of seeded) {
         console.log(`  ${account.email.padEnd(30)} ${account.role}${outcome === "unchanged" ? "" : ` (${outcome})`}`)
       }
+      console.log(`Sample submissions and reports: ${await seedSampleModeration(sql)} added.`)
     } else {
       console.log("Not a local database: no dev accounts.")
     }

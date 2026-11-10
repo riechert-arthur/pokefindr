@@ -120,11 +120,20 @@ can(role, "admin.jobs") // true for admins only
 | --- | --- | --- | --- |
 | `dev@pokefindr.local` | `dev` | admin | every section of `/admin` |
 | `moderator@pokefindr.local` | `moderator` | moderator | the review queue and Reports only; can't decide its own submissions; gets the review emails |
+| `ash@pokefindr.local` | `ash` | member | a plain member: no Admin link, `/admin` is a 404 |
+| `misty@pokefindr.local` | `misty` | member | the same |
+| `brock@pokefindr.local` | `brock` | member | the same |
+| `serena@pokefindr.local` | `serena` | member | the same, with emails and pages in Spanish (`locale` `es`) |
 
 The accounts are `DEV_ACCOUNTS` in `scripts/db/seedDevUsers.ts`; add an entry to seed another.
 Each run adds missing accounts and sets an existing account's role back to the seeded value, so a
 seeded account always means the same thing, on new and existing branch databases alike. To try
 a role change, use an account you signed up yourself.
+
+The seed also adds three pending submissions (from `ash`, `brock` and `serena`) and an open report
+(from `misty`), all named or marked as samples, so the review queue and Reports have something in
+them on a new database (`scripts/db/seedModeration.ts`). They have fixed ids: one you approve or
+reject stays decided on the next seed.
 
 Every email the app sends goes to Mailpit at http://localhost:8025. Running `npm run dev` outside
 Docker, `MAIL_PROVIDER` defaults to `console`, which prints each email (and its link) in the

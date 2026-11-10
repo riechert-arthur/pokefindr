@@ -5,6 +5,8 @@ import { SAMPLE_EVENTS, SAMPLE_SOURCE, seedSampleHighlights } from "../../script
 import { DEV_ACCOUNTS, DEV_PASSWORD, DEV_USER, seedDevUsers } from "../../scripts/db/seedDevUsers"
 import { verifyPassword } from "better-auth/crypto"
 import { NextResponse } from "next/server"
+import { SAMPLE_REPORT, SAMPLE_SUBMISSIONS, seedSampleModeration } from "../../scripts/db/seedModeration"
+import { approveSubmission, listQueue } from "@/server/services/moderation"
 import { requireEntitlement, roleOf } from "@/server/admin/access"
 import { getDb } from "@/server/db/client"
 import { getLocationsNear } from "@/server/services/locations"
@@ -127,6 +129,24 @@ describe("seedDevUsers", () => {
     expect(await requireEntitlement(as(), "moderation.view")).toEqual({ userId: mod.id, role: "moderator" })
   })
 
+  it("adds every member once, as a member, one of them in Spanish", async () => {
+    const members = DEV_ACCOUNTS.filter((a) => a.role === "member")
+    expect(members.length).toBeGreaterThanOrEqual(3)
+    await seedDevUsers(sql)
+    await seedDevUsers(sql)
+    const rows = await sql<{ email: string; role: string; locale: string | null }[]>`
+      select u.email, p.role, p.locale from users u join profiles p on p.id = u.id where u.email in ${sql(members.map((m) => m.email))} order by u.email`
+    expect(rows.map((r) => [r.email, r.role])).toEqual(members.map((m) => [m.email, "member"]).sort())
+    expect(rows.filter((r) => r.locale === "es")).toHaveLength(1)
+  })
+
+  it("skips an account whose username someone signed up with, instead of failing", async () => {
+    const ash = DEV_ACCOUNTS.find((a) => a.username === "ash")!
+    await sql`insert into users (id, name, email) values (gen_random_uuid(), 'Other Ash', 'other@example.com')`
+    await sql`insert into profiles (id, username) select id, 'Ash' from users where email = 'other@example.com'`
+    expect((await seedDevUsers(sql, [ash]))[0].outcome).toBe("username taken")
+  })
+
   it("puts a role changed by hand back to the seeded value", async () => {
     await seedDevUsers(sql)
     await sql`update profiles set role = 'member' where id = ${DEV_USER.id}`
@@ -142,5 +162,32 @@ describe("seedDevUsers", () => {
     for (const { password } of rows) {
       expect(await verifyPassword({ hash: password, password: DEV_PASSWORD })).toBe(true)
     }
+  })
+})
+
+describe("seedSampleModeration", () => {
+  it("fills the review queue and Reports once, with samples from the seeded members", async () => {
+    await seedLocations(sql, readSeedLocations())
+    await seedDevUsers(sql)
+    const now = new Date()
+    expect(await seedSampleModeration(sql, now)).toBe(SAMPLE_SUBMISSIONS.length + 1)
+    expect(await seedSampleModeration(sql, now)).toBe(0)
+    const queue = await sql<{ name: string; status: string }[]>`select payload->>'name' as name, status from location_submissions order by id`
+    expect(queue.map((q) => q.status)).toEqual(SAMPLE_SUBMISSIONS.map(() => "pending"))
+    expect(queue.every((q) => q.name.endsWith("(sample)"))).toBe(true)
+    expect(await listQueue(undefined, getDb(), now)).toHaveLength(SAMPLE_SUBMISSIONS.length)
+    const [report] = await sql`select reason, resolved_at, user_id from status_reports where id = ${SAMPLE_REPORT.id}`
+    expect(report).toMatchObject({ reason: "gone", resolved_at: null, user_id: SAMPLE_REPORT.by })
+  })
+
+  it("can be approved, and stays decided on re-seeding", async () => {
+    await seedLocations(sql, readSeedLocations())
+    await seedDevUsers(sql)
+    await seedSampleModeration(sql)
+    const event = SAMPLE_SUBMISSIONS.find((s) => s.kind === "event")!
+    expect((await approveSubmission(event.id, DEV_USER.id, getDb())).status).toBe("done")
+    await seedSampleModeration(sql)
+    const [row] = await sql`select status from location_submissions where id = ${event.id}`
+    expect(row.status).toBe("approved")
   })
 })

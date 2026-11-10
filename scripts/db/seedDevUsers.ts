@@ -30,6 +30,12 @@ export type DevAccount = {
 export const DEV_ACCOUNTS = [
   { id: "00000000-0000-4000-8000-00000000de70", email: "dev@pokefindr.local", username: "dev", name: "Dev User", role: "admin" },
   { id: "00000000-0000-4000-8000-0000000000d1", email: "moderator@pokefindr.local", username: "moderator", name: "Dev Moderator", role: "moderator" },
+  // Ordinary members, so moderators and admins have other people's submissions and reports to act on.
+  { id: "00000000-0000-4000-8000-0000000000a1", email: "ash@pokefindr.local", username: "ash", name: "Ash Ketchum", role: "member" },
+  { id: "00000000-0000-4000-8000-0000000000a2", email: "misty@pokefindr.local", username: "misty", name: "Misty Waterflower", role: "member" },
+  { id: "00000000-0000-4000-8000-0000000000a3", email: "brock@pokefindr.local", username: "brock", name: "Brock Harrison", role: "member" },
+  // Emails and pages in Spanish.
+  { id: "00000000-0000-4000-8000-0000000000a4", email: "serena@pokefindr.local", username: "serena", name: "Serena Yvonne", role: "member", locale: "es" },
 ] as const satisfies readonly DevAccount[]
 
 export const DEV_USER = DEV_ACCOUNTS[0]
@@ -46,8 +52,11 @@ export function isLocalDatabase(url: string | undefined): boolean {
   }
 }
 
-/** What seeding did to one account: added it, put its role back, or left it alone. */
-export type SeedOutcome = "added" | "role reset" | "unchanged"
+/**
+ * What seeding did to one account: added it, put its role back, left it
+ * alone, or skipped it because someone signed up with its username.
+ */
+export type SeedOutcome = "added" | "role reset" | "unchanged" | "username taken"
 
 /**
  * Adds each missing account (user, credential account, onboarded profile) and
@@ -65,6 +74,12 @@ export async function seedDevUsers(
     if (existing) {
       const changed = await sql`update profiles set role = ${account.role} where id = ${existing.id} and role <> ${account.role}`
       results.push({ account, outcome: changed.count > 0 ? "role reset" : "unchanged" })
+      continue
+    }
+    // Someone signed up with this username by hand: leave their account be rather than fail the seed.
+    const [taken] = await sql`select 1 from profiles where lower(username) = lower(${account.username})`
+    if (taken) {
+      results.push({ account, outcome: "username taken" })
       continue
     }
     hash ??= await hashPassword(DEV_PASSWORD)
