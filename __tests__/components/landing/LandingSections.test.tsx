@@ -70,7 +70,7 @@ describe("landing sections", () => {
     // Spanish numbers, and the state count's plural.
     expect(screen.getByText("1457")).toBeInTheDocument()
     expect(screen.getByText("estado")).toBeInTheDocument()
-    expect(screen.getByPlaceholderText("Ciudad o dirección, como Denver, CO")).toBeInTheDocument()
+    expect(screen.getByPlaceholderText("Ciudad o dirección, ej. Denver")).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Usar mi ubicación" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Busca tu ciudad" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "¿Qué es una máquina expendedora de Pokémon?" })).toBeInTheDocument()

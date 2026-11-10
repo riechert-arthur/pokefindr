@@ -15,16 +15,17 @@ export const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 
 /**
  * The languages that are ready for visitors: detected from the browser, offered
- * in the switcher, in the sitemap and indexed. Spanish joins in #186.
+ * in the switcher, in the sitemap and indexed. Spanish since #186. A new
+ * language is in LOCALES first, and here once it's reviewed (docs/i18n.md).
  */
-export const PUBLIC_LOCALES: readonly Locale[] = ["en"]
+export const PUBLIC_LOCALES: readonly Locale[] = ["en", "es"]
 
 export const routing = defineRouting({
   locales: LOCALES,
   defaultLocale: DEFAULT_LOCALE,
   localePrefix: "as-needed",
-  // Reading the cookie and Accept-Language would send visitors to a language
-  // that isn't public yet.
+  // Off while English is the only public language: reading the cookie and
+  // Accept-Language would send visitors to a language that isn't ready.
   localeDetection: PUBLIC_LOCALES.length > 1,
   // Kept when someone visits or switches to another language (#182), once
   // languages are detected. Before that it isn't written either: it would

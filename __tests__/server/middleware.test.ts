@@ -2,7 +2,7 @@
 import { beforeAll, describe, expect, it } from "vitest"
 import { NextRequest } from "next/server"
 import { SignJWT } from "jose"
-import { middleware } from "@/middleware"
+import { middleware, publicDetection } from "@/middleware"
 import { PUBLIC_LOCALES } from "@/i18n/routing"
 
 beforeAll(() => {
@@ -93,5 +93,18 @@ describe("middleware and the language (#177)", () => {
     expect(res.headers.get("x-middleware-request-x-user-tier")).toBeNull()
     // Next keeps only the headers listed here, so the client's are dropped.
     expect(res.headers.get("x-middleware-override-headers")?.split(",")).not.toContain("x-user-id")
+  })
+})
+
+describe("detection only picks a public language (docs/i18n.md)", () => {
+  it("drops languages that aren't public from Accept-Language and the cookie", () => {
+    // "fr" stands in for a language in LOCALES that isn't public yet.
+    const headers = publicDetection(new Headers({ "accept-language": "fr-FR,fr;q=0.9,es;q=0.8,*;q=0.1", cookie: "a=1; NEXT_LOCALE=fr; b=2" }))
+    expect(headers.get("accept-language")).toBe("es;q=0.8,*;q=0.1")
+    expect(headers.get("cookie")).toBe("a=1; b=2")
+    const none = publicDetection(new Headers({ "accept-language": "fr", cookie: "NEXT_LOCALE=fr" }))
+    expect(none.get("accept-language")).toBeNull()
+    expect(none.get("cookie")).toBeNull()
+    expect(publicDetection(new Headers({ cookie: "NEXT_LOCALE=es" })).get("cookie")).toBe("NEXT_LOCALE=es")
   })
 })

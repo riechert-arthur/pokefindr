@@ -37,9 +37,15 @@ describe("LanguageSwitcher (#182)", () => {
     expect(languageName("es")).toBe("Español")
   })
 
-  it("stays hidden while only one language is public", () => {
-    const { container } = render(<LanguageSwitcher />)
+  it("stays hidden with only one language", () => {
+    const { container } = render(<LanguageSwitcher locales={["en"]} />)
     expect(container).toBeEmptyDOMElement()
+  })
+
+  it("offers the public languages (#186)", () => {
+    render(<LanguageSwitcher />)
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Language" }), { key: "Enter" })
+    expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["English", "Español"])
   })
 
   it("opens the same page, query and fragment in the new language", () => {
