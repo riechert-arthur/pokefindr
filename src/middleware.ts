@@ -39,7 +39,7 @@ export const config = {
 }
 
 /** The pages that need a session, after any language prefix. */
-const SESSION_PAGES = /^\/(home|settings|admin)(\/|$)/
+const SESSION_PAGES = /^\/(home|settings|admin|moderate)(\/|$)/
 
 const LOCALE_PREFIX = new RegExp(`^/(${routing.locales.join('|')})(?=/|$)`)
 

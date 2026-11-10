@@ -289,3 +289,17 @@ describe("0011_submissions", () => {
     await sql`truncate locations cascade`
   })
 })
+
+describe("0022_super_admin", () => {
+  it("turns super admins back into admins when rolled back, since the old check doesn't allow them", async () => {
+    const { migrator } = createMigrator(sql)
+    throwIfFailed(await migrator.migrateToLatest())
+    const [u] = await sql<{ id: string }[]>`insert into users (name, email) values ('Oak', 'oak@example.test') returning id`
+    await sql`insert into profiles (id, username, role) values (${u.id}, 'oak', 'super_admin')`
+    throwIfFailed(await migrator.migrateTo("0021_location_canaries"))
+    const [row] = await sql<{ role: string }[]>`select role from profiles where id = ${u.id}`
+    expect(row.role).toBe("admin")
+    throwIfFailed(await migrator.migrateToLatest())
+    await sql`truncate users cascade`
+  })
+})

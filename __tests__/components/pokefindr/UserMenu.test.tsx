@@ -47,13 +47,13 @@ describe("UserMenu", () => {
   })
 
   it("renders the first initial when no image is provided", () => {
-    render(<UserMenu size={42} userName="misty" />)
+    render(<UserMenu userName="misty" />)
 
-    expect(screen.getByRole("button", { name: "Account menu for misty" })).toHaveTextContent("m")
+    expect(screen.getByRole("button", { name: "Account menu for misty" })).toHaveTextContent("M")
   })
 
   it("opens the menu and logs the user out", async () => {
-    render(<UserMenu size={42} userName="misty" />)
+    render(<UserMenu userName="misty" />)
 
     // Radix menus open from the keyboard (or pointerdown), not a synthetic click.
     fireEvent.keyDown(screen.getByRole("button", { name: "Account menu for misty" }), { key: "Enter" })
@@ -76,7 +76,7 @@ describe("UserMenu", () => {
   it("shows an error and stays put when logout fails", async () => {
     postMock.mockRejectedValue(new Error("500"))
     vi.spyOn(console, "error").mockImplementation(() => {})
-    render(<UserMenu size={42} userName="misty" variant="list" />)
+    render(<UserMenu userName="misty" variant="list" />)
 
     fireEvent.click(screen.getByRole("button", { name: "Log out" }))
 
@@ -86,7 +86,7 @@ describe("UserMenu", () => {
   })
 
   it("lays out Settings and Log out inline in the list variant", () => {
-    render(<UserMenu size={36} userName="misty" variant="list" />)
+    render(<UserMenu userName="misty" variant="list" />)
 
     expect(screen.queryByRole("button", { name: /Account menu/ })).not.toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Settings" })).toHaveAttribute("href", "/settings")
@@ -97,7 +97,7 @@ describe("UserMenu", () => {
   it("sends one logout request when Log out is clicked twice", async () => {
     let resolve!: () => void
     postMock.mockReturnValue(new Promise((r) => { resolve = () => r({}) }))
-    render(<UserMenu size={36} userName="misty" variant="list" />)
+    render(<UserMenu userName="misty" variant="list" />)
 
     const button = screen.getByRole("button", { name: "Log out" })
     fireEvent.click(button)

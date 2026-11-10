@@ -13,8 +13,8 @@ type Story = StoryObj<typeof meta>
 /** Today: Home and Map, on the dashboard. */
 export const OnHome: Story = {}
 
-/** With the add flow (R4) and for an admin (R8), on the map. */
+/** With the add flow (R4), for an admin (Moderate and Admin), on the map. */
 export const AllTabs: Story = {
-  args: { canAdd: true, isAdmin: true },
+  args: { canAdd: true, canModerate: true, isAdmin: true },
   parameters: { nextjs: { navigation: { pathname: "/map" } } },
 }

@@ -41,8 +41,8 @@ describe("reviews", () => {
     expect(await addReview({ locationId: store, userId: alice, rating: 5, text: "Stocked" })).toEqual({ id: expect.any(String), status: "published", checkFailed: false })
     expect(await addReview({ locationId: nextDoor, userId: bob, rating: 2, text: "Empty" })).toEqual({ id: expect.any(String), status: "published", checkFailed: false })
 
-    expect(await listLocationReviews(store)).toEqual([{ rating: 5, text: "Stocked", username: "alice" }])
-    expect(await listLocationReviews(nextDoor)).toEqual([{ rating: 2, text: "Empty", username: "bob" }])
+    expect(await listLocationReviews(store)).toEqual([{ rating: 5, text: "Stocked", username: "alice", image: null }])
+    expect(await listLocationReviews(nextDoor)).toEqual([{ rating: 2, text: "Empty", username: "bob", image: null }])
   })
 
   it("lists a location's reviews for the panel, newest first, with the average and the viewer's own marked", async () => {
@@ -80,7 +80,7 @@ describe("reviews", () => {
     expect(await deleteReview(mine.id, bob)).toBe(false)
 
     expect(await updateReview(mine.id, alice, { rating: 5, text: "Great" })).toEqual({ status: "published", checkFailed: false })
-    expect(await listLocationReviews(store)).toEqual([{ rating: 5, text: "Great", username: "alice" }])
+    expect(await listLocationReviews(store)).toEqual([{ rating: 5, text: "Great", username: "alice", image: null }])
 
     expect(await deleteReview(mine.id, alice)).toBe(true)
     expect(await listUserReviews(alice)).toEqual([])

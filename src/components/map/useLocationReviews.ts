@@ -9,6 +9,8 @@ export interface Review {
   rating: number
   text: string
   username: string
+  /** The reviewer's profile picture (#290), or null for initials. */
+  image?: string | null
   createdAt: string
   mine: boolean
   /** The viewer's own review can be "held" (pending review) or "removed"; everyone else's are published (#253). */
@@ -24,7 +26,7 @@ export interface ReviewsState {
   average: number
   reload: () => void
   /** Shows the review at once, then saves it; on failure it's taken back with a toast. */
-  add: (input: { rating: number; text: string }, username: string) => Promise<boolean>
+  add: (input: { rating: number; text: string }, username: string, image?: string | null) => Promise<boolean>
   edit: (id: string, input: { rating: number; text: string }) => Promise<boolean>
   remove: (id: string) => Promise<boolean>
 }
@@ -94,8 +96,8 @@ export function useLocationReviews(locationId: string): ReviewsState {
   }, [locationId, attempt])
 
   const add = useCallback(
-    async (input: { rating: number; text: string }, username: string) => {
-      const temp: Review = { id: `pending-${Date.now()}`, ...input, username, createdAt: new Date().toISOString(), mine: true }
+    async (input: { rating: number; text: string }, username: string, image: string | null = null) => {
+      const temp: Review = { id: `pending-${Date.now()}`, ...input, username, image, createdAt: new Date().toISOString(), mine: true }
       setReviews((rs) => [temp, ...rs])
       try {
         const res = await send("/api/reviews", "POST", { locationId, ...input })

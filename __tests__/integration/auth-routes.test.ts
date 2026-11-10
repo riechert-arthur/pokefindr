@@ -10,7 +10,7 @@ import { resetAuthForTests } from "@/server/auth/auth"
 import { resetServerConfigForTests } from "@/server/config"
 import { getDb } from "@/server/db/client"
 import { profiles, sessions, subscriptions, users } from "@/server/db/schema"
-import { DEV_USER, isLocalDatabase, seedDevUser } from "../../scripts/db/seedDevUser"
+import { DEV_PASSWORD, DEV_USER, isLocalDatabase, seedDevUsers } from "../../scripts/db/seedDevUsers"
 import { closeTestConnection, testDatabaseUrl } from "./testDatabase"
 
 const sql = postgres(testDatabaseUrl(), { max: 1, onnotice: () => {} })
@@ -228,7 +228,7 @@ describe("current user", () => {
     await post(signup, form)
     const [user] = await getDb().select().from(users)
     const res = await currentUser(new NextRequest("http://localhost:3000/api/auth/user", { headers: { "x-user-id": user.id } }))
-    expect(await res.json()).toEqual({ user: { id: user.id, username: "ash", full_name: "Ash Ketchum", metadata: null, role: "member", locale: null } })
+    expect(await res.json()).toEqual({ user: { id: user.id, username: "ash", full_name: "Ash Ketchum", metadata: null, role: "member", locale: null, image: null } })
   })
 })
 
@@ -240,10 +240,9 @@ describe("the dev user", () => {
     expect(isLocalDatabase(undefined)).toBe(false)
   })
 
-  it("is added once, and can log in", async () => {
-    expect(await seedDevUser(sql)).toBe(true)
-    expect(await seedDevUser(sql)).toBe(false)
-    const res = await post(login, { email: DEV_USER.email, password: DEV_USER.password })
+  it("can log in", async () => {
+    await seedDevUsers(sql, [DEV_USER])
+    const res = await post(login, { email: DEV_USER.email, password: DEV_PASSWORD })
     expect(res.status).toBe(200)
   })
 })

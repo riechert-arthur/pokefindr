@@ -3,8 +3,10 @@ import { ADMIN_SECTIONS, groupsFor, sectionFor } from "@/lib/admin/sections"
 import { queueIsLate } from "@/lib/admin/summary"
 
 describe("admin sections", () => {
-  it("shows moderators only what they may open, admins everything", () => {
-    expect(groupsFor("admin").flatMap((g) => g.sections)).toEqual(ADMIN_SECTIONS)
+  it("shows moderators only what they may open, admins all but Users, super admins everything", () => {
+    expect(groupsFor("super_admin").flatMap((g) => g.sections)).toEqual(ADMIN_SECTIONS)
+    expect(groupsFor("super_admin").map((g) => g.id)).toEqual(["moderation", "locations", "system", "people"])
+    expect(groupsFor("admin").flatMap((g) => g.sections)).toEqual(ADMIN_SECTIONS.filter((s) => s.id !== "users"))
     expect(groupsFor("moderator").flatMap((g) => g.sections).map((s) => s.id)).toEqual(["queue", "reviews", "reports"])
     expect(groupsFor("member")).toEqual([])
     expect(groupsFor(null)).toEqual([])
@@ -15,6 +17,8 @@ describe("admin sections", () => {
     expect(sectionFor("nope", "admin")?.id).toBe("queue")
     expect(sectionFor(null, "admin")?.id).toBe("queue")
     expect(sectionFor("queue", "member")).toBeNull()
+    expect(sectionFor("users", "super_admin")?.id).toBe("users")
+    expect(sectionFor("users", "admin")?.id).toBe("queue")
   })
 
   it("calls the queue late once its oldest submission waited over 24 h", () => {

@@ -1,7 +1,7 @@
 import "server-only"
 import { and, desc, eq, or, sql } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
-import { locationRatings, locations, profiles, reviewModerationChecks } from "@/server/db/schema"
+import { locationRatings, locations, profiles, reviewModerationChecks, users } from "@/server/db/schema"
 import type { ReviewStatus } from "@/lib/reviews/moderation"
 import type { ContentModerator, ModerationResult } from "@/server/ports/moderator"
 import { moderate, REVIEW_CHECK_TIMEOUT_MS } from "./content-moderation"
@@ -13,6 +13,8 @@ export interface LocationReview {
   rating: number
   text: string
   username: string
+  /** The reviewer's profile picture (#290), or null for initials. */
+  image: string | null
 }
 
 /** Published reviews of one location, newest first. */
@@ -21,12 +23,13 @@ export async function listLocationReviews(
   db: Database = getDb(),
 ): Promise<LocationReview[]> {
   const rows = await db
-    .select({ rating: locationRatings.rating, text: locationRatings.text, username: profiles.username })
+    .select({ rating: locationRatings.rating, text: locationRatings.text, username: profiles.username, image: users.image })
     .from(locationRatings)
     .leftJoin(profiles, eq(profiles.id, locationRatings.userId))
+    .leftJoin(users, eq(users.id, locationRatings.userId))
     .where(and(eq(locationRatings.locationId, locationId), published))
     .orderBy(desc(locationRatings.createdAt))
-  return rows.map((r) => ({ rating: r.rating, text: r.text ?? "", username: r.username ?? "Unknown" }))
+  return rows.map((r) => ({ rating: r.rating, text: r.text ?? "", username: r.username ?? "Unknown", image: r.image ?? null }))
 }
 
 /** One review in the details panel; `mine` marks the viewer's own, which they can edit. */
@@ -35,6 +38,8 @@ export interface PanelReview {
   rating: number
   text: string
   username: string
+  /** The reviewer's profile picture (#290), or null for initials. */
+  image: string | null
   createdAt: string
   mine: boolean
   /** Always published, except the viewer's own held ("pending review") or removed one. */
@@ -62,12 +67,14 @@ export async function getPanelReviews(locationId: string, viewerId: string | nul
       rating: locationRatings.rating,
       text: locationRatings.text,
       username: profiles.username,
+      image: users.image,
       createdAt: locationRatings.createdAt,
       mine: viewerId ? sql<boolean>`${locationRatings.userId} = ${viewerId}` : sql<boolean>`false`,
       status: locationRatings.status,
     })
     .from(locationRatings)
     .leftJoin(profiles, eq(profiles.id, locationRatings.userId))
+    .leftJoin(users, eq(users.id, locationRatings.userId))
     .where(and(eq(locationRatings.locationId, locationId), viewerId ? or(published, eq(locationRatings.userId, viewerId)) : published))
     .orderBy(desc(locationRatings.createdAt), desc(locationRatings.id))
   const reviews = rows.map((r) => ({
@@ -75,6 +82,7 @@ export async function getPanelReviews(locationId: string, viewerId: string | nul
     rating: r.rating,
     text: r.text ?? "",
     username: r.username ?? "Unknown",
+    image: r.image ?? null,
     createdAt: (r.createdAt ?? new Date(0)).toISOString(),
     mine: Boolean(r.mine),
     status: r.status,

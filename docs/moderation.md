@@ -11,7 +11,7 @@ works, and why it's built this way.
 | Timeout and fallback | `src/server/services/content-moderation.ts` |
 | Reviews: check on write, public reads | `src/server/services/reviews.ts` |
 | Held-review queue, decisions, recheck job | `src/server/services/review-moderation.ts` |
-| The Reviews tab in /admin | `src/components/admin/HeldReviews.tsx` |
+| The Reviews tab in /moderate and section in /admin | `src/components/admin/HeldReviews.tsx` |
 | The assistant's question check | `src/server/assistant/moderation.ts`, `src/app/api/assistant/route.ts` |
 | Labelled eval set and script | `evals/moderation/cases.yaml`, `scripts/moderation/eval.ts` |
 
@@ -55,8 +55,8 @@ two together, and run the eval after changing either.
   (`/api/locations/<id>/reviews`), `/api/get-reviews`, the assistant's `get_place` and the MCP tools,
   which all read through `getPanelReviews` / `listLocationReviews`. The author still sees their own,
   in the panel, on /home/reviews and in MCP `my_reviews`, with its status.
-- **Moderators** (`moderation.reviews`) see held reviews in /admin → Moderation → Reviews, oldest
-  first, with the model's verdict, categories and reason. **Approve** publishes; **Remove** keeps it
+- **Moderators** (`moderation.reviews`) see held reviews in /moderate → Reviews (admins also in /admin →
+  Moderation → Reviews; `/admin?section=reviews` sends moderators to the tab), oldest first, with the model's verdict, categories and reason. **Approve** publishes; **Remove** keeps it
   from everyone but its author. Either can be undone for an hour by the moderator who made it, as in
   the submission queue. Deciding a review you wrote yourself needs `moderation.decideOwn` (admins).
 - **Editing a removed review** sends it back to the queue whatever the check says, and keeps who
