@@ -185,11 +185,10 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     [states],
   )
   const [map, setMap] = useState<ViewportMap>()
-  const viewport = useViewportLocations(map, { types: kinds })
+  const viewport = useViewportLocations(map, { types: kinds, retailers })
   const inView = useMemo<FeatureCollection<Point, LocationFeatureProperties & { dim?: boolean }>>(() => {
-    const features = retailers?.length
-      ? viewport.features.filter((f) => f.properties.kind !== "vending" || retailers.includes(f.properties.retailer))
-      : viewport.features
+    // The API filters by retailer before its cap (#201).
+    const features = viewport.features
     if (!place) return { type: "FeatureCollection", features }
     return {
       type: "FeatureCollection",
@@ -198,7 +197,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         return { ...f, properties: { ...f.properties, dim: milesBetween(place.lng, place.lat, lng, lat) > place.radius } }
       }),
     }
-  }, [viewport.features, retailers, place])
+  }, [viewport.features, place])
 
   // The search box's text: the view's label, until the viewer types.
   const [query, setQuery] = useState(() => searchLabel(params, t("search.yourLocation"), stateName))
@@ -214,8 +213,9 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   // The details panel follows `location=` (a shared link, Back or Forward).
   // A location in view opens at once; any other comes from /api/locations/<id>
   // (the map no longer loads every location, #201).
-  // globalThis: `Map` here is the map component from ./engine.
-  const knownLocations = useMemo(() => new globalThis.Map(viewport.features.map((f) => [f.properties.id, f])), [viewport.features])
+  // Read through a ref: a new view loading mustn't re-run this (and cancel a details fetch).
+  const viewportFeatures = useRef(viewport.features)
+  viewportFeatures.current = viewport.features
   useEffect(() => {
     const id = params.location
     if (!id) {
@@ -223,7 +223,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
       pushedDetails.current = null
       return
     }
-    const feature = knownLocations.get(id)
+    const feature = viewportFeatures.current.find((f) => f.properties.id === id)
     if (feature) {
       dispatch({ type: "showDetails", location: toSelected(feature) })
       return
@@ -254,7 +254,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         void setParams({ location: null }, { history: "replace" })
       })
     return () => controller.abort()
-  }, [params.location, knownLocations, setParams])
+  }, [params.location, setParams])
 
   // A new view (a pick, Back or Forward) puts its label in the search box.
   // Keyed on the label, so a pan (a camera-only URL write) keeps what the

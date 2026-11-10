@@ -2,8 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { getGeocoder } from "@/server/container"
 import { GeocoderError } from "@/server/ports/geocoder"
 import { geocodeQuerySchema } from "@/lib/geocode/query"
-import { limitClient, RATE_RULES } from "@/server/api-rate-limit"
-import { refuseBots } from "@/server/bot-check"
+import { guardRoute, RATE_RULES } from "@/server/api-rate-limit"
 
 // Answers vary by query; the CDN caches each one (below).
 export const dynamic = "force-dynamic"
@@ -14,8 +13,6 @@ export const dynamic = "force-dynamic"
  *   provider and its key stay on the server.
  */
 export async function GET(request: NextRequest) {
-  const refused = await refuseBots()
-  if (refused) return refused
   const params = request.nextUrl.searchParams
   const parsed = geocodeQuerySchema.safeParse({
     q: params.get("q") ?? "",
@@ -26,8 +23,8 @@ export async function GET(request: NextRequest) {
     const message = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")
     return NextResponse.json({ error: `Invalid query. ${message}` }, { status: 400 })
   }
-  const limited = await limitClient(request, RATE_RULES.geocode)
-  if (limited) return limited
+  const blocked = await guardRoute(request, RATE_RULES.geocode, { bots: true })
+  if (blocked) return blocked
 
   const { q, near, limit } = parsed.data
   try {

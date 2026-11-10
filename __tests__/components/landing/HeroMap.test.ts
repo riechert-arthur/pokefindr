@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { albers, fitAlbers, scatter } from "@/components/landing/HeroMap"
+import { albers, dotsFor, fitAlbers, onLand, scatter } from "@/components/landing/HeroMap"
 
 describe("fitAlbers", () => {
   // As in the prototype, the far northwest can tuck a little under the top
@@ -58,5 +58,22 @@ describe("scatter", () => {
     const dots = scatter(cells, 0.25)
     expect(new Set(dots.map(String)).size).toBe(4)
     expect(scatter(cells, 0.25)).toEqual(dots)
+  })
+
+  it("gives busy cells more dots, but not one per machine", () => {
+    expect([1, 2, 4, 25, 100].map(dotsFor)).toEqual([1, 2, 4, 9, 16])
+  })
+
+  it("keeps dots on land", () => {
+    // A square "state" covering the cell's west half only.
+    const half = onLand({
+      type: "FeatureCollection",
+      features: [{ type: "Feature", properties: { region: "WA" }, geometry: { type: "Polygon", coordinates: [[[-122.5, 47.5], [-122.375, 47.5], [-122.375, 47.75], [-122.5, 47.75], [-122.5, 47.5]]] } }],
+    })
+    const dots = scatter([[-122.5, 47.5, 9]], 0.25, half)
+    expect(dots.length).toBeGreaterThan(0)
+    for (const [lng] of dots) expect(lng).toBeLessThan(-122.375)
+    // Nowhere on land: no dots.
+    expect(scatter([[-122.5, 47.5, 9]], 0.25, () => false)).toEqual([])
   })
 })

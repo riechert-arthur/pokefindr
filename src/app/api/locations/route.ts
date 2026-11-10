@@ -1,12 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getLocationsInBbox } from "@/server/services/locations"
 import { bboxQuerySchema } from "@/lib/locations/bbox"
-import { refuseBots } from "@/server/bot-check"
-import { limitClient, RATE_RULES } from "@/server/api-rate-limit"
+import { guardRoute, RATE_RULES } from "@/server/api-rate-limit"
 
 // Never prerendered or kept in the Next.js data cache: the location import runs
-// outside Next.js and couldn't clear it. The short CDN cache below is the only
-// cache, so the map trails the database by about a minute at most.
+// outside Next.js and couldn't clear it. Browsers keep each answer 30 seconds
+// (below), so the map trails the database by about that much.
 export const dynamic = "force-dynamic"
 
 /**
@@ -16,22 +15,22 @@ export const dynamic = "force-dynamic"
  *   There's no way to ask for every location (#201, docs/scraping.md).
  */
 export async function GET(request: NextRequest) {
-  const refused = await refuseBots()
-  if (refused) return refused
-  const limited = await limitClient(request, RATE_RULES.locations)
-  if (limited) return limited
+  const blocked = await guardRoute(request, RATE_RULES.locations, { bots: true })
+  if (blocked) return blocked
   const params = request.nextUrl.searchParams
   try {
     const parsed = bboxQuerySchema.safeParse({
       bbox: params.get("bbox"),
       types: params.get("types") ?? undefined,
+      retailer: params.get("retailer") ?? undefined,
     })
     if (!parsed.success) {
       const message = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")
       return NextResponse.json({ error: `Invalid query. ${message}` }, { status: 400 })
     }
 
-    return NextResponse.json(await getLocationsInBbox(parsed.data), {
+    const { retailer, ...query } = parsed.data
+    return NextResponse.json(await getLocationsInBbox({ ...query, retailers: retailer }), {
       // Only the browser keeps it: a CDN copy would reach bots without BotID's check (#198).
       headers: { "Cache-Control": "private, max-age=30" },
     })
