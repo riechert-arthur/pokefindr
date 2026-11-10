@@ -26,8 +26,10 @@ async function main() {
     console.log("Refreshed location_region_counts.")
     if (isLocalDatabase(migrationDatabaseUrl())) {
       const seeded = await seedDevUsers(sql)
-      const added = seeded.filter((s) => s.outcome === "added").length
-      console.log(`Dev accounts: ${added} added, ${seeded.length - added} already there. Password for all: ${DEV_PASSWORD}`)
+      const counts = new Map<string, number>()
+      for (const { outcome } of seeded) counts.set(outcome, (counts.get(outcome) ?? 0) + 1)
+      const summary = [...counts].map(([outcome, n]) => `${n} ${outcome}`).join(", ")
+      console.log(`Dev accounts: ${summary}. Password for all: ${DEV_PASSWORD}`)
       for (const { account, outcome } of seeded) {
         console.log(`  ${account.email.padEnd(30)} ${account.role}${outcome === "unchanged" ? "" : ` (${outcome})`}`)
       }

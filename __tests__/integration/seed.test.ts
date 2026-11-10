@@ -127,6 +127,29 @@ describe("seedDevUsers", () => {
     expect(await requireEntitlement(as(), "moderation.view")).toEqual({ userId: mod.id, role: "moderator" })
   })
 
+  it("skips an account whose username someone signed up with, instead of failing", async () => {
+    await sql`insert into users (id, name, email) values (gen_random_uuid(), 'Other Dev', 'other@example.com')`
+    await sql`insert into profiles (id, username) select id, 'Dev' from users where email = 'other@example.com'`
+    expect((await seedDevUsers(sql, [DEV_USER]))[0].outcome).toBe("username taken")
+    expect(await sql`select 1 from users where id = ${DEV_USER.id}`).toHaveLength(0)
+  })
+
+  it("leaves an account someone signed up with a seeded email alone", async () => {
+    await sql`insert into users (id, name, email) values (gen_random_uuid(), 'Real Dev', ${DEV_USER.email})`
+    await sql`insert into profiles (id, username) select id, 'realdev' from users where email = ${DEV_USER.email}`
+    expect((await seedDevUsers(sql, [DEV_USER]))[0].outcome).toBe("email taken")
+    const [row] = await sql`select p.role from profiles p join users u on u.id = p.id where u.email = ${DEV_USER.email}`
+    expect(row.role).toBe("member")
+  })
+
+  it("adds the profile an older seed left out, with its role", async () => {
+    await seedDevUsers(sql)
+    await sql`delete from profiles where id = ${DEV_USER.id}`
+    expect((await seedDevUsers(sql, [DEV_USER]))[0].outcome).toBe("profile added")
+    const [row] = await sql`select role, onboarded from profiles where id = ${DEV_USER.id}`
+    expect(row).toEqual({ role: DEV_USER.role, onboarded: true })
+  })
+
   it("puts a role changed by hand back to the seeded value", async () => {
     await seedDevUsers(sql)
     await sql`update profiles set role = 'member' where id = ${DEV_USER.id}`

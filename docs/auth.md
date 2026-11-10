@@ -124,7 +124,9 @@ can(role, "admin.jobs") // true for admins only
 The accounts are `DEV_ACCOUNTS` in `scripts/db/seedDevUsers.ts`; add an entry to seed another.
 Each run adds missing accounts and sets an existing account's role back to the seeded value, so a
 seeded account always means the same thing, on new and existing branch databases alike. To try
-a role change, use an account you signed up yourself.
+a role change, use an account you signed up yourself. Accounts are matched by their fixed id, so
+one you signed up yourself is never changed: if its email or username is a seeded one, the seed
+skips that seeded account and says so (`email taken`, `username taken`).
 
 Every email the app sends goes to Mailpit at http://localhost:8025. Running `npm run dev` outside
 Docker, `MAIL_PROVIDER` defaults to `console`, which prints each email (and its link) in the
