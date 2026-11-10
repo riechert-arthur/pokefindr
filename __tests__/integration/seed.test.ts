@@ -2,6 +2,8 @@ import { afterAll, describe, expect, it } from "vitest"
 import postgres from "postgres"
 import { readSeedLocations, seedLocations } from "../../scripts/db/seedLocations"
 import { SAMPLE_EVENTS, SAMPLE_SOURCE, seedSampleHighlights } from "../../scripts/db/seedHighlights"
+import { DEV_ACCOUNTS, DEV_PASSWORD, DEV_USER, seedDevUsers } from "../../scripts/db/seedDevUsers"
+import { verifyPassword } from "better-auth/crypto"
 import { getDb } from "@/server/db/client"
 import { getLocationsNear } from "@/server/services/locations"
 import { getUpcomingEvents } from "@/server/services/highlights"
@@ -83,5 +85,73 @@ describe("seedSampleHighlights", () => {
     expect(before).toHaveLength(SAMPLE_EVENTS.length)
     const [old] = await sql`select is_active from locations where name = 'Old show (sample)'`
     expect(old.is_active).toBe(false)
+  })
+})
+
+describe("seedDevUsers", () => {
+  const outcomes = async () => (await seedDevUsers(sql)).map((r) => [r.account.email, r.outcome])
+  const accounts = () =>
+    sql<{ email: string; username: string; role: string; onboarded: boolean; email_verified: boolean }[]>`
+      select u.email, p.username, p.role, p.onboarded, u.email_verified
+      from users u join profiles p on p.id = u.id order by u.email`
+
+  it("adds every account once, then changes nothing", async () => {
+    expect(await outcomes()).toEqual(DEV_ACCOUNTS.map((a) => [a.email, "added"]))
+    const after = await accounts()
+    expect(await outcomes()).toEqual(DEV_ACCOUNTS.map((a) => [a.email, "unchanged"]))
+    expect(await accounts()).toEqual(after)
+    expect(after).toEqual(
+      [...DEV_ACCOUNTS]
+        .sort((a, b) => a.email.localeCompare(b.email))
+        .map((a) => ({ email: a.email, username: a.username, role: a.role, onboarded: true, email_verified: true })),
+    )
+    const [{ count }] = await sql<{ count: number }[]>`select count(*)::int as count from accounts where provider_id = 'credential'`
+    expect(count).toBe(DEV_ACCOUNTS.length)
+  })
+
+  it("makes the dev account an admin", async () => {
+    await seedDevUsers(sql)
+    const [row] = await sql`select role from profiles where id = ${DEV_USER.id}`
+    expect(row.role).toBe("admin")
+  })
+
+  it("skips an account whose username someone signed up with, instead of failing", async () => {
+    await sql`insert into users (id, name, email) values (gen_random_uuid(), 'Other Dev', 'other@example.com')`
+    await sql`insert into profiles (id, username) select id, 'Dev' from users where email = 'other@example.com'`
+    expect((await seedDevUsers(sql, [DEV_USER]))[0].outcome).toBe("username taken")
+    expect(await sql`select 1 from users where id = ${DEV_USER.id}`).toHaveLength(0)
+  })
+
+  it("leaves an account someone signed up with a seeded email alone", async () => {
+    await sql`insert into users (id, name, email) values (gen_random_uuid(), 'Real Dev', ${DEV_USER.email})`
+    await sql`insert into profiles (id, username) select id, 'realdev' from users where email = ${DEV_USER.email}`
+    expect((await seedDevUsers(sql, [DEV_USER]))[0].outcome).toBe("email taken")
+    const [row] = await sql`select p.role from profiles p join users u on u.id = p.id where u.email = ${DEV_USER.email}`
+    expect(row.role).toBe("member")
+  })
+
+  it("adds the profile an older seed left out, with its role", async () => {
+    await seedDevUsers(sql)
+    await sql`delete from profiles where id = ${DEV_USER.id}`
+    expect((await seedDevUsers(sql, [DEV_USER]))[0].outcome).toBe("profile added")
+    const [row] = await sql`select role, onboarded from profiles where id = ${DEV_USER.id}`
+    expect(row).toEqual({ role: DEV_USER.role, onboarded: true })
+  })
+
+  it("puts a role changed by hand back to the seeded value", async () => {
+    await seedDevUsers(sql)
+    await sql`update profiles set role = 'member' where id = ${DEV_USER.id}`
+    expect((await seedDevUsers(sql, [DEV_USER]))[0].outcome).toBe("role reset")
+    const [row] = await sql`select role from profiles where id = ${DEV_USER.id}`
+    expect(row.role).toBe(DEV_USER.role)
+  })
+
+  it("stores a password Better Auth accepts", async () => {
+    await seedDevUsers(sql)
+    const rows = await sql<{ password: string }[]>`select password from accounts where provider_id = 'credential'`
+    expect(rows).toHaveLength(DEV_ACCOUNTS.length)
+    for (const { password } of rows) {
+      expect(await verifyPassword({ hash: password, password: DEV_PASSWORD })).toBe(true)
+    }
   })
 })

@@ -2,15 +2,16 @@
  * Loads the fixture locations in database/seeds/locations.json and a few
  * sample events (labelled as samples, each at an event location) so a local
  * database isn't empty, then refreshes the per-state counts. On a local
- * database it also adds a dev account (scripts/db/seedDevUser.ts). Safe to
- * run repeatedly (see seedLocations, seedSampleHighlights and seedDevUser).
+ * database it also adds the dev accounts, one per role
+ * (scripts/db/seedDevUsers.ts). Safe to run repeatedly (see seedLocations,
+ * seedSampleHighlights and seedDevUsers).
  *
  *   npm run db:seed    (make run runs it in the init container)
  */
 import { loadDevEnv, migrationClient, migrationDatabaseUrl } from "./env"
 import { readSeedLocations, seedLocations } from "./seedLocations"
 import { seedSampleHighlights } from "./seedHighlights"
-import { DEV_USER, isLocalDatabase, seedDevUser } from "./seedDevUser"
+import { DEV_PASSWORD, isLocalDatabase, seedDevUsers } from "./seedDevUsers"
 
 loadDevEnv()
 
@@ -24,10 +25,16 @@ async function main() {
     await sql`refresh materialized view location_region_counts`
     console.log("Refreshed location_region_counts.")
     if (isLocalDatabase(migrationDatabaseUrl())) {
-      const added = await seedDevUser(sql)
-      console.log(`Dev user ${DEV_USER.email} / ${DEV_USER.password}${added ? " (added)" : ""}.`)
+      const seeded = await seedDevUsers(sql)
+      const counts = new Map<string, number>()
+      for (const { outcome } of seeded) counts.set(outcome, (counts.get(outcome) ?? 0) + 1)
+      const summary = [...counts].map(([outcome, n]) => `${n} ${outcome}`).join(", ")
+      console.log(`Dev accounts: ${summary}. Password for all: ${DEV_PASSWORD}`)
+      for (const { account, outcome } of seeded) {
+        console.log(`  ${account.email.padEnd(30)} ${account.role}${outcome === "unchanged" ? "" : ` (${outcome})`}`)
+      }
     } else {
-      console.log("Not a local database: no dev user.")
+      console.log("Not a local database: no dev accounts.")
     }
   } finally {
     await sql.end({ timeout: 5 })
