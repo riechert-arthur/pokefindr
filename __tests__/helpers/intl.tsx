@@ -7,14 +7,12 @@
 import type { ReactNode } from "react"
 import { createTranslator, NextIntlClientProvider } from "next-intl"
 import * as rtl from "@testing-library/react"
-import { merge, type Messages, type Tree } from "@/i18n/messages"
+import { MESSAGES } from "@/i18n/all-messages"
 import { DEFAULT_LOCALE, type Locale } from "@/i18n/routing"
-import en from "@/i18n/generated/en.json"
-import es from "@/i18n/generated/es.json"
 
 export * from "@testing-library/react"
 
-export const MESSAGES: Record<Locale, Messages> = { en, es: merge(en, es as Tree) as Messages }
+export { MESSAGES }
 
 type Options<T> = T & { locale?: Locale }
 
