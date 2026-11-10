@@ -115,6 +115,7 @@ map:
     someGoneBody: Ya no están en el mapa, así que la ruta las omite.
     shown: Ruta en el mapa
     shownBody: "{count, plural, one {# parada, en el orden de visita.} other {# paradas, en el orden de visita.}}"
+    straight: No se pudieron obtener indicaciones por calles; se muestran líneas rectas.
     clear: Quitar
     stop: "Parada {n}: {name}"
   controls:

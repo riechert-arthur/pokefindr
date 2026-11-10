@@ -160,6 +160,8 @@ map:
     someGoneBody: They aren't on the map anymore, so the route skips them.
     shown: Route on the map
     shownBody: "{count, plural, one {# stop, in visiting order.} other {# stops, in visiting order.}}"
+    # Instead of "shown" when the route is straight lines between the stops, not along the streets.
+    straight: Couldn't get street directions, showing straight lines.
     clear: Clear
     # A numbered pin. {n} is its place in the route, {name} the place.
     stop: "Stop {n}: {name}"

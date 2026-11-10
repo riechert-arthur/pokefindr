@@ -5,6 +5,7 @@ import { identityTokenSource } from "@/server/adapters/claude/identity"
 import { getServerConfig, type ServerConfig } from "@/server/config"
 import type { Geocoder } from "@/server/ports/geocoder"
 import type { Mailer } from "@/server/ports/mailer"
+import type { Router } from "@/server/ports/router"
 import type { SharedRateLimiter } from "@/server/ports/rate-limiter"
 import { MemoryRateLimiter } from "@/server/adapters/rate-limiter/memory"
 import { PostgresRateLimiter } from "@/server/adapters/rate-limiter/postgres"
@@ -16,6 +17,8 @@ import { PhotonGeocoder } from "@/server/adapters/geocoder/photon"
 import { MapboxGeocoder } from "@/server/adapters/geocoder/mapbox"
 import { MapTilerGeocoder } from "@/server/adapters/geocoder/maptiler"
 import { NominatimGeocoder } from "@/server/adapters/geocoder/nominatim"
+import { FakeRouter } from "@/server/adapters/router/fake"
+import { OpenRouteServiceRouter } from "@/server/adapters/router/openrouteservice"
 
 /**
  * Builds the adapter for each port from config. Services and routes get
@@ -34,6 +37,17 @@ export function makeGeocoder(config: ServerConfig): Geocoder {
       return new NominatimGeocoder(config.GEOCODER_USER_AGENT!, config.GEOCODER_BASE_URL)
     case "fake":
       return new FakeGeocoder()
+  }
+}
+
+export function makeRouter(config: ServerConfig): Router {
+  switch (config.ROUTER_PROVIDER) {
+    case "openrouteservice":
+      return new OpenRouteServiceRouter(config.ROUTER_API_KEY!, config.ROUTER_BASE_URL)
+    case "fake":
+      // Allowed, so a deploy without the key still works, but say so: every route is straight.
+      if (config.NODE_ENV === "production") console.warn("[router] no ROUTER_API_KEY in production; assistant routes are straight lines")
+      return new FakeRouter()
   }
 }
 
@@ -56,6 +70,7 @@ export function makeRateLimiter(config: ServerConfig): SharedRateLimiter {
 }
 
 let geocoder: Geocoder | undefined
+let router: Router | undefined
 let rateLimiter: SharedRateLimiter | undefined
 let mailer: Mailer | undefined
 let anthropic: Anthropic | null | undefined
@@ -64,6 +79,12 @@ let anthropic: Anthropic | null | undefined
 export function getGeocoder(): Geocoder {
   geocoder ??= makeGeocoder(getServerConfig())
   return geocoder
+}
+
+/** The configured router (#288), built once per server instance. */
+export function getRouter(): Router {
+  router ??= makeRouter(getServerConfig())
+  return router
 }
 
 /** The configured mailer, built once per server instance. */
@@ -113,6 +134,7 @@ export function getAnthropic(): Anthropic | null {
 /** Test helper: forget the built adapters so the next call re-reads config. */
 export function resetContainerForTests() {
   geocoder = undefined
+  router = undefined
   mailer = undefined
   anthropic = undefined
 }
