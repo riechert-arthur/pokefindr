@@ -3,6 +3,7 @@ import { z } from "zod/v3"
 import { getPanelReviews } from "@/server/services/reviews"
 import { viewerId } from "@/server/auth/viewer"
 import { guardRoute, RATE_RULES } from "@/server/api-rate-limit"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest, context: Context) {
   try {
     return NextResponse.json(await getPanelReviews(parsed.data, await viewerId(request)), { headers: { "Cache-Control": "private, no-store" } })
   } catch (err) {
-    console.error("[api/locations/id/reviews] failed to load reviews", err)
+    log.forRequest(request, "/api/locations/[id]/reviews").logError("api.failed", err, { step: "failed to load reviews" })
     return NextResponse.json({ error: "Failed to load reviews" }, { status: 500 })
   }
 }

@@ -3,6 +3,7 @@ import { z } from "zod/v3"
 import { SUBMISSION_KINDS } from "@/lib/submissions/constants"
 import { findDuplicates } from "@/server/services/submissions"
 import { apiError } from "@/server/api-error"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
   try {
     return NextResponse.json({ duplicates: await findDuplicates({ ...query.data, userId }) })
   } catch (err) {
-    console.error("[api/submissions/duplicates] failed", err)
+    log.forRequest(request, "/api/submissions/duplicates").logError("api.failed", err)
     return apiError("serverError", "Server error", 500)
   }
 }

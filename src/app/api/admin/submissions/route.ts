@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { listDecided, listQueue } from "@/server/services/moderation"
 import { requireEntitlement } from "@/server/admin/access"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
     const [queue, decided] = await Promise.all([listQueue(userId), listDecided(userId)])
     return NextResponse.json({ queue, decided })
   } catch (err) {
-    console.error("[api/admin/submissions] failed to load the queue", err)
+    log.forRequest(request, "/api/admin/submissions").logError("api.failed", err, { step: "failed to load the queue" })
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }

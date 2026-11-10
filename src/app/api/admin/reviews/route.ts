@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { requireEntitlement } from "@/server/admin/access"
 import { listDecidedReviews, listHeldReviews } from "@/server/services/review-moderation"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
     const [held, decided] = await Promise.all([listHeldReviews(staff.userId), listDecidedReviews(staff.userId)])
     return NextResponse.json({ held, decided }, { headers: { "Cache-Control": "no-store" } })
   } catch (err) {
-    console.error("[api/admin/reviews] failed to list", err)
+    log.forRequest(request, "/api/admin/reviews").logError("admin.reviews_list_failed", err)
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }

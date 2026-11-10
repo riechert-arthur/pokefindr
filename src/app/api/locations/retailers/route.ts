@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getTopRetailers } from "@/server/services/region-counts"
 import { guardRoute, RATE_RULES } from "@/server/api-rate-limit"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -16,7 +17,7 @@ export async function GET(request: Request) {
   try {
     return NextResponse.json({ retailers: await getTopRetailers() }, { headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" } })
   } catch (err) {
-    console.error("[api/locations/retailers] failed to load retailers", err)
+    log.forRequest(request, "/api/locations/retailers").logError("api.failed", err, { step: "failed to load retailers" })
     return NextResponse.json({ error: "Failed to load retailers" }, { status: 500 })
   }
 }

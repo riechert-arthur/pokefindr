@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { listUserReviews } from '@/server/services/reviews'
 import { apiError } from "@/server/api-error"
+import { log } from "@/server/log"
 
 export async function GET(req: NextRequest) {
   const userId = req.headers.get('x-user-id')
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
     const reviews = await listUserReviews(userId)
     return NextResponse.json({ reviews }, { status: 200 })
   } catch (err) {
-    console.error('[api/my-reviews] failed to load reviews', err)
+    log.forRequest(req, "/api/my-reviews").logError("api.failed", err, { step: "failed to load reviews" })
     return apiError("serverError", "Server error", 500)
   }
 }

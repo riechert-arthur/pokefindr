@@ -1,6 +1,6 @@
 import "server-only"
 import { NextResponse, type NextRequest } from "next/server"
-import { getAuth, IDENTITY_BASE_PATH } from "@/server/auth/auth"
+import { authHandler, IDENTITY_BASE_PATH } from "@/server/auth/auth"
 import { getServerConfig } from "@/server/config"
 import { LOCALE_HEADER, requestLocale } from "@/server/i18n"
 
@@ -49,7 +49,7 @@ export async function identityRequest(req: NextRequest | Request, path: `/${stri
   if (userAgent) headers.set("user-agent", userAgent)
   // The page's language, for the emails Better Auth sends from this request (#185).
   headers.set(LOCALE_HEADER, requestLocale(req))
-  return getAuth().handler(
+  return authHandler(
     new Request(new URL(`${IDENTITY_BASE_PATH}${path}`, APP_URL), { method: "POST", headers, body: JSON.stringify(body ?? {}) }),
   )
 }

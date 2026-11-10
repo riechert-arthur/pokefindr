@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getAuth, IDENTITY_BASE_PATH } from "@/server/auth/auth"
+import { authHandler, IDENTITY_BASE_PATH } from "@/server/auth/auth"
 
 /**
  * Better Auth's endpoints the browser uses directly: OAuth, email links,
@@ -13,7 +13,7 @@ const OURS_INSTEAD = new Set(["/sign-up/email", "/sign-in/email", "/change-email
 function handle(req: Request) {
   const path = new URL(req.url).pathname.slice(IDENTITY_BASE_PATH.length).replace(/\/+$/, "")
   if (OURS_INSTEAD.has(path)) return NextResponse.json({ error: "Not found" }, { status: 404 })
-  return getAuth().handler(req)
+  return authHandler(req)
 }
 
 export const GET = handle

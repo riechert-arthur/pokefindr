@@ -5,6 +5,7 @@ import { addReview } from '@/server/services/reviews'
 import { apiError } from "@/server/api-error"
 import { recheckSoon } from '@/server/services/review-moderation'
 import { limitClient, RATE_RULES } from '@/server/api-rate-limit'
+import { log } from "@/server/log"
 
 const bodySchema = z.object({
   locationId: z.string().uuid(),
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
     // `held`: it waits for a moderator, and only its author sees it (#253).
     return NextResponse.json({ success: true, id: added.id, status: added.status }, { status: 200 })
   } catch (err) {
-    console.error('[api/reviews] failed to add review', err)
+    log.forRequest(req, "/api/reviews").logError("db.write_failed", err, { write: "review", step: "failed to add review" })
     return apiError("serverError", "Server error", 500)
   }
 }

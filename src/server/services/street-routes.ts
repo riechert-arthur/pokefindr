@@ -9,6 +9,7 @@ import type { RateRule } from "@/server/ports/rate-limiter"
 import type { RoutePoint, Router } from "@/server/ports/router"
 import type { RouteStop, StreetRoute } from "@/lib/types/routes"
 import { queryFeatures } from "./locations"
+import { log } from "@/server/log"
 
 /** The most stops in a route, as the assistant's plan_route allows. */
 export { MAX_STOPS } from "@/server/assistant/tools"
@@ -68,7 +69,7 @@ export async function streetRoute(
     return { ...result, stops }
   } catch (err) {
     if (signal?.aborted) throw err
-    console.error("[route] routing failed; drawing straight lines", err)
+    log.logError("route.routing_failed", err, { fallback: "straight" }, "warn")
     return fallback()
   }
 }

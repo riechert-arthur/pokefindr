@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { requireEntitlement } from "@/server/admin/access"
 import { listUsers } from "@/server/services/user-admin"
 import { ROLES, type Role } from "@/lib/auth/roles"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
   try {
     return NextResponse.json(await listUsers({ q, role: role as Role | null, cursor: params.get("cursor") }), { headers: { "Cache-Control": "no-store" } })
   } catch (err) {
-    console.error("[api/admin/users] failed", err)
+    log.forRequest(request, "/api/admin/users").logError("admin.users_failed", err)
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }

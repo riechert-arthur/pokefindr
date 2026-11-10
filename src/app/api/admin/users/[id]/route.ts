@@ -3,6 +3,7 @@ import { z } from "zod/v3"
 import { requireEntitlement } from "@/server/admin/access"
 import { setRole } from "@/server/services/user-admin"
 import { SET_ROLE_ERRORS, type SetRoleRefusal } from "@/lib/admin/users"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -30,7 +31,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     if (result.status === "done" || result.status === "unchanged") return NextResponse.json(result)
     return NextResponse.json({ error: SET_ROLE_ERRORS[result.status], status: result.status }, { status: STATUS[result.status] })
   } catch (err) {
-    console.error("[api/admin/users] failed", err)
+    log.forRequest(request, "/api/admin/users/[id]").logError("admin.users_failed", err)
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }

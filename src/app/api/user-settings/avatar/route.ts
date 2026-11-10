@@ -6,6 +6,7 @@ import { getImageStore } from "@/server/container"
 import type { ImageStore } from "@/server/ports/image-store"
 import { AvatarError, removeAvatar, setAvatar, tooLarge, type AvatarRefusal } from "@/server/services/avatars"
 import { AVATAR_MAX_BYTES } from "@/lib/avatars"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 // sharp needs Node, not the edge runtime.
@@ -80,7 +81,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     return NextResponse.json({ image })
   } catch (err) {
     if (err instanceof AvatarError) return apiError(err.code, err.message, REFUSED[err.code])
-    console.error("[api/user-settings/avatar] upload failed", err)
+    log.forRequest(req, "/api/user-settings/avatar").logError("avatar.upload_failed", err)
     return apiError("serverError", "Something went wrong on our side. Try again.", 500)
   }
 }

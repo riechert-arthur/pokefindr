@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod/v3"
 import { guardRoute, RATE_RULES } from "@/server/api-rate-limit"
 import { getRouteStops, MAX_STOPS, streetRoute } from "@/server/services/street-routes"
+import { log } from "@/server/log"
 
 // Answers vary by ids; the CDN caches each one (below).
 export const dynamic = "force-dynamic"
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
   try {
     stops = await getRouteStops(parsed.data)
   } catch (err) {
-    console.error("[api/route] failed to load the stops", err)
+    log.forRequest(request, "/api/route").logError("route.stops_failed", err)
     return NextResponse.json({ error: "Failed to load the route" }, { status: 500 })
   }
   if (stops.length < 2) return NextResponse.json({ error: "Route not found" }, { status: 404 })

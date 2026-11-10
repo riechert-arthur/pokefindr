@@ -5,6 +5,7 @@ import { getDb, type Database } from "@/server/db/client"
 import { assistantFeedback, assistantPlaceViews, assistantTurnTexts, assistantTurns, assistantUsage, type AssistantOutcome } from "@/server/db/schema"
 import { defineJob } from "@/server/lib/jobs/types"
 import type { AssistantUsage } from "@/lib/types/assistant-stream"
+import { log, timed } from "@/server/log"
 
 /**
  * The assistant's turn log (#212): one row per turn for cost and review,
@@ -81,7 +82,7 @@ export interface TurnRecord {
 
 /** Stores a turn, and writes one log line about it (no text). */
 export async function recordTurn(t: TurnRecord, db: Database = getDb()): Promise<void> {
-  await db.transaction(async (tx) => {
+  await timed("recordTurn", () => db.transaction(async (tx) => {
     await tx.insert(assistantTurns).values({
       id: t.id,
       userId: t.userId,
@@ -99,20 +100,17 @@ export async function recordTurn(t: TurnRecord, db: Database = getDb()): Promise
       flags: t.flags,
     })
     if (t.text) await tx.insert(assistantTurnTexts).values({ turnId: t.id, question: t.text.question, answer: t.text.answer, toolCalls: t.tools })
+  }))
+  log.info("assistant_turn", {
+    turnId: t.id,
+    userId: t.userId,
+    outcome: t.outcome,
+    model: t.model,
+    ...t.usage,
+    latencyMs: t.latencyMs,
+    tools: t.tools.map((x) => `${x.name}${x.ok ? "" : "!"}`),
+    flags: t.flags,
   })
-  console.info(
-    JSON.stringify({
-      event: "assistant_turn",
-      turnId: t.id,
-      userId: t.userId,
-      outcome: t.outcome,
-      model: t.model,
-      ...t.usage,
-      latencyMs: t.latencyMs,
-      tools: t.tools.map((x) => `${x.name}${x.ok ? "" : "!"}`),
-      flags: t.flags,
-    }),
-  )
 }
 
 /** Deletes the text of a user's turns and feedback comments ("clear my assistant history"); the rows stay, without text. */

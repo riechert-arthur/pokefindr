@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod/v3"
 import { requireEntitlement } from "@/server/admin/access"
 import { decideReview, type ReviewDecision } from "@/server/services/review-moderation"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     }
     return NextResponse.json({ ok: true, status: result.review })
   } catch (err) {
-    console.error("[api/admin/reviews] failed to decide", err)
+    log.forRequest(request, "/api/admin/reviews/[id]").logError("admin.review_decide_failed", err)
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }

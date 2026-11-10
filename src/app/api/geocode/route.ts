@@ -3,6 +3,7 @@ import { getGeocoder } from "@/server/container"
 import { GeocoderError } from "@/server/ports/geocoder"
 import { geocodeQuerySchema } from "@/lib/geocode/query"
 import { guardRoute, RATE_RULES } from "@/server/api-rate-limit"
+import { log } from "@/server/log"
 
 // Answers vary by query; the CDN caches each one (below).
 export const dynamic = "force-dynamic"
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
     )
   } catch (err) {
     if (request.signal.aborted) return new NextResponse(null, { status: 499 })
-    console.error("[api/geocode] search failed", err)
+    log.forRequest(request, "/api/geocode").logError("api.failed", err, { step: "search failed" })
     const status = err instanceof GeocoderError && err.status === 429 ? 503 : 502
     return NextResponse.json({ error: "Search is unavailable right now" }, { status })
   }

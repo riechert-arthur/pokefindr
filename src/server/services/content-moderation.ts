@@ -1,6 +1,7 @@
 import "server-only"
 import { getModerator } from "@/server/container"
 import { noUsage, type ContentModerator, type ModerationOptions, type ModerationResult, type ModerationVerdict } from "@/server/ports/moderator"
+import { log } from "@/server/log"
 
 /** How long a review waits for its check before it's held (#253). */
 export const REVIEW_CHECK_TIMEOUT_MS = 3_000
@@ -21,7 +22,7 @@ export async function moderate(
   try {
     moderator = given ?? getModerator()
   } catch (err) {
-    console.error("[moderation] couldn't set up the moderator", err)
+    log.logError("moderation.setup_failed", err)
     return failedResult(fallback, "unconfigured")
   }
   try {
@@ -34,7 +35,7 @@ export async function moderate(
     const timedOut = timeout.aborted
     // The caller gave up on it (a refused request): nothing to report.
     if (outer?.aborted && !timedOut) return failedResult(fallback, "error")
-    console.error(JSON.stringify({ event: "moderation_failed", kind: rest.kind, timedOut, error: err instanceof Error ? err.name : String(err) }))
+    log.logError("moderation.failed", err, { kind: rest.kind, timedOut }, "warn")
     return failedResult(fallback, timedOut ? "timeout" : "error")
   }
 }

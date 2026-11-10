@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getPlacementFlags } from "@/server/services/ad-placements"
 import { SPONSOR_PLACEMENTS } from "@/config/banners"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -14,7 +15,7 @@ export async function GET() {
   try {
     return NextResponse.json({ placements: await getPlacementFlags() }, { headers: { "Cache-Control": "no-store" } })
   } catch (err) {
-    console.error("[api/ads/placements] failed", err)
+    log.with({ route: "/api/ads/placements" }).logError("api.failed", err)
     return NextResponse.json({ placements: Object.fromEntries(SPONSOR_PLACEMENTS.map((p) => [p, false])) }, { headers: { "Cache-Control": "no-store" } })
   }
 }

@@ -1,3 +1,4 @@
+import { logError } from "@/server/log"
 /**
  * Keeps uploaded images (profile pictures, #290) and serves them at a public
  * URL. Adapters live in `src/server/adapters/image-store/`; `getImageStore()`
@@ -19,5 +20,5 @@ export interface ImageStore {
  */
 export async function deleteOwnedImage(store: ImageStore | null, url: string | null | undefined): Promise<void> {
   if (!store || !url || !store.owns(url)) return
-  await store.delete(url).catch((err) => console.error("[image-store] couldn't delete", url, err))
+  await store.delete(url).catch((err) => logError("image_store.delete_failed", err))
 }

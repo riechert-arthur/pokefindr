@@ -4,6 +4,7 @@ import { refuseBots } from "@/server/bot-check"
 import { getRateLimiter } from "@/server/container"
 import { clientIp, rateLimitKey } from "@/server/lib/rate-limit"
 import type { RateRule } from "@/server/ports/rate-limiter"
+import { log, sampled } from "@/server/log"
 
 /**
  * Per-client limits on the public data routes (#199, docs/scraping.md),
@@ -25,6 +26,20 @@ export const RATE_RULES = {
   route: { name: "route", perMinute: 30, burst: 10 },
 } as const satisfies Record<string, RateRule>
 
+/** One 429 in this many is logged (security.rate_limited). */
+const LIMITED_SAMPLE = 10
+
+/**
+ * The start of an IP, for logs: the /24 for IPv4 (`203.0.113.0/24`), the
+ * /64 for IPv6 (as the limiter keys it). Never the whole address.
+ */
+export function ipPrefix(ip: string): string {
+  const key = rateLimitKey(ip)
+  const v4 = /^(\d+\.\d+\.\d+)\.\d+$/.exec(key)
+  if (v4) return `${v4[1]}.0/24`
+  return key.endsWith("::/64") ? key : "unknown"
+}
+
 /** How long a request waits on the limiter before going through without it. */
 const LIMITER_TIMEOUT_MS = 300
 
@@ -34,13 +49,23 @@ const LIMITER_TIMEOUT_MS = 300
  * id). If the store fails or is slow (LIMITER_TIMEOUT_MS), the request goes
  * through: a limiter outage shouldn't take the map down.
  */
+const UUID_SEGMENT = /\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(?=\/|$)/gi
+
+/** The route a request is for, as the other log lines name it: `/api/locations/[id]`, not the id itself. */
+export function routeOf(request: Request): string {
+  return new URL(request.url).pathname.replace(UUID_SEGMENT, "/[id]")
+}
+
 export async function limitClient(request: Request, rule: RateRule, key?: string): Promise<Response | null> {
   try {
-    const { ok, retryAfter } = await takeInTime(rule, key ?? rateLimitKey(clientIp(request.headers)))
+    const ip = clientIp(request.headers)
+    const { ok, retryAfter } = await takeInTime(rule, key ?? rateLimitKey(ip))
     if (ok) return null
+    // A scraper earns one a second: a sample is enough to see it.
+    if (sampled(LIMITED_SAMPLE)) log.forRequest(request, routeOf(request)).info("security.rate_limited", { rule: rule.name, ipPrefix: ipPrefix(ip), retryAfter, sample: LIMITED_SAMPLE })
     return apiError("tooManyRequests", "Too many requests. Wait a moment and try again.", 429, {}, { headers: { "Retry-After": String(retryAfter) } })
   } catch (err) {
-    console.error(`[rate-limit] couldn't check ${rule.name}; letting the request through`, err)
+    log.forRequest(request).logError("rate_limit.check_failed", err, { rule: rule.name })
     return null
   }
 }
@@ -60,7 +85,7 @@ export async function withinServerBudget(rule: RateRule): Promise<boolean> {
   try {
     return (await takeInTime(rule, "server")).ok
   } catch (err) {
-    console.error(`[rate-limit] couldn't check ${rule.name}; going ahead`, err)
+    log.logError("rate_limit.check_failed", err, { rule: rule.name, scope: "server" }, "warn")
     return true
   }
 }
@@ -71,6 +96,6 @@ export async function withinServerBudget(rule: RateRule): Promise<boolean> {
  * BotID's 403, anyone else over the limit a 429; null means go ahead.
  */
 export async function guardRoute(request: Request, rule: RateRule, { bots = false }: { bots?: boolean } = {}): Promise<Response | null> {
-  const [refused, limited] = await Promise.all([bots ? refuseBots() : null, limitClient(request, rule)])
+  const [refused, limited] = await Promise.all([bots ? refuseBots(routeOf(request)) : null, limitClient(request, rule)])
   return refused ?? limited
 }

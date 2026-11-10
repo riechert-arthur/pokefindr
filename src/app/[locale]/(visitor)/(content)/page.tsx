@@ -19,6 +19,7 @@ import { getTranslations } from "next-intl/server"
 import { pageMetadata } from "@/i18n/seo"
 import { getPathname } from "@/i18n/navigation"
 import { PRODUCTION_URL } from "@/server/site-url"
+import { log } from "@/server/log"
 
 // The counts change only after an import; rebuild the page at most hourly.
 export const revalidate = 3600
@@ -46,7 +47,7 @@ async function orNullWithoutDb<T>(what: string, load: () => Promise<T>): Promise
     return await load()
   } catch (err) {
     if (process.env.NODE_ENV === "production" && process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD) throw err
-    console.error(`[landing] couldn't load the ${what}; building the page without them`, err)
+    log.with({ route: "/" }).logError("page.failed", err, { step: `couldn't load the ${what}; building the page without them` })
     return null
   }
 }
@@ -86,7 +87,7 @@ export default async function LandingPage({ params }: LocaleParams) {
     // Whether the sponsored strip is on, so its space is kept from the first paint (#298).
     // Optional: if it can't be read, the strip just isn't reserved (rather than the page failing to rebuild).
     adFlags().catch((err: unknown) => {
-      console.error("[landing] couldn't read the ad placements; not reserving the strip", err)
+      log.with({ route: "/" }).logError("page.failed", err, { step: "couldn't read the ad placements; not reserving the strip" })
       return null
     }),
     getTranslations({ locale, namespace: "landing.meta" }),

@@ -3,6 +3,7 @@ import { z } from "zod/v3"
 import { REPORT_REASONS } from "@/lib/locations/reports"
 import { addLocationReport } from "@/server/services/reports"
 import { apiError } from "@/server/api-error"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest, context: Context) {
     if (result === "rate_limited") return NextResponse.json({ error: "Too many reports today. Try again tomorrow." }, { status: 429 })
     return NextResponse.json({ success: true, duplicate: result === "duplicate" })
   } catch (err) {
-    console.error("[api/locations/id/reports] failed to store the report", err)
+    log.forRequest(request, "/api/locations/[id]/reports").logError("db.write_failed", err, { write: "status_report", step: "failed to store the report" })
     return apiError("serverError", "Server error", 500)
   }
 }

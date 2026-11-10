@@ -4,6 +4,7 @@ import { FEEDBACK_REASONS } from "@/server/db/schema"
 import { saveFeedback } from "@/server/assistant/feedback"
 import { tokenBucket } from "@/server/lib/rate-limit"
 import { apiError } from "@/server/api-error"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -34,7 +35,7 @@ export async function POST(request: NextRequest) {
     if (result === "not_found") return NextResponse.json({ error: "Answer not found" }, { status: 404 })
     return NextResponse.json({ saved: true })
   } catch (err) {
-    console.error("[api/assistant/feedback] couldn't save", err)
+    log.forRequest(request, "/api/assistant/feedback").logError("db.write_failed", err, { write: "assistant_feedback", step: "couldn't save" })
     return apiError("serverError", "Server error", 500)
   }
 }

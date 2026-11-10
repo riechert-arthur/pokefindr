@@ -4,6 +4,7 @@ import { MACHINE_ID, normalizeMachineId } from "@/lib/locations/address"
 import { requireEntitlement } from "@/server/admin/access"
 import { enqueueJob } from "@/server/lib/jobs/enqueue"
 import { addVendingMachine } from "@/server/services/vending"
+import { audit, log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -27,6 +28,7 @@ const body = z.object({
 export async function POST(request: NextRequest) {
   const staff = await requireEntitlement(request, "admin.vending")
   if (staff instanceof NextResponse) return staff
+  const logger = log.forRequest(request, "/api/admin/vending")
   const parsed = body.safeParse(await request.json().catch(() => null))
   if (!parsed.success) {
     const issue = parsed.error.issues[0]
@@ -34,14 +36,17 @@ export async function POST(request: NextRequest) {
   }
   try {
     const result = await addVendingMachine(parsed.data, staff.userId)
+    audit(logger, "vending.add", { actorId: staff.userId, target: result.status === "added" ? result.id : undefined, outcome: result.status })
     if (result.status === "overlap") return NextResponse.json({ error: "This overlaps a machine already on the map.", overlaps: result.overlaps }, { status: 409 })
     if (result.status === "wrong_state")
       return NextResponse.json({ error: result.pinState ? `The pin is in ${result.pinState}, not ${parsed.data.state.toUpperCase()}.` : "The pin isn't in a US state.", field: "pin" }, { status: 400 })
     // The state and region counts are a materialized view: refresh it so the new machine counts.
-    await enqueueJob("refresh-region-counts", {}).catch((err) => console.error("[api/admin/vending] couldn't queue the counts refresh", err))
+    await enqueueJob("refresh-region-counts", {}).catch((err) => logger.logError("api.failed", err, { step: "couldn't queue the counts refresh" }))
     return NextResponse.json({ id: result.id }, { status: 201 })
   } catch (err) {
-    console.error("[api/admin/vending] failed to add", err)
+    // Who tried what, even when it failed.
+    audit(logger, "vending.add", { actorId: staff.userId, outcome: "error" })
+    logger.logError("api.failed", err, { step: "failed to add" })
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }

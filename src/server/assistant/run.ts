@@ -16,6 +16,7 @@ import { memoryOf } from "@/lib/assistant/memory"
 import { costMicros } from "./pricing"
 import type { AssistantCard } from "@/lib/types/assistant"
 import type { AssistantEvent, AssistantTurn, AssistantUsage } from "@/lib/types/assistant-stream"
+import { log } from "@/server/log"
 
 /** What the viewer reads when the model refuses, or the input check blocks a question (#253). */
 export const REFUSAL_REPLY = "I can't help with that one. Ask me about finding Pokémon cards, card shops or events."
@@ -58,7 +59,7 @@ export function getClaude(): ClaudeStreamer | null {
     client = getAnthropic()
   } catch (err) {
     // A misconfiguration (federation with no identity here): the assistant says it's unavailable, and the log says why.
-    console.error("[assistant] couldn't set up the Claude client", err)
+    log.logError("assistant.client_failed", err)
     return null
   }
   return client && claudeStreamer(client)

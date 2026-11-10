@@ -12,6 +12,7 @@ import type { ModerationResult } from "@/server/ports/moderator"
 import type { AssistantOutcome } from "@/server/db/schema"
 import type { AssistantEvent } from "@/lib/types/assistant-stream"
 import { apiError } from "@/server/api-error"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 // A turn can take a few tool rounds.
@@ -64,6 +65,7 @@ export async function POST(request: NextRequest) {
   const body = bodySchema.safeParse(await request.json().catch(() => null))
   if (!body.success) return apiError("invalidInput", "Invalid request", 400, { issues: body.error.issues.map((i) => i.message) })
 
+  const logger = log.forRequest(request, "/api/assistant")
   const db = getDb()
   const now = new Date()
   const budgetMicros = Math.round(config.ASSISTANT_DAILY_BUDGET_USD * 1e6)
@@ -72,7 +74,7 @@ export async function POST(request: NextRequest) {
   try {
     started = await startTurn({ userId, now, dailyBudgetMicros: budgetMicros }, db)
   } catch (err) {
-    console.error("[api/assistant] couldn't check the limits", err)
+    logger.logError("api.failed", err, { step: "couldn't check the limits" })
     return apiError("assistantFailed", "Something went wrong with the assistant. Try again.", 500)
   }
   if (!started.ok) {
@@ -83,7 +85,7 @@ export async function POST(request: NextRequest) {
       await recordTurn(
       { id: crypto.randomUUID(), userId, outcome, model: null, usage: emptyUsage(), latencyMs: null, tools: [], flags: flagsFor({ question, outcome, tools: [], costMicros: 0 }), text: null },
       db,
-    ).catch((err) => console.error("[api/assistant] couldn't log the turn", err))
+    ).catch((err) => logger.logError("api.failed", err, { step: "couldn't log the turn" }))
     return r.kind === "paused"
       ? apiError(r.code, r.message, 503, { paused: true })
       : apiError(r.code, r.message, 429, r.values ? { values: r.values } : {}, { headers: { "Retry-After": String(r.retryAfter) } })
@@ -153,7 +155,7 @@ export async function POST(request: NextRequest) {
       } catch (err) {
         if (request.signal.aborted) outcome = "stopped"
         else {
-          console.error("[api/assistant] turn failed", err)
+          logger.logError("api.failed", err, { step: "turn failed" })
           emit({ type: "error", ...failureMessage(err, signal.aborted) })
         }
       } finally {
@@ -175,7 +177,7 @@ export async function POST(request: NextRequest) {
             },
             db,
           ),
-        ]).catch((err) => console.error("[api/assistant] couldn't record usage", err))
+        ]).catch((err) => logger.logError("api.failed", err, { step: "couldn't record usage" }))
         try {
           controller.close()
         } catch {

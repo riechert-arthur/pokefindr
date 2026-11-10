@@ -12,6 +12,7 @@ import { initialMapView } from "@/lib/map/initial-view"
 import { getLocationFeature } from "@/server/services/locations"
 import type { LocationFeature } from "@/lib/types/locations"
 import { pageMetadata } from "@/i18n/seo"
+import { log } from "@/server/log"
 import { TILE_ORIGIN } from "@/lib/map/tiles"
 
 export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
@@ -32,7 +33,7 @@ async function sharedLocation(id: string | null): Promise<LocationFeature | null
   try {
     return await getLocationFeature(id)
   } catch (err) {
-    console.error("[map] couldn't load the shared location", err)
+    log.with({ route: "/map" }).logError("page.failed", err, { step: "couldn't load the shared location" })
     return null
   }
 }
@@ -53,7 +54,7 @@ async function resolvePlace(params: MapSearchParams): Promise<string | null> {
     if (found.kind === "state" && found.state) return mapUrl("/map", { ...params, q: null, lat: null, lng: null, state: found.state })
     return mapUrl("/map", { ...params, q: found.label, lat: roundPlace(found.lat), lng: roundPlace(found.lng) })
   } catch (err) {
-    console.error("[map] couldn't geocode the linked place", err)
+    log.with({ route: "/map" }).logError("page.failed", err, { step: "couldn't geocode the linked place" })
     return null
   }
 }

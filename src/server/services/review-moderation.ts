@@ -9,6 +9,7 @@ import type { ContentModerator } from "@/server/ports/moderator"
 import { enqueueJob } from "@/server/lib/jobs/enqueue"
 import { moderate } from "./content-moderation"
 import { recordReviewCheck, reviewContext } from "./reviews"
+import { logError } from "@/server/log"
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -180,7 +181,7 @@ export const RECHECK_DELAY_SECONDS = 600
 export function recheckSoon(now = Date.now()) {
   const window = Math.floor(now / (RECHECK_DELAY_SECONDS * 1000))
   enqueueJob("recheck-held-reviews", {}, { delaySeconds: RECHECK_DELAY_SECONDS, idempotencyKey: `recheck-held-reviews:${window}` }).catch((err) =>
-    console.error("[reviews] couldn't queue the recheck", err),
+    logError("job.enqueue_failed", err, { job: "recheck-held-reviews" }),
   )
 }
 

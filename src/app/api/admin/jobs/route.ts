@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { requireEntitlement } from "@/server/admin/access"
 import { listJobs } from "@/server/services/admin-jobs"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -11,7 +12,7 @@ export async function GET(request: NextRequest) {
   try {
     return NextResponse.json({ jobs: await listJobs() }, { headers: { "Cache-Control": "no-store" } })
   } catch (err) {
-    console.error("[api/admin/jobs] failed", err)
+    log.forRequest(request, "/api/admin/jobs").logError("api.failed", err)
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
 }

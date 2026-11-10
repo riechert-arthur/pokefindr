@@ -8,6 +8,7 @@ import { pointOf } from "./locations"
 import type { SubmissionTextCheck } from "@/lib/reviews/moderation"
 import type { ContentModerator } from "@/server/ports/moderator"
 import { moderate, REVIEW_CHECK_TIMEOUT_MS } from "./content-moderation"
+import { logError } from "@/server/log"
 
 /** Submissions one person may send in a day: enough for a few real places, too few to flood the queue. */
 export const SUBMISSIONS_PER_DAY = 5
@@ -107,7 +108,7 @@ export async function checkSubmissionText(id: string, input: Partial<SubmissionI
     await db.update(locationSubmissions).set({ textCheck: stored }).where(eq(locationSubmissions.id, id))
     console.info(JSON.stringify({ event: "submission_moderation", submissionId: id, verdict: check.verdict, failed: stored.failed, costMicros: check.usage.costMicros }))
   } catch (err) {
-    console.error("[submissions] couldn't store the text check", err)
+    logError("moderation.store_failed", err, { kind: "submission" })
   }
 }
 
