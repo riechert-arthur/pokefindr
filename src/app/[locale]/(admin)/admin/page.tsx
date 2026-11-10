@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { headers } from "next/headers"
 import { notFound } from "next/navigation"
 import { AdminApp } from "@/components/admin/AdminApp"
+import { groupsFor } from "@/lib/admin/sections"
 import { can } from "@/lib/auth/entitlements"
 import { roleOf } from "@/server/admin/access"
 import { getProfile } from "@/server/services/users"
@@ -16,7 +17,8 @@ export const dynamic = "force-dynamic"
 export default async function AdminPage() {
   const userId = (await headers()).get("x-user-id")
   const role = await roleOf(userId)
-  if (!role || !can(role, "admin.open")) notFound()
+  // A role that may open /admin but no section in it gets no page either.
+  if (!role || !can(role, "admin.open") || groupsFor(role).length === 0) notFound()
   const profile = await getProfile(userId!)
   return <AdminApp role={role} username={profile?.username ?? "admin"} />
 }

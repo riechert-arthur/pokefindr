@@ -1,5 +1,4 @@
 "use client"
-import { can } from "@/lib/auth/entitlements"
 
 import { useCallback, useEffect, useId, useState } from "react"
 import { CheckIcon, InboxIcon, ShieldAlertIcon, TriangleAlertIcon, Undo2Icon } from "lucide-react"
@@ -13,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Map, Marker, MAP_STYLES } from "@/components/map/engine"
+import { can } from "@/lib/auth/entitlements"
 import { useIsDark } from "@/lib/design/useThemeKey"
 import { useSessionContext } from "@/components/providers/SessionProvider"
 import { REJECT_REASONS, REJECT_REASON_LABELS, SHOP_SELLS_LABELS, type RejectReason } from "@/lib/submissions/constants"

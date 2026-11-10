@@ -20,11 +20,6 @@ export async function getRole(userId: string, db: Database = getDb()): Promise<R
   return row?.role ?? null
 }
 
-/** Whether this user may review submissions. */
-export async function isModerator(userId: string, db: Database = getDb()): Promise<boolean> {
-  return can(await getRole(userId, db), "moderation.decide")
-}
-
 type Payload = Partial<Omit<ShopSubmission, "kind" | "lng" | "lat"> & Omit<EventSubmission, "kind" | "lng" | "lat">>
 
 interface Row extends Record<string, unknown> {
