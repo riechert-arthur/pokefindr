@@ -96,6 +96,17 @@ const serverSchema = z.object({
    */
   MAIL_FROM: blankAsUnset(z.string().min(1).optional()),
 
+  /**
+   * Where profile pictures are kept (#290, src/server/container.ts):
+   * "vercel-blob" (production, needs BLOB_READ_WRITE_TOKEN), "local" (files
+   * under public/uploads/, for `next dev`), "memory" (tests) or "none"
+   * (uploads are refused). Unset: vercel-blob when BLOB_READ_WRITE_TOKEN is
+   * set, else none in production and local everywhere else.
+   */
+  IMAGE_STORE: blankAsUnset(z.enum(["vercel-blob", "local", "memory", "none"]).optional()),
+  /** The Vercel Blob store's read-write token (Vercel sets it when a Blob store is connected to the project). */
+  BLOB_READ_WRITE_TOKEN: blankAsUnset(z.string().min(1).optional()),
+
   /** Claude API key for the assistant (/api/assistant). Unset (and no federation below), the assistant says it's unavailable. */
   ANTHROPIC_API_KEY: blankAsUnset(z.string().min(1).optional()),
 
@@ -134,6 +145,7 @@ const serverSchema = z.object({
     GEOCODER_PROVIDER: env.GEOCODER_PROVIDER ?? (env.NODE_ENV === "production" ? "photon" : "fake"),
     RATE_LIMIT_STORE: env.RATE_LIMIT_STORE ?? (env.NODE_ENV === "production" ? "postgres" : "memory"),
     MAIL_FROM: env.MAIL_FROM ?? "PokeFindr <no-reply@localhost>",
+    IMAGE_STORE: env.IMAGE_STORE ?? (env.BLOB_READ_WRITE_TOKEN ? "vercel-blob" : env.NODE_ENV === "production" ? "none" : "local"),
   }
 }).superRefine((env, ctx) => {
   if ((env.GEOCODER_PROVIDER === "mapbox" || env.GEOCODER_PROVIDER === "maptiler") && !env.GEOCODER_API_KEY)
@@ -147,6 +159,8 @@ const serverSchema = z.object({
   for (const p of ["GOOGLE", "DISCORD"] as const)
     if (Boolean(env[`${p}_CLIENT_ID`]) !== Boolean(env[`${p}_CLIENT_SECRET`]))
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: [`${p}_CLIENT_${env[`${p}_CLIENT_ID`] ? "SECRET" : "ID"}`], message: `${p.toLowerCase()} sign-in needs both ${p}_CLIENT_ID and ${p}_CLIENT_SECRET` })
+  if (env.IMAGE_STORE === "vercel-blob" && !env.BLOB_READ_WRITE_TOKEN)
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["BLOB_READ_WRITE_TOKEN"], message: "required when IMAGE_STORE is vercel-blob" })
   if (env.MAIL_PROVIDER === "smtp" && !env.SMTP_URL)
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["SMTP_URL"], message: "required when MAIL_PROVIDER is smtp" })
   if (env.GEOCODER_PROVIDER === "nominatim" && !env.GEOCODER_USER_AGENT)

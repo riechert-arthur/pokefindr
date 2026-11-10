@@ -310,6 +310,10 @@ reviews:
   deleteFailed: Couldn't delete your review
   sessionEnded: Your session ended. Log in again and retry.
   connection: Check your connection and try again.
+  # For moderators, on someone else's review with a profile picture (#290). {name} is their username.
+  removePhoto: Remove {name}'s photo
+  photoRemoved: "{name}'s photo was removed. Their reviews show initials now."
+  removePhotoFailed: Couldn't remove the photo. Try again.
 
 # "Report a problem" on a place's details. {kind}: vending, shop or event.
 report:
@@ -725,6 +729,20 @@ settings:
   update: Update
   # A toast after a name or username change is saved.
   saved: Your changes are saved.
+  # The "Profile picture" row (#290).
+  avatar:
+    label: Profile picture
+    hint: JPEG, PNG or WebP, up to 2 MB. We crop it to a square.
+    upload: Upload photo
+    uploading: Uploading…
+    remove: Remove photo
+    removing: Removing…
+    # Toasts.
+    uploaded: Your photo is updated.
+    removed: Your photo is removed.
+    # Checked before uploading.
+    tooLarge: That file is over 2 MB. Choose a smaller photo.
+    wrongType: Choose a JPEG, PNG or WebP photo.
   # Notes about an email change, which needs approval from the old address and confirmation from the new one.
   email:
     # After saving a new address. {current} is the current address, {next} the new one.
@@ -1271,6 +1289,11 @@ email:
 # Errors from our API that the pages show, by the `code` in the response
 # (#185). The API also sends its own English `error`, shown when a code isn't here.
 apiErrors:
+  # Profile pictures (#290).
+  avatarTooLarge: That file is over 2 MB. Choose a smaller photo.
+  avatarWrongType: Choose a JPEG, PNG or WebP photo.
+  avatarRejected: We couldn't read that photo. Try another one.
+  avatarsUnavailable: Profile pictures aren't available right now.
   loginRequired: Log in to continue
   wrongPassword: Wrong email or password. If you haven't confirmed your email yet, we've sent you a new link.
   credentialsMissing: Enter your email and password

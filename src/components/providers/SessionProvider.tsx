@@ -19,6 +19,8 @@ export interface AuthUser {
   metadata: Record<string, unknown>;
   /** member, moderator or admin (migration 0012). */
   role?: Role;
+  /** Their profile picture (#290), or null for initials. */
+  image?: string | null;
 }
 
 export interface SessionContextType {

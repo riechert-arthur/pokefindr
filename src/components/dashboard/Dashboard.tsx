@@ -133,7 +133,7 @@ export function Dashboard({ assistant }: DashboardProps) {
           <Button asChild variant="ghost" size="sm">
             <Link href="/map">{t("openMap")}</Link>
           </Button>
-          <UserMenu userName={session?.username ?? t("guest")} />
+          <UserMenu userName={session?.username ?? t("guest")} imageUrl={session?.image} />
         </header>
 
         <main

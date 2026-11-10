@@ -129,7 +129,7 @@ export default function ReviewsPage() {
               <span className="sr-only">View notifications</span>
               <BellIcon className="size-6" />
             </button>*/}
-            <UserMenu userName={session?.username ?? tDashboard("guest")} />
+            <UserMenu userName={session?.username ?? tDashboard("guest")} imageUrl={session?.image} />
           </div>
         </div>
       </header>

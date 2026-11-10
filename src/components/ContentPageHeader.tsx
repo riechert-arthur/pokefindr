@@ -74,6 +74,7 @@ export const MobileMenu: FC<MobileMenuProps> = ({
                   variant="list"
                   itemClassName={NAV_ITEM}
                   userName={session.username}
+                  imageUrl={session.image}
                 />
               )}
             </div>
@@ -137,6 +138,7 @@ export const ContentPageHeader: FC<HeaderProps> = ({ navigation }) => {
             ) : (
               <UserMenu
                 userName={session.username}
+                imageUrl={session.image}
               />
             )
           }

@@ -6,6 +6,10 @@ import { getServerConfig, type ServerConfig } from "@/server/config"
 import type { Geocoder } from "@/server/ports/geocoder"
 import type { Mailer } from "@/server/ports/mailer"
 import type { SharedRateLimiter } from "@/server/ports/rate-limiter"
+import type { ImageStore } from "@/server/ports/image-store"
+import { LocalImageStore } from "@/server/adapters/image-store/local"
+import { MemoryImageStore } from "@/server/adapters/image-store/memory"
+import { VercelBlobImageStore } from "@/server/adapters/image-store/vercel-blob"
 import { MemoryRateLimiter } from "@/server/adapters/rate-limiter/memory"
 import { PostgresRateLimiter } from "@/server/adapters/rate-limiter/postgres"
 import { getDb } from "@/server/db/client"
@@ -55,7 +59,22 @@ export function makeRateLimiter(config: ServerConfig): SharedRateLimiter {
   }
 }
 
+/** The image store for profile pictures (#290), or null when uploads are off (IMAGE_STORE=none). */
+export function makeImageStore(config: ServerConfig): ImageStore | null {
+  switch (config.IMAGE_STORE) {
+    case "vercel-blob":
+      return new VercelBlobImageStore(config.BLOB_READ_WRITE_TOKEN!)
+    case "local":
+      return new LocalImageStore()
+    case "memory":
+      return new MemoryImageStore()
+    case "none":
+      return null
+  }
+}
+
 let geocoder: Geocoder | undefined
+let imageStore: ImageStore | null | undefined
 let rateLimiter: SharedRateLimiter | undefined
 let mailer: Mailer | undefined
 let anthropic: Anthropic | null | undefined
@@ -76,6 +95,12 @@ export function getMailer(): Mailer {
 export function getRateLimiter(): SharedRateLimiter {
   rateLimiter ??= makeRateLimiter(getServerConfig())
   return rateLimiter
+}
+
+/** The configured image store, built once per server instance; null when uploads are off. */
+export function getImageStore(): ImageStore | null {
+  if (imageStore === undefined) imageStore = makeImageStore(getServerConfig())
+  return imageStore
 }
 
 const CLAUDE_OPTIONS = { maxRetries: 1, timeout: 60_000 } as const
@@ -115,4 +140,5 @@ export function resetContainerForTests() {
   geocoder = undefined
   mailer = undefined
   anthropic = undefined
+  imageStore = undefined
 }

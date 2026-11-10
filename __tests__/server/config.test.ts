@@ -133,4 +133,22 @@ describe("getServerConfig", () => {
     vi.stubEnv("APP_URL", "https://changed.example")
     expect(getServerConfig()).toBe(first)
   })
+
+  it("keeps profile pictures on disk in dev, in Vercel Blob with a token, and off in production without one", () => {
+    vi.stubEnv("BLOB_READ_WRITE_TOKEN", undefined)
+    vi.stubEnv("IMAGE_STORE", undefined)
+    expect(getServerConfig().IMAGE_STORE).toBe("local")
+    resetServerConfigForTests()
+    vi.stubEnv("NODE_ENV", "production")
+    expect(getServerConfig().IMAGE_STORE).toBe("none")
+    resetServerConfigForTests()
+    vi.stubEnv("BLOB_READ_WRITE_TOKEN", "vercel_blob_rw_x")
+    expect(getServerConfig().IMAGE_STORE).toBe("vercel-blob")
+  })
+
+  it("requires BLOB_READ_WRITE_TOKEN for IMAGE_STORE=vercel-blob", () => {
+    vi.stubEnv("BLOB_READ_WRITE_TOKEN", undefined)
+    vi.stubEnv("IMAGE_STORE", "vercel-blob")
+    expect(() => getServerConfig()).toThrowError(/BLOB_READ_WRITE_TOKEN: required when IMAGE_STORE is vercel-blob/)
+  })
 })
