@@ -464,6 +464,8 @@ nav:
   discord: Discord
   settings: Settings
   admin: Admin
+  # Moderators' dashboard (/moderate).
+  moderate: Moderate
   # Tab bar: opens the map's add-a-place flow.
   addPlace: Add a place
   # Accessible names of the navigation landmarks.
@@ -704,6 +706,18 @@ assistant:
     doneBody: The text of your conversations is deleted.
     failed: Couldn't clear your history
     failedBody: Check your connection and try again.
+
+# /moderate (#293): moderators' dashboard. The review queue and Reports inside it are English only, like /admin.
+moderate:
+  # Page and browser-tab title.
+  title: Moderate
+  intro: Review new places before they go on the map, and act on problems people reported.
+  openNav: Open navigation
+  tabs:
+    queue: Review queue
+    reports: Reports
+    # The count beside a tab, for screen readers. {count} is a number.
+    waiting: "{count} waiting"
 
 # /settings.
 settings:

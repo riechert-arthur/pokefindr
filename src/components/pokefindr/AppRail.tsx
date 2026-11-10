@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl"
 import { Link, usePathname } from "@/i18n/navigation"
 import type { ComponentType, Ref, SVGProps } from "react"
-import { BookOpenIcon, HouseIcon, MapPinIcon, SettingsIcon, ShieldIcon } from "lucide-react"
+import { BookOpenIcon, HouseIcon, InboxIcon, MapPinIcon, SettingsIcon, ShieldIcon } from "lucide-react"
 import { Logo } from "@/components/brand/Logo"
 import { DiscordIcon } from "@/components/icons/DiscordIcon"
 import { LanguageSwitcher } from "@/components/pokefindr/LanguageSwitcher"
@@ -11,7 +11,7 @@ import { ThemeToggle } from "@/components/pokefindr/ThemeToggle"
 import { SUPPORT_URL } from "@/lib/links"
 import { cn } from "@/lib/utils"
 
-type NavLabel = "home" | "blog" | "map" | "discord" | "settings" | "admin"
+type NavLabel = "home" | "blog" | "map" | "discord" | "settings" | "moderate" | "admin"
 
 interface RailItem {
   href: string
@@ -30,6 +30,7 @@ const MAIN: RailItem[] = [
 
 const DISCORD: RailItem = { href: SUPPORT_URL, label: "discord", icon: DiscordIcon, external: true }
 const SETTINGS: RailItem = { href: "/settings", label: "settings", icon: SettingsIcon }
+const MODERATE: RailItem = { href: "/moderate", label: "moderate", icon: InboxIcon }
 const ADMIN: RailItem = { href: "/admin", label: "admin", icon: ShieldIcon }
 
 /** A 40px rounded icon button, as in the prototype's `.rail button`. */
@@ -60,7 +61,9 @@ export const APP_NAV_ID = "app-navigation"
 interface AppRailProps {
   /** Shows Settings. */
   signedIn?: boolean
-  /** Shows Admin, for moderators and admins. */
+  /** Shows Moderate (/moderate), for whoever has `moderation.view`. */
+  canModerate?: boolean
+  /** Shows Admin (/admin), for whoever has `admin.open`. */
   isAdmin?: boolean
   ref?: Ref<HTMLElement>
   className?: string
@@ -72,7 +75,7 @@ interface AppRailProps {
  * the current page shaded. Discord, Settings and the theme toggle sit at the
  * bottom; the prototype leaves them out, but the app needs them somewhere.
  */
-export function AppRail({ signedIn = false, isAdmin = false, className, ref }: AppRailProps) {
+export function AppRail({ signedIn = false, canModerate = false, isAdmin = false, className, ref }: AppRailProps) {
   const t = useTranslations("nav")
   const pathname = usePathname()
   const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
@@ -90,6 +93,7 @@ export function AppRail({ signedIn = false, isAdmin = false, className, ref }: A
       {MAIN.map((item) => (
         <RailLink key={item.href} item={item} current={isCurrent(item.href)} />
       ))}
+      {canModerate && <RailLink item={MODERATE} current={isCurrent(MODERATE.href)} />}
       {isAdmin && <RailLink item={ADMIN} current={isCurrent(ADMIN.href)} />}
       <div className="mt-auto flex flex-col items-center gap-2">
         <RailLink item={DISCORD} current={false} />

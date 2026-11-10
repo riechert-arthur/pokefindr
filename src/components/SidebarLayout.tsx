@@ -50,6 +50,7 @@ export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
         <AppRail
           ref={railRef}
           signedIn={Boolean(session)}
+          canModerate={can(session?.role, "moderation.view")}
           isAdmin={can(session?.role, "admin.open")}
           className={cn(
             "z-50 transition-[transform,visibility] duration-300",
@@ -74,7 +75,7 @@ export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
         {/* relative: pages' absolute headers start at the rail's edge, not under it. */}
         <main className="relative z-10 min-w-0 flex-1 overflow-auto bg-muted/50 dark:bg-background">{children}</main>
       </div>
-      <TabBar canAdd isAdmin={can(session?.role, "admin.open")} className="sm:hidden" />
+      <TabBar canAdd canModerate={can(session?.role, "moderation.view")} isAdmin={can(session?.role, "admin.open")} className="sm:hidden" />
     </div>
   )
 }

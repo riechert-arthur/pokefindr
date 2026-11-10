@@ -22,7 +22,7 @@ Every seeded account uses the password `pokefindr-dev-password!`:
 | --- | --- | --- |
 | `superadmin@pokefindr.local` | super_admin | Admin → Users, plus everything an admin has |
 | `dev@pokefindr.local` | admin | every section of `/admin` except Users |
-| `moderator@pokefindr.local` | moderator | the review queue and Reports only; can't decide its own submissions; gets the review emails |
+| `moderator@pokefindr.local` | moderator | `/moderate` (`/admin` sends it there); can't decide its own submissions; gets the review emails |
 | `ash@pokefindr.local`, `misty@pokefindr.local`, `brock@pokefindr.local` | member | a plain member: no Admin link, `/admin` is a 404 |
 | `serena@pokefindr.local` | member | the same, with emails and pages in Spanish |
 

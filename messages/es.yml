@@ -370,6 +370,7 @@ nav:
   discord: Discord
   settings: Configuración
   admin: Admin
+  moderate: Moderar
   addPlace: Agregar un lugar
   appNavigation: Navegación de la app
   tabs: Pestañas
@@ -547,6 +548,16 @@ assistant:
     doneBody: Se eliminó el texto de tus conversaciones.
     failed: No pudimos borrar tu historial
     failedBody: Revisa tu conexión e inténtalo de nuevo.
+
+# /moderate (#293): moderators' dashboard. The review queue and Reports inside it are English only, like /admin.
+moderate:
+  title: Moderar
+  intro: Revisa los lugares nuevos antes de que aparezcan en el mapa y atiende los problemas que la gente reporta.
+  openNav: Abrir navegación
+  tabs:
+    queue: Cola de revisión
+    reports: Reportes
+    waiting: "{count} pendientes"
 
 settings:
   title: Configuración general

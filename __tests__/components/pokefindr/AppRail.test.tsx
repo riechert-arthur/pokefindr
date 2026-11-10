@@ -38,6 +38,19 @@ describe("AppRail", () => {
     expect(screen.getByRole("link", { name: "Settings" })).toBeTruthy()
   })
 
+  it("shows Moderate and Admin only when allowed, and marks Moderate on its page", () => {
+    pathname = "/moderate"
+    const { rerender } = render(<AppRail />)
+    expect(screen.queryByRole("link", { name: "Moderate" })).toBeNull()
+    expect(screen.queryByRole("link", { name: "Admin" })).toBeNull()
+    rerender(<AppRail canModerate />)
+    expect(screen.getByRole("link", { name: "Moderate" })).toHaveAttribute("href", "/moderate")
+    expect(screen.queryByRole("link", { name: "Admin" })).toBeNull()
+    expect(current()).toEqual(["Moderate"])
+    rerender(<AppRail canModerate isAdmin />)
+    expect(screen.getByRole("link", { name: "Admin" })).toHaveAttribute("href", "/admin")
+  })
+
   it("opens Discord in a new tab without an opener", () => {
     render(<AppRail />)
     const discord = screen.getByRole("link", { name: "Discord" })
