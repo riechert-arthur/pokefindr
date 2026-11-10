@@ -15,9 +15,9 @@ import { getSiteUrl, PRODUCTION_URL } from "@/server/site-url"
 
 const site = getSiteUrl() ?? new URL(PRODUCTION_URL)
 
+// No viewport or charset here: Next writes both on every page, and warns
+// ("Unsupported metadata viewport") when they're in metadata (#255).
 const metadata = {
-  "viewport": "width=device-width, initial-scale=1",
-  "charset": "UTF-8",
   "other": {
     "google-adsense-account": "ca-pub-5624613492216779",
     "impact-site-verification": "34eb1c2e-8a9b-4082-9f19-211558caebd7",

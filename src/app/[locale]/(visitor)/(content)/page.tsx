@@ -4,6 +4,8 @@ import { Hero, type HeroStats } from "@/components/landing/Hero"
 import { HeroMap } from "@/components/landing/HeroMap"
 import { FaqSection, HowItWorks, LocationTypes } from "@/components/landing/LandingSections"
 import { faqJsonLd } from "@/lib/faq"
+import { jsonLd, organizationJsonLd, websiteId, websiteJsonLd } from "@/lib/json-ld"
+import { PUBLIC_LOCALES } from "@/i18n/routing"
 import type { LocationKind } from "@/lib/types/locations"
 import { getRegionCounts } from "@/server/services/region-counts"
 import { getVendingCells, VENDING_CELL_DEG } from "@/server/services/locations"
@@ -66,9 +68,6 @@ function landingCounts(): Promise<{ hero: HeroStats; kinds: Partial<Record<Locat
 /** The cells don't depend on the language: one query an hour for every locale's page. */
 const vendingCells = unstable_cache(() => getVendingCells(), ["landing-vending-cells"], { revalidate: 3600 })
 
-/** JSON-LD as a script tag; `<` is escaped so the data can't close the tag. */
-const jsonLd = (data: unknown) => ({ __html: JSON.stringify(data).replace(/</g, "\\u003c") })
-
 export default async function LandingPage({ params }: LocaleParams) {
   const locale = await setPageLocale(params)
   const [counts, cells, t, faq] = await Promise.all([
@@ -78,15 +77,21 @@ export default async function LandingPage({ params }: LocaleParams) {
     getTranslations({ locale, namespace: "landing.meta" }),
     getTranslations({ locale, namespace: "faq" }),
   ])
+  const url = new URL(getPathname({ href: "/", locale }), PRODUCTION_URL).toString()
+  // The site, who runs it, this page and its FAQ. Nothing about locations (src/lib/json-ld.ts).
   const webPage = {
     "@context": "https://schema.org",
     "@type": "WebPage",
     name: t("pageName"),
     description: t("pageDescription"),
-    url: new URL(getPathname({ href: "/", locale }), PRODUCTION_URL).toString(),
+    url,
+    inLanguage: locale,
+    isPartOf: { "@id": websiteId(PRODUCTION_URL) },
   }
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(organizationJsonLd(PRODUCTION_URL))} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(websiteJsonLd(PRODUCTION_URL, PUBLIC_LOCALES))} />
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(webPage)} />
       <script type="application/ld+json" dangerouslySetInnerHTML={jsonLd(faqJsonLd(faq))} />
       <div className="isolate">

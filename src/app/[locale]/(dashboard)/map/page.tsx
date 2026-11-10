@@ -64,8 +64,17 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
   const params = await loadMapSearchParams(searchParams)
   const resolved = await resolvePlace(params)
   if (resolved) redirect({ href: resolved, locale: await getLocale() })
-  const location = await sharedLocation(params.location)
+  const [t, location] = await Promise.all([getTranslations("map.meta"), sharedLocation(params.location)])
   const [longitude, latitude] = location?.geometry.coordinates ?? []
   const view = initialMapView(params, location ? { longitude, latitude } : null)
-  return <MapLoader view={view} location={location} />
+  return (
+    <>
+      {/* Text to index without JavaScript (#255): the pins come from bot-checked APIs, so this is all a crawler reads. No location data. */}
+      <header className="sr-only">
+        <h1>{t("heading")}</h1>
+        <p>{t("intro")}</p>
+      </header>
+      <MapLoader view={view} location={location} />
+    </>
+  )
 }

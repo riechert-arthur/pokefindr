@@ -4,15 +4,16 @@
 import type { FC } from "react"
 import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
+import { NEWEST_RELEASE } from "@/lib/changelog"
 
 /**
- * The release the pop-up announces: its version, when it came out, and its
- * changes (some in shorter words than the changelog page). A new release
- * changes all three together, with its messages in content.changelog.
+ * The release the pop-up announces: the newest in src/lib/changelog.ts, and
+ * its changes (some in shorter words than the changelog page). A new release
+ * needs its own list here, with its messages in content.changelog.
  */
 const RELEASE = {
-  version: "1.2",
-  released: "v1_2.released",
+  version: NEWEST_RELEASE.version,
+  released: `${NEWEST_RELEASE.key}.released`,
   items: ["modal.items.accounts", "v1_2.items.reviews", "modal.items.settings", "modal.items.sso", "v1_2.items.ratings"],
 } as const
 const CURRENT_CHANGELOG_VERSION = RELEASE.version
