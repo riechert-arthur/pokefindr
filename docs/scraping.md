@@ -126,9 +126,11 @@ to spot. No route returns every location: `queryFeatures()` always takes a limit
 | `/api/highlights` | 4 hotspots, 3 events | — | — |
 | `/api/locations/aggregates`, `/retailers` | counts per region, retailer names | — | no places |
 
-- **Points from zoom 7.** Below `POINT_ZOOM` the map shades states from the aggregates; from 7 up it
-  loads the places in view. At zoom 7 a 1440p screen shows about 28° × 11°; a bigger screen's box
-  is shrunk around its center to 300 square degrees.
+- **The map's box.** From zoom 6 (`POINT_ZOOM`) the map loads the places in view; below it, it
+  shades states from the aggregates. At zoom 6 a 1440p screen shows about 28° × 11° (MapLibre's
+  tiles are 512 px); a bigger screen's box is shrunk around its center to 300 square degrees.
+  The retailer filter runs in the query, before the cap, and a cut-off box keeps the places
+  nearest its middle, so the screen fills evenly outward from the center.
 - **No list of everything.** `GET /api/locations` without a box is a 400. The map used to load
   every location to open `?location=` links instantly; it now looks in the places in view, then
   asks `/api/locations/[id]`.

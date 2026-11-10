@@ -32,6 +32,20 @@ beforeEach(async () => {
     )
 })
 
+describe("the viewport cap (#201)", () => {
+  it("filters by retailer before the cap, and keeps the places nearest the middle", async () => {
+    await getDb().insert(locations).values({ machineId: "Q99999", retailer: "QFC", address: "1 Edge St", city: "Far", state: "CO", geog: { lng: -105.9, lat: 40.9 } })
+    const qfc = await (await get(bboxRoute, "bbox=-106,39,-104,41&retailer=QFC")).json()
+    expect(qfc.features.map((f: { properties: { machineID: string } }) => f.properties.machineID)).toEqual(["Q99999"])
+    const all = await (await get(bboxRoute, "bbox=-106,39,-104,41")).json()
+    // The box's middle is -105,40; the seeded grid runs from 39.7 north, so the
+    // far corner place (and the grid's southern rows) are past the cut.
+    expect(all.truncated).toBe(true)
+    const lats = all.features.map((f: { geometry: { coordinates: number[] } }) => f.geometry.coordinates[1])
+    expect(Math.min(...lats)).toBeGreaterThan(39.7)
+  })
+})
+
 describe("no endpoint returns every location (#201, docs/scraping.md)", () => {
   it("won't list every location without a box, or a box over the limit", async () => {
     expect((await get(bboxRoute, "")).status).toBe(400)
@@ -45,18 +59,19 @@ describe("no endpoint returns every location (#201, docs/scraping.md)", () => {
     expect(box.truncated).toBe(true)
 
     const near = await (await get(nearRoute, "lng=-105&lat=39.7&r=50")).json()
-    expect(near.features.length).toBeLessThanOrEqual(NEAR_LIMIT)
+    expect(near.features).toHaveLength(NEAR_LIMIT)
+    expect(near.truncated).toBe(true)
     expect(near.total).toBe(SEEDED)
     expect((await get(nearRoute, `lng=-105&lat=39.7&r=50&limit=${NEAR_LIMIT + 1}`)).status).toBe(400)
 
     const search = await (await get(searchRoute, "q=King&limit=20")).json()
-    expect(search.features.length).toBeLessThanOrEqual(20)
+    expect(search.features).toHaveLength(20)
     expect((await get(searchRoute, "q=King&limit=21")).status).toBe(400)
 
     const cities = await (await get(citiesRoute, "state=CO")).json()
-    expect(cities.cities.length).toBeLessThanOrEqual(TOP_CITIES_LIMIT)
+    expect(cities.cities).toHaveLength(TOP_CITIES_LIMIT)
 
-    const highlights = await (await highlightsRoute()).json()
+    const highlights = await (await get(highlightsRoute, "")).json()
     expect(JSON.stringify(highlights).match(/"id"/g)?.length ?? 0).toBeLessThan(20)
   })
 })

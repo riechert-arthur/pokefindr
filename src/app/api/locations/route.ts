@@ -22,13 +22,15 @@ export async function GET(request: NextRequest) {
     const parsed = bboxQuerySchema.safeParse({
       bbox: params.get("bbox"),
       types: params.get("types") ?? undefined,
+      retailer: params.get("retailer") ?? undefined,
     })
     if (!parsed.success) {
       const message = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")
       return NextResponse.json({ error: `Invalid query. ${message}` }, { status: 400 })
     }
 
-    return NextResponse.json(await getLocationsInBbox(parsed.data), {
+    const { retailer, ...query } = parsed.data
+    return NextResponse.json(await getLocationsInBbox({ ...query, retailers: retailer }), {
       // Only the browser keeps it: a CDN copy would reach bots without BotID's check (#198).
       headers: { "Cache-Control": "private, max-age=30" },
     })

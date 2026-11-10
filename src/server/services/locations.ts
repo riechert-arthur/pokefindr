@@ -5,8 +5,8 @@ import { locations } from "@/server/db/schema"
 import { OUTSIDE_LOWER_48 } from "@/lib/map/states"
 import type { LocationFeature, LocationFeatureCollection, LocationKind, NearbyLocations, StateCities } from "@/lib/types/locations"
 import type { Bbox } from "@/lib/locations/bbox"
+import { NEAR_LIMIT } from "@/lib/locations/search"
 
-/** The most locations one viewport request returns. */
 /** The most locations one viewport request returns (#201); `truncated` says when there were more. */
 export const BBOX_LIMIT = 500
 
@@ -161,9 +161,8 @@ export async function searchLocations(
   return fc
 }
 
-/** The most results one radius search returns; the list shows them all, closest first. */
-/** The most rows one near request returns (#201); counts and the total still cover every match. */
-export const NEAR_LIMIT = 200
+/** The most rows one near request returns (#201, set in lib for the route's validation too). */
+export { NEAR_LIMIT }
 
 export interface NearQuery {
   /** [lng, lat] of the place. */
@@ -288,18 +287,23 @@ export interface BboxQuery {
   bbox: Bbox
   /** Kinds to include. Empty means none. */
   types: readonly LocationKind[]
+  /** Vending retailers to keep (other kinds aren't filtered), as the map's `retailer=`. Empty means all. */
+  retailers?: readonly string[]
   limit?: number
 }
 
 /**
- * Active locations inside `bbox`, for the map above zoom 6. The test is
+ * Active locations inside `bbox`, for the map from zoom 6 (POINT_ZOOM). The
+ * retailer filter runs here, before the cap, and a cut-off box keeps the
+ * places nearest its center, so a full view still fills the screen evenly
+ * outward from the middle. The test is
  * planar: `geog::geometry && envelope` keeps exactly the points between the
  * box's meridians and parallels, using the GiST index on `geog::geometry`.
  * (On geography, `&&` compares boxes on the sphere, which bow out: it
  * returned points ~10 km past a city-sized box's sides.)
  */
 export async function getLocationsInBbox(
-  { bbox, types, limit = BBOX_LIMIT }: BboxQuery,
+  { bbox, types, retailers = [], limit = BBOX_LIMIT }: BboxQuery,
   db: Database = getDb(),
 ): Promise<LocationFeatureCollection> {
   if (types.length === 0) return { type: "FeatureCollection", features: [], truncated: false }
@@ -307,8 +311,9 @@ export async function getLocationsInBbox(
   return queryFeatures(
     db,
     sql`l.geog::geometry && ST_MakeEnvelope(${west}, ${south}, ${east}, ${north}, 4326)
-      and l.kind in (${kindsIn(types)})`,
+      and l.kind in (${kindsIn(types)}) ${retailerIn(retailers)}`,
     limit,
+    sql`geog::geometry <-> ST_SetSRID(ST_MakePoint(${(west + east) / 2}, ${(south + north) / 2}), 4326), id`,
   )
 }
 

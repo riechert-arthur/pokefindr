@@ -33,9 +33,10 @@ describe("location features", () => {
     ])
 
     const fc = await features()
-    expect(fc.features.map((f) => f.properties.machineID)).toEqual(["Q00350", ""])
+    // Nearest the box's middle (-95.5, 34) first: North Carolina, then Arizona.
+    expect(fc.features.map((f) => f.properties.machineID)).toEqual(["", "Q00350"])
 
-    const [frys, userAdded] = fc.features
+    const [userAdded, frys] = fc.features
     expect(frys).toEqual({
       type: "Feature",
       id: active.id,

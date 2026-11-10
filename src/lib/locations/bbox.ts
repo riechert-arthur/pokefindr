@@ -6,8 +6,9 @@ export type Bbox = [west: number, south: number, east: number, north: number]
 
 /**
  * The largest area, in square degrees, one request may cover (#201). The map
- * asks for locations from zoom 7 (POINT_ZOOM), where a 1440p screen shows
- * about 28° × 11°; a bigger screen's box is shrunk around its center to fit.
+ * asks for locations from zoom 6 (POINT_ZOOM), where a 1440p screen shows
+ * about 28° × 11° (MapLibre's tiles are 512 px); a bigger screen's box is
+ * shrunk around its center to fit.
  * Anything bigger is a zoomed-out view, which uses region counts instead.
  * Small on purpose: the more requests a full copy takes, the easier it is to
  * spot (docs/scraping.md).
@@ -36,6 +37,12 @@ const typesSchema = z
 /** `types=vending,shop`: every kind when absent, none when empty. */
 export const kindsParam = typesSchema.optional().transform((t): LocationKind[] => t ?? [...LOCATION_KINDS])
 
+/** Vending retailers, comma-separated, as in the map's URL (`retailer=`). Absent means all. */
+export const retailerParam = z
+  .string()
+  .optional()
+  .transform((s) => (s ? s.split(",").map((r) => r.trim()).filter(Boolean) : []))
+
 /** `lng,lat` as plain decimals in range. */
 export const pointParam = z
   .string()
@@ -46,10 +53,13 @@ export const pointParam = z
  * Query parameters for GET /api/locations?bbox=…&types=…
  * - `bbox`: west,south,east,north in degrees.
  * - `types`: comma-separated kinds; every kind when absent, none when empty.
+ * - `retailer`: comma-separated vending retailers; every one when absent.
  */
 export const bboxQuerySchema = z.object({
   bbox: bboxSchema,
   types: kindsParam,
+  /** Vending retailers, as the map's `retailer=`; filtered before the cap. */
+  retailer: retailerParam,
 })
 
 export type BboxQueryParams = z.infer<typeof bboxQuerySchema>
