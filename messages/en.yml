@@ -599,6 +599,7 @@ dashboard:
       title: Upcoming events
       error: Couldn't load events. Check your connection and refresh.
       empty: Card shows and league nights show up here once they're added.
+      seeOnMap: See events on map
   # /home/reviews: the reviews you've written, to edit or delete.
   reviews:
     loadingProfile: Loading profile..

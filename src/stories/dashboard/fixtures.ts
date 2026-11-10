@@ -11,7 +11,7 @@ export const longReviews: MyReview[] = [
 ]
 
 /** Days from now, so the events stay upcoming and in the current year whenever the story renders. */
-const inDays = (days: number, hours = 0) => new Date(Date.now() + (days * 24 + hours) * 3_600_000).toISOString()
+export const inDays = (days: number, hours = 0) => new Date(Date.now() + (days * 24 + hours) * 3_600_000).toISOString()
 
 export const longEvents: UpcomingEvent[] = [
   { id: "e1", title: "Regional Championship Pre-Release Tournament and Card Swap Meet", startsAt: inDays(3), endsAt: null, city: "Rancho Cucamonga", state: "CA", lng: -117.59, lat: 34.1, isSample: false },
