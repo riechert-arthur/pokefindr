@@ -36,7 +36,8 @@ const featureJson = (extra: SQL = sql``) => sql`
  * FeatureCollection built in one query. Postgres does the JSON assembly, so
  * this stays fast as the table grows. It returns at most `limit` and sets
  * `truncated` when more matched: there's no uncapped form, so no caller can
- * list every location (#201).
+ * list every location (#201). With `canaries`, the decoys too (#202; they're
+ * inactive): only the map's viewport request asks.
  */
 export async function queryFeatures(
   db: Database,
@@ -44,11 +45,13 @@ export async function queryFeatures(
   limit: number,
   // Unqualified columns, so it applies to both CTEs below.
   orderBy: SQL = sql`"machineID", id`,
+  { canaries = false }: { canaries?: boolean } = {},
 ): Promise<LocationFeatureCollection> {
+  const shown = canaries ? sql`(l.is_active or l.canary)` : sql`l.is_active`
   const rows = await db.execute<{ fc: LocationFeatureCollection }>(sql`
     with matched as (
       select l.* from ${locations} l
-      where l.is_active and l.geog is not null and ${where}
+      where ${shown} and l.geog is not null and ${where}
       order by ${orderBy}
       limit ${limit + 1}
     ),
@@ -292,7 +295,9 @@ export interface BboxQuery {
 }
 
 /**
- * Active locations inside `bbox`, for the map above zoom 6. The test is
+ * Active locations inside `bbox`, for the map above zoom 6, with any canaries
+ * there (#202): this is the request that hands out the data in bulk, so it's
+ * the one a copy would come from. The test is
  * planar: `geog::geometry && envelope` keeps exactly the points between the
  * box's meridians and parallels, using the GiST index on `geog::geometry`.
  * (On geography, `&&` compares boxes on the sphere, which bow out: it
@@ -309,6 +314,8 @@ export async function getLocationsInBbox(
     sql`l.geog::geometry && ST_MakeEnvelope(${west}, ${south}, ${east}, ${north}, 4326)
       and l.kind in (${kindsIn(types)})`,
     limit,
+    undefined,
+    { canaries: true },
   )
 }
 

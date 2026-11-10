@@ -293,6 +293,35 @@ npm run db:import-locations -- --apply
 `--file <geojson>` imports another file of the same shape; `--report <json>`
 saves the counts and verification.
 
+## Canary locations
+
+To recognize a copy of PokeFindr's data (#202), `locations` holds a few
+decoys: made-up vending machines of real retailers, on made-up addresses in
+towns where those retailers have machines. `locations.canary` marks them
+(migration 0021). A canary is always inactive (a check enforces it), so the
+lists, search, details, counts and the region counts view leave it out like
+any inactive row. Only the map's viewport request, `GET /api/locations?bbox=`
+(`getLocationsInBbox`), returns them: the map draws them as dots, and a
+scraper copying that endpoint copies them too. A new query that keeps to
+active rows needs nothing more.
+
+The repo is public, so the decoys are never committed. `scripts/canary/plant.ts`
+makes them from a secret seed, the same ones every time:
+
+```bash
+CANARY_SEED=... npm run canary:plant               # add or update them (6 by default; --count N)
+CANARY_SEED=... npm run canary:plant -- --list     # print them; no database needed
+CANARY_SEED=... npm run canary:plant -- --prune    # also delete canaries this seed and count don't make
+```
+
+Keep the seed in a password manager. To check a dataset found elsewhere,
+run `--list` with the same seed and count, and search it for the machine
+IDs, addresses or coordinates. The script writes nothing if a decoy would land
+within 250 m of a real location or on its machine ID or address; then pick
+another seed. If the location import ever brings a real machine with a
+canary's ID, that row becomes the real machine (`canary` is cleared), and the
+next `canary:plant` reports the clash.
+
 ## Region counts
 
 `location_region_counts` (migration 0003) is a materialized view with one row

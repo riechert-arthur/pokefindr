@@ -374,10 +374,12 @@ export async function mergeStaging(db: Db): Promise<MergeCounts> {
       insert into locations as l ("machineID", ${MERGED_COLUMNS.map(q).join(", ")}, updated_at)
       select "machineID", ${desiredColumns.join(", ")}, now()
       from joined
+      -- A machine in the file is real: one that took a canary's id (#202) stops being a decoy.
       on conflict ("machineID") do update set
         ${MERGED_COLUMNS.map((c) => `${q(c)} = excluded.${q(c)}`).join(", ")},
+        canary = false,
         updated_at = now()
-      where (${MERGED_COLUMNS.map((c) => comparable("l", c)).join(", ")})
+      where l.canary or (${MERGED_COLUMNS.map((c) => comparable("l", c)).join(", ")})
         is distinct from (${MERGED_COLUMNS.map((c) => comparable("excluded", c)).join(", ")})
       returning (xmax = 0) as inserted
     )
@@ -400,7 +402,7 @@ export interface VerifyReport {
   coordinateMismatches: string[]
   overridesInFile: number
   overridesFlagged: number
-  /** Machines in the table that aren't in the file. Listed, never deleted. */
+  /** Machines in the table that aren't in the file, canaries aside. Listed, never deleted. */
   extras: string[]
   problems: string[]
 }
@@ -430,7 +432,7 @@ export async function verifyImport(db: Db): Promise<VerifyReport> {
       (select count(*)::int from location_import s join locations l using ("machineID")
         where s.manual_override and l.manual_override and l.manual_override_source = 'file') as "overridesFlagged",
       array(select l."machineID" from locations l
-        where l."machineID" is not null
+        where l."machineID" is not null and not l.canary
           and not exists (select 1 from location_import s where s."machineID" = l."machineID")
         order by 1) as "extras"`)}`.execute(db)
 

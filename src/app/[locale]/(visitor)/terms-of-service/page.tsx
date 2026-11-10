@@ -17,7 +17,7 @@ const TermsOfServicePage: FC<LocaleParams> = async ({ params }) => {
     <div lang="en" className="max-w-3xl mx-auto p-6 text-foreground">
       <EnglishOnlyNotice href="/terms-of-service" />
       <h1 className="text-3xl font-bold mb-4">TERMS OF SERVICE</h1>
-      <p className="mb-4">Last updated November 8, 2026</p>
+      <p className="mb-4">Last updated November 9, 2026</p>
 
       <p className="mb-4">
         These Terms of Service (&quot;Terms&quot;) govern your use of the
@@ -161,7 +161,34 @@ const TermsOfServicePage: FC<LocaleParams> = async ({ params }) => {
         places it shows you. Do not use it, or automate it, to copy PokeFindr&apos;s
         location data in bulk.
       </p>
-      <h2 className="text-2xl font-semibold mt-8 mb-4">11. CONTACT US</h2>
+
+      <h2 className="text-2xl font-semibold mt-8 mb-4">
+        11. AUTOMATED ACCESS AND DATA COLLECTION
+      </h2>
+      <p className="mb-4">
+        You may not collect PokeFindr&apos;s location data, or copy it in bulk,
+        by automated means. This includes crawlers, scrapers, bots and scripts,
+        and calling the Website&apos;s API from outside the Website. You may
+        not republish, sell or build another service on data collected this
+        way.
+      </p>
+      <p className="mb-4">
+        Search engines may crawl and index the Website&apos;s pages, following
+        our robots.txt. You may also use PokeFindr from an AI assistant through
+        the MCP server described on our{" "}
+        <Link href="/developers" className="text-primary hover:underline">
+          Developers
+        </Link>{" "}
+        page, within its limits. For any other use of the data, contact us
+        first.
+      </p>
+      <p className="mb-4">
+        The data contains markers that let us recognize a copy of it. If we
+        find our data collected against these Terms, we may block access and
+        take further action.
+      </p>
+
+      <h2 className="text-2xl font-semibold mt-8 mb-4">12. CONTACT US</h2>
       <p className="mb-4">
         If you have any questions or concerns about these Terms, please contact
         us at{" "}
