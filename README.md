@@ -14,7 +14,15 @@ With Docker running:
 make run    # database, migrations, seed data and the app, all in Docker
 ```
 
-Then open http://localhost:3000 and log in as the seeded dev user, `dev@pokefindr.local` with password `pokefindr-dev-password!` (local databases only). Emails the app sends, such as sign-up confirmations, land in Mailpit at http://localhost:8025. `make run` is safe to rerun at any time, e.g. after a pull. `make help` lists the other commands (`stop`, `logs`, `shell`, `prune`, `reset`). Each git branch gets its own local database. See [docs/database.md](docs/database.md) for details.
+Then open http://localhost:3000 and log in with one of the seeded accounts below (local databases only). Emails the app sends, such as sign-up confirmations, land in Mailpit at http://localhost:8025. `make run` is safe to rerun at any time, e.g. after a pull. `make help` lists the other commands (`stop`, `logs`, `shell`, `prune`, `reset`). Each git branch gets its own local database. See [docs/database.md](docs/database.md) for details.
+
+Every seeded account uses the password `pokefindr-dev-password!`:
+
+| Email | Role | For testing |
+| --- | --- | --- |
+| `dev@pokefindr.local` | admin | every section of `/admin` |
+
+The seed puts each account's role back on every run, so change roles on an account you signed up yourself. The list lives in `DEV_ACCOUNTS` in `scripts/db/seedDevUsers.ts`.
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 

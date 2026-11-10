@@ -91,9 +91,12 @@ test("forgot password, reset it, log in with the new one", async ({ page }) => {
   await logIn(page, email, newPassword)
 })
 
-test("the seeded dev user can log in", async ({ page }) => {
+test("the seeded dev user can log in, and is an admin", async ({ page }) => {
   // Sign-in allows 3 tries per 10 seconds from one address.
   await page.waitForTimeout(10_000)
   await page.goto("/login")
   await logIn(page, "dev@pokefindr.local", "pokefindr-dev-password!")
+  // Members get a 404 here (scripts/db/seedDevUsers.ts makes dev@ an admin).
+  const res = await page.goto("/admin")
+  expect(res?.status()).toBe(200)
 })

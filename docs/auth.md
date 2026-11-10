@@ -112,10 +112,18 @@ can(role, "admin.jobs") // true for admins only
 
 ## Local development
 
-`make run` seeds a confirmed account into local databases only:
+`make run` (or `npm run db:seed`) seeds confirmed, onboarded accounts into local databases only
+(localhost or the `db` container; `scripts/db/seed.ts` checks). They all use the password
+`pokefindr-dev-password!`:
 
-- **Email:** `dev@pokefindr.local`
-- **Password:** `pokefindr-dev-password!`
+| Email | Username | Role | For testing |
+| --- | --- | --- | --- |
+| `dev@pokefindr.local` | `dev` | admin | every section of `/admin` |
+
+The accounts are `DEV_ACCOUNTS` in `scripts/db/seedDevUsers.ts`; add an entry to seed another.
+Each run adds missing accounts and sets an existing account's role back to the seeded value, so a
+seeded account always means the same thing, on new and existing branch databases alike. To try
+a role change, use an account you signed up yourself.
 
 Every email the app sends goes to Mailpit at http://localhost:8025. Running `npm run dev` outside
 Docker, `MAIL_PROVIDER` defaults to `console`, which prints each email (and its link) in the
