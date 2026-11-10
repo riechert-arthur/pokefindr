@@ -21,7 +21,7 @@ Every seeded account uses the password `pokefindr-dev-password!`:
 | Email | Role | For testing |
 | --- | --- | --- |
 | `dev@pokefindr.local` | admin | every section of `/admin` |
-| `moderator@pokefindr.local` | moderator | the review queue and Reports only; can't decide its own submissions; gets the review emails |
+| `moderator@pokefindr.local` | moderator | opens `/admin`, but sees only the review queue and Reports (and their counts); can't decide its own submissions; gets the review emails |
 | `ash@pokefindr.local`, `misty@pokefindr.local`, `brock@pokefindr.local` | member | a plain member: no Admin link, `/admin` is a 404 |
 | `serena@pokefindr.local` | member | the same, with emails and pages in Spanish |
 

@@ -119,7 +119,7 @@ can(role, "admin.jobs") // true for admins only
 | Email | Username | Role | For testing |
 | --- | --- | --- | --- |
 | `dev@pokefindr.local` | `dev` | admin | every section of `/admin` |
-| `moderator@pokefindr.local` | `moderator` | moderator | the review queue and Reports only; can't decide its own submissions; gets the review emails |
+| `moderator@pokefindr.local` | `moderator` | moderator | opens `/admin`, but sees only the review queue and Reports (and their counts); can't decide its own submissions; gets the review emails |
 | `ash@pokefindr.local` | `ash` | member | a plain member: no Admin link, `/admin` is a 404 |
 | `misty@pokefindr.local` | `misty` | member | the same |
 | `brock@pokefindr.local` | `brock` | member | the same |
@@ -128,7 +128,9 @@ can(role, "admin.jobs") // true for admins only
 The accounts are `DEV_ACCOUNTS` in `scripts/db/seedDevUsers.ts`; add an entry to seed another.
 Each run adds missing accounts and sets an existing account's role back to the seeded value, so a
 seeded account always means the same thing, on new and existing branch databases alike. To try
-a role change, use an account you signed up yourself.
+a role change, use an account you signed up yourself. Accounts are matched by their fixed id, so
+one you signed up yourself is never changed: if its email or username is a seeded one, the seed
+skips that seeded account and says so (`email taken`, `username taken`).
 
 The seed also adds three pending submissions (from `ash`, `brock` and `serena`) and an open report
 (from `misty`), all named or marked as samples, so the review queue and Reports have something in

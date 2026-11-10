@@ -2,7 +2,7 @@ import { afterAll, describe, expect, it } from "vitest"
 import postgres from "postgres"
 import { readSeedLocations, seedLocations } from "../../scripts/db/seedLocations"
 import { SAMPLE_EVENTS, SAMPLE_SOURCE, seedSampleHighlights } from "../../scripts/db/seedHighlights"
-import { DEV_ACCOUNTS, DEV_PASSWORD, DEV_USER, seedDevUsers } from "../../scripts/db/seedDevUsers"
+import { DEV_ACCOUNTS, DEV_MODERATOR, DEV_PASSWORD, DEV_USER, seedDevUsers } from "../../scripts/db/seedDevUsers"
 import { verifyPassword } from "better-auth/crypto"
 import { NextResponse } from "next/server"
 import { SAMPLE_REPORT, SAMPLE_SUBMISSIONS, seedSampleModeration } from "../../scripts/db/seedModeration"
@@ -121,12 +121,36 @@ describe("seedDevUsers", () => {
 
   it("adds a moderator who can moderate but not open the admin-only sections", async () => {
     await seedDevUsers(sql)
-    const mod = DEV_ACCOUNTS.find((a) => a.email === "moderator@pokefindr.local")!
+    const mod = DEV_MODERATOR
     expect(await roleOf(mod.id)).toBe("moderator")
-    const as = () => new Request("http://localhost:3000/api/admin/jobs", { headers: { "x-user-id": mod.id } })
-    const jobs = await requireEntitlement(as(), "admin.jobs")
-    expect(jobs instanceof NextResponse && jobs.status).toBe(404)
-    expect(await requireEntitlement(as(), "moderation.view")).toEqual({ userId: mod.id, role: "moderator" })
+    const as = (path: string) => new Request(`http://localhost:3000${path}`, { headers: { "x-user-id": mod.id } })
+    const jobs = await requireEntitlement(as("/api/admin/jobs"), "admin.jobs")
+    expect(jobs).toBeInstanceOf(NextResponse)
+    expect((jobs as NextResponse).status).toBe(404)
+    expect(await requireEntitlement(as("/api/admin/submissions"), "moderation.view")).toEqual({ userId: mod.id, role: "moderator" })
+  })
+
+  it("skips an account whose username someone signed up with, instead of failing", async () => {
+    await sql`insert into users (id, name, email) values (gen_random_uuid(), 'Other Dev', 'other@example.com')`
+    await sql`insert into profiles (id, username) select id, 'Dev' from users where email = 'other@example.com'`
+    expect((await seedDevUsers(sql, [DEV_USER]))[0].outcome).toBe("username taken")
+    expect(await sql`select 1 from users where id = ${DEV_USER.id}`).toHaveLength(0)
+  })
+
+  it("leaves an account someone signed up with a seeded email alone", async () => {
+    await sql`insert into users (id, name, email) values (gen_random_uuid(), 'Real Dev', ${DEV_USER.email})`
+    await sql`insert into profiles (id, username) select id, 'realdev' from users where email = ${DEV_USER.email}`
+    expect((await seedDevUsers(sql, [DEV_USER]))[0].outcome).toBe("email taken")
+    const [row] = await sql`select p.role from profiles p join users u on u.id = p.id where u.email = ${DEV_USER.email}`
+    expect(row.role).toBe("member")
+  })
+
+  it("adds the profile an older seed left out, with its role", async () => {
+    await seedDevUsers(sql)
+    await sql`delete from profiles where id = ${DEV_USER.id}`
+    expect((await seedDevUsers(sql, [DEV_USER]))[0].outcome).toBe("profile added")
+    const [row] = await sql`select role, onboarded from profiles where id = ${DEV_USER.id}`
+    expect(row).toEqual({ role: DEV_USER.role, onboarded: true })
   })
 
   it("adds every member once, as a member, one of them in Spanish", async () => {
@@ -138,13 +162,6 @@ describe("seedDevUsers", () => {
       select u.email, p.role, p.locale from users u join profiles p on p.id = u.id where u.email in ${sql(members.map((m) => m.email))} order by u.email`
     expect(rows.map((r) => [r.email, r.role])).toEqual(members.map((m) => [m.email, "member"]).sort())
     expect(rows.filter((r) => r.locale === "es")).toHaveLength(1)
-  })
-
-  it("skips an account whose username someone signed up with, instead of failing", async () => {
-    const ash = DEV_ACCOUNTS.find((a) => a.username === "ash")!
-    await sql`insert into users (id, name, email) values (gen_random_uuid(), 'Other Ash', 'other@example.com')`
-    await sql`insert into profiles (id, username) select id, 'Ash' from users where email = 'other@example.com'`
-    expect((await seedDevUsers(sql, [ash]))[0].outcome).toBe("username taken")
   })
 
   it("puts a role changed by hand back to the seeded value", async () => {
