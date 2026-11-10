@@ -18,10 +18,12 @@ export const TILE_ROWS = 3
 /**
  * A dashboard tile, as the prototype's `.tiles .dcard`: a title (with an
  * optional badge, always at the top right), a body, and a footer pinned to the
- * bottom so the tiles' actions line up across the row. `min-w-0` lets it
- * shrink to its column in the dashboard's grid, and the body's `grid-cols-1`
- * (a `minmax(0, 1fr)` track) stops its rows from widening it, so a long name
- * truncates instead of overflowing (#302).
+ * bottom so the tiles' actions line up across the row. The body's
+ * `grid-cols-1` (a `minmax(0, 1fr)` track) is what stops its rows from
+ * widening the tile, so a long name truncates instead of overflowing (#302).
+ * `min-w-0` does nothing in the dashboard's own grid, whose tracks are
+ * `minmax(0, 1fr)` too; it keeps the tile from growing if it's ever put in a
+ * flex row or an `auto` track.
  * `live` makes the body a polite live region (Near you announces its count).
  */
 function Tile({ title, badge, footer, live, children }: { title: string; badge?: ReactNode; footer?: ReactNode; live?: boolean; children: ReactNode }) {
@@ -52,14 +54,18 @@ function TileRow({ href, title, caption }: { href: ComponentProps<typeof Link>["
       href={href}
       className="-mx-1.5 grid min-w-0 grid-cols-1 rounded-md px-1.5 py-1 text-left hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <span className="block truncate text-body font-medium text-foreground">{title}</span>
+      {/* The whole title shows on hover once it's cut short. */}
+      <span className="block truncate text-body font-medium text-foreground" title={typeof title === "string" ? title : undefined}>{title}</span>
       <span className={`flex min-w-0 items-center gap-1.5 ${muted}`}>{caption}</span>
     </Link>
   )
 }
 
-/** The one action style every tile's footer uses. */
-const action = { variant: "outline", size: "sm" } as const
+/**
+ * The one action style every tile's footer uses. A long label (in Spanish at
+ * 4 columns) wraps inside the tile instead of running past it.
+ */
+const action = { variant: "outline", size: "sm", className: "h-auto min-h-8 max-w-full whitespace-normal py-1.5 text-left" } as const
 
 export type NearState = { status: "idle" } | { status: "locating" } | { status: "denied" } | { status: "ready"; count: number | null }
 
