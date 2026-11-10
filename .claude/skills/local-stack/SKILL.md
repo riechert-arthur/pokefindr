@@ -42,7 +42,7 @@ Next.js warnings in `web` (for example the metadata `viewport` notice) are noise
 
 ## Logging in
 
-The seed adds ready-made accounts, only on local databases, all with the password `pokefindr-dev-password!`: `dev@pokefindr.local` is an admin. The list is `DEV_ACCOUNTS` in `scripts/db/seedDevUsers.ts`, and the accounts table is in `docs/auth.md` ("Local development"). Roles live in `profiles.role`; the seed sets seeded accounts' roles back on every run, so for a one-off role change use an account you signed up yourself:
+The seed adds ready-made accounts, only on local databases, all with the password `pokefindr-dev-password!`: `dev@pokefindr.local` is an admin and `moderator@pokefindr.local` a moderator. The list is `DEV_ACCOUNTS` in `scripts/db/seedDevUsers.ts`, and the accounts table is in `docs/auth.md` ("Local development"). Roles live in `profiles.role`; the seed sets seeded accounts' roles back on every run, so for a one-off role change use an account you signed up yourself:
 
 ```bash
 docker compose exec db psql -U pokefindr -d "$(scripts/dev/db-name.sh)" \

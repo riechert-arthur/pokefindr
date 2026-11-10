@@ -29,9 +29,19 @@ export type DevAccount = {
 /** Every seeded account. Add one here to seed it; see docs/auth.md, "Local development". */
 export const DEV_ACCOUNTS = [
   { id: "00000000-0000-4000-8000-00000000de70", email: "dev@pokefindr.local", username: "dev", name: "Dev User", role: "admin" },
+  { id: "00000000-0000-4000-8000-0000000000d1", email: "moderator@pokefindr.local", username: "moderator", name: "Dev Moderator", role: "moderator" },
 ] as const satisfies readonly DevAccount[]
 
 export const DEV_USER = DEV_ACCOUNTS[0]
+
+/** The seeded account with this email. A typo, or an account renamed in the list, fails typecheck. */
+export function devAccount(email: (typeof DEV_ACCOUNTS)[number]["email"]): DevAccount {
+  const account = DEV_ACCOUNTS.find((a) => a.email === email)
+  if (!account) throw new Error(`No dev account ${email}`)
+  return account
+}
+
+export const DEV_MODERATOR = devAccount("moderator@pokefindr.local")
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]", "db"])
 

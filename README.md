@@ -21,6 +21,7 @@ Every seeded account uses the password `pokefindr-dev-password!`:
 | Email | Role | For testing |
 | --- | --- | --- |
 | `dev@pokefindr.local` | admin | every section of `/admin` |
+| `moderator@pokefindr.local` | moderator | opens `/admin`, but sees only the review queue and Reports (and their counts); can't decide its own submissions; gets the review emails |
 
 The seed puts each account's role back on every run, so change roles on an account you signed up yourself. The list lives in `DEV_ACCOUNTS` in `scripts/db/seedDevUsers.ts`.
 

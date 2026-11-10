@@ -140,6 +140,7 @@ when someone signs up with them; an upload replaces it. With none, `UserAvatar` 
 | Email | Username | Role | For testing |
 | --- | --- | --- | --- |
 | `dev@pokefindr.local` | `dev` | admin | every section of `/admin` |
+| `moderator@pokefindr.local` | `moderator` | moderator | opens `/admin`, but sees only the review queue and Reports (and their counts); can't decide its own submissions; gets the review emails |
 
 The accounts are `DEV_ACCOUNTS` in `scripts/db/seedDevUsers.ts`; add an entry to seed another.
 Each run adds missing accounts and sets an existing account's role back to the seeded value, so a
