@@ -183,7 +183,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
     () =>
       (states?.features ?? [])
         .filter((f) => f.properties.region)
-        .map((f) => ({ code: f.properties.region, name: f.properties.name, count: f.properties.count }))
+        .map((f) => ({ code: f.properties.region, count: f.properties.count }))
         .sort((a, b) => b.count - a.count),
     [states],
   )
