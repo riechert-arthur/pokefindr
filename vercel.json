@@ -5,7 +5,8 @@
     { "path": "/api/jobs/expire-events", "schedule": "5 6 * * *" },
     { "path": "/api/jobs/refresh-region-counts", "schedule": "15 6 * * *" },
     { "path": "/api/jobs/assistant-retention", "schedule": "30 6 * * *" },
-    { "path": "/api/jobs/prune-rate-limits", "schedule": "45 6 * * *" }
+    { "path": "/api/jobs/prune-rate-limits", "schedule": "45 6 * * *" },
+    { "path": "/api/jobs/recheck-held-reviews", "schedule": "50 6 * * *" }
   ],
   "functions": {
     "src/app/api/queues/jobs/route.ts": {

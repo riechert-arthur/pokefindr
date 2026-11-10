@@ -90,14 +90,14 @@ export async function notifySubmissionCreated(submissionId: string, db: Database
     .from(profiles)
     .innerJoin(users, eq(users.id, profiles.id))
     .where(inArray(profiles.role, rolesWith("moderation.notify")))
-  // In each moderator's language (#185); the admin page itself is English.
+  // In each moderator's language (#185); the queue on /moderate is English.
   const email = (locale: Locale) =>
     submissionToReview({
       kind: row.s.kind,
       name: p.name ?? serverTranslator(locale)("email.toReview.unnamed"),
       place: [p.city, p.state].filter(Boolean).join(", "),
       submitter: row.submitter,
-      url: `${getServerConfig().APP_URL}/admin`,
+      url: `${getServerConfig().APP_URL}/moderate`,
       locale,
     })
   // Each moderator on their own: one bad address mustn't stop the rest. The

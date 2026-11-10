@@ -1,10 +1,14 @@
 import "server-only"
-import { sql } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
 import { locationSubmissions, locations } from "@/server/db/schema"
 import type { SubmissionKind } from "@/lib/submissions/constants"
 import type { DuplicateCandidate, MySubmission, SubmissionInput } from "@/lib/submissions/schemas"
 import { pointOf } from "./locations"
+import type { SubmissionTextCheck } from "@/lib/reviews/moderation"
+import type { ContentModerator } from "@/server/ports/moderator"
+import { moderate, REVIEW_CHECK_TIMEOUT_MS } from "./content-moderation"
+import { logError } from "@/server/log"
 
 /** Submissions one person may send in a day: enough for a few real places, too few to flood the queue. */
 export const SUBMISSIONS_PER_DAY = 5
@@ -58,6 +62,60 @@ export async function createSubmission(
   { userId, input, confirmDuplicate = false }: { userId: string; input: SubmissionInput; confirmDuplicate?: boolean },
   db: Database = getDb(),
   now = new Date(),
+  moderator?: ContentModerator,
+): Promise<CreateResult> {
+  const result = await insertSubmission({ userId, input, confirmDuplicate }, db, now)
+  // After the insert's transaction, so the check never holds a lock. It never rejects anything: moderators decide.
+  if (result.status === "created") await checkSubmissionText(result.id, input, db, moderator)
+  return result
+}
+
+/** The fields people type freely, as the text check reads them. */
+export function submissionText(input: Partial<SubmissionInput>): string {
+  const f = input as Record<string, unknown>
+  return (
+    [
+      ["Name", f.name],
+      ["Venue", f.venue],
+      ["Hours", f.hours],
+      ["Website", f.website],
+      ["Link", f.link],
+    ] as const
+  )
+    .filter(([, v]) => typeof v === "string" && v.trim())
+    .map(([k, v]) => `${k}: ${v}`)
+    .join("\n")
+}
+
+/**
+ * Checks a submission's free text (#253) and stores the result on it, for
+ * the review queue's checks. A failure is stored as a failed check; it
+ * never blocks the submission.
+ */
+export async function checkSubmissionText(id: string, input: Partial<SubmissionInput>, db: Database = getDb(), moderator?: ContentModerator) {
+  const text = submissionText(input)
+  if (!text) return
+  try {
+    const check = await moderate(text, { kind: "submission", timeoutMs: REVIEW_CHECK_TIMEOUT_MS, fallback: "hold", moderator })
+    const stored: SubmissionTextCheck = {
+      verdict: check.verdict,
+      categories: check.categories,
+      reason: check.reason,
+      model: check.model,
+      failed: Boolean(check.failed),
+      at: new Date().toISOString(),
+    }
+    await db.update(locationSubmissions).set({ textCheck: stored }).where(eq(locationSubmissions.id, id))
+    console.info(JSON.stringify({ event: "submission_moderation", submissionId: id, verdict: check.verdict, failed: stored.failed, costMicros: check.usage.costMicros }))
+  } catch (err) {
+    logError("moderation.store_failed", err, { kind: "submission" })
+  }
+}
+
+async function insertSubmission(
+  { userId, input, confirmDuplicate }: { userId: string; input: SubmissionInput; confirmDuplicate: boolean },
+  db: Database,
+  now: Date,
 ): Promise<CreateResult> {
   const { kind, lng, lat, ...fields } = input
   // One person's submissions are counted and added one at a time, so parallel requests can't all pass the limit.

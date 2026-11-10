@@ -160,6 +160,8 @@ map:
     someGoneBody: They aren't on the map anymore, so the route skips them.
     shown: Route on the map
     shownBody: "{count, plural, one {# stop, in visiting order.} other {# stops, in visiting order.}}"
+    # Instead of "shown" when the route is straight lines between the stops, not along the streets.
+    straight: Couldn't get street directions, showing straight lines.
     clear: Clear
     # A numbered pin. {n} is its place in the route, {name} the place.
     stop: "Stop {n}: {name}"
@@ -308,11 +310,24 @@ reviews:
   # Toasts.
   posted: Review posted
   postedBody: It shows at the top of the reviews.
+  # A review the automatic check held for a moderator (#253). Only its author sees it.
+  held: Review sent for a check
+  heldBody: A moderator will look at it before others can see it.
+  # Next to the viewer's own held review, and under it.
+  pending: Pending review
+  pendingBody: Only you can see this until a moderator approves it.
+  # Next to the viewer's own review a moderator removed, and under it.
+  removed: Removed
+  removedBody: A moderator removed this review, so only you can see it. Edit it to send it for review again.
   postFailed: Couldn't post your review
   editFailed: Couldn't save your changes
   deleteFailed: Couldn't delete your review
   sessionEnded: Your session ended. Log in again and retry.
   connection: Check your connection and try again.
+  # For moderators, on someone else's review with a profile picture (#290). {name} is their username.
+  removePhoto: Remove {name}'s photo
+  photoRemoved: "{name}'s photo was removed. Their reviews show initials now."
+  removePhotoFailed: Couldn't remove the photo. Try again.
 
 # "Report a problem" on a place's details. {kind}: vending, shop or event.
 report:
@@ -467,6 +482,8 @@ nav:
   discord: Discord
   settings: Settings
   admin: Admin
+  # Moderators' dashboard (/moderate).
+  moderate: Moderate
   # Tab bar: opens the map's add-a-place flow.
   addPlace: Add a place
   # Accessible names of the navigation landmarks.
@@ -599,6 +616,7 @@ dashboard:
       title: Upcoming events
       error: Couldn't load events. Check your connection and refresh.
       empty: Card shows and league nights show up here once they're added.
+      seeOnMap: See events on map
   # /home/reviews: the reviews you've written, to edit or delete.
   reviews:
     loadingProfile: Loading profile..
@@ -708,23 +726,54 @@ assistant:
     failed: Couldn't clear your history
     failedBody: Check your connection and try again.
 
+# /moderate (#293): moderators' dashboard. The review queue, Reviews and Reports inside it are English only, like /admin.
+moderate:
+  # Page and browser-tab title.
+  title: Moderate
+  intro: Review new places before they go on the map, check reviews the automatic check held, and act on problems people reported.
+  openNav: Open navigation
+  tabs:
+    queue: Review queue
+    reviews: Reviews
+    reports: Reports
+    # The count beside a tab, for screen readers. {count} is a number.
+    waiting: "{count, plural, one {# waiting} other {# waiting}}"
+
 # /settings.
 settings:
   # Heading for screen readers.
-  title: General Settings
-  loadingProfile: Loading profile..
-  loading: Loading settings...
+  title: General settings
+  loadingProfile: Loading your profile…
+  loadFailed: We couldn't load your profile. Check your connection and reload the page.
   openNav: Open navigation
   profile:
     title: Profile
-    body: This information will be displayed publicly so be careful what you share.
+    body: Your username shows next to your reviews. Your name and email stay private.
   fields:
     fullName: Full name
     email: Email address
     username: Username
   save: Save
+  saving: Saving…
   cancel: Cancel
+  # Opens a row for editing. Each one is described by its row's label for screen readers.
   update: Update
+  # A toast after a name or username change is saved.
+  saved: Your changes are saved.
+  # The "Profile picture" row (#290).
+  avatar:
+    label: Profile picture
+    hint: JPEG, PNG or WebP, up to 2 MB. We crop it to a square.
+    upload: Upload photo
+    uploading: Uploading…
+    remove: Remove photo
+    removing: Removing…
+    # Toasts.
+    uploaded: Your photo is updated.
+    removed: Your photo is removed.
+    # Checked before uploading.
+    tooLarge: That file is over 2 MB. Choose a smaller photo.
+    wrongType: Choose a JPEG, PNG or WebP photo.
   # Notes about an email change, which needs approval from the old address and confirmation from the new one.
   email:
     # After saving a new address. {current} is the current address, {next} the new one.
@@ -991,6 +1040,9 @@ content:
     title: Your Recent Reviews
     edit: Edit
     delete: Delete
+    # On a review a moderator hasn't approved yet (#253), and one a moderator removed.
+    pending: Pending review
+    removed: Removed by a moderator
 
 # The privacy policy and terms of service, which are in English only.
 legal:
@@ -1280,6 +1332,11 @@ email:
 # Errors from our API that the pages show, by the `code` in the response
 # (#185). The API also sends its own English `error`, shown when a code isn't here.
 apiErrors:
+  # Profile pictures (#290).
+  avatarTooLarge: That file is over 2 MB. Choose a smaller photo.
+  avatarWrongType: Choose a JPEG, PNG or WebP photo.
+  avatarRejected: We couldn't read that photo. Try another one.
+  avatarsUnavailable: Profile pictures aren't available right now.
   loginRequired: Log in to continue
   wrongPassword: Wrong email or password. If you haven't confirmed your email yet, we've sent you a new link.
   credentialsMissing: Enter your email and password

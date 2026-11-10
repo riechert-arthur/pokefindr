@@ -3,6 +3,8 @@ import type { NextRequest } from 'next/server'
 import { z } from 'zod/v3'
 import { deleteReview, updateReview } from '@/server/services/reviews'
 import { apiError } from "@/server/api-error"
+import { recheckSoon } from '@/server/services/review-moderation'
+import { limitClient, RATE_RULES } from '@/server/api-rate-limit'
 import { log } from "@/server/log"
 
 const reviewIdSchema = z.string().uuid()
@@ -36,6 +38,8 @@ export async function PATCH(req: NextRequest, context: Context) {
   if (!userId) {
     return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
   }
+  const limited = await limitClient(req, RATE_RULES.reviews)
+  if (limited) return limited
   const reviewId = reviewIdSchema.safeParse((await context.params).id)
   if (!reviewId.success) return NextResponse.json({ error: 'Review not found' }, { status: 404 })
 
@@ -50,7 +54,9 @@ export async function PATCH(req: NextRequest, context: Context) {
   try {
     const updated = await updateReview(reviewId.data, userId, body.data)
     if (!updated) return NextResponse.json({ error: 'Review not found' }, { status: 404 })
-    return NextResponse.json({ success: true })
+    if (updated.checkFailed) recheckSoon()
+    // The text is checked again: `held` means it waits for a moderator (#253).
+    return NextResponse.json({ success: true, status: updated.status })
   } catch (err) {
     log.forRequest(req, "/api/reviews/[id]").logError("db.write_failed", err, { write: "review", step: "failed to update review" })
     return apiError("serverError", "Server error", 500)

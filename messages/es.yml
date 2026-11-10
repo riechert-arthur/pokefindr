@@ -115,6 +115,7 @@ map:
     someGoneBody: Ya no están en el mapa, así que la ruta las omite.
     shown: Ruta en el mapa
     shownBody: "{count, plural, one {# parada, en el orden de visita.} other {# paradas, en el orden de visita.}}"
+    straight: No se pudieron obtener indicaciones por calles; se muestran líneas rectas.
     clear: Quitar
     stop: "Parada {n}: {name}"
   controls:
@@ -237,11 +238,20 @@ reviews:
   deleteBodyUnnamed: Se eliminará tu calificación. Esto no se puede deshacer.
   posted: Reseña publicada
   postedBody: Aparece al principio de las reseñas.
+  held: Reseña enviada a revisión
+  heldBody: Un moderador la revisará antes de que otros puedan verla.
+  pending: Pendiente de revisión
+  pendingBody: Solo tú puedes verla hasta que un moderador la apruebe.
+  removed: Retirada
+  removedBody: Un moderador retiró esta reseña, así que solo tú puedes verla. Edítala para enviarla de nuevo a revisión.
   postFailed: No se pudo publicar tu reseña
   editFailed: No se pudieron guardar tus cambios
   deleteFailed: No se pudo eliminar tu reseña
   sessionEnded: Tu sesión terminó. Vuelve a iniciar sesión e inténtalo de nuevo.
   connection: Revisa tu conexión e inténtalo de nuevo.
+  removePhoto: Quitar la foto de {name}
+  photoRemoved: "Se quitó la foto de {name}. Sus reseñas muestran iniciales ahora."
+  removePhotoFailed: No se pudo quitar la foto. Inténtalo de nuevo.
 
 report:
   title: Reportar un problema
@@ -373,6 +383,7 @@ nav:
   discord: Discord
   settings: Configuración
   admin: Admin
+  moderate: Moderar
   addPlace: Agregar un lugar
   appNavigation: Navegación de la app
   tabs: Pestañas
@@ -467,6 +478,7 @@ dashboard:
       title: Próximos eventos
       error: No pudimos cargar los eventos. Revisa tu conexión y recarga la página.
       empty: Las ferias de cartas y las noches de liga aparecen aquí cuando se agregan.
+      seeOnMap: Ver eventos en el mapa
   reviews:
     loadingProfile: Cargando perfil..
     validation:
@@ -551,21 +563,45 @@ assistant:
     failed: No pudimos borrar tu historial
     failedBody: Revisa tu conexión e inténtalo de nuevo.
 
+# /moderate (#293): moderators' dashboard. The review queue, Reviews and Reports inside it are English only, like /admin.
+moderate:
+  title: Moderar
+  intro: Revisa los lugares nuevos antes de que aparezcan en el mapa, revisa las reseñas que retuvo la revisión automática y atiende los problemas que la gente reporta.
+  openNav: Abrir navegación
+  tabs:
+    queue: Cola de revisión
+    reviews: Reseñas
+    reports: Reportes
+    waiting: "{count, plural, one {# pendiente} other {# pendientes}}"
+
 settings:
   title: Configuración general
-  loadingProfile: Cargando perfil..
-  loading: Cargando configuración...
+  loadingProfile: Cargando tu perfil…
+  loadFailed: No pudimos cargar tu perfil. Revisa tu conexión y vuelve a cargar la página.
   openNav: Abrir navegación
   profile:
     title: Perfil
-    body: Esta información se mostrará públicamente, así que ten cuidado con lo que compartes.
+    body: Tu nombre de usuario aparece junto a tus reseñas. Tu nombre y tu correo son privados.
   fields:
     fullName: Nombre completo
     email: Correo electrónico
     username: Nombre de usuario
   save: Guardar
+  saving: Guardando…
   cancel: Cancelar
   update: Cambiar
+  saved: Tus cambios se guardaron.
+  avatar:
+    label: Foto de perfil
+    hint: JPEG, PNG o WebP, de hasta 2 MB. La recortamos en un cuadrado.
+    upload: Subir foto
+    uploading: Subiendo…
+    remove: Quitar foto
+    removing: Quitando…
+    uploaded: Tu foto se actualizó.
+    removed: Se quitó tu foto.
+    tooLarge: Ese archivo pesa más de 2 MB. Elige una foto más pequeña.
+    wrongType: Elige una foto JPEG, PNG o WebP.
   email:
     pending: Enviamos a {current} un enlace para aprobar el cambio a {next}. Después, confírmalo desde esa bandeja de entrada.
     approved: Gracias. Si aprobaste el cambio desde tu dirección anterior, confírmalo desde la bandeja de entrada de la nueva. El correo de abajo es el actual.
@@ -901,6 +937,8 @@ content:
     title: Tus reseñas recientes
     edit: Editar
     delete: Eliminar
+    pending: Pendiente de revisión
+    removed: Retirada por un moderador
 
 legal:
   englishOnly: Esta página solo está disponible en inglés. <link>Leerla en inglés</link>.
@@ -1021,6 +1059,10 @@ email:
     noReason: no pasó la revisión
 
 apiErrors:
+  avatarTooLarge: Ese archivo pesa más de 2 MB. Elige una foto más pequeña.
+  avatarWrongType: Elige una foto JPEG, PNG o WebP.
+  avatarRejected: No pudimos leer esa foto. Prueba con otra.
+  avatarsUnavailable: Las fotos de perfil no están disponibles ahora.
   loginRequired: Inicia sesión para continuar
   wrongPassword: Correo o contraseña incorrectos. Si todavía no confirmaste tu correo, te enviamos un enlace nuevo.
   credentialsMissing: Escribe tu correo y tu contraseña

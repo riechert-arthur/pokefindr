@@ -27,6 +27,7 @@ export const ADMIN_GROUPS: readonly AdminGroup[] = [
     label: "Moderation",
     sections: [
       { id: "queue", label: "Review queue", sub: "New card shops and events wait here before they go on the map.", entitlement: "moderation.view" },
+      { id: "reviews", label: "Reviews", sub: "Reviews the automatic check held. Only their authors see them until you approve them.", entitlement: "moderation.reviews" },
       { id: "reports", label: "Reports", sub: "Problems people reported on live locations.", entitlement: "moderation.view" },
     ],
   },
@@ -50,6 +51,11 @@ export const ADMIN_GROUPS: readonly AdminGroup[] = [
       { id: "jobs", label: "Jobs", sub: "Background jobs that keep locations up to date.", entitlement: "admin.jobs" },
       { id: "ads", label: "Ads", sub: "Turn sponsored placements on or off.", entitlement: "admin.ads" },
     ],
+  },
+  {
+    id: "people",
+    label: "People",
+    sections: [{ id: "users", label: "Users", sub: "Find someone and change their role. Super admins only.", entitlement: "users.manage" }],
   },
 ]
 

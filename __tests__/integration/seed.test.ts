@@ -2,6 +2,13 @@ import { afterAll, describe, expect, it } from "vitest"
 import postgres from "postgres"
 import { readSeedLocations, seedLocations } from "../../scripts/db/seedLocations"
 import { SAMPLE_EVENTS, SAMPLE_SOURCE, seedSampleHighlights } from "../../scripts/db/seedHighlights"
+import { DEV_ACCOUNTS, DEV_MODERATOR, DEV_PASSWORD, DEV_USER, seedDevUsers } from "../../scripts/db/seedDevUsers"
+import { verifyPassword } from "better-auth/crypto"
+import { NextResponse } from "next/server"
+import { SAMPLE_REPORT, SAMPLE_SUBMISSIONS, seedSampleModeration } from "../../scripts/db/seedModeration"
+import { approveSubmission, listQueue } from "@/server/services/moderation"
+import { addLocationReport } from "@/server/services/reports"
+import { requireEntitlement, roleOf } from "@/server/admin/access"
 import { getDb } from "@/server/db/client"
 import { getLocationsNear } from "@/server/services/locations"
 import { getUpcomingEvents } from "@/server/services/highlights"
@@ -83,5 +90,126 @@ describe("seedSampleHighlights", () => {
     expect(before).toHaveLength(SAMPLE_EVENTS.length)
     const [old] = await sql`select is_active from locations where name = 'Old show (sample)'`
     expect(old.is_active).toBe(false)
+  })
+})
+
+describe("seedDevUsers", () => {
+  const outcomes = async () => (await seedDevUsers(sql)).map((r) => [r.account.email, r.outcome])
+  const accounts = () =>
+    sql<{ email: string; username: string; role: string; locale: string | null; onboarded: boolean; email_verified: boolean }[]>`
+      select u.email, p.username, p.role, p.locale, p.onboarded, u.email_verified
+      from users u join profiles p on p.id = u.id order by u.email`
+
+  it("adds every account once, then changes nothing", async () => {
+    expect(await outcomes()).toEqual(DEV_ACCOUNTS.map((a) => [a.email, "added"]))
+    const after = await accounts()
+    expect(await outcomes()).toEqual(DEV_ACCOUNTS.map((a) => [a.email, "unchanged"]))
+    expect(await accounts()).toEqual(after)
+    expect(after).toEqual(
+      [...DEV_ACCOUNTS]
+        .sort((a, b) => a.email.localeCompare(b.email))
+        .map((a) => ({ email: a.email, username: a.username, role: a.role, locale: "locale" in a ? a.locale : null, onboarded: true, email_verified: true })),
+    )
+    expect(DEV_ACCOUNTS.filter((a) => a.role === "member").length).toBeGreaterThanOrEqual(3)
+    expect(after.filter((a) => a.locale === "es")).toHaveLength(1)
+    const [{ count }] = await sql<{ count: number }[]>`select count(*)::int as count from accounts where provider_id = 'credential'`
+    expect(count).toBe(DEV_ACCOUNTS.length)
+  })
+
+  it("makes the dev account an admin", async () => {
+    await seedDevUsers(sql)
+    const [row] = await sql`select role from profiles where id = ${DEV_USER.id}`
+    expect(row.role).toBe("admin")
+  })
+
+  it("adds a moderator who can moderate but not open the admin-only sections", async () => {
+    await seedDevUsers(sql)
+    const mod = DEV_MODERATOR
+    expect(await roleOf(mod.id)).toBe("moderator")
+    const as = (path: string) => new Request(`http://localhost:3000${path}`, { headers: { "x-user-id": mod.id } })
+    const jobs = await requireEntitlement(as("/api/admin/jobs"), "admin.jobs")
+    expect(jobs).toBeInstanceOf(NextResponse)
+    expect((jobs as NextResponse).status).toBe(404)
+    expect(await requireEntitlement(as("/api/admin/submissions"), "moderation.view")).toEqual({ userId: mod.id, role: "moderator" })
+  })
+
+  it("skips an account whose username someone signed up with, instead of failing", async () => {
+    await sql`insert into users (id, name, email) values (gen_random_uuid(), 'Other Dev', 'other@example.com')`
+    await sql`insert into profiles (id, username) select id, 'Dev' from users where email = 'other@example.com'`
+    expect((await seedDevUsers(sql, [DEV_USER]))[0].outcome).toBe("username taken")
+    expect(await sql`select 1 from users where id = ${DEV_USER.id}`).toHaveLength(0)
+  })
+
+  it("leaves an account someone signed up with a seeded email alone", async () => {
+    await sql`insert into users (id, name, email) values (gen_random_uuid(), 'Real Dev', ${DEV_USER.email})`
+    await sql`insert into profiles (id, username) select id, 'realdev' from users where email = ${DEV_USER.email}`
+    expect((await seedDevUsers(sql, [DEV_USER]))[0].outcome).toBe("email taken")
+    const [row] = await sql`select p.role from profiles p join users u on u.id = p.id where u.email = ${DEV_USER.email}`
+    expect(row.role).toBe("member")
+  })
+
+  it("adds the profile an older seed left out, with its role", async () => {
+    await seedDevUsers(sql)
+    await sql`delete from profiles where id = ${DEV_USER.id}`
+    expect((await seedDevUsers(sql, [DEV_USER]))[0].outcome).toBe("profile added")
+    const [row] = await sql`select role, onboarded from profiles where id = ${DEV_USER.id}`
+    expect(row).toEqual({ role: DEV_USER.role, onboarded: true })
+  })
+
+  it("puts a role changed by hand back to the seeded value", async () => {
+    await seedDevUsers(sql)
+    await sql`update profiles set role = 'member' where id = ${DEV_USER.id}`
+    expect((await seedDevUsers(sql, [DEV_USER]))[0].outcome).toBe("role reset")
+    const [row] = await sql`select role from profiles where id = ${DEV_USER.id}`
+    expect(row.role).toBe(DEV_USER.role)
+  })
+
+  it("stores a password Better Auth accepts", async () => {
+    await seedDevUsers(sql)
+    const rows = await sql<{ password: string }[]>`select password from accounts where provider_id = 'credential'`
+    expect(rows).toHaveLength(DEV_ACCOUNTS.length)
+    for (const { password } of rows) {
+      expect(await verifyPassword({ hash: password, password: DEV_PASSWORD })).toBe(true)
+    }
+  })
+})
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+describe("seedSampleModeration", () => {
+  it("fills the review queue and Reports once, with samples from the seeded members", async () => {
+    await seedLocations(sql, readSeedLocations())
+    await seedDevUsers(sql)
+    const now = new Date()
+    expect(await seedSampleModeration(sql, now)).toBe(SAMPLE_SUBMISSIONS.length + 1)
+    expect(await seedSampleModeration(sql, now)).toBe(0)
+    const queue = await sql<{ name: string; status: string }[]>`select payload->>'name' as name, status from location_submissions order by id`
+    expect(queue.map((q) => q.status)).toEqual(SAMPLE_SUBMISSIONS.map(() => "pending"))
+    expect(queue.every((q) => q.name.endsWith("(sample)"))).toBe(true)
+    expect(await listQueue(undefined, getDb(), now)).toHaveLength(SAMPLE_SUBMISSIONS.length)
+    // Not late on a new database (late is older than a day).
+    const [{ oldest }] = await sql<{ oldest: Date }[]>`select min(created_at) as oldest from location_submissions`
+    expect(now.getTime() - oldest.getTime()).toBeLessThan(DAY_MS)
+    const [report] = await sql`select reason, resolved_at, user_id from status_reports where id = ${SAMPLE_REPORT.id}`
+    expect(report).toMatchObject({ reason: "gone", resolved_at: null, user_id: SAMPLE_REPORT.by })
+  })
+
+  it("doesn't make misty's own report of the sample machine a duplicate", async () => {
+    await seedLocations(sql, readSeedLocations())
+    await seedDevUsers(sql)
+    await seedSampleModeration(sql)
+    const [machine] = await sql`select id from locations where "machineID" = ${SAMPLE_REPORT.machineID}`
+    expect(await addLocationReport({ locationId: machine.id, userId: SAMPLE_REPORT.by, reason: "gone" }, getDb())).toBe("added")
+  })
+
+  it("can be approved, and stays decided on re-seeding", async () => {
+    await seedLocations(sql, readSeedLocations())
+    await seedDevUsers(sql)
+    await seedSampleModeration(sql)
+    const event = SAMPLE_SUBMISSIONS.find((s) => s.kind === "event")!
+    expect((await approveSubmission(event.id, DEV_USER.id, getDb())).status).toBe("done")
+    await seedSampleModeration(sql)
+    const [row] = await sql`select status from location_submissions where id = ${event.id}`
+    expect(row.status).toBe("approved")
   })
 })

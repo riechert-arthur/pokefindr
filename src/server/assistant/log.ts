@@ -30,10 +30,34 @@ export interface ToolCall {
 /** Phrases that try to talk the model out of its instructions. */
 const INJECTION = /\b(ignore|disregard|forget)\b.{0,40}\b(instructions|rules|prompt)\b|\bsystem prompt\b|\byou are now\b|\bjailbreak\b|\bdeveloper mode\b/i
 
-/** Why a turn might need a look: a refusal, injection-looking input, a hit cap, or an unusual cost. */
-export function flagsFor({ question, outcome, tools, costMicros }: { question: string; outcome: AssistantOutcome; tools: readonly ToolCall[]; costMicros: number }): string[] {
+/** The turn-log flags a check adds: `moderated` when it held or blocked the question, `moderation_error` when it didn't run. */
+export function moderationFlags(check: { verdict: "allow" | "hold" | "block"; failed?: boolean } | null | undefined): string[] {
+  if (!check) return []
+  if (check.failed) return ["moderation_error"]
+  return check.verdict === "allow" ? [] : ["moderated"]
+}
+
+/**
+ * Why a turn might need a look: a refusal, injection-looking input, a hit
+ * cap, an unusual cost, or the input check (#253): `moderated` when it held
+ * or blocked the question, `moderation_error` when it didn't run.
+ */
+export function flagsFor({
+  question,
+  outcome,
+  tools,
+  costMicros,
+  moderation,
+}: {
+  question: string
+  outcome: AssistantOutcome
+  tools: readonly ToolCall[]
+  costMicros: number
+  moderation?: { verdict: "allow" | "hold" | "block"; failed?: boolean } | null
+}): string[] {
   const flags: string[] = []
   if (outcome === "refused") flags.push("refused")
+  flags.push(...moderationFlags(moderation))
   if (INJECTION.test(question)) flags.push("injection")
   if (outcome === "limited") flags.push("rate_limited")
   if (tools.some((t) => !t.ok && /limit of places/i.test(t.error ?? ""))) flags.push("place_cap")

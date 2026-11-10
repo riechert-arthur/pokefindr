@@ -48,6 +48,7 @@ storybook-static
 
 # Assistant eval reports (npm run eval:assistant)
 /evals/assistant/results/
+/evals/moderation/results/
 
 # Playwright (npx playwright test)
 /test-results/
@@ -56,5 +57,7 @@ storybook-static
 # Built from messages/*.yml (npm run i18n:build)
 /src/i18n/generated/
 
+# Profile pictures from the local image store (IMAGE_STORE=local, #290)
+/public/uploads/
 # Lighthouse CI reports (lighthouserc.json)
 /.lighthouseci/
