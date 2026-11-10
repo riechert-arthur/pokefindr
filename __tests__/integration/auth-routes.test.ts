@@ -228,7 +228,7 @@ describe("current user", () => {
     await post(signup, form)
     const [user] = await getDb().select().from(users)
     const res = await currentUser(new NextRequest("http://localhost:3000/api/auth/user", { headers: { "x-user-id": user.id } }))
-    expect(await res.json()).toEqual({ user: { id: user.id, username: "ash", full_name: "Ash Ketchum", metadata: null, role: "member" } })
+    expect(await res.json()).toEqual({ user: { id: user.id, username: "ash", full_name: "Ash Ketchum", metadata: null, role: "member", locale: null } })
   })
 })
 
