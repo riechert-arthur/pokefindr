@@ -9,7 +9,7 @@ vi.mock("@/components/map/MapLoader", () => ({ MapLoader: () => null }))
 const redirect = vi.fn((url: string) => {
   throw new Error(`REDIRECT ${url}`)
 })
-vi.mock("next-intl/server", () => ({ getLocale: async () => "en" }))
+vi.mock("next-intl/server", () => ({ getLocale: async () => "en", getTranslations: async (ns: string) => (key: string) => `${ns}.${key}` }))
 vi.mock("@/i18n/navigation", () => ({ redirect: ({ href }: { href: string }) => redirect(href) }))
 
 import MapPage from "@/app/[locale]/(dashboard)/map/page"
@@ -46,5 +46,14 @@ describe("/map with a place name only", () => {
     await open({ q: "Seattle, WA", lat: "47.6", lng: "-122.3" })
     await open({ near: "me" })
     expect(search).not.toHaveBeenCalled()
+  })
+})
+
+describe("/map's text for search engines (#255)", () => {
+  it("renders a heading and an intro on the server, with no location data", async () => {
+    const { renderToStaticMarkup } = await import("react-dom/server")
+    const html = renderToStaticMarkup(await open({}))
+    expect(html).toContain("<h1>map.meta.heading</h1>")
+    expect(html).toContain("<p>map.meta.intro</p>")
   })
 })
