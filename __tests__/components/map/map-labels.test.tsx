@@ -3,6 +3,8 @@ import { renderHook } from "../../helpers/intl"
 import { localizedTextField, nameLabelIds } from "@/components/map/layers"
 import { useStateName } from "@/components/map/useStateName"
 import { countryName } from "@/lib/map/country-names"
+import { STATES } from "@/lib/map/states"
+import { MESSAGES } from "@/i18n/all-messages"
 
 /** Label layers as OpenFreeMap's positron style has them. */
 const NAME = ["case", ["has", "name:nonlatin"], ["concat", ["get", "name:latin"], "\n", ["get", "name:nonlatin"]], ["coalesce", ["get", "name_en"], ["get", "name"]]]
@@ -35,6 +37,10 @@ describe("map labels in the viewer's language (#184)", () => {
     expect(countryName("", "Kosovo", "es")).toBe("Kosovo")
     expect(countryName("", "Kosovo", "ja")).not.toBe("Kosovo")
     expect(countryName("", "Somaliland", "es")).toBe("Somaliland")
+  })
+
+  it("has every state's name in every catalog", () => {
+    for (const messages of Object.values(MESSAGES)) expect(Object.keys(messages.states).sort()).toEqual(Object.keys(STATES).sort())
   })
 
   it("names US states in the page's language", () => {
