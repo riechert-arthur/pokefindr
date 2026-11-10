@@ -1,8 +1,10 @@
 "use client"
 
 import { useRef, useState, type FormEvent } from "react"
+import { toast } from "sonner"
 import { Link } from "@/i18n/navigation"
 import { StarRating } from "@/components/pokefindr/StarRating"
+import { UserAvatar } from "@/components/pokefindr/UserAvatar"
 import type { LocationKind } from "@/components/pokefindr/kinds"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -38,6 +40,10 @@ interface ReviewsSectionProps {
   reviews: ReviewsState
   /** The signed-in viewer's name; null signed out (the form becomes a log-in link). */
   username: string | null
+  /** The viewer's profile picture, for their review while it posts. */
+  image?: string | null
+  /** The viewer may remove other people's profile pictures (moderation.avatars, #290). */
+  moderate?: boolean
   /** The location's name, for the delete confirmation. */
   placeName?: string
 }
@@ -47,7 +53,7 @@ interface ReviewsSectionProps {
  * age, then the form (stars and optional text). The viewer can edit or delete
  * their own; posting shows the review at once.
  */
-export function ReviewsSection({ kind, reviews, username, placeName }: ReviewsSectionProps) {
+export function ReviewsSection({ kind, reviews, username, image = null, moderate = false, placeName }: ReviewsSectionProps) {
   const f = useFormat()
   const t = useTranslations("reviews")
   // The review being edited in the form, or null for a new one.
@@ -74,7 +80,7 @@ export function ReviewsSection({ kind, reviews, username, placeName }: ReviewsSe
     const input = { rating, text: text.trim() }
     const target = editing
     reset()
-    const ok = target ? await reviews.edit(target.id, input) : await reviews.add(input, username)
+    const ok = target ? await reviews.edit(target.id, input) : await reviews.add(input, username, image)
     if (!ok) {
       // Put the draft back so nothing typed is lost.
       setEditing(target)
@@ -92,6 +98,22 @@ export function ReviewsSection({ kind, reviews, username, placeName }: ReviewsSe
     setText(r.text)
     // Move to the form so it's clear the review is open there.
     textRef.current?.focus()
+  }
+
+  /** A moderator takes down someone's picture: their reviews show initials from then on. */
+  const removePhoto = async (r: Review) => {
+    setBusy(true)
+    try {
+      const res = await fetch(`/api/admin/reviews/${encodeURIComponent(r.id)}/avatar`, { method: "DELETE" })
+      if (!res.ok) throw new Error(`DELETE /api/admin/reviews/:id/avatar failed (${res.status})`)
+      toast.success(t("photoRemoved", { name: r.username }))
+      reviews.reload()
+    } catch (err) {
+      console.error("[map] couldn't remove the picture", err)
+      toast.error(t("removePhotoFailed"))
+    } finally {
+      setBusy(false)
+    }
   }
 
   const confirmDelete = () => {
@@ -128,15 +150,20 @@ export function ReviewsSection({ kind, reviews, username, placeName }: ReviewsSe
           {reviews.reviews.map((r) => (
             <li key={r.id} className="rounded-lg border border-border px-3 py-2.5 text-body">
               <div className="flex items-center gap-2">
-                <span aria-hidden className="grid size-[22px] place-items-center rounded-full bg-muted text-overline font-bold tracking-normal">
-                  {r.username.charAt(0).toUpperCase()}
-                </span>
+                <UserAvatar size="xs" name={r.username} imageUrl={r.image} />
                 <b className="font-semibold">{r.username}</b>
                 <StarRating rating={r.rating} starSize={13} />
                 <span className="grow" />
                 <span className="text-caption text-muted-foreground">{f.ago(r.createdAt)}</span>
               </div>
               {r.text && <p className="mt-1.5 whitespace-pre-line break-words">{r.text}</p>}
+              {moderate && !r.mine && r.image && (
+                <div className="mt-1 flex gap-1">
+                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-caption" onClick={() => void removePhoto(r)} disabled={busy}>
+                    {t("removePhoto", { name: r.username })}
+                  </Button>
+                </div>
+              )}
               {r.mine && !r.id.startsWith("pending-") && (
                 <div className="mt-1 flex gap-1">
                   <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-caption" onClick={() => startEdit(r)} disabled={busy}>

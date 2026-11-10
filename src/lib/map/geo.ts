@@ -56,6 +56,9 @@ export function radiusCircle(lng: number, lat: number, miles: number): Feature<P
   return { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [ring] } }
 }
 
+/** `n` rounded to `places` decimals. */
+export const round = (n: number, places: number) => Math.round(n * 10 ** places) / 10 ** places
+
 /** Straight-line (great-circle) distance in miles. */
 export function milesBetween(lng1: number, lat1: number, lng2: number, lat2: number): number {
   const rad = Math.PI / 180
