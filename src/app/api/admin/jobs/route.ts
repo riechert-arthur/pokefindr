@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { requireStaff } from "@/server/admin/access"
+import { requireEntitlement } from "@/server/admin/access"
 import { listJobs } from "@/server/services/admin-jobs"
 
 export const dynamic = "force-dynamic"
 
 /** GET /api/admin/jobs: each job with its last run and pause state (#157). Admins only. */
 export async function GET(request: NextRequest) {
-  const staff = await requireStaff(request, "admin")
+  const staff = await requireEntitlement(request, "admin.jobs")
   if (staff instanceof NextResponse) return staff
   try {
     return NextResponse.json({ jobs: await listJobs() }, { headers: { "Cache-Control": "no-store" } })

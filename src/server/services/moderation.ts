@@ -2,7 +2,8 @@ import "server-only"
 import { and, eq, sql } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
 import { cardShopDetails, eventDetails, highlights, locationRatings, locationSubmissions, locations, profiles, statusReports } from "@/server/db/schema"
-import { canModerate, type Role } from "@/lib/auth/roles"
+import { can } from "@/lib/auth/entitlements"
+import type { Role } from "@/lib/auth/roles"
 import type { RejectReason } from "@/lib/submissions/constants"
 import type { EventSubmission, ShopSubmission } from "@/lib/submissions/schemas"
 import { UNDO_MS, type ModerationCheck, type ModerationItem } from "@/lib/submissions/moderation"
@@ -17,11 +18,6 @@ const DAY_MS = 24 * 60 * 60 * 1000
 export async function getRole(userId: string, db: Database = getDb()): Promise<Role | null> {
   const [row] = await db.select({ role: profiles.role }).from(profiles).where(eq(profiles.id, userId))
   return row?.role ?? null
-}
-
-/** Whether this user may review submissions. */
-export async function isModerator(userId: string, db: Database = getDb()): Promise<boolean> {
-  return canModerate(await getRole(userId, db))
 }
 
 type Payload = Partial<Omit<ShopSubmission, "kind" | "lng" | "lat"> & Omit<EventSubmission, "kind" | "lng" | "lat">>
@@ -130,14 +126,11 @@ export type DecisionResult = { status: "done"; locationId?: string; reviewedAt?:
 
 type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0]
 
-/**
- * A moderator can't decide their own submission: someone else checks it.
- * Admins can, so a site with one admin isn't stuck.
- */
+/** Deciding your own submission needs `moderation.decideOwn`; without it, someone else checks it. */
 async function decidingOwn(tx: Tx, submittedBy: string, reviewerId: string): Promise<boolean> {
   if (submittedBy !== reviewerId) return false
   const [me] = await tx.select({ role: profiles.role }).from(profiles).where(eq(profiles.id, reviewerId))
-  return me?.role !== "admin"
+  return !can(me?.role, "moderation.decideOwn")
 }
 
 /** Locks the submission for this decision. */

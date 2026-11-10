@@ -4,7 +4,7 @@ import { REJECT_REASONS } from "@/lib/submissions/constants"
 import { approveSubmission, rejectSubmission, undoDecision, type DecisionResult } from "@/server/services/moderation"
 import { REVIEWED_EMAIL_DELAY_SECONDS } from "@/server/services/submission-notifications"
 import { enqueueJob } from "@/server/lib/jobs/enqueue"
-import { requireStaff } from "@/server/admin/access"
+import { requireEntitlement } from "@/server/admin/access"
 
 export const dynamic = "force-dynamic"
 
@@ -31,7 +31,7 @@ const ANSWERS: Record<Exclude<DecisionResult["status"], "done">, [number, string
  *   the queue. Moderators and admins only (404 for anyone else).
  */
 export async function POST(request: NextRequest, context: Context) {
-  const staff = await requireStaff(request, "moderator")
+  const staff = await requireEntitlement(request, "moderation.decide")
   if (staff instanceof NextResponse) return staff
   const { userId } = staff
   const id = idSchema.safeParse((await context.params).id)

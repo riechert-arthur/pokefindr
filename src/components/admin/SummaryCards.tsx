@@ -4,7 +4,8 @@ import { Pill, type PillTone } from "@/components/admin/Pill"
 import { KINDS, KIND_ORDER } from "@/components/pokefindr/kinds"
 import { REPORTS_HOT } from "@/lib/admin/reports"
 import { queueIsLate, type AdminSummary } from "@/lib/admin/summary"
-import type { StaffRole } from "@/lib/admin/roles"
+import { can } from "@/lib/auth/entitlements"
+import type { Role } from "@/lib/auth/roles"
 import { useFormat, type Format } from "@/i18n/format"
 
 interface Card {
@@ -60,9 +61,9 @@ function cards(s: AdminSummary, f: Format): Card[] {
  * first. Each opens its section. They refresh with the sidebar's counts,
  * after every approve, reject, hide and add.
  */
-export function SummaryCards({ summary, role, onOpen }: { summary: AdminSummary | null; role: StaffRole; onOpen: (section: string) => void }) {
+export function SummaryCards({ summary, role, onOpen }: { summary: AdminSummary | null; role: Role; onOpen: (section: string) => void }) {
   const f = useFormat()
-  const shown = summary ? cards(summary, f).filter((c) => !c.admin || role === "admin") : []
+  const shown = summary ? cards(summary, f).filter((c) => !c.admin || can(role, "admin.summary.all")) : []
   if (!summary) return <div aria-hidden className="h-[118px] rounded-xl bg-muted/50" />
   return (
     <ul aria-label="Summary" className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

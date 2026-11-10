@@ -89,6 +89,27 @@ every connected app has to connect again.
 There's no "connected apps" page yet to disconnect an app from PokeFindr's side; people disconnect it
 in the app.
 
+## Roles and entitlements
+
+Everyone signed in has a role in `profiles.role`: `member`, `moderator` or `admin` (migration 0012). It's read from the database on each request, not stored in the session, so a change applies on the person's next request.
+
+What each role may do is decided in one place, `src/lib/auth/entitlements.ts` (#299). It maps each **entitlement**, named after what it allows (`moderation.decide`, `admin.jobs`), to the roles that have it:
+
+```ts
+import { can } from "@/lib/auth/entitlements"
+
+can(role, "admin.jobs") // true for admins only
+```
+
+- **Server checks:** admin API routes use `requireEntitlement(request, "admin.jobs")` from `src/server/admin/access.ts`. It answers 401 without a session and 404 to anyone without the entitlement, so the route's existence isn't shown.
+- **UI:** components use `can()` to hide what someone can't use. That's cosmetic; the server check is what protects the data.
+- **Admin sections:** each section in `src/lib/admin/sections.ts` names the entitlement it needs.
+- **Never compare role names elsewhere.** A test (`__tests__/lib/entitlements.test.ts`) fails on `role === "admin"`-style checks outside `entitlements.ts`.
+
+**To add an entitlement,** add an entry with the roles that get it, use `can` or `requireEntitlement` where it applies, and update the snapshot in `__tests__/lib/entitlements.test.ts`.
+
+**To add a role,** add it to `ROLES` (`src/lib/auth/roles.ts`) and to the `profiles_role_check` constraint with a migration. Then list it under each entitlement it should have. A role that isn't listed anywhere can do nothing beyond a member.
+
 ## Local development
 
 `make run` seeds a confirmed account into local databases only:

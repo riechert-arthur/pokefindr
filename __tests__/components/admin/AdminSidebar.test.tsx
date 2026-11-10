@@ -8,11 +8,11 @@ const GROUPS: AdminGroup[] = [
     id: "moderation",
     label: "Moderation",
     sections: [
-      { id: "queue", label: "Review queue", sub: "", access: "moderator" },
-      { id: "reports", label: "Reports", sub: "", access: "moderator" },
+      { id: "queue", label: "Review queue", sub: "", entitlement: "moderation.view" },
+      { id: "reports", label: "Reports", sub: "", entitlement: "moderation.view" },
     ],
   },
-  { id: "system", label: "System", sections: [{ id: "jobs", label: "Jobs", sub: "", access: "admin" }] },
+  { id: "system", label: "System", sections: [{ id: "jobs", label: "Jobs", sub: "", entitlement: "admin.jobs" }] },
 ]
 
 const renderSidebar = (onSelect = vi.fn()) =>

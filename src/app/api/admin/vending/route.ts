@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod/v3"
 import { MACHINE_ID, normalizeMachineId } from "@/lib/locations/address"
-import { requireStaff } from "@/server/admin/access"
+import { requireEntitlement } from "@/server/admin/access"
 import { enqueueJob } from "@/server/lib/jobs/enqueue"
 import { addVendingMachine } from "@/server/services/vending"
 
@@ -25,7 +25,7 @@ const body = z.object({
  *   400 for a bad field or a pin outside the state. Admins only.
  */
 export async function POST(request: NextRequest) {
-  const staff = await requireStaff(request, "admin")
+  const staff = await requireEntitlement(request, "admin.vending")
   if (staff instanceof NextResponse) return staff
   const parsed = body.safeParse(await request.json().catch(() => null))
   if (!parsed.success) {

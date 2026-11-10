@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { z } from "zod/v3"
-import { requireStaff } from "@/server/admin/access"
+import { requireEntitlement } from "@/server/admin/access"
 import { setPlacement } from "@/server/services/ad-placements"
 import { SPONSOR_PLACEMENTS } from "@/config/banners"
 
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic"
 
 /** POST /api/admin/ads/:placement  { enabled }: switches a placement on or off for everyone (#159). Admins only. */
 export async function POST(request: NextRequest, context: { params: Promise<{ placement: string }> }) {
-  const staff = await requireStaff(request, "admin")
+  const staff = await requireEntitlement(request, "admin.ads")
   if (staff instanceof NextResponse) return staff
   const placement = z.enum(SPONSOR_PLACEMENTS).safeParse((await context.params).placement)
   if (!placement.success) return NextResponse.json({ error: "Unknown placement" }, { status: 404 })
