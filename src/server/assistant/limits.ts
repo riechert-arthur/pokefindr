@@ -46,20 +46,16 @@ export type Refusal =
  * Whether `userId` may start a turn now. Checks, cheapest first: the
  * per-minute rate, one open turn, the daily messages and tokens, then the
  * global spend ceiling. On success the message is counted and the turn
- * marked open; call `endTurn` when it finishes. `onAdmitted` is called
- * once the in-memory checks pass, before the database ones, so paid work
- * can start in parallel without a script hammering the endpoint paying for it.
+ * marked open; call `endTurn` when it finishes.
  */
 export async function startTurn(
-  { userId, now, dailyBudgetMicros, onAdmitted }: { userId: string; now: Date; dailyBudgetMicros: number; onAdmitted?: () => void },
+  { userId, now, dailyBudgetMicros }: { userId: string; now: Date; dailyBudgetMicros: number },
   db: Database,
 ): Promise<{ ok: true; spentToday: number } | { ok: false; refusal: Refusal }> {
   if (!perMinute.take(userId)) return { ok: false, refusal: { kind: "limited", message: "You're sending messages quickly. Wait a minute and try again.", code: "tooFast", retryAfter: 60, quick: true } }
   if (openTurns.has(userId)) return { ok: false, refusal: { kind: "limited", message: "Wait for the current answer to finish.", code: "answerInProgress", retryAfter: 5, quick: true } }
   // Claimed before the first await, so requests sent at once can't all get past this.
   openTurns.add(userId)
-  // Past the in-memory checks: work that runs alongside the database ones (the question's moderation check) can start.
-  onAdmitted?.()
   try {
     const day = utcDay(now)
     const [[mine], [all]] = await Promise.all([

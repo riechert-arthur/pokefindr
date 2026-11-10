@@ -68,19 +68,13 @@ export async function POST(request: NextRequest) {
   const now = new Date()
   const budgetMicros = Math.round(config.ASSISTANT_DAILY_BUDGET_USD * 1e6)
   const question = body.data.messages[body.data.messages.length - 1].content
-  // The question's moderation check (#253) runs alongside the limit checks, once the in-memory ones pass.
-  const checkAbort = new AbortController()
-  let checking: Promise<ModerationResult> | null = null
   let started: Awaited<ReturnType<typeof startTurn>>
   try {
-    started = await startTurn({ userId, now, dailyBudgetMicros: budgetMicros, onAdmitted: () => (checking = checkQuestion(question, { signal: checkAbort.signal })) }, db)
+    started = await startTurn({ userId, now, dailyBudgetMicros: budgetMicros }, db)
   } catch (err) {
-    checkAbort.abort()
     console.error("[api/assistant] couldn't check the limits", err)
     return apiError("assistantFailed", "Something went wrong with the assistant. Try again.", 500)
   }
-  // A refused request doesn't wait for (or pay for more of) the check.
-  if (!started.ok) checkAbort.abort()
   if (!started.ok) {
     const r = started.refusal
     const outcome: AssistantOutcome = r.kind === "paused" ? "paused" : "limited"
@@ -102,13 +96,18 @@ export async function POST(request: NextRequest) {
   while (history[0]?.role === "assistant") history.shift()
   const viewer = body.data.viewer ? { lng: round2(body.data.viewer.lng), lat: round2(body.data.viewer.lat) } : null
 
+  // The input check (#253), once the turn is admitted, so a refused request never pays for one. It reads
+  // every message of the viewer's the model will see: the page sends the history, so anyone can write it.
   // Fails open: an error or a slow check (QUESTION_CHECK_TIMEOUT_MS) comes back as "allow", flagged.
-  const check: ModerationResult | null = checking ? await (checking as Promise<ModerationResult>) : null
+  const check: ModerationResult = await checkQuestion(
+    history.filter((m) => m.role === "user").map((m) => m.content),
+    { signal: request.signal },
+  )
   const signal = AbortSignal.any([request.signal, AbortSignal.timeout(TURN_TIMEOUT_MS)])
   const usage = emptyUsage()
   // The check counts toward the turn's cost, and so toward the daily budget.
-  if (check) addCheckUsage(usage, check)
-  const blocked = check?.verdict === "block" && !check.failed
+  addCheckUsage(usage, check)
+  const blocked = check.verdict === "block" && !check.failed
   const turnId = crypto.randomUUID()
   const toolCalls: ToolCall[] = []
   let answer = ""
@@ -135,7 +134,7 @@ export async function POST(request: NextRequest) {
       try {
         if (blocked) {
           // Never sent to the assistant's model: the canned reply, logged as blocked.
-          emitBlocked(emit, usage, check!.model)
+          emitBlocked(emit, usage, check.model)
           outcome = "blocked"
           return
         }

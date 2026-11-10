@@ -76,12 +76,16 @@ fine" / "Text flagged" line among the queue's checks. Nothing is rejected automa
 
 ## The assistant's questions
 
-The newest question in each `/api/assistant` request is checked as the turn starts, alongside the
-limit checks (it starts once the in-memory per-minute checks pass, so a script hammering the
-endpoint doesn't pay for checks).
+Each `/api/assistant` request is checked once its limit checks pass, so a refused request (a script
+hammering the endpoint, a viewer over their daily limit, the site over its budget) never pays for a
+check. The check reads every message of the viewer's the model will see, in one call, the newest
+last: the page sends the conversation, so anyone can write the earlier messages. The page leaves a
+blocked question and its reply out of what it sends next (the `done` event says `blocked: true`), so
+a conversation goes on after a block; a history with a blocked question in it is blocked again.
 
 - **"Block"** (clear abuse, threats, personal details, injection): the assistant's model is never
-  called. The viewer gets a short, polite canned reply (`BLOCKED_REPLY`), and the turn is logged with
+  called. The viewer gets a short, polite canned reply (`BLOCKED_REPLY`, the same words as a model
+  refusal), and the turn is logged with
   outcome `blocked` and the flag `moderated` (migration 0025).
 - **"Hold"**: the turn goes ahead as usual, flagged `moderated` for review.
 - **A failure or a check slower than 1.5 s** fails open: the turn goes ahead, flagged
@@ -94,7 +98,8 @@ endpoint doesn't pay for checks).
 
 `evals/assistant/cases.yaml` has a `blocked` category; `npm run eval:assistant` runs the same check
 before each case (`--moderation claude|fake|off`), and fails a case the check blocks that it
-shouldn't.
+shouldn't. The injection jailbreak cases expect a block too; with `--moderation off` the model's own
+refusal is graded instead. A check that doesn't run is an API error, not a wrong answer.
 
 ## Why Claude Haiku, behind a port
 

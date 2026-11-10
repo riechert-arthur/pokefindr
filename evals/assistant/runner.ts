@@ -201,8 +201,11 @@ export async function runEval(o: RunOptions): Promise<EvalReport> {
         if (e.type === "error") failure = e.message
       }
       try {
-        const check = o.moderator ? await checkQuestion(c.question, { moderator: o.moderator }) : null
+        // As /api/assistant does: every question of the conversation, the newest last.
+        const check = o.moderator ? await checkQuestion([...history.filter((m) => m.role === "user").map((m) => m.content), c.question], { moderator: o.moderator }) : null
         if (check) addCheckUsage(usage, check)
+        // An outage isn't a wrong answer: it goes to the errors, and no turn is paid for.
+        if (check?.failed) throw new Error(`the question check didn't run: ${check.reason}`)
         blocked = check ? check.verdict === "block" && !check.failed : undefined
         if (blocked) emitBlocked(emit, usage, check!.model)
         else
