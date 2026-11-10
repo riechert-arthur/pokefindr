@@ -1,6 +1,7 @@
 import { render } from "../../helpers/intl"
 import { describe, expect, it } from "vitest"
 import { AgentMark } from "@/components/brand/AgentMark"
+import { Logo } from "@/components/brand/Logo"
 
 describe("AgentMark", () => {
   it("is decorative, draws the pin glyph in primary-foreground on the brand gradient", () => {
@@ -12,8 +13,17 @@ describe("AgentMark", () => {
     expect(mark.querySelector("svg")).toHaveClass("lucide-agent-pin")
   })
 
-  it("scales the glyph with the box", () => {
-    const glyph = (size: "sm" | "md" | "lg") => render(<AgentMark size={size} />).container.firstElementChild!.className.match(/\[&_svg\]:(size-\S+)/)?.[1]
-    expect(["sm", "md", "lg"].map((s) => glyph(s as "sm"))).toEqual(["size-4", "size-5", "size-[26px]"])
+  it("draws the logo's own pin, so a change to the logo carries over", () => {
+    const pin = render(<AgentMark />).container.querySelector("path")
+    const logoPin = render(<Logo size={32} title="" />).container.querySelector("path")
+    expect(pin?.getAttribute("d")).toBe(logoPin?.getAttribute("d"))
+  })
+
+  it.each([
+    ["sm", "size-[26px]", "[&_svg]:size-4"],
+    ["md", "size-[34px]", "[&_svg]:size-5"],
+    ["lg", "size-11", "[&_svg]:size-[26px]"],
+  ] as const)("at %s, is a %s box with a %s glyph", (size, box, glyph) => {
+    expect(render(<AgentMark size={size} />).container.firstElementChild).toHaveClass(box, glyph)
   })
 })
