@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
-import { AgentMark } from "./AgentMark"
+import { AgentMark } from "@/components/brand/AgentMark"
 import { AssistantCardView } from "./AssistantCards"
 import { AssistantText } from "./AssistantText"
 import { Composer } from "./Composer"
