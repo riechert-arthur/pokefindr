@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import type { useTranslations } from "next-intl"
+import { SUPPORT_URL } from "@/lib/links"
 
 /** The FAQ's questions, in order. Each one's question and answer are in the catalog (`faq.items.<id>`). */
 export const FAQ_IDS = ["what", "map", "verified", "info", "filter", "add", "report", "account", "countries", "official"] as const
@@ -8,7 +9,7 @@ export type FaqId = (typeof FAQ_IDS)[number]
 /** Where the tags in the answers link: `<center>` and `<support>`. */
 export const FAQ_LINKS = {
   center: "https://support.pokemoncenter.com/hc/en-us/sections/13360842288916-Pok%C3%A9mon-Automated-Retail-Vending-Machines",
-  support: "https://discord.gg/f2uUR5bAZU",
+  support: SUPPORT_URL,
 } as const
 
 export type FaqTag = keyof typeof FAQ_LINKS

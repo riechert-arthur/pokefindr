@@ -33,7 +33,7 @@ export const config = {
     // Every page, for the language (docs/i18n.md). Not the API, Next's own
     // files, /.well-known, the generated icons and images, or anything with a
     // file extension.
-    '/((?!api|_next|_vercel|\\.well-known|opengraph-image|twitter-image|icon|apple-icon|.*\\..*).*)',
+    '/((?!api|_next|_vercel|\\.well-known|social-card|\\w+/social-card|icon|apple-icon|.*\\..*).*)',
   ],
 }
 
@@ -41,6 +41,16 @@ export const config = {
 const SESSION_PAGES = /^\/(home|settings|admin)(\/|$)/
 
 const LOCALE_PREFIX = new RegExp(`^/(${routing.locales.join('|')})(?=/|$)`)
+
+/** The path as next-intl and the router see it: `/%68ome` is `/home`. */
+function decodedPath(pathname: string): string {
+  try {
+    return decodeURI(pathname)
+  } catch {
+    // Not valid percent-encoding: next-intl leaves it as it is too.
+    return pathname
+  }
+}
 
 /** The language prefix of a page's path, if any, and the path without it. */
 function splitLocale(pathname: string): { locale: Locale | null; path: string } {
@@ -101,7 +111,8 @@ export async function middleware(req: NextRequest) {
 
   // Pages: check the session where one is needed, then let next-intl pick the
   // language. It passes these headers on to the page.
-  const { locale, path } = splitLocale(pathname)
+  // Matched on the decoded path, or an encoded one (`/%68ome`) would skip the check.
+  const { locale, path } = splitLocale(decodedPath(pathname))
   let user: SessionJWTPayload | null = null
   if (SESSION_PAGES.test(path)) {
     user = await verifiedUser(req)

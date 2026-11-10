@@ -8,6 +8,7 @@ import { Logo } from "@/components/brand/Logo"
 import { DiscordIcon } from "@/components/icons/DiscordIcon"
 import { LanguageSwitcher } from "@/components/pokefindr/LanguageSwitcher"
 import { ThemeToggle } from "@/components/pokefindr/ThemeToggle"
+import { SUPPORT_URL } from "@/lib/links"
 import { cn } from "@/lib/utils"
 
 type NavLabel = "home" | "blog" | "map" | "discord" | "settings" | "admin"
@@ -27,7 +28,7 @@ const MAIN: RailItem[] = [
   { href: "/map", label: "map", icon: MapPinIcon },
 ]
 
-const DISCORD: RailItem = { href: "https://discord.gg/f2uUR5bAZU", label: "discord", icon: DiscordIcon, external: true }
+const DISCORD: RailItem = { href: SUPPORT_URL, label: "discord", icon: DiscordIcon, external: true }
 const SETTINGS: RailItem = { href: "/settings", label: "settings", icon: SettingsIcon }
 const ADMIN: RailItem = { href: "/admin", label: "admin", icon: ShieldIcon }
 
@@ -93,7 +94,8 @@ export function AppRail({ signedIn = false, isAdmin = false, className, ref }: A
       <div className="mt-auto flex flex-col items-center gap-2">
         <RailLink item={DISCORD} current={false} />
         {signedIn && <RailLink item={SETTINGS} current={isCurrent(SETTINGS.href)} />}
-        <LanguageSwitcher variant="compact" className="px-1.5" />
+        {/* The rail is 64px wide: the globe and code, no arrow. */}
+        <LanguageSwitcher variant="compact" chevron={false} className="px-1.5" />
         <ThemeToggle variant="toggle" className={cn(itemClass, "p-0 [&_svg]:size-5")} />
       </div>
     </nav>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { createTranslator } from "next-intl"
-import { loadMessages } from "./messages"
+import { loadMessages, type Messages } from "./messages"
 import { getPathname } from "./navigation"
 import { DEFAULT_LOCALE, PUBLIC_LOCALES, type Locale } from "./routing"
 
@@ -12,10 +12,31 @@ export const SOCIAL_CARD_SIZE = { width: 1200, height: 630 }
 /** A page's path in a language: "/map", "/es/map". */
 export const localizedPath = (path: string, locale: Locale) => getPathname({ href: path, locale })
 
+const ogTranslators = new Map<Locale, Promise<OgTranslator>>()
+type OgTranslator = ReturnType<typeof createTranslator<Messages, "og">>
+
+/**
+ * The "og" messages in a language, made once per server: every page's
+ * metadata and the social card read them. (Route handlers and metadata can't
+ * use getTranslations, so this reads the catalog.)
+ */
+export function ogTranslator(locale: Locale): Promise<OgTranslator> {
+  let t = ogTranslators.get(locale)
+  if (!t) ogTranslators.set(locale, (t = loadMessages(locale).then((messages) => createTranslator({ locale, messages, namespace: "og" }))))
+  return t
+}
+
 /** The link-preview image in a language (src/app/[locale]/social-card), with its alt text. */
 export async function socialCard(locale: Locale) {
-  const t = createTranslator({ locale, messages: await loadMessages(locale), namespace: "og" })
+  const t = await ogTranslator(locale)
   return { url: localizedPath("/social-card", locale), ...SOCIAL_CARD_SIZE, alt: t("alt"), type: "image/png" }
+}
+
+/** A page in each public language, and English as x-default: for hreflang in its metadata and in the sitemap. */
+export function languageAlternates(path: string, address: (path: string) => string = (p) => p): Record<string, string> {
+  const languages: Record<string, string> = Object.fromEntries(PUBLIC_LOCALES.map((l) => [l, address(localizedPath(path, l))]))
+  languages["x-default"] = address(localizedPath(path, DEFAULT_LOCALE))
+  return languages
 }
 
 /**
@@ -45,11 +66,15 @@ async function withLanguage(locale: Locale, url: string, alternates: Metadata["a
  * link preview in the page's language.
  */
 export function pageMetadata(path: string, locale: Locale, metadata: Metadata = {}): Promise<Metadata> {
-  const languages: Record<string, string> = Object.fromEntries(PUBLIC_LOCALES.map((l) => [l, localizedPath(path, l)]))
-  languages["x-default"] = localizedPath(path, DEFAULT_LOCALE)
   const url = localizedPath(path, locale)
-  return withLanguage(locale, url, { canonical: url, languages }, metadata)
+  return withLanguage(locale, url, { canonical: url, languages: languageAlternates(path) }, metadata)
 }
+
+/** `generateMetadata` for an indexable page with no metadata of its own: `export const generateMetadata = localeMetadata("/login")`. */
+export const localeMetadata =
+  (path: string) =>
+  async ({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> =>
+    pageMetadata(path, (await params).locale as Locale)
 
 /**
  * For a page whose content is English in every language (blog posts, the

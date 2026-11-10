@@ -3,7 +3,7 @@ import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { buttonVariants } from "@/components/ui/button"
 
-export const SUPPORT_URL = "https://discord.gg/f2uUR5bAZU"
+import { SUPPORT_URL } from "@/lib/links"
 
 /** The 404 and error pages: a code, a title, a line of text, and the way home. */
 export function ErrorPage({ code, title, children }: { code: string; title: string; children?: ReactNode }) {

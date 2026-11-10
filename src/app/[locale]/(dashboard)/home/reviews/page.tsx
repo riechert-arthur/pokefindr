@@ -31,18 +31,20 @@ import { StarRating } from '@/components/pokefindr/StarRating'
 import { useSessionContext } from '@/components/providers/SessionProvider'
 import { LoadSpinner } from '@/components/wrappers/LoadSpinner'
 
-type ReviewFormValues = { rating: number; text: string }
+type ReviewMessages = ReturnType<typeof useTranslations<'dashboard.reviews'>>
+
+/** The edit form's checks, with their messages in the page's language. */
+const makeReviewSchema = (t: ReviewMessages) =>
+  z.object({
+    rating: z.number().min(1, { message: t('validation.rating') }).max(5, { message: t('validation.rating') }),
+    text: z.string().min(1, { message: t('validation.text') }),
+  })
+
+type ReviewFormValues = z.infer<ReturnType<typeof makeReviewSchema>>
 
 export default function ReviewsPage() {
   const t = useTranslations('dashboard.reviews')
-  const reviewSchema = useMemo(
-    () =>
-      z.object({
-        rating: z.number().min(1, { message: t('validation.rating') }).max(5),
-        text: z.string().min(1, { message: t('validation.text') }),
-      }),
-    [t],
-  )
+  const reviewSchema = useMemo(() => makeReviewSchema(t), [t])
   const tDashboard = useTranslations('dashboard')
   const { isSidebarOpen } = useSidebar()
   const [reviews, setReviews] = useState<Review[]>([])

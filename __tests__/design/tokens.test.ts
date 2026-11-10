@@ -8,7 +8,7 @@ import { COLOR_TOKENS, HSL_CHANNELS, channelsToHsl } from "@/lib/design/tokens"
 const ROOT = path.resolve(__dirname, "../..")
 const css = readFileSync(path.join(ROOT, "src/app/globals.css"), "utf8")
 const tailwind = readFileSync(path.join(ROOT, "tailwind.config.ts"), "utf8")
-const layout = readFileSync(path.join(ROOT, "src/app/[locale]/layout.tsx"), "utf8")
+const fonts = readFileSync(path.join(ROOT, "src/app/fonts.ts"), "utf8")
 const fontSize = (tailwindConfig.theme?.extend?.fontSize ?? {}) as Record<string, [string, unknown]>
 
 /**
@@ -46,7 +46,7 @@ describe("design tokens", () => {
     const used = [...tailwind.matchAll(/var\(--([\w-]+)\)/g)].map((m) => m[1]).filter(isThemed)
     expect(used.length).toBeGreaterThan(0)
     for (const font of ["font-sans", "font-mono"]) {
-      expect(layout, `layout.tsx sets --${font}`).toContain(`variable: "--${font}"`)
+      expect(fonts, `fonts.ts sets --${font}`).toContain(`variable: "--${font}"`)
     }
     for (const token of used) {
       expect(light.has(token), `${token} in :root`).toBe(true)

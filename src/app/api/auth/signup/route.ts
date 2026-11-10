@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { registrationSchema } from "@/lib/schemas"
+import { registrationSchema } from "@/server/auth/schemas"
 import { VERIFIED_CALLBACK } from "@/lib/auth/paths"
 import { identityRequest, refuseCrossSite } from "@/server/auth/identity"
 import { requestLocale } from "@/server/i18n"

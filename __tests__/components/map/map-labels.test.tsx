@@ -3,6 +3,8 @@ import { renderHook } from "../../helpers/intl"
 import { localizedTextField, nameLabelIds } from "@/components/map/layers"
 import { useStateName } from "@/components/map/useStateName"
 import { countryName } from "@/lib/map/country-names"
+import { STATES } from "@/lib/map/states"
+import { MESSAGES } from "@/i18n/all-messages"
 
 /** Label layers as OpenFreeMap's positron style has them. */
 const NAME = ["case", ["has", "name:nonlatin"], ["concat", ["get", "name:latin"], "\n", ["get", "name:nonlatin"]], ["coalesce", ["get", "name_en"], ["get", "name"]]]
@@ -18,7 +20,7 @@ const STYLE = [
 
 describe("map labels in the viewer's language (#184)", () => {
   it("rewrites the basemap's name labels, not road numbers or our own layers", () => {
-    expect(nameLabelIds(STYLE, new Set([STYLE[6].id]))).toEqual(["highway-name-major", "label_country_1"])
+    expect(nameLabelIds(STYLE, new Set([STYLE[6].id]))).toEqual(["highway-name-major", "label_country_1", "label_state"])
   })
 
   it("prefers the language's name, then the Latin one, then the local one", () => {
@@ -30,8 +32,15 @@ describe("map labels in the viewer's language (#184)", () => {
     expect(countryName("124", "Canada", "es")).toBe("Canadá")
     expect(countryName("840", "United States of America", "es")).toBe("Estados Unidos")
     expect(countryName("643", "Russia", "en")).toBe("Russia")
-    // No code in the outlines: the English name.
+    expect(countryName("158", "Taiwan", "es")).toBe("Taiwán")
+    // No code in the outlines: Kosovo by its name, the others in English.
+    expect(countryName("", "Kosovo", "es")).toBe("Kosovo")
+    expect(countryName("", "Kosovo", "ja")).not.toBe("Kosovo")
     expect(countryName("", "Somaliland", "es")).toBe("Somaliland")
+  })
+
+  it("has every state's name in every catalog", () => {
+    for (const messages of Object.values(MESSAGES)) expect(Object.keys(messages.states).sort()).toEqual(Object.keys(STATES).sort())
   })
 
   it("names US states in the page's language", () => {

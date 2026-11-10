@@ -48,6 +48,7 @@ import { geographyPoint } from "../geography"
 import type { LocationKind } from "@/lib/types/locations"
 import type { RejectReason, ShopSells, SubmissionKind, SubmissionStatus } from "@/lib/submissions/constants"
 import type { Role } from "@/lib/auth/roles"
+import type { Locale } from "@/i18n/routing"
 
 const createdAt = () => timestamp("created_at", { withTimezone: true }).defaultNow()
 
@@ -324,7 +325,7 @@ export const profiles = pgTable(
     /** member, moderator (reviews submissions) or admin (migration 0012). */
     role: text("role").$type<Role>().notNull().default("member"),
     /** The language they picked, e.g. "es" (migration 0019); null until they pick one. */
-    locale: text("locale"),
+    locale: text("locale").$type<Locale>(),
     createdAt: createdAt(),
     // Set by the ORM on every update; there is no database trigger for it.
     updatedAt: timestamp("updated_at", { withTimezone: true })

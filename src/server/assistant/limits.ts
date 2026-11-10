@@ -4,6 +4,7 @@ import type { Database } from "@/server/db/client"
 import { assistantPlaceViews, assistantUsage } from "@/server/db/schema"
 import { tokenBucket } from "@/server/lib/rate-limit"
 import type { AssistantUsage } from "@/lib/types/assistant-stream"
+import type { ApiErrorCode } from "@/server/api-error"
 
 /**
  * The assistant's limits (#209) and its cap on places (#211). Daily counts
@@ -30,11 +31,11 @@ const openTurns = new Set<string>()
 
 /** `code` and `values` name the page's message for it (apiErrors in messages/*.yml, #185). */
 export type Refusal =
-  | { kind: "paused"; message: string; code: string }
+  | { kind: "paused"; message: string; code: ApiErrorCode }
   | {
       kind: "limited"
       message: string
-      code: string
+      code: ApiErrorCode
       values?: Record<string, number>
       retryAfter: number
       /** Turned away by the in-memory checks (per minute, one open turn), before any database read: not worth a log row. */
@@ -62,7 +63,7 @@ export async function startTurn(
       db.select({ cost: sql<number>`coalesce(sum(${assistantUsage.costMicros}), 0)::bigint` }).from(assistantUsage).where(eq(assistantUsage.day, day)),
     ])
     const tomorrow = secondsToNextDay(now)
-    const overMessages = { ok: false as const, refusal: { kind: "limited" as const, message: `You've reached today's limit of ${MESSAGES_PER_DAY} messages. It resets at midnight UTC.`, code: "dailyMessages", values: { limit: MESSAGES_PER_DAY }, retryAfter: tomorrow } }
+    const overMessages = { ok: false as const, refusal: { kind: "limited" as const, message: `You've reached today's limit of ${MESSAGES_PER_DAY} messages. It resets at midnight UTC.`, code: "dailyMessages" as const, values: { limit: MESSAGES_PER_DAY }, retryAfter: tomorrow } }
     if ((mine?.messages ?? 0) >= MESSAGES_PER_DAY) return release(userId, overMessages)
     if ((mine?.inputTokens ?? 0) + (mine?.outputTokens ?? 0) >= TOKENS_PER_DAY)
       return release(userId, { ok: false, refusal: { kind: "limited", message: "You've used today's assistant allowance. It resets at midnight UTC.", code: "dailyAllowance", retryAfter: tomorrow } })

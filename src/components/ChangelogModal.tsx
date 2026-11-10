@@ -5,10 +5,17 @@ import type { FC } from "react"
 import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
 
-const CURRENT_CHANGELOG_VERSION = "1.2"
-
-/** What the pop-up lists: the release's changes, some in shorter words than the changelog page. */
-const ITEMS = ["modal.items.accounts", "v1_2.items.reviews", "modal.items.settings", "modal.items.sso", "v1_2.items.ratings"] as const
+/**
+ * The release the pop-up announces: its version, when it came out, and its
+ * changes (some in shorter words than the changelog page). A new release
+ * changes all three together, with its messages in content.changelog.
+ */
+const RELEASE = {
+  version: "1.2",
+  released: "v1_2.released",
+  items: ["modal.items.accounts", "v1_2.items.reviews", "modal.items.settings", "modal.items.sso", "v1_2.items.ratings"],
+} as const
+const CURRENT_CHANGELOG_VERSION = RELEASE.version
 
 const ChangelogModal: FC = () => {
   const t = useTranslations("content.changelog")
@@ -35,9 +42,9 @@ const ChangelogModal: FC = () => {
         <h2 className="text-xl font-semibold mb-2">
           {t("title", { version: CURRENT_CHANGELOG_VERSION })}
         </h2>
-        <p className="text-sm text-muted-foreground mb-4">{t("v1_2.released")}</p>
+        <p className="text-sm text-muted-foreground mb-4">{t(RELEASE.released)}</p>
         <ul className="list-disc list-inside space-y-1 mb-6">
-          {ITEMS.map((key) => (
+          {RELEASE.items.map((key) => (
             <li key={key}>{t.rich(key, { b: (chunks) => <strong>{chunks}</strong>, i: (chunks) => <i>{chunks}</i> })}</li>
           ))}
         </ul>

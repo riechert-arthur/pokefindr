@@ -1,15 +1,10 @@
 import { Fragment, type FC } from "react"
 import { getTranslations } from "next-intl/server"
 import { setPageLocale, type LocaleParams } from "@/i18n/static"
-import { pageMetadata } from "@/i18n/seo"
-import type { Metadata } from "next"
-import type { Locale } from "@/i18n/routing"
+import { localeMetadata } from "@/i18n/seo"
 
 /** Its address in each language, for search engines (#183). */
-export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
-  return pageMetadata("/changelog", (await params).locale as Locale)
-}
-
+export const generateMetadata = localeMetadata("/changelog")
 
 const ids = <K extends string, I extends string>(release: K, items: readonly I[]) => items.map((item) => `${release}.items.${item}` as const)
 

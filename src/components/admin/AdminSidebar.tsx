@@ -7,6 +7,7 @@ import { Logo } from "@/components/brand/Logo"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import type { AdminGroup } from "@/lib/admin/sections"
 import { cn } from "@/lib/utils"
+import { useFormat } from "@/i18n/format"
 
 const ICONS: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
   queue: InboxIcon,
@@ -35,6 +36,8 @@ function readCollapsed(): Set<string> {
 }
 
 function Count({ count, hot, label }: SectionCount & { label: string }) {
+  // In the page's number format, like the summary cards.
+  const f = useFormat()
   return (
     <span
       aria-label={`${count} ${label}`}
@@ -43,7 +46,7 @@ function Count({ count, hot, label }: SectionCount & { label: string }) {
         hot ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground",
       )}
     >
-      {count.toLocaleString("en-US")}
+      {f.count(count)}
     </span>
   )
 }

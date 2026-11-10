@@ -8,9 +8,9 @@ const HIGHLIGHTS: Highlights = {
   events: [{ id: "e1", title: "Card show", startsAt: "2026-12-06T18:00:00Z", endsAt: null, city: "Denver", state: "CO", lng: -104.99, lat: 39.74, isSample: true }],
 }
 const STATES = [
-  { code: "CA", name: "California", count: 299 },
-  { code: "WA", name: "Washington", count: 213 },
-  { code: "VT", name: "Vermont", count: 0 },
+  { code: "CA", count: 299 },
+  { code: "WA", count: 213 },
+  { code: "VT", count: 0 },
 ]
 const ALL = ["vending", "shop", "event"] as const
 

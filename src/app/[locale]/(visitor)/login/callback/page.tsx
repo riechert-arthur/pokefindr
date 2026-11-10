@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
+import type { Locale } from "@/i18n/routing"
 import { Link, useRouter } from "@/i18n/navigation"
 import { buttonVariants } from "@/components/ui/button"
 import { AuthPage } from "@/components/forms/AuthPage"
@@ -31,11 +32,13 @@ export default function OAuthCallback() {
     const target = safeNext(new URLSearchParams(window.location.search).get("next"))
     setNext(target)
     fetch("/api/auth/callback", { method: "POST" })
-      .then((res) => {
+      .then(async (res) => {
         if (res.status === 200) {
           broadcastAuth("login")
+          // In the language saved on their profile, if they picked one (#182).
+          const { locale } = (await res.json().catch(() => ({}))) as { locale?: Locale | null }
           if (target) window.location.assign(target)
-          else router.push("/home")
+          else router.push("/home", locale ? { locale } : undefined)
         } else setStep(res.status === 204 ? "onboarding" : "failed")
       })
       .catch(() => setStep("failed"))

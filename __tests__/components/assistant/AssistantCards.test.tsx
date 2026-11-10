@@ -32,6 +32,23 @@ describe("AssistantCardView", () => {
     expect(screen.getByRole("link", { name: "Open this area on the map" })).toHaveAttribute("href", "/map?r=10&near=me")
   })
 
+  it("writes a card's heading in the page's language and units, from its area", () => {
+    const card = { type: "places" as const, title: "1,457 within 15 mi of Denver, CO", total: 1457, places: [], near: null, area: { kind: "near" as const, label: "Denver, CO", radiusMiles: 15 } }
+    render(<AssistantCardView card={card} />)
+    expect(screen.getByRole("heading", { name: "1,457 within 15 mi of Denver, CO" })).toBeInTheDocument()
+    render(<AssistantCardView card={card} />, { locale: "es" })
+    expect(screen.getByRole("heading", { name: "1457 a menos de 15 mi de Denver, CO" })).toBeInTheDocument()
+    render(<AssistantCardView card={{ type: "events", title: "Events within 7 mi of you", area: { kind: "near", label: "you", radiusMiles: 7 }, events: [] }} />, { locale: "es" })
+    expect(screen.getByRole("heading", { name: "Eventos a menos de 7 mi de ti" })).toBeInTheDocument()
+    render(<AssistantCardView card={{ type: "events", title: "Upcoming events", area: null, events: [] }} />, { locale: "es" })
+    expect(screen.getByRole("heading", { name: "Próximos eventos" })).toBeInTheDocument()
+  })
+
+  it("keeps the English title of a card saved without its area", () => {
+    render(<AssistantCardView card={{ type: "stats", title: "Within 15 mi of Denver", total: 0, byKind: {}, topRetailers: [] }} />, { locale: "es" })
+    expect(screen.getByRole("heading", { name: "Within 15 mi of Denver" })).toBeInTheDocument()
+  })
+
   it("shows counts per kind and the top retailers", () => {
     render(<AssistantCardView card={{ type: "stats", title: "Colorado", total: 90, byKind: { vending: 88, event: 2 }, topRetailers: [{ retailer: "King Soopers", count: 60 }] }} />)
     expect(screen.getByText("88")).toBeInTheDocument()

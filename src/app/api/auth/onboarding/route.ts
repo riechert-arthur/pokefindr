@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
-import { callbackSchema } from "@/lib/schemas"
+import { callbackSchema } from "@/server/auth/schemas"
 import { identitySession, signedIn } from "@/server/auth/finish"
 import { createProfile, getProfile, usernameTaken, UsernameTakenError } from "@/server/services/users"
 import { requestLocale } from "@/server/i18n"

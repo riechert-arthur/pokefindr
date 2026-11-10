@@ -52,7 +52,12 @@ export function buildMessages() {
 }
 
 /** Rebuilds on every change to messages/ (next dev). A broken file logs and keeps the last good JSON. */
+let watching = false
+
 export function watchMessages() {
+  // Next can load its config more than once; one watcher is enough.
+  if (watching) return
+  watching = true
   let timer
   watch(MESSAGES_DIR, () => {
     clearTimeout(timer)
