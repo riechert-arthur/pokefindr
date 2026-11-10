@@ -20,5 +20,5 @@ export default async function AdminPage() {
   // A role that may open /admin but no section in it gets no page either.
   if (!role || !can(role, "admin.open") || groupsFor(role).length === 0) notFound()
   const profile = await getProfile(userId!)
-  return <AdminApp role={role} username={profile?.username ?? "admin"} />
+  return <AdminApp role={role} username={profile?.username ?? "admin"} image={profile?.image} />
 }

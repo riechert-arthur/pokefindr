@@ -4,6 +4,8 @@ import { and, eq, gt, ne, sql, type SQLWrapper } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
 import { profiles, subscriptions, usernameHolds, users } from "@/server/db/schema"
 import type { SessionTier } from "@/server/auth/session"
+import { getImageStore } from "@/server/container"
+import { deleteOwnedImage, type ImageStore } from "@/server/ports/image-store"
 import type { Locale } from "@/i18n/routing"
 
 /** What the client's session context gets (the shape /api/auth/user has always returned). */
@@ -16,6 +18,8 @@ export interface PublicProfile {
   role: Role
   /** The language they picked (#182), or null. */
   locale: Locale | null
+  /** Their profile picture (#290): uploaded, or from Google or Discord. Null shows initials. */
+  image: string | null
 }
 
 export class UsernameTakenError extends Error {
@@ -33,8 +37,10 @@ function isUniqueViolation(err: unknown): boolean {
 
 export async function getProfile(userId: string, db: Database = getDb()): Promise<PublicProfile | null> {
   const [row] = await db
-    .select({ id: profiles.id, username: profiles.username, full_name: profiles.fullName, metadata: profiles.metadata, role: profiles.role, locale: profiles.locale })
+    .select({ id: profiles.id, username: profiles.username, full_name: profiles.fullName, metadata: profiles.metadata, role: profiles.role, locale: profiles.locale, image: users.image })
     .from(profiles)
+    // Profiles from before our own accounts have no user row, so no picture.
+    .leftJoin(users, eq(users.id, profiles.id))
     .where(eq(profiles.id, userId))
   return row ?? null
 }
@@ -45,9 +51,10 @@ export async function userExists(userId: string, db: Database = getDb()): Promis
   return Boolean(row)
 }
 
-/** Deletes a user and, by cascade, their accounts, sessions and profile. */
-export async function deleteUser(userId: string, db: Database = getDb()): Promise<void> {
-  await db.delete(users).where(eq(users.id, userId))
+/** Deletes a user and, by cascade, their accounts, sessions and profile, and the profile picture we stored for them. */
+export async function deleteUser(userId: string, db: Database = getDb(), store: ImageStore | null = getImageStore()): Promise<void> {
+  const [deleted] = await db.delete(users).where(eq(users.id, userId)).returning({ image: users.image })
+  await deleteOwnedImage(store, deleted?.image)
 }
 
 /**

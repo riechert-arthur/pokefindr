@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest"
 vi.mock("server-only", () => ({}))
 vi.mock("@vercel/oidc", () => ({ getVercelOidcToken: vi.fn(async () => "vercel-jwt") }))
 
-import { makeAnthropic, makeGeocoder } from "@/server/container"
+import { makeAnthropic, makeGeocoder, makeRouter } from "@/server/container"
 import { identityTokenSource } from "@/server/adapters/claude/identity"
 import type { ServerConfig } from "@/server/config"
 import { FakeGeocoder } from "@/server/adapters/geocoder/fake"
@@ -12,6 +12,8 @@ import { MapboxGeocoder } from "@/server/adapters/geocoder/mapbox"
 import { MapTilerGeocoder } from "@/server/adapters/geocoder/maptiler"
 import { NominatimGeocoder } from "@/server/adapters/geocoder/nominatim"
 import { PhotonGeocoder } from "@/server/adapters/geocoder/photon"
+import { FakeRouter } from "@/server/adapters/router/fake"
+import { OpenRouteServiceRouter } from "@/server/adapters/router/openrouteservice"
 
 const config = (overrides: Partial<ServerConfig>) => ({ GEOCODER_PROVIDER: "fake", ...overrides }) as ServerConfig
 
@@ -25,6 +27,13 @@ describe("makeGeocoder", () => {
   ] as const)("builds the %s adapter", (provider, Adapter) => {
     const geocoder = makeGeocoder(config({ GEOCODER_PROVIDER: provider, GEOCODER_API_KEY: "key", GEOCODER_USER_AGENT: "ua" }))
     expect(geocoder).toBeInstanceOf(Adapter)
+  })
+})
+
+describe("makeRouter", () => {
+  it("builds the fake and OpenRouteService adapters", () => {
+    expect(makeRouter(config({ ROUTER_PROVIDER: "fake" }))).toBeInstanceOf(FakeRouter)
+    expect(makeRouter(config({ ROUTER_PROVIDER: "openrouteservice", ROUTER_API_KEY: "key" }))).toBeInstanceOf(OpenRouteServiceRouter)
   })
 })
 

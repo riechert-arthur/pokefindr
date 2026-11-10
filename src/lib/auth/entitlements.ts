@@ -16,6 +16,8 @@ export const ENTITLEMENTS = {
   "moderation.decide": ["moderator", "admin", "super_admin"],
   /** Decide a submission you sent yourself. Moderators can't; admins (and super admins) can, so a site with one admin isn't stuck. */
   "moderation.decideOwn": ["admin", "super_admin"],
+  /** Remove someone's profile picture, which shows publicly next to their reviews (#290). */
+  "moderation.avatars": ["moderator", "admin", "super_admin"],
   /** Get the "a submission needs review" email. */
   "moderation.notify": ["moderator", "admin", "super_admin"],
   /** Open /admin at all. */
