@@ -84,6 +84,50 @@ describe("UsersTable", () => {
     expect(within(screen.getByText("superadmin").closest("tr")!).getByText("Super admin")).toBeInTheDocument()
   })
 
+  it("says so when the change can't reach the server", async () => {
+    stubApi(() => {
+      throw new TypeError("Failed to fetch")
+    })
+    render(<UsersTable />)
+    fireEvent.click(await screen.findByRole("button", { name: "Change misty's role" }))
+    fireEvent.click(within(await screen.findByRole("dialog")).getByRole("radio", { name: "Moderator" }))
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Make misty a moderator" }))
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("That didn't work. Check your connection and try again."))
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+  })
+
+  it("takes someone out of a role filter once they no longer have that role", async () => {
+    stubApi()
+    render(<UsersTable />)
+    await screen.findByText("misty")
+    fireEvent.click(screen.getByRole("radio", { name: "Moderator" }))
+    await waitFor(() => expect(screen.queryByText("misty")).toBeNull())
+    fireEvent.click(await screen.findByRole("button", { name: "Change moderator's role" }))
+    fireEvent.click(within(await screen.findByRole("dialog")).getByRole("radio", { name: "Member" }))
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Make moderator a member" }))
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
+    expect(screen.queryByText("moderator@pokefindr.local")).toBeNull()
+  })
+
+  it("shows the latest search's answer, not a slower earlier one", async () => {
+    let releaseFirst = () => {}
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string) => {
+        const q = new URL(url, "http://x").searchParams.get("q")
+        const users = USERS.filter((u) => !q || u.username.includes(q))
+        if (!q) await new Promise<void>((resolve) => (releaseFirst = resolve))
+        return new Response(JSON.stringify({ users, nextCursor: null }))
+      }),
+    )
+    render(<UsersTable />)
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search users" }), { target: { value: "misty" } })
+    expect(await screen.findByText("misty@pokefindr.local")).toBeInTheDocument()
+    releaseFirst()
+    await new Promise((r) => setTimeout(r, 50))
+    expect(screen.queryByText("moderator@pokefindr.local")).toBeNull()
+  })
+
   it("offers a retry when the list doesn't load", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 500 })))
     render(<UsersTable />)

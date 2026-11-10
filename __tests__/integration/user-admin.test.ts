@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest"
 import { randomUUID } from "node:crypto"
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import { NextRequest } from "next/server"
 import { getDb } from "@/server/db/client"
 import { profiles, roleChanges, users } from "@/server/db/schema"
@@ -70,6 +70,16 @@ describe("listUsers", () => {
     expect(second.nextCursor).toBeNull()
     // A cursor that isn't ours starts from the top.
     expect((await listUsers({ q: "trainer", cursor: "nonsense" })).users).toHaveLength(USERS_PER_PAGE)
+  })
+
+  it("doesn't skip someone who joined within the same millisecond as a page's last row", async () => {
+    const extra = Array.from({ length: USERS_PER_PAGE + 1 }, (_, i) => ({ id: randomUUID(), username: `trainer${i}` }))
+    await insertProfiles(getDb(), extra)
+    // Microseconds apart, newest first: trainer0 is .123456, the next .123455, and so on.
+    for (const [i, u] of extra.entries()) await getDb().execute(sql`update users set created_at = '2026-01-01T00:00:00.123456Z'::timestamptz - make_interval(secs => ${i} * 0.000001) where id = ${u.id}`)
+    const first = await listUsers({ q: "trainer" })
+    const second = await listUsers({ q: "trainer", cursor: first.nextCursor })
+    expect([...first.users, ...second.users].map((u) => u.username)).toEqual(extra.map((u) => u.username))
   })
 })
 
