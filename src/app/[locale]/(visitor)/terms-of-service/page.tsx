@@ -5,9 +5,12 @@ import { EnglishOnlyNotice } from "@/components/EnglishOnlyNotice"
 import { englishOnlyMetadata } from "@/i18n/seo"
 import type { Metadata } from "next"
 
-/** Its address in each language, for search engines (#183). */
+/** Its title, description and English address, for search engines (#183, #255). The document is in English only. */
 export async function generateMetadata(): Promise<Metadata> {
-  return englishOnlyMetadata("/terms-of-service")
+  return englishOnlyMetadata("/terms-of-service", {
+    title: "Terms of Service | PokeFindr",
+    description: "The terms for using PokeFindr: the map, accounts, reviews, the API and the MCP server.",
+  })
 }
 
 

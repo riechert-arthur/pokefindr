@@ -58,3 +58,5 @@ storybook-static
 
 # Profile pictures from the local image store (IMAGE_STORE=local, #290)
 /public/uploads/
+# Lighthouse CI reports (lighthouserc.json)
+/.lighthouseci/

@@ -4,7 +4,7 @@ import { Link } from "@/i18n/navigation"
 import { useCallback, useEffect, useState, type ReactNode } from "react"
 import { MenuIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { AgentMark } from "@/components/assistant/AgentMark"
+import { AgentMark } from "@/components/brand/AgentMark"
 import { APP_NAV_ID } from "@/components/pokefindr/AppRail"
 import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { useSidebar } from "@/components/providers/SidebarContextProvider"
@@ -21,7 +21,7 @@ import { useTranslations } from "next-intl"
 export const SUGGESTIONS = ["portland", "denver", "washington", "phoenix"] as const
 
 const chip =
-  "rounded-full border border-border bg-card/85 px-[11px] py-1 text-body text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+  "rounded-full border border-border bg-card/85 px-3 py-1 text-body text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 
 async function getJson<T>(url: string, signal: AbortSignal): Promise<T> {
   const res = await fetch(url, { signal })

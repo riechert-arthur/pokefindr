@@ -70,12 +70,6 @@ export function pageMetadata(path: string, locale: Locale, metadata: Metadata = 
   return withLanguage(locale, url, { canonical: url, languages: languageAlternates(path) }, metadata)
 }
 
-/** `generateMetadata` for an indexable page with no metadata of its own: `export const generateMetadata = localeMetadata("/login")`. */
-export const localeMetadata =
-  (path: string) =>
-  async ({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> =>
-    pageMetadata(path, (await params).locale as Locale)
-
 /**
  * For a page whose content is English in every language (blog posts, the
  * privacy policy and terms): the English page is the canonical one, so search
@@ -85,6 +79,13 @@ export function englishOnlyMetadata(path: string, metadata: Metadata = {}): Prom
   const url = localizedPath(path, DEFAULT_LOCALE)
   return withLanguage(DEFAULT_LOCALE, url, { canonical: url }, metadata)
 }
+
+/**
+ * `robots` for a page that's never indexed (an account-flow step). Page
+ * metadata replaces the layout's robots whole, so this keeps its nofollow
+ * for a language that isn't public yet.
+ */
+export const noindex = (locale: string): NonNullable<Metadata["robots"]> => ({ index: false, follow: (PUBLIC_LOCALES as readonly string[]).includes(locale) })
 
 /** For pages that aren't indexed (the layout's default): og:locale and the link preview. */
 export function languageMetadata(locale: Locale, metadata: Metadata = {}): Promise<Metadata> {
