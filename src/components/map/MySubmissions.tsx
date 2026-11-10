@@ -4,11 +4,11 @@ import { useCallback, useEffect, useState } from "react"
 import { KindDot } from "@/components/pokefindr/KindDot"
 import { KINDS } from "@/components/pokefindr/kinds"
 import { StatusBadge } from "@/components/pokefindr/StatusBadge"
-import { REJECT_REASON_LABELS } from "@/lib/submissions/constants"
 import type { MySubmission } from "@/lib/submissions/schemas"
 import { cn } from "@/lib/utils"
 import { Marker } from "./engine"
 import type { Pin } from "./AddPlaceSheet"
+import { useTranslations } from "next-intl"
 
 /**
  * The signed-in person's submissions (GET /api/submissions?mine), and a
@@ -32,6 +32,7 @@ export function useMySubmissions(signedIn: boolean): { submissions: MySubmission
 
 /** The pin being placed in Add a place: the kind's color, draggable. */
 export function AddPin({ pin, kind, onMove }: { pin: Pin; kind: "shop" | "event" | null; onMove: (pin: Pin) => void }) {
+  const t = useTranslations("map.submissions")
   return (
     <Marker
       longitude={pin.lng}
@@ -42,7 +43,7 @@ export function AddPin({ pin, kind, onMove }: { pin: Pin; kind: "shop" | "event"
     >
       <span
         role="img"
-        aria-label="New place's pin. Drag it to move it."
+        aria-label={t("pinLabel")}
         className={cn("block size-7 cursor-grab rounded-full rounded-br-none border-[3px] border-card shadow-md [transform:rotate(45deg)] active:cursor-grabbing", kind ? KINDS[kind].bg : "bg-primary")}
       />
     </Marker>
@@ -51,6 +52,7 @@ export function AddPin({ pin, kind, onMove }: { pin: Pin; kind: "shop" | "event"
 
 /** The person's pending submissions on the map: a dashed ring in the kind's color. Nobody else sees them. */
 export function PendingMarkers({ submissions, onOpen }: { submissions: readonly MySubmission[]; onOpen: (s: MySubmission) => void }) {
+  const t = useTranslations("map.submissions")
   return (
     <>
       {submissions
@@ -60,8 +62,8 @@ export function PendingMarkers({ submissions, onOpen }: { submissions: readonly 
             <button
               type="button"
               onClick={() => onOpen(s)}
-              aria-label={`${s.name}, pending review`}
-              title={`${s.name} · Pending review`}
+              aria-label={t("pendingLabel", { name: s.name })}
+              title={t("pendingTitle", { name: s.name })}
               className="grid size-6 place-items-center rounded-full border-2 border-dashed border-warning bg-card shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <KindDot kind={s.kind} className="size-4 [&_svg]:size-2.5" />
@@ -72,13 +74,9 @@ export function PendingMarkers({ submissions, onOpen }: { submissions: readonly 
   )
 }
 
-const STATUS_NOTE = {
-  pending: "Only you can see it until a moderator checks it.",
-  approved: "On the map for everyone.",
-} as const
-
 /** "Your submissions" in the US sheet: each with its status, and why when it wasn't approved. */
 export function SubmissionRows({ submissions, onOpen }: { submissions: readonly MySubmission[]; onOpen: (s: MySubmission) => void }) {
+  const t = useTranslations("map.submissions")
   return (
     <>
       {submissions.slice(0, 5).map((s) => (
@@ -95,25 +93,25 @@ export function SubmissionRows({ submissions, onOpen }: { submissions: readonly 
                 {s.status === "pending" ? (
                   <StatusBadge status="pending" />
                 ) : s.status === "approved" && s.locationActive === false ? (
-                  <StatusBadge status="sample">{s.kind === "event" ? "Ended" : "Off the map"}</StatusBadge>
+                  <StatusBadge status="sample">{s.kind === "event" ? t("ended") : t("offMap")}</StatusBadge>
                 ) : s.status === "approved" ? (
                   <StatusBadge status="live" />
                 ) : (
                   <StatusBadge status="sample" className="border-destructive/40 text-destructive">
-                    Not approved
+                    {t("notApproved")}
                   </StatusBadge>
                 )}
               </span>
               <span className="block truncate text-body text-muted-foreground">
                 {s.status === "rejected"
                   ? s.rejectReason
-                    ? REJECT_REASON_LABELS[s.rejectReason]
-                    : "Not approved"
+                    ? t(`rejectReasons.${s.rejectReason}`)
+                    : t("notApproved")
                   : s.status === "approved" && s.locationActive === false
                     ? s.kind === "event"
-                      ? "It's over, so it's off the map."
-                      : "It isn't on the map anymore."
-                    : STATUS_NOTE[s.status]}
+                      ? t("over")
+                      : t("gone")
+                    : t(s.status)}
               </span>
             </span>
           </button>

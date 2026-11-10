@@ -3,28 +3,32 @@
 import { cloneElement, useEffect, useId, useRef, useState, type ComponentProps, type ReactElement } from "react"
 import { ArrowLeftIcon, MapPinIcon, SearchIcon, TriangleAlertIcon, XIcon } from "lucide-react"
 import { KindDot } from "@/components/pokefindr/KindDot"
-import { KINDS } from "@/components/pokefindr/kinds"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { searchPlaces, type GeocodeResult } from "@/lib/geocode/client"
-import { SHOP_SELLS, SHOP_SELLS_LABELS, type SubmissionKind } from "@/lib/submissions/constants"
-import { submissionSchema, type DuplicateCandidate } from "@/lib/submissions/schemas"
+import { SHOP_SELLS, type ShopSells, type SubmissionKind } from "@/lib/submissions/constants"
+import type { ZodIssue } from "zod/v3"
+import { SUBMISSION_ERROR_KEYS, submissionSchema, type DuplicateCandidate, type SubmissionErrorKey } from "@/lib/submissions/schemas"
 import { cn } from "@/lib/utils"
 import { STATE_ZONES, browserZone, formatInZone, zoneName, zonedToIso } from "@/lib/time/zones"
 import { track } from "@/lib/analytics"
-import { useLocale } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 
 type InputProps = ComponentProps<typeof Input>
+
+/** The schema's messages the form shows in the page's language (addPlace.errors); any other is "Check this field." */
+const ERROR_KEYS = SUBMISSION_ERROR_KEYS
+type ErrorKey = SubmissionErrorKey
 
 export interface Pin {
   lng: number
   lat: number
 }
 
-const STEPS = ["Type", "Location", "Details", "Review"] as const
+const STEPS = ["type", "location", "details", "review"] as const
 
 /** The form's fields as typed, all strings (checkboxes aside), for both kinds. */
 interface Draft {
@@ -94,6 +98,17 @@ interface AddPlaceSheetProps {
  */
 export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindChange, onStepChange, initialKind = null }: AddPlaceSheetProps) {
   const locale = useLocale()
+  const t = useTranslations("addPlace")
+  // Coordinates keep a decimal point in every language, as maps and GPS show them:
+  // a decimal comma would run into the comma between the two.
+  const coordinate = (n: number) => n.toFixed(5)
+  /** A field's problem from the schema, in the page's language (its message names the catalog's in params.key). */
+  const fieldError = (issue: ZodIssue): string => {
+    if (issue.code === "invalid_string" && issue.path[0] === "startsAt") return t("errors.startsAt")
+    const params = issue.code === "custom" ? (issue.params as { key?: string } & Record<string, number> | undefined) : undefined
+    const key = params?.key
+    return key && (ERROR_KEYS as readonly string[]).includes(key) ? t(`errors.${key as ErrorKey}`, params) : t("errors.check")
+  }
   const [step, setStep] = useState(initialKind ? 1 : 0)
   const [kind, setKind] = useState<SubmissionKind | null>(initialKind)
   const [draft, setDraft] = useState<Draft>(EMPTY)
@@ -146,10 +161,10 @@ export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindC
       for (const issue of parsed.error.issues) {
         const field = String(issue.path[0]) as keyof Draft
         const key: keyof Draft = field === ("isFree" as keyof Draft) ? "cost" : field
-        next[key] ??= issue.message === "Required" || issue.message.startsWith("Invalid") ? "Check this field." : issue.message
+        next[key] ??= fieldError(issue)
       }
     }
-    if (kind === "event" && !draft.startsAt) next.startsAt = "Pick when it starts."
+    if (kind === "event" && !draft.startsAt) next.startsAt = t("errors.startsAt")
     setErrors(next)
     return Object.keys(next).length === 0
   }
@@ -176,17 +191,17 @@ export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindC
       if (res.status === 409) {
         setDuplicates(body.duplicates ?? [])
         setConfirmed(false)
-        return setErrors({ form: "Places like this are close by. Check them, then tick the box to send it anyway." })
+        return setErrors({ form: t("form.duplicates") })
       }
       if (res.status === 400 && body.field && body.field in EMPTY) {
         setErrors({ [body.field]: body.error })
         return setStep(2)
       }
-      if (res.status === 401) return setErrors({ form: "Your session ended. Log in again to send this." })
-      setErrors({ form: body.error ?? "Couldn't send it. Try again." })
+      if (res.status === 401) return setErrors({ form: t("form.sessionEnded") })
+      setErrors({ form: body.error ?? t("form.failed") })
     } catch {
       track("add_place_submit", { kind, outcome: "error" })
-      setErrors({ form: "Couldn't reach PokeFindr. Check your connection and try again." })
+      setErrors({ form: t("form.offline") })
     } finally {
       setSending(false)
     }
@@ -201,25 +216,25 @@ export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindC
         <div className="flex items-center gap-2">
           <Button type="button" variant="ghost" size="sm" onClick={back} className="-ml-2 text-muted-foreground">
             <ArrowLeftIcon aria-hidden />
-            {step === 0 ? "Cancel" : "Back"}
+            {step === 0 ? t("cancel") : t("back")}
           </Button>
           <span className="flex-1" />
           {step > 0 && (
-            <Button type="button" variant="ghost" size="icon" onClick={onCancel} className="size-8 text-muted-foreground" aria-label="Cancel adding a place">
+            <Button type="button" variant="ghost" size="icon" onClick={onCancel} className="size-8 text-muted-foreground" aria-label={t("cancelAdding")}>
               <XIcon aria-hidden />
             </Button>
           )}
         </div>
         <h2 ref={headingRef} tabIndex={-1} className="text-heading text-foreground outline-none">
-          {kind ? `Add a ${KINDS[kind].one}` : "Add a place"}
+          {kind ? t("titleKind", { kind }) : t("title")}
         </h2>
-        <ol className="flex gap-1.5" aria-label="Steps">
+        <ol className="flex gap-1.5" aria-label={t("steps.label")}>
           {STEPS.map((s, i) => (
             <li key={s} className="flex flex-1 flex-col gap-1" aria-current={i === step ? "step" : undefined}>
               <span aria-hidden className={cn("h-1 rounded-full", i <= step ? "bg-primary" : "bg-muted")} />
               <span className={cn("text-caption", i === step ? "font-semibold text-foreground" : "text-muted-foreground")}>
-                <span className="sr-only">Step {i + 1} of {STEPS.length}: </span>
-                {s}
+                <span className="sr-only">{t("steps.position", { n: i + 1, total: STEPS.length })}</span>
+                {t(`steps.${s}`)}
               </span>
             </li>
           ))}
@@ -234,7 +249,7 @@ export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindC
               setKind(v as SubmissionKind)
               onKindChange?.(v as SubmissionKind)
             }}
-            aria-label="What are you adding?"
+            aria-label={t("type.question")}
             className="gap-2"
           >
             {(["shop", "event"] as const).map((k) => (
@@ -246,10 +261,8 @@ export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindC
                 <RadioGroupItem id={`${id}-${k}`} value={k} className="mt-0.5" />
                 <KindDot kind={k} />
                 <span className="flex flex-col gap-0.5">
-                  <span className="text-subheading">{k === "shop" ? "Card shop" : "Event"}</span>
-                  <span className="text-body font-normal text-muted-foreground">
-                    {k === "shop" ? "A store that sells cards: singles, sealed product or supplies." : "A tournament, league night, prerelease, card show or trade night."}
-                  </span>
+                  <span className="text-subheading">{t(`type.${k}`)}</span>
+                  <span className="text-body font-normal text-muted-foreground">{t(`type.${k}Body`)}</span>
                 </span>
               </Label>
             ))}
@@ -266,11 +279,11 @@ export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindC
             />
             <p className="text-body text-muted-foreground">
               <MapPinIcon className="mr-1 inline size-4 align-[-3px]" aria-hidden />
-              Or click the map to drop the pin there. Drag the pin to put it on the entrance.
+              {t("location.hint")}
             </p>
             {pin && (
               <p className="text-caption text-muted-foreground tabular-nums">
-                Pin at {pin.lat.toFixed(5)}, {pin.lng.toFixed(5)}
+                {t("location.pin", { lat: coordinate(pin.lat), lng: coordinate(pin.lng) })}
               </p>
             )}
             <DuplicateWarning duplicates={duplicates} kind={kind} />
@@ -279,49 +292,49 @@ export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindC
 
         {step === 2 && kind && (
           <div className="flex flex-col gap-3">
-            <Field id={`${id}-name`} label="Name" required error={errors.name}>
-              <Input id={`${id}-name`} value={draft.name} onChange={(e) => set("name", e.target.value)} placeholder={kind === "shop" ? "Mile High Cards" : "League night"} />
+            <Field id={`${id}-name`} label={t("fields.name")} required error={errors.name}>
+              <Input id={`${id}-name`} value={draft.name} onChange={(e) => set("name", e.target.value)} placeholder={kind === "shop" ? t("fields.namePlaceholderShop") : t("fields.namePlaceholderEvent")} />
             </Field>
             {kind === "event" && (
               <>
-                <Field id={`${id}-venue`} label="Venue" hint="Where it's held, if it has a name." error={errors.venue}>
+                <Field id={`${id}-venue`} label={t("fields.venue")} hint={t("fields.venueHint")} error={errors.venue}>
                   <Input id={`${id}-venue`} value={draft.venue} onChange={(e) => set("venue", e.target.value)} />
                 </Field>
                 <p className="-mb-1 text-caption text-muted-foreground">
-                  In the event&apos;s local time: {zoneName(eventZone(draft), locale)}
-                  {STATE_ZONES[draft.state.trim().toUpperCase()] ? "" : ", yours. Fill in the state below to use the event's."}
+                  {t("fields.localTime", { zone: zoneName(eventZone(draft), locale) })}
+                  {STATE_ZONES[draft.state.trim().toUpperCase()] ? "" : t("fields.localTimeYours")}
                 </p>
                 <div className="grid grid-cols-2 gap-2">
-                  <Field id={`${id}-starts`} label="Starts" required error={errors.startsAt}>
+                  <Field id={`${id}-starts`} label={t("fields.starts")} required error={errors.startsAt}>
                     <Input id={`${id}-starts`} type="datetime-local" value={draft.startsAt} onChange={(e) => set("startsAt", e.target.value)} />
                   </Field>
-                  <Field id={`${id}-ends`} label="Ends" error={errors.endsAt}>
+                  <Field id={`${id}-ends`} label={t("fields.ends")} error={errors.endsAt}>
                     <Input id={`${id}-ends`} type="datetime-local" value={draft.endsAt} onChange={(e) => set("endsAt", e.target.value)} />
                   </Field>
                 </div>
               </>
             )}
-            <Field id={`${id}-address`} label="Street address" hint={kind === "shop" ? "Moderators check shops have one." : undefined} error={errors.address}>
+            <Field id={`${id}-address`} label={t("fields.address")} hint={kind === "shop" ? t("fields.addressHintShop") : undefined} error={errors.address}>
               <Input id={`${id}-address`} value={draft.address} onChange={(e) => set("address", e.target.value)} autoComplete="street-address" />
             </Field>
             <div className="grid grid-cols-[minmax(0,1fr)_88px] gap-2">
-              <Field id={`${id}-city`} label="City" required error={errors.city}>
+              <Field id={`${id}-city`} label={t("fields.city")} required error={errors.city}>
                 <Input id={`${id}-city`} value={draft.city} onChange={(e) => set("city", e.target.value)} autoComplete="address-level2" />
               </Field>
-              <Field id={`${id}-state`} label="State" error={errors.state}>
+              <Field id={`${id}-state`} label={t("fields.state")} error={errors.state}>
                 <Input id={`${id}-state`} value={draft.state} onChange={(e) => set("state", e.target.value.toUpperCase())} maxLength={2} autoComplete="address-level1" />
               </Field>
             </div>
             {kind === "shop" ? (
               <>
-                <Field id={`${id}-website`} label="Website" error={errors.website}>
+                <Field id={`${id}-website`} label={t("fields.website")} error={errors.website}>
                   <Input id={`${id}-website`} type="url" inputMode="url" value={draft.website} onChange={(e) => set("website", e.target.value)} placeholder="https://" />
                 </Field>
-                <Field id={`${id}-hours`} label="Hours" hint="For example: Mon–Sat 11 AM–8 PM" error={errors.hours}>
+                <Field id={`${id}-hours`} label={t("fields.hours")} hint={t("fields.hoursHint")} error={errors.hours}>
                   <Input id={`${id}-hours`} value={draft.hours} onChange={(e) => set("hours", e.target.value)} />
                 </Field>
                 <fieldset className="flex flex-col gap-2">
-                  <legend className="mb-1 text-body font-medium">Sells</legend>
+                  <legend className="mb-1 text-body font-medium">{t("fields.sells")}</legend>
                   {SHOP_SELLS.map((s) => (
                     <Label key={s} htmlFor={`${id}-sells-${s}`} className="flex items-center gap-2 font-normal">
                       <Checkbox
@@ -329,23 +342,23 @@ export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindC
                         checked={draft.sells.includes(s)}
                         onCheckedChange={(on) => set("sells", on ? [...draft.sells, s] : draft.sells.filter((x) => x !== s))}
                       />
-                      {SHOP_SELLS_LABELS[s]}
+                      {t(`sells.${s}`)}
                     </Label>
                   ))}
                 </fieldset>
               </>
             ) : (
               <>
-                <Field id={`${id}-link`} label="Link" hint="The organizer's page or sign-up." error={errors.link}>
+                <Field id={`${id}-link`} label={t("fields.link")} hint={t("fields.linkHint")} error={errors.link}>
                   <Input id={`${id}-link`} type="url" inputMode="url" value={draft.link} onChange={(e) => set("link", e.target.value)} placeholder="https://" />
                 </Field>
                 <fieldset>
-                  <legend className="mb-2 text-body font-medium">Entry</legend>
+                  <legend className="mb-2 text-body font-medium">{t("fields.entry")}</legend>
                   <RadioGroup value={draft.cost} onValueChange={(v) => set("cost", v as Draft["cost"])} className="flex gap-4">
                     {(["free", "paid"] as const).map((c) => (
                       <Label key={c} htmlFor={`${id}-cost-${c}`} className="flex items-center gap-2 font-normal">
                         <RadioGroupItem id={`${id}-cost-${c}`} value={c} />
-                        {c === "free" ? "Free" : "Paid"}
+                        {t(`fields.${c}`)}
                       </Label>
                     ))}
                   </RadioGroup>
@@ -362,11 +375,11 @@ export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindC
             {duplicates.length > 0 && (
               <Label htmlFor={`${id}-confirm`} className="flex items-start gap-2 font-normal">
                 <Checkbox id={`${id}-confirm`} checked={confirmed} onCheckedChange={(on) => setConfirmed(on === true)} className="mt-0.5" />
-                I checked these. This is a different place.
+                {t("review.confirm")}
               </Label>
             )}
             <p className="text-body text-muted-foreground">
-              A moderator checks it before it goes on the map. Until then only you can see it, marked Pending review.
+              {t("review.moderated")}
             </p>
           </div>
         )}
@@ -381,11 +394,11 @@ export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindC
       <div className="flex gap-2 border-t border-border px-3 py-2.5">
         {step < 3 ? (
           <Button type="button" className="flex-1" onClick={next} disabled={!canNext}>
-            {step === 1 && !pin ? "Place the pin to continue" : "Continue"}
+            {step === 1 && !pin ? t("placePin") : t("continue")}
           </Button>
         ) : (
           <Button type="button" className="flex-1" onClick={submit} disabled={sending || needsConfirm}>
-            {sending ? "Sending…" : "Send for review"}
+            {sending ? t("sending") : t("send")}
           </Button>
         )}
       </div>
@@ -395,12 +408,13 @@ export function AddPlaceSheet({ pin, onPinChange, onCancel, onSubmitted, onKindC
 
 /** A labelled input, its hint, and its error, which the input points at (aria-describedby) while it's invalid. */
 function Field({ id, label, hint, required, error, children }: { id: string; label: string; hint?: string; required?: boolean; error?: string; children: ReactElement<InputProps> }) {
+  const t = useTranslations("addPlace.fields")
   const note = error || hint ? `${id}-note` : undefined
   return (
     <div className="flex flex-col gap-1.5">
       <Label htmlFor={id}>
         {label}
-        {!required && <span className="font-normal text-muted-foreground"> (optional)</span>}
+        {!required && <span className="font-normal text-muted-foreground">{t("optional")}</span>}
       </Label>
       {cloneElement(children, {
         "aria-invalid": error ? true : undefined,
@@ -418,18 +432,19 @@ function Field({ id, label, hint, required, error, children }: { id: string; lab
 }
 
 function DuplicateWarning({ duplicates, kind }: { duplicates: DuplicateCandidate[]; kind: SubmissionKind }) {
+  const t = useTranslations("addPlace.duplicates")
   if (!duplicates.length) return null
   return (
     <div role="status" className="flex flex-col gap-1.5 rounded-lg border border-warning/45 bg-warning/5 p-3">
       <p className="flex items-center gap-1.5 text-body font-semibold text-foreground">
         <TriangleAlertIcon className="size-4 text-warning" aria-hidden />
-        This might already be on the map
+        {t("title")}
       </p>
       <ul className="flex flex-col gap-1">
         {duplicates.map((d) => (
           <li key={d.id} className="text-body text-muted-foreground">
-            <span className="font-medium text-foreground">{d.name || `A ${KINDS[kind].one}`}</span>
-            {d.source === "submission" ? " (yours, waiting for review)" : ""} · {d.meters} m away
+            <span className="font-medium text-foreground">{d.name || t("unnamed", { kind })}</span>
+            {d.source === "submission" ? t("yours") : ""} · {t("away", { meters: d.meters })}
             {d.address ? ` · ${d.address}` : ""}
           </li>
         ))}
@@ -440,24 +455,25 @@ function DuplicateWarning({ duplicates, kind }: { duplicates: DuplicateCandidate
 
 function Review({ kind, draft }: { kind: SubmissionKind; draft: Draft }) {
   const locale = useLocale()
+  const t = useTranslations("addPlace")
   const zone = eventZone(draft)
   const when = (v: string) => (v ? `${formatInZone(zonedToIso(v, zone), zone, locale)}` : "")
   const rows: [string, string][] = [
-    ["Name", draft.name],
+    [t("review.name"), draft.name],
     ...(kind === "event"
-      ? ([["Venue", draft.venue], ["When", [[when(draft.startsAt), when(draft.endsAt)].filter(Boolean).join(" – "), draft.startsAt ? zoneName(zone, locale) : ""].filter(Boolean).join(", ")]] as [string, string][])
+      ? ([[t("review.venue"), draft.venue], [t("review.when"), [[when(draft.startsAt), when(draft.endsAt)].filter(Boolean).join(" – "), draft.startsAt ? zoneName(zone, locale) : ""].filter(Boolean).join(", ")]] as [string, string][])
       : []),
-    ["Address", [draft.address, [draft.city, draft.state].filter(Boolean).join(", ")].filter(Boolean).join(", ")],
+    [t("review.address"), [draft.address, [draft.city, draft.state].filter(Boolean).join(", ")].filter(Boolean).join(", ")],
     ...(kind === "shop"
-      ? ([["Website", draft.website], ["Hours", draft.hours], ["Sells", draft.sells.map((s) => SHOP_SELLS_LABELS[s as keyof typeof SHOP_SELLS_LABELS]).join(", ")]] as [string, string][])
-      : ([["Link", draft.link], ["Entry", draft.cost === "free" ? "Free" : draft.cost === "paid" ? "Paid" : ""]] as [string, string][])),
+      ? ([[t("review.website"), draft.website], [t("review.hours"), draft.hours], [t("review.sells"), draft.sells.map((s) => t(`sells.${s as ShopSells}`)).join(", ")]] as [string, string][])
+      : ([[t("review.link"), draft.link], [t("review.entry"), draft.cost ? t(`fields.${draft.cost}`) : ""]] as [string, string][])),
   ]
   return (
     <dl className="grid">
       {rows.map(([term, value]) => (
         <div key={term} className="grid grid-cols-[88px_minmax(0,1fr)] gap-3 border-b border-border py-2">
           <dt className="text-body text-muted-foreground">{term}</dt>
-          <dd className="m-0 min-w-0 break-words text-body">{value || <span className="text-muted-foreground">Not given</span>}</dd>
+          <dd className="m-0 min-w-0 break-words text-body">{value || <span className="text-muted-foreground">{t("review.notGiven")}</span>}</dd>
         </div>
       ))}
     </dl>
@@ -466,6 +482,7 @@ function Review({ kind, draft }: { kind: SubmissionKind; draft: Draft }) {
 
 /** A small address search for the location step: picks move the pin. */
 function AddressSearch({ onPick }: { onPick: (r: GeocodeResult) => void }) {
+  const tl = useTranslations("addPlace.location")
   const [q, setQ] = useState("")
   const [results, setResults] = useState<GeocodeResult[] | null>(null)
   const [failed, setFailed] = useState(false)
@@ -494,14 +511,14 @@ function AddressSearch({ onPick }: { onPick: (r: GeocodeResult) => void }) {
 
   return (
     <div className="flex flex-col gap-1.5">
-      <Label htmlFor={`${id}-q`}>Search an address</Label>
+      <Label htmlFor={`${id}-q`}>{tl("search")}</Label>
       <div className="relative">
         <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-        <Input id={`${id}-q`} value={q} onChange={(e) => setQ(e.target.value)} className="pl-8" placeholder="1450 Grant St, Denver" autoComplete="off" />
+        <Input id={`${id}-q`} value={q} onChange={(e) => setQ(e.target.value)} className="pl-8" placeholder={tl("searchPlaceholder")} autoComplete="off" />
       </div>
-      {failed && <p className="text-caption text-destructive">Search isn&apos;t working right now. Click the map instead.</p>}
+      {failed && <p className="text-caption text-destructive">{tl("searchFailed")}</p>}
       {results && (
-        <ul className="flex flex-col rounded-lg border border-border p-1" aria-label="Addresses">
+        <ul className="flex flex-col rounded-lg border border-border p-1" aria-label={tl("results")}>
           {results.length ? (
             results.map((r) => (
               <li key={`${r.label}-${r.lng}-${r.lat}`}>
@@ -521,7 +538,7 @@ function AddressSearch({ onPick }: { onPick: (r: GeocodeResult) => void }) {
               </li>
             ))
           ) : (
-            <li className="px-2 py-1.5 text-body text-muted-foreground">No match. Try a street and city, or click the map.</li>
+            <li className="px-2 py-1.5 text-body text-muted-foreground">{tl("noMatch")}</li>
           )}
         </ul>
       )}

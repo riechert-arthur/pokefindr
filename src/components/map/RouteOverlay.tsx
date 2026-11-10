@@ -6,6 +6,7 @@ import { Layer, Marker, Source, useMap } from "./engine"
 import { SOURCES, routeLineLayer, type MapColors } from "./layers"
 import type { LocationFeature } from "@/lib/types/locations"
 import { cameraPadding } from "./camera"
+import { useTranslations } from "next-intl"
 
 interface RouteOverlayProps {
   /** Location ids in visiting order (the URL's `route=`). */
@@ -22,6 +23,8 @@ interface RouteOverlayProps {
  */
 export function RouteOverlay({ ids, colors, onClear }: RouteOverlayProps) {
   const { current: map } = useMap()
+  const t = useTranslations("map.route")
+  const tm = useTranslations("map")
   const [stops, setStops] = useState<LocationFeature[] | null>(null)
   const key = ids.join(",")
 
@@ -41,18 +44,18 @@ export function RouteOverlay({ ids, colors, onClear }: RouteOverlayProps) {
       .then((found) => {
         const ok = found.filter((f): f is LocationFeature => f !== null)
         if (ok.length < 2) {
-          toast.error("Couldn't show the route", { description: "Its places aren't on the map anymore." })
+          toast.error(t("failed"), { description: t("gone") })
           onClear()
           return
         }
         // Gone stops are skipped, so say so: the numbers no longer match the route card.
-        if (ok.length < found.length) toast("Some stops are gone", { description: "They aren't on the map anymore, so the route skips them." })
+        if (ok.length < found.length) toast(t("someGone"), { description: t("someGoneBody") })
         setStops(ok)
       })
       .catch((err) => {
         if (ctl.signal.aborted) return
         console.error("[map] couldn't load the route", err)
-        toast.error("Couldn't show the route", { description: "Check your connection and try again." })
+        toast.error(t("failed"), { description: tm("connection") })
       })
     return () => ctl.abort()
     // onClear is a fresh closure each render; the ids decide what to load.
@@ -71,7 +74,7 @@ export function RouteOverlay({ ids, colors, onClear }: RouteOverlayProps) {
       ],
       { padding: cameraPadding(map.getContainer(), { sheet: true }), maxZoom: 14, duration: 1000 },
     )
-    toast("Route on the map", { description: `${stops.length} stops, in visiting order.`, action: { label: "Clear", onClick: onClear } })
+    toast(t("shown"), { description: t("shownBody", { count: stops.length }), action: { label: t("clear"), onClick: onClear } })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stops, map])
 
@@ -96,7 +99,7 @@ export function RouteOverlay({ ids, colors, onClear }: RouteOverlayProps) {
         <Marker key={s.properties.id} longitude={s.geometry.coordinates[0]} latitude={s.geometry.coordinates[1]}>
           <span
             role="img"
-            aria-label={`Stop ${i + 1}: ${s.properties.retailer}`}
+            aria-label={t("stop", { n: i + 1, name: s.properties.retailer })}
             className="grid size-[22px] place-items-center rounded-full border-2 border-card bg-primary text-caption font-bold text-primary-foreground shadow"
           >
             {i + 1}

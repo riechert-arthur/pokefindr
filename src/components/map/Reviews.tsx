@@ -3,25 +3,32 @@
 import { useRef, useState, type FormEvent } from "react"
 import { Link } from "@/i18n/navigation"
 import { StarRating } from "@/components/pokefindr/StarRating"
-import { KINDS, type LocationKind } from "@/components/pokefindr/kinds"
+import type { LocationKind } from "@/components/pokefindr/kinds"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Textarea } from "@/components/ui/textarea"
 import type { Review, ReviewsState } from "./useLocationReviews"
 import { useFormat } from "@/i18n/format"
+import { useFormatter, useTranslations } from "next-intl"
 
 /** The longest review text the API takes. */
 export const REVIEW_MAX_LENGTH = 500
 
 /** Under the title: the stars and "4.5 · 3 reviews", or "No reviews yet". */
 export function ReviewSummary({ reviews }: { reviews: ReviewsState }) {
+  const t = useTranslations("reviews")
+  const format = useFormatter()
   if (reviews.status === "loading" && reviews.count === 0) return <Skeleton className="h-4 w-40" />
   if (reviews.status === "error") return null
   return (
     <div className="flex items-center gap-2 text-body text-muted-foreground">
       <StarRating rating={reviews.average} starSize={14} />
-      <span>{reviews.count ? `${reviews.average.toFixed(1)} · ${reviews.count} review${reviews.count === 1 ? "" : "s"}` : "No reviews yet"}</span>
+      <span>
+        {reviews.count
+          ? t("summary", { average: format.number(reviews.average, { minimumFractionDigits: 1, maximumFractionDigits: 1 }), count: reviews.count })
+          : t("none")}
+      </span>
     </div>
   )
 }
@@ -42,6 +49,7 @@ interface ReviewsSectionProps {
  */
 export function ReviewsSection({ kind, reviews, username, placeName }: ReviewsSectionProps) {
   const f = useFormat()
+  const t = useTranslations("reviews")
   // The review being edited in the form, or null for a new one.
   const [editing, setEditing] = useState<Review | null>(null)
   const [rating, setRating] = useState(0)
@@ -97,23 +105,23 @@ export function ReviewsSection({ kind, reviews, username, placeName }: ReviewsSe
   return (
     <section aria-labelledby="reviews-title" className="mt-5">
       <h3 id="reviews-title" className="mb-2 text-subheading text-foreground">
-        Reviews
+        {t("title")}
       </h3>
       {reviews.status === "error" ? (
         <p className="text-body text-muted-foreground">
-          Couldn&apos;t load reviews.{" "}
+          {t("failed")}{" "}
           <Button type="button" variant="link" className="h-auto p-0" onClick={reviews.reload}>
-            Try again
+            {t("tryAgain")}
           </Button>
         </p>
       ) : reviews.status === "loading" && reviews.count === 0 ? (
-        <div aria-label="Loading reviews" className="grid gap-2.5">
+        <div aria-label={t("loading")} className="grid gap-2.5">
           <Skeleton className="h-16 w-full" />
           <Skeleton className="h-16 w-full" />
         </div>
       ) : reviews.count === 0 ? (
         <p className="text-body text-muted-foreground">
-          Be the first to review this {KINDS[kind].one}. Was it stocked? Was it easy to find?
+          {t("first", { kind })}
         </p>
       ) : (
         <ul className="mb-3 grid gap-2.5">
@@ -132,7 +140,7 @@ export function ReviewsSection({ kind, reviews, username, placeName }: ReviewsSe
               {r.mine && !r.id.startsWith("pending-") && (
                 <div className="mt-1 flex gap-1">
                   <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-caption" onClick={() => startEdit(r)} disabled={busy}>
-                    Edit
+                    {t("edit")}
                   </Button>
                   <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-caption" onClick={(e) => {
                       deleteButton.current = e.currentTarget
@@ -140,7 +148,7 @@ export function ReviewsSection({ kind, reviews, username, placeName }: ReviewsSe
                     }}
                     disabled={busy}
                   >
-                    Delete
+                    {t("delete")}
                   </Button>
                 </div>
               )}
@@ -150,10 +158,10 @@ export function ReviewsSection({ kind, reviews, username, placeName }: ReviewsSe
       )}
 
       {username ? (
-        <form onSubmit={submit} aria-label={editing ? "Edit your review" : "Write a review"} className="mt-2.5 grid gap-2 rounded-lg bg-muted p-3">
+        <form onSubmit={submit} aria-label={editing ? t("editTitle") : t("writeTitle")} className="mt-2.5 grid gap-2 rounded-lg bg-muted p-3">
           <div className="flex items-center gap-2">
-            <span className="text-body text-muted-foreground">Your rating</span>
-            <StarRating rating={rating} starSize={20} onChange={setRating} label="Your rating" />
+            <span className="text-body text-muted-foreground">{t("yourRating")}</span>
+            <StarRating rating={rating} starSize={20} onChange={setRating} label={t("yourRating")} />
           </div>
           <Textarea
             ref={textRef}
@@ -161,29 +169,32 @@ export function ReviewsSection({ kind, reviews, username, placeName }: ReviewsSe
             onChange={(e) => setText(e.target.value)}
             rows={3}
             maxLength={REVIEW_MAX_LENGTH}
-            aria-label="Your review"
-            placeholder="What did you find? Stock, restock day, where the machine is in the store…"
+            aria-label={t("yourReview")}
+            placeholder={t("placeholder")}
             className="bg-background"
           />
           <div className="flex items-center gap-2">
-            <span className="text-caption text-muted-foreground">{rating ? "" : "Pick a rating to post."}</span>
+            <span className="text-caption text-muted-foreground">{rating ? "" : t("pickRating")}</span>
             <span className="grow" />
             {editing && (
               <Button type="button" variant="ghost" size="sm" onClick={reset}>
-                Cancel
+                {t("cancel")}
               </Button>
             )}
             <Button type="submit" size="sm" disabled={!rating || busy}>
-              {editing ? "Save changes" : "Post review"}
+              {editing ? t("save") : t("post")}
             </Button>
           </div>
         </form>
       ) : (
         <p className="mt-2.5 rounded-lg bg-muted p-3 text-body text-muted-foreground">
-          <Link href="/login" className="text-primary underline underline-offset-4">
-            Log in
-          </Link>{" "}
-          to write a review.
+          {t.rich("login", {
+            link: (chunks) => (
+              <Link href="/login" className="text-primary underline underline-offset-4">
+                {chunks}
+              </Link>
+            ),
+          })}
         </p>
       )}
       <Dialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
@@ -199,19 +210,19 @@ export function ReviewsSection({ kind, reviews, username, placeName }: ReviewsSe
           }}
         >
           <DialogHeader>
-            <DialogTitle>Delete this review?</DialogTitle>
+            <DialogTitle>{t("deleteTitle")}</DialogTitle>
             <DialogDescription>
-              Your rating{placeName ? ` for ${placeName}` : ""} will be removed. This can&apos;t be undone.
+              {placeName ? t("deleteBody", { place: placeName }) : t("deleteBodyUnnamed")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="outline">
-                Cancel
+                {t("cancel")}
               </Button>
             </DialogClose>
             <Button type="button" variant="destructive" onClick={confirmDelete}>
-              Delete
+              {t("delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

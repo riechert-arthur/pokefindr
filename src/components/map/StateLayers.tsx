@@ -16,6 +16,7 @@ import { Card } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 import { cameraPadding } from "./camera"
 import { useFormat } from "@/i18n/format"
+import { useTranslations } from "next-intl"
 
 interface StateLayersProps {
   states: StateCollection
@@ -87,9 +88,10 @@ export function StateLayers({ states, max, bounds, colors, beforeId, onSelect }:
 /** The state shading's scale, shown while the map is zoomed out. */
 export function StateLegend({ max, className }: { max: number; className?: string }) {
   const f = useFormat()
+  const t = useTranslations("map")
   return (
     <Card className={cn("w-[180px] px-3 py-2.5 text-caption shadow-md", className)}>
-      <strong className="font-semibold">Places per state</strong>
+      <strong className="font-semibold">{t("legend")}</strong>
       <div className="mb-1 mt-1.5 h-2 rounded border border-border bg-gradient-to-r from-map-land to-map-choro-hi" />
       <div className="flex justify-between tabular-nums text-muted-foreground">
         <span>0</span>

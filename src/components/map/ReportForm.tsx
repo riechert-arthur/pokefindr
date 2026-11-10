@@ -3,12 +3,13 @@
 import { useState, type FormEvent } from "react"
 import { Link } from "@/i18n/navigation"
 import { toast } from "sonner"
-import { KINDS, type LocationKind } from "@/components/pokefindr/kinds"
+import type { LocationKind } from "@/components/pokefindr/kinds"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Textarea } from "@/components/ui/textarea"
-import { REPORT_REASONS, REPORT_REASON_LABELS, type ReportReason } from "@/lib/locations/reports"
+import { REPORT_REASONS, type ReportReason } from "@/lib/locations/reports"
+import { useLocale, useTranslations } from "next-intl"
 
 interface ReportFormProps {
   locationId: string
@@ -27,15 +28,20 @@ export function ReportForm({ locationId, kind, signedIn, onClose }: ReportFormPr
   const [reason, setReason] = useState<ReportReason | "">("")
   const [comment, setComment] = useState("")
   const [sending, setSending] = useState(false)
-  const one = KINDS[kind].one
+  const t = useTranslations("report")
+  const locale = useLocale()
 
   if (!signedIn)
     return (
       <div className="mt-2.5 rounded-lg border border-border bg-muted px-3 py-2.5 text-body text-muted-foreground">
-        <Link href="/login" className="text-primary underline underline-offset-4">
-          Log in
-        </Link>{" "}
-        to report a problem with this {one}.
+        {t.rich("signedOut", {
+          kind,
+          link: (chunks) => (
+            <Link href="/login" className="text-primary underline underline-offset-4">
+              {chunks}
+            </Link>
+          ),
+        })}
       </div>
     )
 
@@ -50,37 +56,37 @@ export function ReportForm({ locationId, kind, signedIn, onClose }: ReportFormPr
         body: JSON.stringify({ reason, ...(reason === "other" && comment.trim() ? { comment: comment.trim() } : {}) }),
       })
       if (res.status === 401) {
-        toast.error("Couldn't send your report", { description: "Your session ended. Log in again and retry." })
+        toast.error(t("failed"), { description: t("sessionEnded") })
         return
       }
       if (res.status === 429) {
-        toast.error("Too many reports today", { description: "Thanks for helping. Try again tomorrow." })
+        toast.error(t("tooMany"), { description: t("tooManyBody") })
         return
       }
       if (!res.ok) throw new Error(`POST reports failed (${res.status})`)
       const { duplicate } = (await res.json()) as { duplicate?: boolean }
-      if (duplicate) toast("Already reported", { description: `You reported this ${one} today. Thanks.` })
-      else toast.success("Report sent", { description: `Thanks. We'll check "${REPORT_REASON_LABELS[reason].toLowerCase()}" for this ${one}.` })
+      if (duplicate) toast(t("already"), { description: t("alreadyBody", { kind }) })
+      else toast.success(t("sent"), { description: t("sentBody", { kind, reason: t(`reasons.${reason}`).toLocaleLowerCase(locale) }) })
       onClose()
     } catch (err) {
       console.error("[map] couldn't send the report", err)
-      toast.error("Couldn't send your report", { description: "Check your connection and try again." })
+      toast.error(t("failed"), { description: t("connection") })
     } finally {
       setSending(false)
     }
   }
 
   return (
-    <form onSubmit={submit} aria-label="Report a problem" className="mt-2.5 grid gap-1 rounded-lg border border-border bg-muted px-3 py-2.5">
+    <form onSubmit={submit} aria-label={t("title")} className="mt-2.5 grid gap-1 rounded-lg border border-border bg-muted px-3 py-2.5">
       <p id="report-question" className="mb-1 text-body text-muted-foreground">
-        What&apos;s wrong with this {one}?
+        {t("question", { kind })}
       </p>
       <RadioGroup value={reason} onValueChange={(v) => setReason(v as ReportReason)} aria-labelledby="report-question" className="gap-0">
         {REPORT_REASONS.map((r) => (
           <div key={r} className="flex items-center gap-2 py-1">
             <RadioGroupItem value={r} id={`report-${r}`} className="border-foreground text-foreground" />
             <Label htmlFor={`report-${r}`} className="cursor-pointer text-body font-normal">
-              {REPORT_REASON_LABELS[r]}
+              {t(`reasons.${r}`)}
             </Label>
           </div>
         ))}
@@ -91,17 +97,17 @@ export function ReportForm({ locationId, kind, signedIn, onClose }: ReportFormPr
           onChange={(e) => setComment(e.target.value)}
           rows={2}
           maxLength={500}
-          aria-label="What's wrong? (optional)"
-          placeholder="What's wrong? (optional)"
+          aria-label={t("comment")}
+          placeholder={t("comment")}
           className="mt-1 bg-background"
         />
       )}
       <div className="mt-1 flex items-center justify-end gap-2">
         <Button type="button" variant="ghost" size="sm" onClick={onClose}>
-          Cancel
+          {t("cancel")}
         </Button>
         <Button type="submit" size="sm" disabled={!reason || sending}>
-          Send report
+          {t("send")}
         </Button>
       </div>
     </form>

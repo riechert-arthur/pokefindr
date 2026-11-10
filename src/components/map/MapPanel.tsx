@@ -4,6 +4,7 @@ import { useEffect, useRef, type ReactNode } from "react"
 import { TypeChip } from "@/components/pokefindr/TypeChip"
 import { KIND_ORDER } from "@/components/pokefindr/kinds"
 import type { LocationKind } from "@/lib/types/locations"
+import { useTranslations } from "next-intl"
 
 interface MapPanelProps {
   search: ReactNode
@@ -27,6 +28,7 @@ interface MapPanelProps {
  */
 export function MapPanel({ search, filter, kinds, kindTotals, onKindsChange, sheet, sheetLabel }: MapPanelProps) {
   const ref = useRef<HTMLDivElement>(null)
+  const t = useTranslations("map")
 
   // Phones: the bottom-right controls sit above the panel (CSS reads --map-panel-h).
   useEffect(() => {
@@ -58,7 +60,7 @@ export function MapPanel({ search, filter, kinds, kindTotals, onKindsChange, she
       </div>
       <div
         role="group"
-        aria-label="What to show on the map"
+        aria-label={t("kindsGroup")}
         className="pointer-events-auto -m-px flex flex-none gap-1.5 overflow-x-auto p-px [scrollbar-width:none] sm:flex-wrap sm:overflow-visible"
       >
         {KIND_ORDER.map((k) => (

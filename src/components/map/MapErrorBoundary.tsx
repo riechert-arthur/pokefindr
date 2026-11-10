@@ -1,17 +1,10 @@
 "use client"
 
 import { Component, type ErrorInfo, type ReactNode } from "react"
-import { MapStatus } from "./MapStatus"
+import { MapFailed } from "./MapStatus"
 
 /** Why the map couldn't start. Each reason has its own message. */
 export type MapFailure = "library" | "webgl" | "crash"
-
-/** Wording from the redesign prototype. */
-export const MAP_FAILURE_MESSAGES: Record<MapFailure, string> = {
-  library: "The map library didn't load. Check your connection and reload.",
-  webgl: "This browser couldn't start the map (WebGL is off or unavailable).",
-  crash: "The map stopped working. Reload to try again.",
-}
 
 /**
  * Sorts an error thrown while loading or running the map: a chunk that
@@ -37,7 +30,8 @@ interface State {
 
 /**
  * Catches errors from the map and everything drawn on it, and shows a
- * message with a reload button instead of a blank page.
+ * message with a reload button instead of a blank page (the messages are
+ * map.failure in the catalog).
  */
 export class MapErrorBoundary extends Component<Props, State> {
   state: State = { failure: null }
@@ -52,7 +46,7 @@ export class MapErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.failure) {
-      return <MapStatus kind="error">{MAP_FAILURE_MESSAGES[this.state.failure]}</MapStatus>
+      return <MapFailed failure={this.state.failure} />
     }
     return this.props.children
   }

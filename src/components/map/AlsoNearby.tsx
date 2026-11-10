@@ -7,6 +7,7 @@ import { LOCATION_KINDS, type LocationFeature, type LocationKind, type NearbyLoc
 export type NearbyRow = NearbyLocations["features"][number]
 import { roundPlace } from "@/lib/map/url-state"
 import { LocationRow } from "./LocationRow"
+import { useTranslations } from "next-intl"
 
 /** How far "Also nearby" looks, in miles, and how many it lists. */
 export const ALSO_NEARBY_MILES = 5
@@ -53,11 +54,12 @@ export function useAlsoNearby(
 
 /** The panel's "Also nearby", as in the prototype: rows like the results list, which open that place. */
 export function AlsoNearby({ rows, onOpen }: { rows: NearbyRow[]; onOpen: (feature: LocationFeature) => void }) {
+  const t = useTranslations("details")
   if (!rows.length) return null
   return (
     <section aria-labelledby="also-nearby-title" className="mt-5">
       <h3 id="also-nearby-title" className="mb-1 text-subheading text-foreground">
-        Also nearby
+        {t("alsoNearby")}
       </h3>
       <ul className="-mx-2.5">
         {rows.map((f) => (

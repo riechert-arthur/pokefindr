@@ -37,3 +37,410 @@ format:
     minutes: "{count} min ago"
     hours: "{count} hr ago"
     days: "{count, plural, one {# day ago} other {# days ago}}"
+
+# Location kinds, as the map's chips, filters and labels name them.
+kinds:
+  vending:
+    # The chip and filter heading.
+    label: Vending machines
+    # The chip on phones, where it's tight.
+    short: Vending
+    # One of them, as a label over a place's name.
+    name: Vending machine
+  shop:
+    label: Card shops
+    short: Shops
+    name: Card shop
+  event:
+    label: Events
+    short: Events
+    name: Event
+
+# The map page (/map): everything on and around the map.
+map:
+  # The page's title and description for search engines and link previews.
+  meta:
+    title: Find all Pokemon Vending Machine Locations Near You - Free Map | PokeFindr
+    description: See an interactive map with all the Pokemon Vending Machine locations near you. Easily send the directions to Google Maps and see reviews from others.
+    # Comma-separated search terms.
+    keywords: Pokemon vending machines, Pokemon map, vending machine locations, Pokemon merchandise map, PokeFindr, pokemon vending machines near me, pokemon vending machine map, nearest pokemon vending machines
+    ogTitle: Find all Pokemon Vending Machine Locations Near You | PokeFindr
+    ogDescription: Explore a comprehensive map of Pokemon Vending Machine Locations. Easily find directions to your nearest vending machine!
+  # While the map starts.
+  loading: Loading the map…
+  reload: Reload
+  # Why the map couldn't start, with the Reload button below.
+  failure:
+    library: The map library didn't load. Check your connection and reload.
+    webgl: This browser couldn't start the map (WebGL is off or unavailable).
+    crash: The map stopped working. Reload to try again.
+  # The pill at the top of the map. {places} is a count like "12 places" or
+  # "2,000+ vending machines". The parts are joined with " · ".
+  status:
+    inUs: "{places} in the US"
+    zoomIn: Zoom in or pick a state to see them
+    error: Couldn't load this area
+    errorHint: Move the map to try again
+    loadingArea: Loading this area…
+    inView: "{places} in view"
+    updating: updating…
+    zoomForAll: zoom in to see them all
+    loaded: loaded for this area
+  # The state shading's scale, while zoomed out.
+  legend: Places per state
+  # Names the row of kind chips, for screen readers.
+  kindsGroup: What to show on the map
+  search:
+    placeholder: Search city or address
+    # In the search box after "Near me".
+    yourLocation: Your location
+    # The menu button left of the search box, on phones.
+    openNavigation: Open navigation
+    # Beside a suggested city: "41 places within 10 mi".
+    areaWithin: "{places} within {radius}"
+  # The + button beside the search box.
+  add: Add a card shop or event
+  # The panel's name for screen readers, per view.
+  panel:
+    add: Add a place
+    results: Results
+    us: Across the US
+  # The back button above a place's details.
+  back:
+    nearYou: Back to results near you
+    # {place} is a city or address, or a state's name.
+    to: "Back to {place}"
+    results: Back to results
+    plain: Back
+  # The popup over a place on the map.
+  popup:
+    # {id} is like "Q01557".
+    machine: "Machine {id}"
+    details: View details
+    directions: Directions
+  # Toasts when "Find my location" fails.
+  locate:
+    denied: Location is off
+    unavailable: Couldn't find your location
+    hint: Search a city or address to see what's nearby.
+  # Countries PokeFindr doesn't cover yet, greyed out on the map.
+  country:
+    tooltip: Not on PokeFindr yet
+    # The toast on clicking one. {name} is the country's name.
+    unsupported: "{name} isn't supported yet"
+    unsupportedUnnamed: This country isn't supported yet
+    coverage: PokeFindr covers the US for now. More countries are on the way.
+  # Credit for the outlines, in the map's attribution.
+  attribution: "Outlines: Natural Earth, US Census"
+  loadPlaceFailed: Couldn't load this place
+  loadLocationsFailed: Couldn't load vending machine locations. Please refresh to try again.
+  connection: Check your connection and try again.
+  # Adding a place while signed out.
+  addSignedOut:
+    title: Log in to add a place
+    body: Adding a card shop or event needs an account, so a moderator can check it.
+    panelBody: Log in to add a card shop or event. A moderator checks each one before it goes on the map.
+    login: Log in
+    cancel: Cancel
+  # After sending a place. {name} is what they called it.
+  sent:
+    title: Sent for review
+    body: "{name} shows as Pending review to you until a moderator checks it."
+  # A route the assistant planned, drawn on the map.
+  route:
+    failed: Couldn't show the route
+    gone: Its places aren't on the map anymore.
+    someGone: Some stops are gone
+    someGoneBody: They aren't on the map anymore, so the route skips them.
+    shown: Route on the map
+    shownBody: "{count, plural, one {# stop, in visiting order.} other {# stops, in visiting order.}}"
+    clear: Clear
+    # A numbered pin. {n} is its place in the route, {name} the place.
+    stop: "Stop {n}: {name}"
+  # MapLibre's own controls.
+  controls:
+    zoomIn: Zoom in
+    zoomOut: Zoom out
+    resetNorth: Drag to rotate map, click to reset north
+    findMyLocation: Find my location
+    locationNotAvailable: Location not available
+    enterFullscreen: Enter fullscreen
+    exitFullscreen: Exit fullscreen
+    toggleAttribution: Toggle attribution
+    mapFeedback: Map feedback
+    closePopup: Close popup
+    # Names the map itself.
+    map: Map
+    marker: Map marker
+  # The Filters button and its popover.
+  filters:
+    button: Filters
+    # The button's name when retailers are picked.
+    buttonCount: "{count, plural, one {Filters, # retailer} other {Filters, # retailers}}"
+    vendingTitle: Vending machines · retailer
+    vendingOff: Turn on vending machines to filter by retailer.
+    failed: Couldn't load retailers. Try again in a moment.
+    loading: Loading retailers…
+    shopsTitle: Card shops
+    shopsSoon: Open now, sells singles, hosts events. These filters arrive with real shop data.
+    eventsTitle: Events
+    eventsSoon: This week, this month, event type. Coming once events are real.
+    clear: Clear
+    done: Done
+  # The list for a searched place.
+  results:
+    # {places} is a count like "12 places"; {place} the place searched.
+    title: "{places} near {place}"
+    titlePending: "Places near {place}"
+    # {place} when it's the viewer's own position.
+    you: you
+    sortedFromCenter: Sorted by distance from the center
+    sortedFromYou: Sorted by distance from you
+    within: Within
+    failed: Couldn't load these results
+    tryAgain: Try again
+    loading: Loading results
+    # {radius} is like "5 mi" or "8 km".
+    nothingWithin: "Nothing within {radius}"
+    widen: "Widen to {radius}"
+    widenHint: Try a wider radius or turn on more types.
+    listLabel: "Places near {place}, closest first"
+    # Under a capped list: "Showing the closest 50 of 1,234."
+    truncated: "Showing the closest {shown} of {total}."
+  # A state's view.
+  state:
+    backToUs: Back to the US
+    nothingForTypes: Nothing here for the selected types
+    failed: Couldn't load this state's cities
+    loading: Loading cities
+    # {name} is the state.
+    empty: "Nothing in {name} yet"
+    emptyHint: Turn on more types above, or search a city.
+    listLabel: "Cities in {name} with the most places"
+  # The panel before a search.
+  us:
+    title: Across the US
+    subtitle: Search a city, or start from a highlight.
+    submissions: Your submissions
+    hotspots: Vending hotspots
+    # {count} is like "102 vending machines", {radius} like "10 mi".
+    hotspotSub: "{count} within {radius}"
+    events: Upcoming events
+    sample: Sample data
+    mostLocations: Most locations
+  # Places the viewer added, until a moderator checks them.
+  submissions:
+    pinLabel: New place's pin. Drag it to move it.
+    # A pending place on the map. {name} is its name.
+    pendingLabel: "{name}, pending review"
+    pendingTitle: "{name} · Pending review"
+    pending: Only you can see it until a moderator checks it.
+    approved: On the map for everyone.
+    ended: Ended
+    offMap: Off the map
+    notApproved: Not approved
+    over: It's over, so it's off the map.
+    gone: It isn't on the map anymore.
+    # Why a moderator didn't approve it.
+    rejectReasons:
+      duplicate: Duplicate of an existing place
+      not_real: Not a real or public place
+      wrong_details: Details are wrong
+      spam: Spam
+
+# A place's details panel.
+details:
+  directions: Directions
+  copyLink: Copy link
+  linkCopied: Link copied
+  copyThis: Copy this link
+  reportProblem: Report a problem
+  alsoNearby: Also nearby
+  # The facts table.
+  facts:
+    retailer: Retailer
+    address: Address
+    machineId: Machine ID
+    notListed: Not listed
+    source: Source
+    sourceValue: Pokémon Center retailer list
+    where: Where
+    location: Location
+    fromYou: From you
+    distance: Distance
+    # {distance} is like "0.4 mi", {place} the searched place.
+    distanceFrom: "{distance} from {place}"
+
+# Reviews on a place's details.
+reviews:
+  title: Reviews
+  # Under the place's name: "4.5 · 3 reviews". {average} is the rating.
+  summary: "{average} · {count, plural, one {# review} other {# reviews}}"
+  none: No reviews yet
+  failed: Couldn't load reviews.
+  tryAgain: Try again
+  loading: Loading reviews
+  # {kind}: vending, shop or event.
+  first: "Be the first to review this {kind, select, vending {vending machine} shop {card shop} other {event}}. Was it stocked? Was it easy to find?"
+  edit: Edit
+  delete: Delete
+  writeTitle: Write a review
+  editTitle: Edit your review
+  yourRating: Your rating
+  yourReview: Your review
+  placeholder: What did you find? Stock, restock day, where the machine is in the store…
+  pickRating: Pick a rating to post.
+  cancel: Cancel
+  save: Save changes
+  post: Post review
+  # "Log in to write a review."
+  login: "<link>Log in</link> to write a review."
+  deleteTitle: Delete this review?
+  # {place} is the place's name.
+  deleteBody: "Your rating for {place} will be removed. This can't be undone."
+  deleteBodyUnnamed: Your rating will be removed. This can't be undone.
+  # Toasts.
+  posted: Review posted
+  postedBody: It shows at the top of the reviews.
+  postFailed: Couldn't post your review
+  editFailed: Couldn't save your changes
+  deleteFailed: Couldn't delete your review
+  sessionEnded: Your session ended. Log in again and retry.
+  connection: Check your connection and try again.
+
+# "Report a problem" on a place's details. {kind}: vending, shop or event.
+report:
+  title: Report a problem
+  signedOut: "<link>Log in</link> to report a problem with this {kind, select, vending {vending machine} shop {card shop} other {event}}."
+  question: "What's wrong with this {kind, select, vending {vending machine} shop {card shop} other {event}}?"
+  reasons:
+    gone: It's gone or was removed
+    wrong_location: Wrong address or pin
+    empty: Empty for a long time
+    other: Something else
+  comment: What's wrong? (optional)
+  cancel: Cancel
+  send: Send report
+  failed: Couldn't send your report
+  sessionEnded: Your session ended. Log in again and retry.
+  tooMany: Too many reports today
+  tooManyBody: Thanks for helping. Try again tomorrow.
+  already: Already reported
+  alreadyBody: "You reported this {kind, select, vending {vending machine} shop {card shop} other {event}} today. Thanks."
+  sent: Report sent
+  # {reason} is one of the reasons above, lowercased in English.
+  sentBody: 'Thanks. We''ll check "{reason}" for this {kind, select, vending {vending machine} shop {card shop} other {event}}.'
+  connection: Check your connection and try again.
+
+# Add a place: a card shop or an event, in the map's panel.
+addPlace:
+  cancel: Cancel
+  back: Back
+  cancelAdding: Cancel adding a place
+  title: Add a place
+  # {kind}: shop or event.
+  titleKind: "{kind, select, shop {Add a card shop} other {Add an event}}"
+  steps:
+    label: Steps
+    # For screen readers, before each step's name.
+    position: "Step {n} of {total}: "
+    type: Type
+    location: Location
+    details: Details
+    review: Review
+  # Step 1.
+  type:
+    question: What are you adding?
+    shop: Card shop
+    shopBody: "A store that sells cards: singles, sealed product or supplies."
+    event: Event
+    eventBody: A tournament, league night, prerelease, card show or trade night.
+  # Step 2.
+  location:
+    hint: Or click the map to drop the pin there. Drag the pin to put it on the entrance.
+    # {lat} and {lng} are coordinates.
+    pin: "Pin at {lat}, {lng}"
+    search: Search an address
+    # An example address in the search box.
+    searchPlaceholder: 1450 Grant St, Denver
+    searchFailed: Search isn't working right now. Click the map instead.
+    results: Addresses
+    noMatch: No match. Try a street and city, or click the map.
+  # Step 3. Each field's label, and a hint under some.
+  fields:
+    optional: " (optional)"
+    name: Name
+    # Example names in the name box.
+    namePlaceholderShop: Mile High Cards
+    namePlaceholderEvent: League night
+    venue: Venue
+    venueHint: Where it's held, if it has a name.
+    # {zone} is like "Mountain Time".
+    localTime: "In the event's local time: {zone}"
+    # After localTime, until the state is filled in.
+    localTimeYours: ", yours. Fill in the state below to use the event's."
+    starts: Starts
+    ends: Ends
+    address: Street address
+    addressHintShop: Moderators check shops have one.
+    city: City
+    state: State
+    website: Website
+    hours: Hours
+    hoursHint: "For example: Mon–Sat 11 AM–8 PM"
+    sells: Sells
+    link: Link
+    linkHint: The organizer's page or sign-up.
+    entry: Entry
+    free: Free
+    paid: Paid
+  # What a card shop sells.
+  sells:
+    singles: Singles
+    sealed: Sealed product
+    supplies: Supplies
+    events: Plays events
+  # Step 4.
+  review:
+    name: Name
+    venue: Venue
+    when: When
+    address: Address
+    website: Website
+    hours: Hours
+    sells: Sells
+    link: Link
+    entry: Entry
+    notGiven: Not given
+    confirm: I checked these. This is a different place.
+    moderated: A moderator checks it before it goes on the map. Until then only you can see it, marked Pending review.
+  # Places close to the pin.
+  duplicates:
+    title: This might already be on the map
+    # A nearby place without a name.
+    unnamed: "{kind, select, shop {A card shop} other {An event}}"
+    yours: " (yours, waiting for review)"
+    # {meters} is a whole number.
+    away: "{meters} m away"
+  continue: Continue
+  placePin: Place the pin to continue
+  send: Send for review
+  sending: Sending…
+  # Next to a field.
+  errors:
+    check: Check this field.
+    startsAt: Pick when it starts.
+    hidden: Remove the hidden or control characters.
+    linkTooLong: Use a shorter link.
+    link: Enter a link starting with https://
+    tooLong: "Use at most {max} characters."
+    name: Enter a name.
+    city: Enter a city.
+    endBeforeStart: It has to end after it starts.
+    tooManyDays: "An event can last at most {days} days."
+  # Under the form.
+  form:
+    duplicates: Places like this are close by. Check them, then tick the box to send it anyway.
+    sessionEnded: Your session ended. Log in again to send this.
+    failed: Couldn't send it. Try again.
+    offline: Couldn't reach PokeFindr. Check your connection and try again.

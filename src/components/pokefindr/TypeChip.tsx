@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils"
 import { KINDS, type LocationKind } from "./kinds"
 import { useFormat } from "@/i18n/format"
+import { useTranslations } from "next-intl"
 
 interface TypeChipProps {
   kind: LocationKind
@@ -21,9 +22,10 @@ interface TypeChipProps {
  */
 export function TypeChip({ kind, pressed, onPressedChange, count, short, className }: TypeChipProps) {
   const f = useFormat()
+  const t = useTranslations("kinds")
   const meta = KINDS[kind]
   const Icon = meta.icon
-  const label = short ? meta.short : meta.label
+  const label = short ? t(`${kind}.short`) : t(`${kind}.label`)
   return (
     <button
       type="button"

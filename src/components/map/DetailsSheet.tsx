@@ -4,11 +4,12 @@ import type { ReactNode } from "react"
 import { ArrowLeftIcon, ExternalLinkIcon, LinkIcon } from "lucide-react"
 import { toast } from "sonner"
 import { KindDot } from "@/components/pokefindr/KindDot"
-import { KINDS, kindName, toKind } from "@/components/pokefindr/kinds"
+import { KINDS, toKind } from "@/components/pokefindr/kinds"
 import { Button } from "@/components/ui/button"
 import { milesBetween } from "@/lib/map/geo"
 import { track } from "@/lib/analytics"
 import { useDistance } from "@/i18n/useDistance"
+import { useTranslations } from "next-intl"
 
 /** The location the panel is about: a map feature's properties and point. */
 export interface DetailsLocation {
@@ -59,36 +60,38 @@ const subtitle = ({ address, city, state }: DetailsLocation) => [address, city, 
  */
 export function DetailsSheet({ location, backLabel, onBack, me, from, summary, actions, top, children }: DetailsSheetProps) {
   const { distance } = useDistance()
+  const t = useTranslations("details")
+  const tk = useTranslations("kinds")
   const kind = toKind(location.kind)
   const { longitude: lng, latitude: lat } = location
 
   const facts: [string, ReactNode][] =
     kind === "vending"
       ? [
-          ["Retailer", location.retailer],
+          [t("facts.retailer"), location.retailer],
           [
-            "Address",
+            t("facts.address"),
             <>
               {location.address}
               <br />
               {[location.city, location.state].filter(Boolean).join(", ")}
             </>,
           ],
-          ["Machine ID", location.machineID ? <span className="font-mono">{location.machineID}</span> : <span className="text-muted-foreground">Not listed</span>],
-          ["Source", "Pokémon Center retailer list"],
+          [t("facts.machineId"), location.machineID ? <span className="font-mono">{location.machineID}</span> : <span className="text-muted-foreground">{t("facts.notListed")}</span>],
+          [t("facts.source"), t("facts.sourceValue")],
         ]
       : [
-          ...(location.address ? ([["Address", location.address]] as [string, ReactNode][]) : []),
-          [kind === "event" ? "Where" : "Location", [location.city, location.state].filter(Boolean).join(", ")],
+          ...(location.address ? ([[t("facts.address"), location.address]] as [string, ReactNode][]) : []),
+          [kind === "event" ? t("facts.where") : t("facts.location"), [location.city, location.state].filter(Boolean).join(", ")],
         ]
-  if (me) facts.push(["From you", distance(milesBetween(me.lng, me.lat, lng, lat))])
-  if (from) facts.push(["Distance", `${distance(milesBetween(from.lng, from.lat, lng, lat))} from ${from.label}`])
+  if (me) facts.push([t("facts.fromYou"), distance(milesBetween(me.lng, me.lat, lng, lat))])
+  if (from) facts.push([t("facts.distance"), t("facts.distanceFrom", { distance: distance(milesBetween(from.lng, from.lat, lng, lat)), place: from.label })])
 
   const copyLink = () => {
     const link = window.location.href
     navigator.clipboard.writeText(link).then(
-      () => toast.success("Link copied", { description: link }),
-      () => toast("Copy this link", { description: link }),
+      () => toast.success(t("linkCopied"), { description: link }),
+      () => toast(t("copyThis"), { description: link }),
     )
   }
 
@@ -101,7 +104,7 @@ export function DetailsSheet({ location, backLabel, onBack, me, from, summary, a
         </Button>
         <div className={`inline-flex items-center gap-2 text-caption font-semibold ${KINDS[kind].text}`}>
           <KindDot kind={kind} />
-          {kindName(kind)}
+          {tk(`${kind}.name`)}
         </div>
         <h2 className="text-heading text-foreground">{location.retailer}</h2>
         <p className="text-body text-muted-foreground">{subtitle(location)}</p>
@@ -109,13 +112,13 @@ export function DetailsSheet({ location, backLabel, onBack, me, from, summary, a
         <div className="flex flex-wrap gap-1.5 pt-1">
           <Button asChild size="sm">
             <a href={directionsUrl(location)} target="_blank" rel="noopener noreferrer" onClick={() => track("directions_click", { kind })}>
-              Directions
+              {t("directions")}
               <ExternalLinkIcon aria-hidden />
             </a>
           </Button>
           <Button type="button" variant="outline" size="sm" onClick={copyLink}>
             <LinkIcon aria-hidden />
-            Copy link
+            {t("copyLink")}
           </Button>
           {actions}
         </div>

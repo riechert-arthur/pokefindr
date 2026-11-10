@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { render } from "../../helpers/intl"
+import { message, render } from "../../helpers/intl"
 
 const toast = vi.fn()
 vi.mock("sonner", () => ({ toast: (...args: unknown[]) => toast(...args) }))
@@ -44,7 +44,11 @@ vi.mock("@/components/map/engine", () => ({
   },
 }))
 
-import { AUTO_LOCATE_TRIES, LOCATE_GIVE_UP_MS, LocateControl, LOCATION_DENIED, LOCATION_UNAVAILABLE } from "@/components/map/LocateControl"
+import { AUTO_LOCATE_TRIES, LOCATE_GIVE_UP_MS, LocateControl } from "@/components/map/LocateControl"
+
+const m = message()
+const LOCATION_DENIED = { title: m("map.locate.denied"), description: m("map.locate.hint") }
+const LOCATION_UNAVAILABLE = { title: m("map.locate.unavailable"), description: m("map.locate.hint") }
 
 afterEach(() => {
   delete (globalThis as { __ctrl?: unknown }).__ctrl

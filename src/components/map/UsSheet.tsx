@@ -11,6 +11,7 @@ import type { MySubmission } from "@/lib/submissions/schemas"
 import { SubmissionRows } from "./MySubmissions"
 import { useFormat } from "@/i18n/format"
 import { useDistance } from "@/i18n/useDistance"
+import { useTranslations } from "next-intl"
 
 /** A state and its count for the shown kinds. */
 export interface StateTotal {
@@ -76,6 +77,7 @@ const iconBox = "grid size-8 shrink-0 place-items-center rounded-lg bg-muted gro
 export function UsSheet({ highlights, states, kinds, onHotspot, onEvent, onState, submissions, onSubmission }: UsSheetProps) {
   const f = useFormat()
   const { radius: radiusText } = useDistance()
+  const t = useTranslations("map.us")
   const hotspots = kinds.includes("vending") ? (highlights?.hotspots ?? []) : []
   const events = kinds.includes("event") ? (highlights?.events ?? []) : []
   const top = states.filter((s) => s.count > 0).slice(0, 5)
@@ -83,17 +85,17 @@ export function UsSheet({ highlights, states, kinds, onHotspot, onEvent, onState
   return (
     <>
       <div className="border-b border-border px-4 pb-2.5 pt-3.5">
-        <h2 className="text-subheading text-foreground">Across the US</h2>
-        <p className="text-body text-muted-foreground">Search a city, or start from a highlight.</p>
+        <h2 className="text-subheading text-foreground">{t("title")}</h2>
+        <p className="text-body text-muted-foreground">{t("subtitle")}</p>
       </div>
       <div className="min-h-0 overflow-y-auto p-1.5">
         {submissions && submissions.length > 0 && onSubmission && (
-          <Section icon={<SendIcon className="size-3.5" aria-hidden />} label="Your submissions">
+          <Section icon={<SendIcon className="size-3.5" aria-hidden />} label={t("submissions")}>
             <SubmissionRows submissions={submissions} onOpen={onSubmission} />
           </Section>
         )}
         {hotspots.length > 0 && (
-          <Section icon={<FlameIcon className="size-3.5" aria-hidden />} label="Vending hotspots">
+          <Section icon={<FlameIcon className="size-3.5" aria-hidden />} label={t("hotspots")}>
             {hotspots.map((h) => (
               <Row
                 key={`${h.city}-${h.state}`}
@@ -103,7 +105,7 @@ export function UsSheet({ highlights, states, kinds, onHotspot, onEvent, onState
                   </span>
                 }
                 title={`${h.city}, ${h.state}`}
-                sub={`${f.kindCount("vending", h.count)} within ${radiusText(HOTSPOT_RADIUS_MILES)}`}
+                sub={t("hotspotSub", { count: f.kindCount("vending", h.count), radius: radiusText(HOTSPOT_RADIUS_MILES) })}
                 onClick={() => onHotspot(h)}
               />
             ))}
@@ -112,8 +114,8 @@ export function UsSheet({ highlights, states, kinds, onHotspot, onEvent, onState
         {events.length > 0 && (
           <Section
             icon={<CalendarDaysIcon className="size-3.5" aria-hidden />}
-            label="Upcoming events"
-            badge={events.some((e) => e.isSample) && <StatusBadge status="sample">Sample data</StatusBadge>}
+            label={t("events")}
+            badge={events.some((e) => e.isSample) && <StatusBadge status="sample">{t("sample")}</StatusBadge>}
           >
             {events.map((e) => (
               <Row
@@ -128,7 +130,7 @@ export function UsSheet({ highlights, states, kinds, onHotspot, onEvent, onState
           </Section>
         )}
         {top.length > 0 && (
-          <Section icon={<MapIcon className="size-3.5" aria-hidden />} label="Most locations">
+          <Section icon={<MapIcon className="size-3.5" aria-hidden />} label={t("mostLocations")}>
             {top.map((s) => (
               <Row
                 key={s.code}

@@ -1,14 +1,21 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 import type { LocationFeatureCollection } from "@/lib/types/locations"
+import { useTranslations } from "next-intl"
 
 const EMPTY: LocationFeatureCollection = { type: "FeatureCollection", features: [] }
 
 /** Loads the map's locations from GET /api/locations. */
 export function useLocations() {
   const [collection, setCollection] = useState<LocationFeatureCollection>(EMPTY)
+  const t = useTranslations("map")
+  // Read at the error, so a new translator doesn't load everything again.
+  const tRef = useRef(t)
+  useEffect(() => {
+    tRef.current = t
+  })
 
   useEffect(() => {
     const controller = new AbortController()
@@ -21,7 +28,7 @@ export function useLocations() {
       .catch((err: unknown) => {
         if (controller.signal.aborted) return
         console.error(err)
-        toast.error("Couldn't load vending machine locations. Please refresh to try again.")
+        toast.error(tRef.current("loadLocationsFailed"))
       })
 
     return () => controller.abort()
