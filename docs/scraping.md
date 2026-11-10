@@ -78,3 +78,33 @@ too: they index pages, not the API.
   everything.
 - **BotID's script** is proxied through our domain under `/149e9513-…` (`withBotId` in
   `next.config.ts`); the middleware's matcher skips that path.
+
+## Shared rate limiter (#199)
+
+Behind the firewall, the data routes keep their own per-client limits, in a bucket every server
+instance shares, so the limit holds however many instances are running. Each data route starts
+with `guardRoute()` (`src/server/api-rate-limit.ts`): the client's limit, and BotID where the
+route is guarded, side by side. Over the limit is a 429 with `Retry-After`.
+
+| Rule | Routes | Limit |
+| --- | --- | --- |
+| `locations` | every `GET /api/locations*`, `/api/highlights` | 40 at once, 120 a minute |
+| `geocode` | `/api/geocode` | 20 at once, 60 a minute |
+
+- **The client** is its IP, and an IPv6 address by its /64 (`rateLimitKey()`), since one home
+  connection or server usually holds a whole /64. On Vercel the platform sets `X-Forwarded-For`,
+  so a client can't pick its own; off Vercel, run it behind a proxy that does.
+- **Shared IPs.** Everyone behind one IPv4 (a campus, a carrier's NAT) shares a bucket, here and in
+  the firewall. 120 a minute is several busy people's worth; raise both if logs show real users
+  getting 429s.
+- **The store** is the `SharedRateLimiter` port (`src/server/ports/rate-limiter.ts`), chosen by
+  `RATE_LIMIT_STORE` in `src/server/container.ts`: `postgres` in production (the
+  `api_rate_limits` table, one upsert per request) and `memory` for local dev and tests. A
+  client an instance has just refused is refused again from memory until its `Retry-After`, so a
+  scraper's burst doesn't queue on its row. Idle rows are deleted nightly by the
+  `prune-rate-limits` job. A Redis adapter would slot in the same way if Postgres became the
+  bottleneck.
+- **If the store fails or takes over 300 ms**, the request goes through and the error is logged:
+  an outage of the limiter shouldn't take the map down. The firewall's limits still apply.
+- The assistant, MCP and feedback limits are per user and stay in memory (`tokenBucket`, which
+  shares its bucket math with the memory adapter).

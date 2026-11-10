@@ -138,6 +138,18 @@ export const authRateLimits = pgTable("auth_rate_limits", {
   lastRequest: bigint("last_request", { mode: "number" }).notNull(),
 })
 
+/** The API's rate-limit buckets (#199), shared by every server instance: one per rule and client. */
+export const apiRateLimits = pgTable(
+  "api_rate_limits",
+  {
+    key: text("key").primaryKey(),
+    tokens: doublePrecision("tokens").notNull(),
+    allowed: boolean("allowed").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("api_rate_limits_updated_at_idx").on(t.updatedAt)],
+)
+
 // ── MCP OAuth (#134): Better Auth's jwt and mcp plugins ──────────────────
 
 const tz = (name: string) => timestamp(name, { withTimezone: true })

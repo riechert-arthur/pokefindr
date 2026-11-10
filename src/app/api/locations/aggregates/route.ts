@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getRegionCounts } from "@/server/services/region-counts"
 import { retailerParam } from "@/lib/locations/search"
+import { guardRoute, RATE_RULES } from "@/server/api-rate-limit"
 
 // Read at request time; the CDN cache below keeps that to about once an hour.
 export const dynamic = "force-dynamic"
@@ -13,6 +14,8 @@ export const dynamic = "force-dynamic"
  *   vending machines count only for those retailers (as on the map).
  */
 export async function GET(request: NextRequest) {
+  const blocked = await guardRoute(request, RATE_RULES.locations)
+  if (blocked) return blocked
   const retailers = retailerParam.parse(request.nextUrl.searchParams.get("retailer") ?? undefined)
   try {
     return NextResponse.json(

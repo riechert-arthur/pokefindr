@@ -1036,5 +1036,6 @@ apiErrors:
   offline: No pudimos conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.
   status: "La solicitud falló con el código {status}"
   unexpected: Ocurrió un error inesperado
+  tooManyRequests: Demasiadas solicitudes. Espera un momento e inténtalo de nuevo.
   botBlocked: No pudimos confirmar que esto vino de tu navegador. Recarga la página e inténtalo de nuevo.
   invalidInput: Revisa lo que escribiste e inténtalo de nuevo.

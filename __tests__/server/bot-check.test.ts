@@ -47,7 +47,7 @@ describe("BotID on the location data (#198)", () => {
     expect(BOT_CHECKED_PATHS).toEqual(expect.arrayContaining(["/api/locations", "/api/locations/near", "/api/locations/search", "/api/geocode"]))
     for (const path of BOT_CHECKED_PATHS) {
       expect(path, "exact paths only").not.toContain("*")
-      expect(readFileSync(join(ROOT, "src/app", path, "route.ts"), "utf8"), path).toContain("await refuseBots()")
+      expect(readFileSync(join(ROOT, "src/app", path, "route.ts"), "utf8"), path).toMatch(/guardRoute\(request, RATE_RULES\.\w+, \{ bots: true \}\)/)
     }
   })
 

@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { getLocationsNear } from "@/server/services/locations"
 import { nearQuerySchema } from "@/lib/locations/search"
-import { refuseBots } from "@/server/bot-check"
+import { guardRoute, RATE_RULES } from "@/server/api-rate-limit"
 
 export const dynamic = "force-dynamic"
 
@@ -11,8 +11,8 @@ export const dynamic = "force-dynamic"
  *   with `distance` in miles, plus `counts` per kind and the `total`.
  */
 export async function GET(request: NextRequest) {
-  const refused = await refuseBots()
-  if (refused) return refused
+  const blocked = await guardRoute(request, RATE_RULES.locations, { bots: true })
+  if (blocked) return blocked
   const params = request.nextUrl.searchParams
   const parsed = nearQuerySchema.safeParse({
     lng: params.get("lng") ?? "",

@@ -2,14 +2,10 @@ import { NextResponse, type NextRequest } from "next/server"
 import { getGeocoder } from "@/server/container"
 import { GeocoderError } from "@/server/ports/geocoder"
 import { geocodeQuerySchema } from "@/lib/geocode/query"
-import { clientIp, rateLimitKey, tokenBucket } from "@/server/lib/rate-limit"
-import { refuseBots } from "@/server/bot-check"
+import { guardRoute, RATE_RULES } from "@/server/api-rate-limit"
 
 // Answers vary by query; the CDN caches each one (below).
 export const dynamic = "force-dynamic"
-
-/** Type-ahead sends a request every few keystrokes: room for fast typing, not for scraping. */
-const limiter = tokenBucket({ perMinute: 60, burst: 20 })
 
 /**
  * GET /api/geocode?q=Denver&near=-105.0,39.7&limit=5
@@ -27,12 +23,8 @@ export async function GET(request: NextRequest) {
     const message = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")
     return NextResponse.json({ error: `Invalid query. ${message}` }, { status: 400 })
   }
-  if (!limiter.take(rateLimitKey(clientIp(request.headers)))) {
-    return NextResponse.json({ error: "Too many searches. Try again in a minute." }, { status: 429, headers: { "Retry-After": "60" } })
-  }
-  // After the free checks: BotID is a call to Vercel.
-  const refused = await refuseBots()
-  if (refused) return refused
+  const blocked = await guardRoute(request, RATE_RULES.geocode, { bots: true })
+  if (blocked) return blocked
 
   const { q, near, limit } = parsed.data
   try {

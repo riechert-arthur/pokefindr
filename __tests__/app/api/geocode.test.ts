@@ -4,7 +4,13 @@ import { NextRequest } from "next/server"
 
 vi.mock("server-only", () => ({}))
 const search = vi.fn()
-vi.mock("@/server/container", () => ({ getGeocoder: () => ({ search }) }))
+// One limiter for the file, its clock stopped so buckets don't refill mid-test.
+const limiter = vi.hoisted(() => ({ current: null as unknown }))
+vi.mock("@/server/container", async () => {
+  const { MemoryRateLimiter } = await import("@/server/adapters/rate-limiter/memory")
+  limiter.current ??= new MemoryRateLimiter(() => 0)
+  return { getGeocoder: () => ({ search }), getRateLimiter: () => limiter.current }
+})
 
 import { GET } from "@/app/api/geocode/route"
 import { GeocoderError } from "@/server/ports/geocoder"
@@ -47,7 +53,9 @@ describe("GET /api/geocode", () => {
     expect(statuses.slice(0, 20).every((s) => s === 200)).toBe(true)
     const limited = await get("q=Denver", "192.0.2.1")
     expect(limited.status).toBe(429)
-    expect(limited.headers.get("retry-after")).toBe("60")
+    // A token a second at 60 a minute.
+    expect(limited.headers.get("retry-after")).toBe("1")
+    expect(await limited.json()).toMatchObject({ code: "tooManyRequests" })
     // Someone else is unaffected.
     expect((await get("q=Denver", "192.0.2.2")).status).toBe(200)
   })

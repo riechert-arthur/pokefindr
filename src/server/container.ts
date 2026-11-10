@@ -5,6 +5,10 @@ import { identityTokenSource } from "@/server/adapters/claude/identity"
 import { getServerConfig, type ServerConfig } from "@/server/config"
 import type { Geocoder } from "@/server/ports/geocoder"
 import type { Mailer } from "@/server/ports/mailer"
+import type { SharedRateLimiter } from "@/server/ports/rate-limiter"
+import { MemoryRateLimiter } from "@/server/adapters/rate-limiter/memory"
+import { PostgresRateLimiter } from "@/server/adapters/rate-limiter/postgres"
+import { getDb } from "@/server/db/client"
 import { ConsoleMailer } from "@/server/adapters/mailer/console"
 import { SmtpMailer } from "@/server/adapters/mailer/smtp"
 import { FakeGeocoder } from "@/server/adapters/geocoder/fake"
@@ -42,7 +46,17 @@ export function makeMailer(config: ServerConfig): Mailer {
   }
 }
 
+export function makeRateLimiter(config: ServerConfig): SharedRateLimiter {
+  switch (config.RATE_LIMIT_STORE) {
+    case "postgres":
+      return new PostgresRateLimiter(getDb)
+    case "memory":
+      return new MemoryRateLimiter()
+  }
+}
+
 let geocoder: Geocoder | undefined
+let rateLimiter: SharedRateLimiter | undefined
 let mailer: Mailer | undefined
 let anthropic: Anthropic | null | undefined
 
@@ -56,6 +70,12 @@ export function getGeocoder(): Geocoder {
 export function getMailer(): Mailer {
   mailer ??= makeMailer(getServerConfig())
   return mailer
+}
+
+/** The API's rate limiter (#199), built once per server instance. */
+export function getRateLimiter(): SharedRateLimiter {
+  rateLimiter ??= makeRateLimiter(getServerConfig())
+  return rateLimiter
 }
 
 const CLAUDE_OPTIONS = { maxRetries: 1, timeout: 60_000 } as const
