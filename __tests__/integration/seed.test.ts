@@ -4,6 +4,8 @@ import { readSeedLocations, seedLocations } from "../../scripts/db/seedLocations
 import { SAMPLE_EVENTS, SAMPLE_SOURCE, seedSampleHighlights } from "../../scripts/db/seedHighlights"
 import { DEV_ACCOUNTS, DEV_PASSWORD, DEV_USER, seedDevUsers } from "../../scripts/db/seedDevUsers"
 import { verifyPassword } from "better-auth/crypto"
+import { NextResponse } from "next/server"
+import { requireEntitlement, roleOf } from "@/server/admin/access"
 import { getDb } from "@/server/db/client"
 import { getLocationsNear } from "@/server/services/locations"
 import { getUpcomingEvents } from "@/server/services/highlights"
@@ -113,6 +115,16 @@ describe("seedDevUsers", () => {
     await seedDevUsers(sql)
     const [row] = await sql`select role from profiles where id = ${DEV_USER.id}`
     expect(row.role).toBe("admin")
+  })
+
+  it("adds a moderator who can moderate but not open the admin-only sections", async () => {
+    await seedDevUsers(sql)
+    const mod = DEV_ACCOUNTS.find((a) => a.email === "moderator@pokefindr.local")!
+    expect(await roleOf(mod.id)).toBe("moderator")
+    const as = () => new Request("http://localhost:3000/api/admin/jobs", { headers: { "x-user-id": mod.id } })
+    const jobs = await requireEntitlement(as(), "admin.jobs")
+    expect(jobs instanceof NextResponse && jobs.status).toBe(404)
+    expect(await requireEntitlement(as(), "moderation.view")).toEqual({ userId: mod.id, role: "moderator" })
   })
 
   it("puts a role changed by hand back to the seeded value", async () => {
