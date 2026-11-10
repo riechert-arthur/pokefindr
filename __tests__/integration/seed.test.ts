@@ -7,6 +7,7 @@ import { verifyPassword } from "better-auth/crypto"
 import { NextResponse } from "next/server"
 import { SAMPLE_REPORT, SAMPLE_SUBMISSIONS, seedSampleModeration } from "../../scripts/db/seedModeration"
 import { approveSubmission, listQueue } from "@/server/services/moderation"
+import { addLocationReport } from "@/server/services/reports"
 import { requireEntitlement, roleOf } from "@/server/admin/access"
 import { getDb } from "@/server/db/client"
 import { getLocationsNear } from "@/server/services/locations"
@@ -95,8 +96,8 @@ describe("seedSampleHighlights", () => {
 describe("seedDevUsers", () => {
   const outcomes = async () => (await seedDevUsers(sql)).map((r) => [r.account.email, r.outcome])
   const accounts = () =>
-    sql<{ email: string; username: string; role: string; onboarded: boolean; email_verified: boolean }[]>`
-      select u.email, p.username, p.role, p.onboarded, u.email_verified
+    sql<{ email: string; username: string; role: string; locale: string | null; onboarded: boolean; email_verified: boolean }[]>`
+      select u.email, p.username, p.role, p.locale, p.onboarded, u.email_verified
       from users u join profiles p on p.id = u.id order by u.email`
 
   it("adds every account once, then changes nothing", async () => {
@@ -107,8 +108,10 @@ describe("seedDevUsers", () => {
     expect(after).toEqual(
       [...DEV_ACCOUNTS]
         .sort((a, b) => a.email.localeCompare(b.email))
-        .map((a) => ({ email: a.email, username: a.username, role: a.role, onboarded: true, email_verified: true })),
+        .map((a) => ({ email: a.email, username: a.username, role: a.role, locale: "locale" in a ? a.locale : null, onboarded: true, email_verified: true })),
     )
+    expect(DEV_ACCOUNTS.filter((a) => a.role === "member").length).toBeGreaterThanOrEqual(3)
+    expect(after.filter((a) => a.locale === "es")).toHaveLength(1)
     const [{ count }] = await sql<{ count: number }[]>`select count(*)::int as count from accounts where provider_id = 'credential'`
     expect(count).toBe(DEV_ACCOUNTS.length)
   })
@@ -153,17 +156,6 @@ describe("seedDevUsers", () => {
     expect(row).toEqual({ role: DEV_USER.role, onboarded: true })
   })
 
-  it("adds every member once, as a member, one of them in Spanish", async () => {
-    const members = DEV_ACCOUNTS.filter((a) => a.role === "member")
-    expect(members.length).toBeGreaterThanOrEqual(3)
-    await seedDevUsers(sql)
-    await seedDevUsers(sql)
-    const rows = await sql<{ email: string; role: string; locale: string | null }[]>`
-      select u.email, p.role, p.locale from users u join profiles p on p.id = u.id where u.email in ${sql(members.map((m) => m.email))} order by u.email`
-    expect(rows.map((r) => [r.email, r.role])).toEqual(members.map((m) => [m.email, "member"]).sort())
-    expect(rows.filter((r) => r.locale === "es")).toHaveLength(1)
-  })
-
   it("puts a role changed by hand back to the seeded value", async () => {
     await seedDevUsers(sql)
     await sql`update profiles set role = 'member' where id = ${DEV_USER.id}`
@@ -195,6 +187,14 @@ describe("seedSampleModeration", () => {
     expect(await listQueue(undefined, getDb(), now)).toHaveLength(SAMPLE_SUBMISSIONS.length)
     const [report] = await sql`select reason, resolved_at, user_id from status_reports where id = ${SAMPLE_REPORT.id}`
     expect(report).toMatchObject({ reason: "gone", resolved_at: null, user_id: SAMPLE_REPORT.by })
+  })
+
+  it("doesn't count toward the members' daily limits", async () => {
+    await seedLocations(sql, readSeedLocations())
+    await seedDevUsers(sql)
+    await seedSampleModeration(sql)
+    const [machine] = await sql`select id from locations where "machineID" = ${SAMPLE_REPORT.machineID}`
+    expect(await addLocationReport({ locationId: machine.id, userId: SAMPLE_REPORT.by, reason: "gone" }, getDb())).toBe("added")
   })
 
   it("can be approved, and stays decided on re-seeding", async () => {
