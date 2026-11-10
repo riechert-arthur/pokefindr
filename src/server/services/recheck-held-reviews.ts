@@ -1,7 +1,7 @@
 import "server-only"
 import { z } from "zod/v3"
 import { defineJob } from "@/server/lib/jobs/types"
-import { recheckFailedReviews } from "./review-moderation"
+import { recheckFailedReviews, recheckSoon } from "./review-moderation"
 
 /**
  * Runs daily (vercel.json), and a few minutes after a check fails. Safe to repeat.
@@ -14,6 +14,8 @@ export const recheckHeldReviewsJob = defineJob({
   description: "Checks again held reviews whose moderation check failed",
   schema: z.unknown(),
   async run() {
-    return recheckFailedReviews()
+    const result = await recheckFailedReviews()
+    if (result.again) recheckSoon()
+    return result
   },
 })

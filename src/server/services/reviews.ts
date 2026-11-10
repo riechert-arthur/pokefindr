@@ -102,8 +102,10 @@ async function checkReview(text: string, context: string, moderator?: ContentMod
   return moderate(text, { kind: "review", context, timeoutMs: REVIEW_CHECK_TIMEOUT_MS, fallback: "hold", moderator })
 }
 
+type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0]
+
 /** Stores a check with its review, and logs what it cost (no text). */
-export async function recordReviewCheck(ratingId: string, check: ModerationResult, db: Database) {
+export async function recordReviewCheck(ratingId: string, check: ModerationResult, db: Database | Tx) {
   await db.insert(reviewModerationChecks).values({
     ratingId,
     verdict: check.verdict,
@@ -150,9 +152,13 @@ export async function addReview(
   // Checked before the insert, so a held review is never visible, not even for a moment.
   const check = await checkReview(review.text, reviewContext(location), moderator)
   const status = statusAfter(check)
-  const [added] = await db.insert(locationRatings).values({ ...review, status }).returning({ id: locationRatings.id })
-  if (check) await recordReviewCheck(added.id, check, db)
-  return { id: added.id, status, checkFailed: Boolean(check?.failed) }
+  // One transaction: a held review always has the check that held it, so a failed one is found by the recheck.
+  const id = await db.transaction(async (tx) => {
+    const [added] = await tx.insert(locationRatings).values({ ...review, status }).returning({ id: locationRatings.id })
+    if (check) await recordReviewCheck(added.id, check, tx)
+    return added.id
+  })
+  return { id, status, checkFailed: Boolean(check?.failed) }
 }
 
 /** The user's own reviews, newest first, with the reviewed location's name. */
@@ -189,8 +195,11 @@ export async function listUserReviews(userId: string, db: Database = getDb()) {
 /**
  * Updates one of the user's reviews, checking the new text again (#253).
  * Returns its status afterwards, or null when it isn't theirs or doesn't
- * exist. A review a moderator removed goes back to the queue whatever the
- * check says, so an edit can't undo a moderator's decision on its own.
+ * exist. A rating-only change keeps the text's status and skips the check.
+ * A review a moderator removed goes back to the queue whatever the check
+ * says, and keeps who removed it, so neither an edit nor the recheck job can
+ * undo a moderator's decision on its own. The update only applies to the
+ * status it was decided from: a moderator acting during the check wins.
  */
 export async function updateReview(
   reviewId: string,
@@ -199,23 +208,60 @@ export async function updateReview(
   db: Database = getDb(),
   moderator?: ContentModerator,
 ): Promise<{ status: ReviewStatus; checkFailed: boolean } | null> {
-  const [current] = await db
-    .select({ status: locationRatings.status, kind: locations.kind, name: locations.name, retailer: locations.retailer, city: locations.city, state: locations.state })
-    .from(locationRatings)
-    .innerJoin(locations, eq(locations.id, locationRatings.locationId))
-    .where(and(eq(locationRatings.id, reviewId), eq(locationRatings.userId, userId)))
+  const mine = and(eq(locationRatings.id, reviewId), eq(locationRatings.userId, userId))
+  const read = async () => {
+    const [row] = await db
+      .select({
+        status: locationRatings.status,
+        text: locationRatings.text,
+        moderatedBy: locationRatings.moderatedBy,
+        moderatedAt: locationRatings.moderatedAt,
+        kind: locations.kind,
+        name: locations.name,
+        retailer: locations.retailer,
+        city: locations.city,
+        state: locations.state,
+      })
+      .from(locationRatings)
+      .innerJoin(locations, eq(locations.id, locationRatings.locationId))
+      .where(mine)
+    return row
+  }
+  let current = await read()
   if (!current) return null
+  if ((current.text ?? "") === changes.text) {
+    // Same text, same verdict: no paid check, and an approved review stays up.
+    const updated = await db.update(locationRatings).set({ rating: changes.rating }).where(mine).returning({ status: locationRatings.status })
+    return updated[0] ? { status: updated[0].status, checkFailed: false } : null
+  }
   const check = await checkReview(changes.text, reviewContext(current), moderator)
-  const status: ReviewStatus = current.status === "removed" ? "held" : statusAfter(check)
-  const updated = await db
-    .update(locationRatings)
-    // A fresh decision: the last moderator's no longer applies to this text.
-    .set({ ...changes, status, moderatedBy: null, moderatedAt: null })
-    .where(and(eq(locationRatings.id, reviewId), eq(locationRatings.userId, userId)))
-    .returning({ id: locationRatings.id })
-  if (updated.length === 0) return null
-  if (check) await recordReviewCheck(reviewId, check, db)
-  return { status, checkFailed: Boolean(check?.failed) }
+  // A moderator may decide while the check runs: then decide again from what they did.
+  for (let attempt = 0; attempt < 3 && current; attempt++) {
+    const was = current
+    const removed = was.status === "removed"
+    const status: ReviewStatus = removed ? "held" : statusAfter(check)
+    const applied = await db.transaction(async (tx) => {
+      const updated = await tx
+        .update(locationRatings)
+        // A fresh decision for new text, except a removal: who removed it stays, so the recheck leaves it to a moderator.
+        .set({ ...changes, status, ...(!removed && { moderatedBy: null, moderatedAt: null }) })
+        .where(
+          and(
+            mine,
+            eq(locationRatings.status, was.status),
+            was.moderatedBy ? eq(locationRatings.moderatedBy, was.moderatedBy) : sql`${locationRatings.moderatedBy} is null`,
+          ),
+        )
+        .returning({ id: locationRatings.id })
+      if (updated.length === 0) return false
+      if (check) await recordReviewCheck(reviewId, check, tx)
+      return true
+    })
+    if (applied) return { status, checkFailed: Boolean(check?.failed) }
+    current = await read()
+  }
+  if (!current) return null
+  throw new Error("the review kept changing while it was being edited")
 }
 
 /** Deletes one of the user's reviews. Returns false when it isn't theirs or doesn't exist. */

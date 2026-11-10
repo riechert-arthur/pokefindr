@@ -142,8 +142,36 @@ describe("checking reviews", () => {
     expect(await recheckFailedReviews(getDb(), new FakeModerator())).toMatchObject({ found: 2, published: 2 })
     expect((await listLocationReviews(store)).map((r) => r.text).sort()).toEqual(["Good spot.", "Restocked Tuesday."])
     // Nothing left to recheck.
-    expect(await recheckFailedReviews(getDb(), new FakeModerator())).toMatchObject({ found: 0 })
+    expect(await recheckFailedReviews(getDb(), new FakeModerator())).toMatchObject({ found: 0, again: false })
   }, 15_000)
+
+  it("asks to run again while the moderator is down or a run's worth is left", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {})
+    await addReview({ locationId: store, userId: AUTHOR, rating: 5, text: "Restocked Tuesday." }, getDb(), down)
+    await addReview({ locationId: store, userId: OTHER, rating: 4, text: "Good spot." }, getDb(), down)
+    expect(await recheckFailedReviews(getDb(), down)).toMatchObject({ stillFailing: 1, again: true })
+    expect(await recheckFailedReviews(getDb(), new FakeModerator(), 1)).toMatchObject({ found: 1, published: 1, again: true })
+    expect(await recheckFailedReviews(getDb(), new FakeModerator(), 1)).toMatchObject({ found: 1, published: 1, again: true })
+    expect(await recheckFailedReviews(getDb(), new FakeModerator(), 1)).toMatchObject({ found: 0, again: false })
+  })
+
+  it("doesn't save a recheck of text the author changed meanwhile", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {})
+    const a = (await addReview({ locationId: store, userId: AUTHOR, rating: 5, text: "Restocked Tuesday." }, getDb(), down))!.id
+    const editing: ContentModerator = {
+      check: async (text, opts) => {
+        // The author edits while the recheck runs, and the edit's own check fails too.
+        await updateReview(a, AUTHOR, { rating: 5, text: "Restocked Wednesday." }, getDb(), down)
+        return new FakeModerator().check(text, opts)
+      },
+    }
+    expect(await recheckFailedReviews(getDb(), editing)).toMatchObject({ found: 1, published: 0 })
+    const checks = await checksOf(a)
+    expect(checks).toHaveLength(2)
+    expect(checks.every((c) => c.failed)).toBe(true)
+    // Its latest check still failed, so the next run picks it up.
+    expect(await recheckFailedReviews(getDb(), new FakeModerator())).toMatchObject({ found: 1, published: 1 })
+  })
 
   it("doesn't recheck reviews held on purpose or already decided", async () => {
     const held = await addReview({ locationId: store, userId: AUTHOR, rating: 1, text: ABUSIVE })
@@ -216,7 +244,47 @@ describe("the held-reviews queue", () => {
     await decideReview(a, "remove", MOD)
     expect(await updateReview(a, AUTHOR, { rating: 3, text: "Fine, I take it back." })).toMatchObject({ status: "held" })
     const [row] = await getDb().select().from(locationRatings).where(eq(locationRatings.id, a))
-    expect(row).toMatchObject({ status: "held", moderatedBy: null, moderatedAt: null })
+    // Who removed it stays, so the recheck job leaves it to a moderator.
+    expect(row).toMatchObject({ status: "held", moderatedBy: MOD })
+  })
+
+  it("doesn't let the recheck publish a removed review edited during an outage, or an undone decision", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {})
+    const removed = (await addReview({ locationId: store, userId: AUTHOR, rating: 1, text: ABUSIVE }))!.id
+    await decideReview(removed, "remove", MOD)
+    expect(await updateReview(removed, AUTHOR, { rating: 3, text: "Fine, I take it back." }, getDb(), down)).toEqual({ status: "held", checkFailed: true })
+
+    const undone = (await addReview({ locationId: store, userId: OTHER, rating: 5, text: "Restocked." }, getDb(), down))!.id
+    await decideReview(undone, "approve", MOD)
+    await decideReview(undone, "undo", MOD)
+
+    expect(await recheckFailedReviews(getDb(), new FakeModerator())).toMatchObject({ found: 0, published: 0 })
+    expect(await listLocationReviews(store)).toEqual([])
+    expect((await listHeldReviews(MOD)).map((r) => r.id).sort()).toEqual([removed, undone].sort())
+  })
+
+  it("keeps a moderator's decision made while an edit is being checked", async () => {
+    const a = (await addReview({ locationId: store, userId: AUTHOR, rating: 1, text: ABUSIVE }))!.id
+    // The moderator removes it while the edit's check runs; the check then allows the new text.
+    const racing: ContentModerator = {
+      check: async (text, opts) => {
+        await decideReview(a, "remove", MOD)
+        return new FakeModerator().check(text, opts)
+      },
+    }
+    expect(await updateReview(a, AUTHOR, { rating: 3, text: "Clean now." }, getDb(), racing)).toEqual({ status: "held", checkFailed: false })
+    const [row] = await getDb().select().from(locationRatings).where(eq(locationRatings.id, a))
+    expect(row).toMatchObject({ status: "held", text: "Clean now.", moderatedBy: MOD })
+    expect(await listLocationReviews(store)).toEqual([])
+  })
+
+  it("keeps an approved review up when only its rating changes, without checking it again", async () => {
+    const a = (await addReview({ locationId: store, userId: AUTHOR, rating: 1, text: ABUSIVE }))!.id
+    await decideReview(a, "approve", MOD)
+    const never: ContentModerator = { check: async () => Promise.reject(new Error("shouldn't be called")) }
+    expect(await updateReview(a, AUTHOR, { rating: 2, text: ABUSIVE }, getDb(), never)).toEqual({ status: "published", checkFailed: false })
+    expect(await listLocationReviews(store)).toEqual([{ rating: 2, text: ABUSIVE, username: "ash" }])
+    expect(await checksOf(a)).toHaveLength(1)
   })
 
   it("lets a moderator decide their own review only with moderation.decideOwn", async () => {

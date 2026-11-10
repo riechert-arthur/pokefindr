@@ -69,6 +69,9 @@ export function HeldReviews() {
         })
       await refresh()
       refreshSummary()
+    } catch (err) {
+      console.error("[admin] couldn't decide the review", err)
+      toast.error("That didn't work. Check your connection and try again.")
     } finally {
       setBusy(null)
     }
