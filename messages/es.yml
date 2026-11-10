@@ -464,6 +464,7 @@ dashboard:
       title: Próximos eventos
       error: No pudimos cargar los eventos. Revisa tu conexión y recarga la página.
       empty: Las ferias de cartas y las noches de liga aparecen aquí cuando se agregan.
+      seeOnMap: Ver eventos en el mapa
   reviews:
     loadingProfile: Cargando perfil..
     validation:
