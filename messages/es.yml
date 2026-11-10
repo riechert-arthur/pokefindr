@@ -234,6 +234,12 @@ reviews:
   deleteBodyUnnamed: Se eliminará tu calificación. Esto no se puede deshacer.
   posted: Reseña publicada
   postedBody: Aparece al principio de las reseñas.
+  held: Reseña enviada a revisión
+  heldBody: Un moderador la revisará antes de que otros puedan verla.
+  pending: Pendiente de revisión
+  pendingBody: Solo tú puedes verla hasta que un moderador la apruebe.
+  removed: Retirada
+  removedBody: Un moderador retiró esta reseña, así que solo tú puedes verla. Edítala para enviarla de nuevo a revisión.
   postFailed: No se pudo publicar tu reseña
   editFailed: No se pudieron guardar tus cambios
   deleteFailed: No se pudo eliminar tu reseña
@@ -889,6 +895,8 @@ content:
     title: Tus reseñas recientes
     edit: Editar
     delete: Eliminar
+    pending: Pendiente de revisión
+    removed: Retirada por un moderador
 
 legal:
   englishOnly: Esta página solo está disponible en inglés. <link>Leerla en inglés</link>.

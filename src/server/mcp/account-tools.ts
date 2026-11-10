@@ -44,7 +44,8 @@ const placeLink = (appUrl: string, id: string) => `${new URL("/map", appUrl)}?lo
 export const myReviews = tool({
   name: "my_reviews",
   title: "My reviews",
-  description: "The signed-in person's PokeFindr reviews, newest first (at most 20): the place, its rating out of 5, the text and the date.",
+  description:
+    "The signed-in person's PokeFindr reviews, newest first (at most 20): the place, its rating out of 5, the text, the date, and its status (published, held for a moderator, or removed by one).",
   scope: "account:read",
   input: z.object({}),
   readOnly: true,
@@ -56,6 +57,8 @@ export const myReviews = tool({
       reviews: reviews.slice(0, MAX_ROWS).map((r) => ({
         rating: r.rating,
         date: r.created ? new Date(r.created).toISOString().slice(0, 10) : null,
+        // Their own reviews only, so held and removed ones are shown, with what that means.
+        status: r.status,
         untrusted_text: plainUserText(r.comment ?? "", 500),
         place: {
           id: r.location.id,

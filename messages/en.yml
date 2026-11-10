@@ -305,6 +305,15 @@ reviews:
   # Toasts.
   posted: Review posted
   postedBody: It shows at the top of the reviews.
+  # A review the automatic check held for a moderator (#253). Only its author sees it.
+  held: Review sent for a check
+  heldBody: A moderator will look at it before others can see it.
+  # Next to the viewer's own held review, and under it.
+  pending: Pending review
+  pendingBody: Only you can see this until a moderator approves it.
+  # Next to the viewer's own review a moderator removed, and under it.
+  removed: Removed
+  removedBody: A moderator removed this review, so only you can see it. Edit it to send it for review again.
   postFailed: Couldn't post your review
   editFailed: Couldn't save your changes
   deleteFailed: Couldn't delete your review
@@ -984,6 +993,9 @@ content:
     title: Your Recent Reviews
     edit: Edit
     delete: Delete
+    # On a review a moderator hasn't approved yet (#253), and one a moderator removed.
+    pending: Pending review
+    removed: Removed by a moderator
 
 # The privacy policy and terms of service, which are in English only.
 legal:

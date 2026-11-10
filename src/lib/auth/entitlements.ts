@@ -14,7 +14,9 @@ export const ENTITLEMENTS = {
   "moderation.view": ["moderator", "admin"],
   /** Approve or reject submissions, and act on reports. */
   "moderation.decide": ["moderator", "admin"],
-  /** Decide a submission you sent yourself. Moderators can't; admins can, so a site with one admin isn't stuck. */
+  /** See held reviews (#253) and approve or remove them. Your own need moderation.decideOwn too. */
+  "moderation.reviews": ["moderator", "admin"],
+  /** Decide a submission you sent, or a review you wrote, yourself. Moderators can't; admins can, so a site with one admin isn't stuck. */
   "moderation.decideOwn": ["admin"],
   /** Get the "a submission needs review" email. */
   "moderation.notify": ["moderator", "admin"],

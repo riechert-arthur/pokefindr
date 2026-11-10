@@ -15,6 +15,8 @@ export const RATE_RULES = {
   locations: { name: "locations", perMinute: 120, burst: 40 },
   /** Type-ahead sends a request every few keystrokes: room for fast typing, not for scraping. */
   geocode: { name: "geocode", perMinute: 60, burst: 20 },
+  /** Posting and editing reviews: each one with text is a paid moderation check (#253). */
+  reviews: { name: "reviews", perMinute: 10, burst: 10 },
 } as const satisfies Record<string, RateRule>
 
 /** How long a request waits on the limiter before going through without it. */

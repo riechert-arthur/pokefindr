@@ -8,6 +8,7 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import { AdminSidebar, type SectionCount } from "@/components/admin/AdminSidebar"
 import { ReviewQueue } from "@/components/admin/ReviewQueue"
 import { ReportsTable } from "@/components/admin/ReportsTable"
+import { HeldReviews } from "@/components/admin/HeldReviews"
 import { AddVendingForm } from "@/components/admin/AddVendingForm"
 import { CoverageView } from "@/components/admin/CoverageView"
 import { JobsTable } from "@/components/admin/JobsTable"
@@ -46,6 +47,7 @@ function useSummary(): [AdminSummary | null, () => void] {
 /** Each section's body. Later sections (#153–#159) add themselves here and in ADMIN_GROUPS. */
 const SECTIONS: Record<string, () => ReactNode> = {
   queue: () => <ReviewQueue />,
+  reviews: () => <HeldReviews />,
   reports: () => <ReportsTable />,
   coverage: () => <CoverageView />,
   "add-vending": () => <AddVendingForm />,
@@ -65,6 +67,7 @@ export function AdminApp({ role, username }: { role: Role; username: string }) {
     ? {
         queue: { count: summary.queue.count, hot: queueIsLate(summary.queue) },
         reports: { count: summary.reports.locations, hot: summary.reports.maxOnOne >= REPORTS_HOT },
+        ...(summary.reviews && { reviews: { count: summary.reviews.held, hot: false } }),
       }
     : {}
 

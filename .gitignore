@@ -48,6 +48,7 @@ storybook-static
 
 # Assistant eval reports (npm run eval:assistant)
 /evals/assistant/results/
+/evals/moderation/results/
 
 # Playwright (npx playwright test)
 /test-results/

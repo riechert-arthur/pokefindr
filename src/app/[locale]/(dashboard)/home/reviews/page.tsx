@@ -93,7 +93,7 @@ export default function ReviewsPage() {
   const saveEdit = form.handleSubmit(async (values) => {
     if (!current) return
     try {
-      await axios.patch(
+      const res = await axios.patch<{ status?: Review['status'] }>(
         `/api/reviews/${current.id}`,
         { text: values.text, rating: values.rating },
         { withCredentials: true }
@@ -101,7 +101,7 @@ export default function ReviewsPage() {
       setReviews((rs) =>
         rs.map((r) =>
           r.id === current.id
-            ? { ...r, comment: values.text, rating: values.rating }
+            ? { ...r, comment: values.text, rating: values.rating, status: res.data?.status ?? r.status }
             : r
         )
       )

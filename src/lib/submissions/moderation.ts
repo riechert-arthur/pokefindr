@@ -8,7 +8,7 @@ export const canUndo = (reviewedAt: string | null, now = Date.now()) => reviewed
 
 /** One automatic check on a submission, shown in the review queue. */
 export interface ModerationCheck {
-  key: "country" | "duplicate" | "address" | "website" | "date"
+  key: "country" | "duplicate" | "address" | "website" | "date" | "text"
   ok: boolean
   label: string
   detail?: string

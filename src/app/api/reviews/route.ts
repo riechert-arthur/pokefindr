@@ -3,6 +3,8 @@ import type { NextRequest } from 'next/server'
 import { z } from 'zod/v3'
 import { addReview } from '@/server/services/reviews'
 import { apiError } from "@/server/api-error"
+import { recheckSoon } from '@/server/services/review-moderation'
+import { limitClient, RATE_RULES } from '@/server/api-rate-limit'
 
 const bodySchema = z.object({
   locationId: z.string().uuid(),
@@ -16,15 +18,19 @@ export async function POST(req: NextRequest) {
   if (!userId) {
     return NextResponse.json({ error: 'Unauthenticated' }, { status: 401 })
   }
+  const limited = await limitClient(req, RATE_RULES.reviews)
+  if (limited) return limited
 
   const parsed = bodySchema.safeParse(await req.json().catch(() => null))
   if (!parsed.success)
     return NextResponse.json({ error: 'Missing or invalid locationId / rating (1-5) / text (up to 500 characters)' }, { status: 400 })
 
   try {
-    const id = await addReview({ ...parsed.data, userId })
-    if (!id) return NextResponse.json({ error: 'Location not found' }, { status: 404 })
-    return NextResponse.json({ success: true, id }, { status: 200 })
+    const added = await addReview({ ...parsed.data, userId })
+    if (!added) return NextResponse.json({ error: 'Location not found' }, { status: 404 })
+    if (added.checkFailed) recheckSoon()
+    // `held`: it waits for a moderator, and only its author sees it (#253).
+    return NextResponse.json({ success: true, id: added.id, status: added.status }, { status: 200 })
   } catch (err) {
     console.error('[api/reviews] failed to add review', err)
     return apiError("serverError", "Server error", 500)

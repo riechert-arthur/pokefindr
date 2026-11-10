@@ -20,6 +20,7 @@
     "job": "tsx --conditions=react-server scripts/run-job.ts",
     "assistant:feedback": "tsx --conditions=react-server scripts/assistant/feedback.ts",
     "eval:assistant": "tsx --conditions=react-server scripts/assistant/eval.ts",
+    "eval:moderation": "tsx --conditions=react-server scripts/moderation/eval.ts",
     "db:up": "docker compose up -d --wait db",
     "db:down": "docker compose down",
     "db:migrate": "tsx scripts/db/migrate.ts up",

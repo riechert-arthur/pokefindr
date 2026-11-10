@@ -128,6 +128,30 @@ describe("getServerConfig", () => {
     expect(() => getServerConfig()).toThrowError(/GEOCODER_PROVIDER/)
   })
 
+  it("moderates with the fake unless it's production with Claude credentials (#253)", () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", undefined)
+    vi.stubEnv("ANTHROPIC_FEDERATION_RULE_ID", undefined)
+    vi.stubEnv("MODERATION_PROVIDER", undefined)
+    expect(getServerConfig().MODERATION_PROVIDER).toBe("fake")
+    resetServerConfigForTests()
+    vi.stubEnv("ANTHROPIC_API_KEY", "sk-test")
+    expect(getServerConfig().MODERATION_PROVIDER).toBe("fake")
+    resetServerConfigForTests()
+    vi.stubEnv("NODE_ENV", "production")
+    expect(getServerConfig().MODERATION_PROVIDER).toBe("claude")
+    expect(getServerConfig().MODERATION_MODEL).toBe("claude-haiku-5-5")
+    resetServerConfigForTests()
+    vi.stubEnv("MODERATION_PROVIDER", "fake")
+    expect(getServerConfig().MODERATION_PROVIDER).toBe("fake")
+  })
+
+  it("needs Claude credentials for MODERATION_PROVIDER=claude", () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", undefined)
+    vi.stubEnv("ANTHROPIC_FEDERATION_RULE_ID", undefined)
+    vi.stubEnv("MODERATION_PROVIDER", "claude")
+    expect(() => getServerConfig()).toThrowError(/MODERATION_PROVIDER: claude needs ANTHROPIC_API_KEY/)
+  })
+
   it("caches the parsed result", () => {
     const first = getServerConfig()
     vi.stubEnv("APP_URL", "https://changed.example")

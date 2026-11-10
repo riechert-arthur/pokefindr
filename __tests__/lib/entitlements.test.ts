@@ -11,10 +11,11 @@ describe("entitlements", () => {
   it("gives each role exactly these", () => {
     expect(Object.fromEntries(ROLES.map((r) => [r, entitlementsOf(r)]))).toEqual({
       member: [],
-      moderator: ["moderation.view", "moderation.decide", "moderation.notify", "admin.open"],
+      moderator: ["moderation.view", "moderation.decide", "moderation.reviews", "moderation.notify", "admin.open"],
       admin: [
         "moderation.view",
         "moderation.decide",
+        "moderation.reviews",
         "moderation.decideOwn",
         "moderation.notify",
         "admin.open",
@@ -60,6 +61,14 @@ describe("entitlements that depend on each other", () => {
 
   it("only lets people who can decide submissions decide their own", () => {
     expect(implies("moderation.decideOwn", "moderation.decide")).toEqual([])
+  })
+
+  it("lets everyone who decides their own reviews see the held ones", () => {
+    expect(implies("moderation.decideOwn", "moderation.reviews")).toEqual([])
+  })
+
+  it("lets everyone who sees held reviews load the admin summary that counts them (GET /api/admin/summary needs moderation.view)", () => {
+    expect(implies("moderation.reviews", "moderation.view")).toEqual([])
   })
 
   it("names a real entitlement on every admin section", () => {
