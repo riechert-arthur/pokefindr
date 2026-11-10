@@ -19,7 +19,8 @@ it's applied, so change the file instead, in a PR. `__tests__/server/firewall.te
 
 | Rule | Matches | Limit per IP | Action |
 | --- | --- | --- | --- |
-| Bot Protection (managed) | every request | — | challenge non-browser traffic |
+| Machine clients: skip the browser checks | `/api/mcp*`, `/api/identity/*`, `/api/jobs/*`, `/api/queues/*`, `/.well-known/*` | — | bypass the rules below and Bot Protection |
+| Bot Protection (managed) | every other request | — | challenge non-browser traffic |
 | Location data: block heavy scrapers | `/api/locations*`, `/api/highlights`, `/api/geocode` | 240 a minute | deny for an hour |
 | Location data: rate limit | the same | 120 a minute | 429 until the minute is up |
 | API: rate limit | `/api/*` | 600 a minute | 429 until the minute is up |
@@ -30,9 +31,17 @@ it's applied, so change the file instead, in a PR. `__tests__/server/firewall.te
 - **Normal use.** Panning the map loads one viewport after it settles (250 ms), and search and
   geocoding are typed by hand, so a busy visitor makes a few dozen requests a minute. 120 leaves
   room for several people behind one IP (an office, a school).
+- **Machine clients.** MCP clients, their OAuth calls and Vercel's job and queue deliveries come
+  from servers, not browsers, and often from a few shared IPs. They can't solve a challenge and
+  would share one per-IP budget, so the first rule lets them past; they have their own limits
+  (`src/server/mcp/limits.ts`, the signed job messages).
+- **The heavy-scraper rule** is a rate limit whose action, past 240 a minute, is a one-hour deny.
+  A rule whose own action is `deny` would block every request it matches.
 - **Search engines.** Bot Protection lets verified bots (Googlebot, Bingbot) through, so pages
   stay indexed. They have no reason to call the API; BotID (#198) turns them away there.
-- **Changing a limit.** Edit the file, run the dry run to see the difference, merge, then apply.
+- **Changing a limit.** Edit the file, run the dry run to see the difference (each rule added,
+  changed or removed, and a warning for IP blocks or managed rules set only in the dashboard,
+  which applying removes), merge, then apply.
   To check a rule, loop requests from one machine (`for i in $(seq 300); do curl -s -o /dev/null
   -w "%{http_code}\n" "https://pokefindr.app/api/locations?bbox=…"; done | sort | uniq -c`)
   and expect 429s after 120 and 403s after 240.
