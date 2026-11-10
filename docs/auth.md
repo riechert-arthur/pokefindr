@@ -110,6 +110,27 @@ can(role, "admin.jobs") // true for admins only
 
 **To add a role,** add it to `ROLES` (`src/lib/auth/roles.ts`) and to the `profiles_role_check` constraint with a migration. Then list it under each entitlement it should have. A role that isn't listed anywhere can do nothing beyond a member.
 
+## Profile pictures
+
+A person's picture is the URL in `users.image` (#290), the Better Auth column, so it rides along in
+the session (`/api/auth/user` returns it as `image`) and needs no migration. Google and Discord fill it
+when someone signs up with them; an upload replaces it. With none, `UserAvatar` shows initials.
+
+- **Upload and remove:** `POST` (multipart, `file`) and `DELETE /api/user-settings/avatar`, from the
+  "Profile picture" row in `/settings`. Same-site only, signed in, and rate limited per account
+  (`RATE_RULES.avatar`).
+- **Limits:** JPEG, PNG or WebP up to 2 MB, judged by the file's first bytes, not its name or
+  `Content-Type` (SVG and GIF are refused). The server (`src/server/services/avatars.ts`, with
+  `sharp`) crops to the center and re-encodes a 256×256 WebP, which drops EXIF and GPS data.
+- **Storage:** the image-store port (`src/server/ports/image-store.ts`), chosen by `IMAGE_STORE`:
+  `vercel-blob` in production (needs `BLOB_READ_WRITE_TOKEN`), `local` for `next dev` (files in
+  `public/uploads/`, gitignored), `memory` in tests, or `none`, which refuses uploads with a 503.
+  Unset, it's `vercel-blob` when the token is set, else `local`, or `none` in production.
+  The old file is deleted when a picture is replaced or removed, or the account is deleted.
+- **Moderation:** moderators and admins (`moderation.avatars`) can remove someone's picture from
+  their review on the map (`DELETE /api/admin/reviews/:id/avatar`, by review so a rename can't
+  point it at someone else; rate limited per staff member, `RATE_RULES.avatarModeration`).
+
 ## Local development
 
 `make run` (or `npm run db:seed`) seeds confirmed, onboarded accounts into local databases only
@@ -155,6 +176,7 @@ npm run test:e2e
 | `MAIL_FROM` | in production | Its domain needs SPF and DKIM records with the SMTP provider |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | optional | Shows "Continue with Google" |
 | `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` | optional | Shows "Continue with Discord" |
+| `BLOB_READ_WRITE_TOKEN` | in production, for profile pictures | Set by Vercel when a Blob store is connected. Without it, uploads answer 503 |
 
 Each OAuth provider's console must list `${APP_URL}/api/identity/callback/google` (or `/discord`) as
 a redirect URI. Preview deployments have changing URLs, so leave the OAuth variables unset there:
