@@ -2,7 +2,7 @@ import { afterAll, describe, expect, it } from "vitest"
 import postgres from "postgres"
 import { readSeedLocations, seedLocations } from "../../scripts/db/seedLocations"
 import { SAMPLE_EVENTS, SAMPLE_SOURCE, seedSampleHighlights } from "../../scripts/db/seedHighlights"
-import { DEV_ACCOUNTS, DEV_PASSWORD, DEV_USER, seedDevUsers } from "../../scripts/db/seedDevUsers"
+import { DEV_ACCOUNTS, DEV_MODERATOR, DEV_PASSWORD, DEV_USER, seedDevUsers } from "../../scripts/db/seedDevUsers"
 import { verifyPassword } from "better-auth/crypto"
 import { NextResponse } from "next/server"
 import { requireEntitlement, roleOf } from "@/server/admin/access"
@@ -119,12 +119,13 @@ describe("seedDevUsers", () => {
 
   it("adds a moderator who can moderate but not open the admin-only sections", async () => {
     await seedDevUsers(sql)
-    const mod = DEV_ACCOUNTS.find((a) => a.email === "moderator@pokefindr.local")!
+    const mod = DEV_MODERATOR
     expect(await roleOf(mod.id)).toBe("moderator")
-    const as = () => new Request("http://localhost:3000/api/admin/jobs", { headers: { "x-user-id": mod.id } })
-    const jobs = await requireEntitlement(as(), "admin.jobs")
-    expect(jobs instanceof NextResponse && jobs.status).toBe(404)
-    expect(await requireEntitlement(as(), "moderation.view")).toEqual({ userId: mod.id, role: "moderator" })
+    const as = (path: string) => new Request(`http://localhost:3000${path}`, { headers: { "x-user-id": mod.id } })
+    const jobs = await requireEntitlement(as("/api/admin/jobs"), "admin.jobs")
+    expect(jobs).toBeInstanceOf(NextResponse)
+    expect((jobs as NextResponse).status).toBe(404)
+    expect(await requireEntitlement(as("/api/admin/submissions"), "moderation.view")).toEqual({ userId: mod.id, role: "moderator" })
   })
 
   it("skips an account whose username someone signed up with, instead of failing", async () => {

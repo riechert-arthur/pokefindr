@@ -34,6 +34,15 @@ export const DEV_ACCOUNTS = [
 
 export const DEV_USER = DEV_ACCOUNTS[0]
 
+/** The seeded account with this email. A typo, or an account renamed in the list, fails typecheck. */
+export function devAccount(email: (typeof DEV_ACCOUNTS)[number]["email"]): DevAccount {
+  const account = DEV_ACCOUNTS.find((a) => a.email === email)
+  if (!account) throw new Error(`No dev account ${email}`)
+  return account
+}
+
+export const DEV_MODERATOR = devAccount("moderator@pokefindr.local")
+
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]", "db"])
 
 /** Whether a connection string points at this machine or the local stack's database. */
