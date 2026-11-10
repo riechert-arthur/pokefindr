@@ -9,6 +9,7 @@ import { createFormatter, createTranslator, NextIntlClientProvider, type Namespa
 import { makeFormat } from "@/i18n/format"
 import * as rtl from "@testing-library/react"
 import { MESSAGES } from "@/i18n/all-messages"
+import type { Messages } from "@/i18n/messages"
 import { DEFAULT_LOCALE, type Locale } from "@/i18n/routing"
 
 export * from "@testing-library/react"

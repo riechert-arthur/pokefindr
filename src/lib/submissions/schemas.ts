@@ -12,12 +12,16 @@ export const MAX_EVENT_DAYS = 14
  */
 const HIDDEN = /[\p{Cc}\p{Cf}]/u
 
+/** The catalog keys (addPlace.errors.*) a form shows for these checks; a key not listed here fails typecheck. */
+export const SUBMISSION_ERROR_KEYS = ["hidden", "linkTooLong", "link", "tooLong", "name", "city", "endBeforeStart", "tooManyDays"] as const
+export type SubmissionErrorKey = (typeof SUBMISSION_ERROR_KEYS)[number]
+
 /**
  * Each message also names its catalog message in `params.key` (with its
  * values), so the form can show it in the page's language (addPlace.errors).
  * The English here is what the API and the MCP tools return.
  */
-const say = (message: string, key: string, values: Record<string, number> = {}) => ({ message, params: { key, ...values } })
+const say = (message: string, key: SubmissionErrorKey, values: Record<string, number> = {}) => ({ message, params: { key, ...values } })
 
 /** Text people type: NFC-normalized and trimmed, without control or invisible characters. */
 const text = () =>
