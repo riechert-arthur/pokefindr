@@ -20,6 +20,7 @@ import { ClearAssistantHistory } from '@/components/assistant/ClearAssistantHist
 import { useSubmitErrorMessage } from '@/lib/forms'
 import { broadcastAuth } from '@/lib/auth/broadcast'
 import { PUBLIC_LOCALES } from '@/i18n/routing'
+import { Slot } from '@/core/shell/Slot'
 
 interface Settings {
   fullName: string
@@ -213,6 +214,9 @@ export default function SettingsPage() {
               <p className="mt-1 text-body text-muted-foreground">{t("assistant.body")}</p>
               <ClearAssistantHistory className="mt-4" />
             </section>
+
+            {/* Sections modules add (#324). */}
+            <Slot name="settings.section" props={{}} />
           </div>
         </div>
       </div>

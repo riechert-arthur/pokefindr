@@ -14,6 +14,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from "@/components/ui/sonner"
 import { getSiteUrl, PRODUCTION_URL } from "@/server/site-url"
 import { onVercelProduction } from "@/server/edge-config"
+import { headMeta } from "@/core/shell/contributions"
+import { MODULES } from "@/modules/registry"
 
 const site = getSiteUrl() ?? new URL(PRODUCTION_URL)
 
@@ -21,6 +23,8 @@ const site = getSiteUrl() ?? new URL(PRODUCTION_URL)
 // ("Unsupported metadata viewport") when they're in metadata (#255).
 const metadata = {
   "other": {
+    // Tags modules add (`head.meta`, #324).
+    ...headMeta(MODULES),
     "google-adsense-account": "ca-pub-5624613492216779",
     "impact-site-verification": "34eb1c2e-8a9b-4082-9f19-211558caebd7",
     "terms-of-service": new URL("/terms-of-service", site).toString(),

@@ -14,6 +14,7 @@ import { useLocationReviews } from "./useLocationReviews"
 import { AlsoNearby, useAlsoNearby } from "./AlsoNearby"
 import type { LocationFeature, LocationKind } from "@/lib/types/locations"
 import { useTranslations } from "next-intl"
+import { Slot } from "@/core/shell/Slot"
 
 type LocationDetailsProps = Omit<ComponentProps<typeof DetailsSheet>, "summary" | "actions" | "top" | "children"> & {
   /** The map's filters, which "Also nearby" follows. */
@@ -55,6 +56,8 @@ export function LocationDetails({ kinds, retailers, onOpen, ...props }: Location
     >
       {/* Never next to the report form (#136). */}
       {!reporting && <SponsoredPlacement placement="details" className="mt-3" />}
+      {/* What modules add to a place's details (#324). */}
+      <Slot name="location.details.section" props={{ location: props.location }} />
       <ReviewsSection kind={kind} reviews={reviews} username={session?.username ?? null} image={session?.image} moderate={can(session?.role, "moderation.avatars")} placeName={props.location.retailer} />
       <AlsoNearby rows={nearby} onOpen={onOpen} />
     </DetailsSheet>

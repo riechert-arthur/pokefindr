@@ -15,6 +15,7 @@ import type { NearbyState } from "./useNearbyLocations"
 import { LocationRow } from "./LocationRow"
 import { SponsoredPlacement } from "@/components/ads/SponsoredPlacement"
 import { useTranslations } from "next-intl"
+import { Slot } from "@/core/shell/Slot"
 
 type Radius = (typeof RADII)[number]
 
@@ -125,6 +126,8 @@ export function ResultsSheet({ label, radius, onRadiusChange, kinds, nearby, sel
                 </li>
                 {/* One sponsored card after the third place (#136), only when more places follow. */}
                 {i === 2 && results.features.length > 3 && <SponsoredPlacement placement="results" className="my-1.5" listItem />}
+                {/* Modules' items between results (#324); each renders an <li>. */}
+                {i === 2 && results.features.length > 3 && <Slot name="results.inline" props={{ count: results.features.length }} />}
               </Fragment>
             ))}
             {results.truncated && (

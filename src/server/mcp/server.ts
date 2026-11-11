@@ -1,8 +1,8 @@
 import "server-only"
 import { McpServer, fromJsonSchema, requireScopes, type CallToolResult, type JsonSchemaType } from "@modelcontextprotocol/server"
-import { ASSISTANT_TOOLS, ToolInputError, inputJsonSchema, runTool, type AssistantTool, type ToolContext } from "@/server/assistant/tools"
+import { assistantTools, ToolInputError, inputJsonSchema, runTool, type AssistantTool, type ToolContext } from "@/server/assistant/tools"
 import { USER_WRITTEN_NOTE } from "@/server/assistant/untrusted"
-import { ACCOUNT_TOOLS, accountInputJsonSchema, type AccountTool, type AccountToolContext } from "./account-tools"
+import { accountTools, accountInputJsonSchema, type AccountTool, type AccountToolContext } from "./account-tools"
 import { log } from "@/server/log"
 
 /**
@@ -115,7 +115,8 @@ function registerReadTool(server: McpServer, t: AssistantTool, withCtx: WithCont
 export function createReadOnlyServer({ ctx, appUrl }: { ctx: () => ToolContext; appUrl: string }): McpServer {
   // No tool takes more than a few dozen values; this bounds what one call can make us parse.
   const server = new McpServer(MCP_SERVER_INFO, { instructions: MCP_INSTRUCTIONS, maxToolInputElements: 200 })
-  for (const t of ASSISTANT_TOOLS) registerReadTool(server, t, (call) => call(ctx()), appUrl)
+  // Core's tools and the modules' ungated ones (#324): a signed-out client has no role.
+  for (const t of assistantTools()) registerReadTool(server, t, (call) => call(ctx()), appUrl)
   return server
 }
 
@@ -159,7 +160,8 @@ function registerAccountTool(server: McpServer, t: AccountTool, ctx: () => Accou
  */
 export function createAccountServer({ ctx, withCtx, appUrl, userId }: { ctx: () => ToolContext; withCtx: WithContext; appUrl: string; userId: string }): McpServer {
   const server = new McpServer(MCP_SERVER_INFO, { instructions: MCP_ACCOUNT_INSTRUCTIONS, maxToolInputElements: 200 })
-  for (const t of ASSISTANT_TOOLS) registerReadTool(server, t, withCtx, appUrl)
-  for (const t of ACCOUNT_TOOLS) registerAccountTool(server, t, () => ({ tools: ctx(), userId, appUrl }))
+  // Module tools gated by a platform role aren't offered over MCP yet: no module has one (#324).
+  for (const t of assistantTools()) registerReadTool(server, t, withCtx, appUrl)
+  for (const t of accountTools()) registerAccountTool(server, t, () => ({ tools: ctx(), userId, appUrl }))
   return server
 }

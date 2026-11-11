@@ -9,6 +9,7 @@
  * startup, with the ones types can't do (requires, duplicates).
  */
 import { ROLES, type Role } from "@/lib/auth/roles"
+import { SLOT_NAMES, type Contributions } from "./slots"
 
 /**
  * Who an entitlement is for.
@@ -34,8 +35,8 @@ export interface ModuleManifest<Id extends string = string, E extends string = s
   readonly entitlements: { readonly [K in E]: EntitlementRule }
   /** Module roles an organization admin can grant (#336): each bundles some of this module's entitlements. */
   readonly roles: { readonly [name: string]: readonly E[] }
-  /** What it puts in core's slots (#324). */
-  readonly contributes: Readonly<Record<string, unknown>>
+  /** What it puts in core's slots (src/core/shell/slots.ts). Server-side contributions are in its module.server.ts. */
+  readonly contributes: Contributions
 }
 
 /**
@@ -49,7 +50,7 @@ export function defineModule<const Id extends string, const E extends `${Id}.${s
   requires?: readonly string[]
   entitlements?: { readonly [K in E]: EntitlementRule }
   roles?: Readonly<Record<`${Id}.${string}`, readonly NoInfer<E>[]>>
-  contributes?: Readonly<Record<string, unknown>>
+  contributes?: Contributions
 }): ModuleManifest<Id, E> {
   return {
     id: manifest.id,
@@ -95,6 +96,22 @@ export function moduleProblems(modules: readonly ModuleManifest[], taken: readon
     for (const [role, grants] of Object.entries(m.roles)) {
       if (!role.startsWith(`${m.id}.`)) problems.push(`Module role "${role}" in module "${m.id}" must start with "${m.id}.".`)
       for (const e of grants) if (!Object.hasOwn(m.entitlements, e)) problems.push(`Module role "${role}" grants "${e}", which module "${m.id}" doesn't declare.`)
+    }
+  }
+  // Contributions: known slots, unique ids within a slot, and entitlements that exist.
+  for (const m of modules) {
+    for (const [slot, value] of Object.entries(m.contributes)) {
+      if (!(SLOT_NAMES as readonly string[]).includes(slot)) {
+        problems.push(`Module "${m.id}" contributes to "${slot}", which isn't a slot (src/core/shell/slots.ts).`)
+        continue
+      }
+      if (!Array.isArray(value)) continue
+      const seen = new Set<string>()
+      for (const c of value as readonly { id: string; entitlement?: string }[]) {
+        if (seen.has(c.id)) problems.push(`Module "${m.id}" contributes "${c.id}" to "${slot}" twice.`)
+        seen.add(c.id)
+        if (c.entitlement && !owner.has(c.entitlement)) problems.push(`Module "${m.id}"'s "${c.id}" in "${slot}" needs "${c.entitlement}", which no one declares.`)
+      }
     }
   }
   // A cycle through `requires` would mean neither module can be removed.

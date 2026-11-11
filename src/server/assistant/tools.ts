@@ -14,6 +14,9 @@ import { milesBetween } from "@/lib/map/geo"
 import { LOCATION_KINDS, type LocationFeature, type LocationKind } from "@/lib/types/locations"
 import type { AssistantCard, AssistantEvent, AssistantPlace, CardArea } from "@/lib/types/assistant"
 import type { PlaceBudget } from "./limits"
+import type { Role } from "@/lib/auth/roles"
+import { moduleAssistantTools } from "@/core/shell/server-slots"
+import { SERVER_MODULES } from "@/modules/registry.server"
 import { USER_WRITTEN_NOTE, plainUserText } from "./untrusted"
 
 /**
@@ -42,6 +45,8 @@ export interface ToolContext {
   signal?: AbortSignal
   /** The viewer's places left today (#211); none means no cap (the MCP server sets its own). */
   places?: PlaceBudget
+  /** The viewer's platform role, for module tools gated by an entitlement (#324). None sees only ungated ones. */
+  role?: Role | null
 }
 
 export interface ToolOutput {
@@ -415,6 +420,9 @@ export const getPlace = tool({
 
 export const ASSISTANT_TOOLS: readonly AssistantTool[] = [findPlaces, areaStats, planRoute, listEvents, getPlace]
 
+/** Core's tools, then those the registered modules contribute (`assistant.tools`, #324) that `role` may use. */
+export const assistantTools = (role: Role | null = null): AssistantTool[] => [...ASSISTANT_TOOLS, ...moduleAssistantTools(SERVER_MODULES, role)]
+
 /** A tool's input as JSON Schema (an object schema), for the Claude API and MCP. */
 export function inputJsonSchema(t: AssistantTool): { type: "object"; properties?: Record<string, unknown>; required?: string[]; [k: string]: unknown } {
   const schema = zodToJsonSchema(t.input, { $refStrategy: "none" }) as Record<string, unknown>
@@ -430,7 +438,7 @@ export type ToolResult = { ok: true; data: Record<string, unknown>; card?: Assis
  * Other failures (the database) throw.
  */
 export async function runTool(name: string, raw: unknown, ctx: ToolContext): Promise<ToolResult> {
-  const t = ASSISTANT_TOOLS.find((x) => x.name === name)
+  const t = assistantTools(ctx.role ?? null).find((x) => x.name === name)
   if (!t) return { ok: false, error: `Unknown tool "${name}".` }
   const parsed = t.input.safeParse(raw)
   if (!parsed.success) return { ok: false, error: `Invalid input: ${parsed.error.issues.map((i) => `${i.path.join(".") || "input"} ${i.message}`).join("; ")}` }

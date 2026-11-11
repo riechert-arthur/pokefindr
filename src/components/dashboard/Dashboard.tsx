@@ -16,6 +16,7 @@ import type { RegionCount } from "@/lib/types/locations"
 import { EventsTile, NearYouTile, ReviewsTile, SubmissionsTile, type MyReview, type NearState } from "./DashboardTiles"
 import { useFormat } from "@/i18n/format"
 import { useTranslations } from "next-intl"
+import { Slot } from "@/core/shell/Slot"
 
 /** The prototype's suggestions, one tap to ask (dashboard.suggestions in the catalog). */
 export const SUGGESTIONS = ["portland", "denver", "washington", "phoenix"] as const
@@ -169,6 +170,8 @@ export function Dashboard({ assistant }: DashboardProps) {
                 <ReviewsTile reviews={reviews} />
                 <SubmissionsTile />
                 <EventsTile events={events} />
+                {/* Tiles modules add (#324). */}
+                <Slot name="dashboard.tile" props={{}} />
               </div>
             </>
           )}

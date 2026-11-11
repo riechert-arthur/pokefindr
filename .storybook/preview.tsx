@@ -8,6 +8,8 @@ import { ThemeProvider } from "../src/components/providers/ThemeProvider"
 import { TooltipProvider } from "../src/components/ui/tooltip"
 import { MESSAGES } from "../src/i18n/all-messages"
 import { DEFAULT_LOCALE, LOCALES, type Locale } from "../src/i18n/routing"
+import { SlotModules } from "../src/core/shell/Slot"
+import { TEST_MODULE } from "../src/core/shell/test-modules"
 
 /** Sets <html lang> as the app's layout does, so screen readers (and axe) know the language. */
 function DocumentLanguage({ locale }: { locale: Locale }) {
@@ -51,6 +53,11 @@ const preview: Preview = {
       description: "Theme",
       toolbar: { title: "Theme", icon: "mirror", items: ["light", "dark"], dynamicTitle: true },
     },
+    // Fill every core slot with a labelled test box (#324), to see where modules can add things.
+    slots: {
+      description: "Module slots",
+      toolbar: { title: "Slots", icon: "component", items: ["registry", "test module"], dynamicTitle: true },
+    },
     // The language, like the app's /es prefix (docs/i18n.md).
     locale: {
       description: "Language",
@@ -59,6 +66,7 @@ const preview: Preview = {
   },
   initialGlobals: {
     theme: "light",
+    slots: "registry",
     locale: DEFAULT_LOCALE,
     // Under the a11y test runner (it sets this flag before the page loads), the
     // addon doesn't run axe itself: .storybook/test-runner.ts does, in light and
@@ -84,7 +92,13 @@ const preview: Preview = {
             {toggle && <SyncThemeWithToolbar toolbar={globals.theme} setToolbar={(theme) => updateGlobals({ theme })} />}
             <TooltipProvider>
               <DocumentLanguage locale={locale} />
-              <Story />
+              {globals.slots === "test module" ? (
+                <SlotModules modules={[TEST_MODULE]}>
+                  <Story />
+                </SlotModules>
+              ) : (
+                <Story />
+              )}
             </TooltipProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
