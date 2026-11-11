@@ -544,12 +544,25 @@ flowchart LR
 
 To remove a module for real:
 
-1. Delete `src/modules/<id>/` and its route files under `src/app` (grouped by module id).
-2. Delete its line in `src/modules/registry.ts`, and take it out of `plans.ts`.
+1. Delete `src/modules/<id>/` and its route files under `src/app` (the manifest's `routes`, paths
+   relative to `src/app`, e.g. `api/ads`).
+2. Delete its lines in `src/modules/registry.ts` and `registry.server.ts`, and take it out of
+   `plans.ts`.
 3. Leave its migrations and tables. Drop them later in a separate migration, after a backup.
 
 Nothing else should need to change. If something does, the CI matrix above would already have
-failed. `scripts/modules/without.ts <id>` runs the same check locally.
+failed (`.github/workflows/modules.yml`, one job per registered module, #326).
+
+Locally:
+
+- `npm run modules:without -- <id>` runs the same check: removes the module from a copy of the
+  repo, then runs typecheck, lint, the unit tests and `next build` on it, plus the integration
+  tests when the module has tables and `TEST_DATABASE_URL` points at a `_test` database. On
+  failure it lists the files that still depend on the module. `--quick` skips the build; `--keep`
+  keeps the copy to look at.
+- `npm run modules:check -- <id>` is the fast loop for work inside one module: lint on its files
+  and routes, typecheck, its unit tests, and the removal check without the build. About a minute
+  and a half.
 
 ## Module catalog
 

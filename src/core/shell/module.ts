@@ -37,6 +37,12 @@ export interface ModuleManifest<Id extends string = string, E extends string = s
   readonly roles: { readonly [name: string]: readonly E[] }
   /** What it puts in core's slots (src/core/shell/slots.ts). Server-side contributions are in its module.server.ts. */
   readonly contributes: Contributions
+  /**
+   * Its route files and folders under src/app (Next.js requires routes to
+   * live there), e.g. "api/ads". They go when the module is removed
+   * (scripts/modules/without.ts, #326).
+   */
+  readonly routes: readonly string[]
 }
 
 /**
@@ -51,6 +57,7 @@ export function defineModule<const Id extends string, const E extends `${Id}.${s
   entitlements?: { readonly [K in E]: EntitlementRule }
   roles?: Readonly<Record<`${Id}.${string}`, readonly NoInfer<E>[]>>
   contributes?: Contributions
+  routes?: readonly string[]
 }): ModuleManifest<Id, E> {
   return {
     id: manifest.id,
@@ -59,6 +66,7 @@ export function defineModule<const Id extends string, const E extends `${Id}.${s
     entitlements: manifest.entitlements ?? ({} as { readonly [K in E]: EntitlementRule }),
     roles: manifest.roles ?? {},
     contributes: manifest.contributes ?? {},
+    routes: manifest.routes ?? [],
   }
 }
 
@@ -114,6 +122,8 @@ export function moduleProblems(modules: readonly ModuleManifest[], taken: readon
       }
     }
   }
+  // Route paths: relative to src/app, inside it.
+  for (const m of modules) for (const r of m.routes) if (r.startsWith("/") || r.split("/").includes("..") || r === "") problems.push(`Module "${m.id}" has route "${r}", which isn't a path inside src/app.`)
   // A cycle through `requires` would mean neither module can be removed.
   const requires = new Map(modules.map((m) => [m.id, m.requires]))
   const visiting = new Set<string>()

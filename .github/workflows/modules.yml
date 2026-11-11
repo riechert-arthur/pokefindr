@@ -1,0 +1,78 @@
+name: Modules
+
+# The removal check (#326, docs/architecture.md "Removing a module"): for
+# every registered module, delete it (its folder, routes and registry lines)
+# from a copy of the repo and check that everything else still typechecks,
+# lints, passes its unit tests and builds. A module with tables also runs the
+# integration tests. New modules join the matrix by being registered.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: modules-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  list:
+    name: List modules
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      ids: ${{ steps.list.outputs.ids }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - id: list
+        run: echo "ids=$(npm run -s modules:list)" >> "$GITHUB_OUTPUT"
+
+  without:
+    name: Without ${{ matrix.id }}
+    needs: list
+    if: needs.list.outputs.ids != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        id: ${{ fromJSON(needs.list.outputs.ids) }}
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Has tables?
+        id: tables
+        run: |
+          if [ -f "src/modules/${{ matrix.id }}/db/schema.ts" ]; then echo "found=true" >> "$GITHUB_OUTPUT"; fi
+      - name: Start PostGIS
+        if: steps.tables.outputs.found == 'true'
+        run: |
+          docker run -d --name postgis \
+            -e POSTGRES_USER=pokefindr -e POSTGRES_PASSWORD=pokefindr -e POSTGRES_DB=pokefindr \
+            -p 5433:5432 \
+            --health-cmd "pg_isready -h 127.0.0.1 -U pokefindr -d pokefindr" --health-interval 2s --health-timeout 3s --health-retries 30 \
+            postgis/postgis:16-3.4
+          for _ in $(seq 60); do
+            [ "$(docker inspect -f '{{.State.Health.Status}}' postgis)" = healthy ] && exit 0
+            sleep 2
+          done
+          docker logs postgis
+          exit 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Remove ${{ matrix.id }} and check the rest
+        run: npm run -s modules:without -- "${{ matrix.id }}"
+        env:
+          TEST_DATABASE_URL: ${{ steps.tables.outputs.found == 'true' && 'postgres://pokefindr:pokefindr@localhost:5433/pokefindr_test' || '' }}

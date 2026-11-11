@@ -32,3 +32,11 @@ What a module adds to core screens goes in its manifest's `contributes`, by slot
 MCP tools, job code, sitemap entries) go in `module.server.ts`, listed in `registry.server.ts`, so
 the browser bundle never reaches them. After adding or changing a scheduled job, run
 `npm run modules:sync` to update `vercel.json`.
+
+## Checking a module
+
+- `npm run modules:check -- <id>`: lint, typecheck, the module's unit tests and the removal
+  check, in a minute or two. Run it before pushing work on a module.
+- `npm run modules:without -- <id>`: the full removal check CI runs (adds `next build`).
+- List the module's route files under `src/app` in its manifest's `routes`, so removing it takes
+  them too.

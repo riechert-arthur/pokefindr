@@ -23,7 +23,7 @@ const routes = defineModule({ id: "routes", name: "Routes", requires: ["events"]
 
 describe("defineModule (#323)", () => {
   it("fills in what a manifest leaves out", () => {
-    expect(routes).toEqual({ id: "routes", name: "Routes", requires: ["events"], entitlements: {}, roles: {}, contributes: {} })
+    expect(routes).toEqual({ id: "routes", name: "Routes", requires: ["events"], entitlements: {}, roles: {}, contributes: {}, routes: [] })
   })
 
   it("keeps ids and entitlement names as literal types", () => {
@@ -70,6 +70,10 @@ describe("the registry's checks (#323)", () => {
     ])
     expect(moduleProblems([events], ["events.view"])).toEqual([`Entitlement "events.view" is declared by both core and "events".`])
     expect(moduleProblems([a, b])).toEqual([`Modules require each other in a cycle: a → b → a.`])
+    expect(moduleProblems([{ ...routes, requires: [], routes: ["api/ok", "../outside", "/abs"] }])).toEqual([
+      `Module "routes" has route "../outside", which isn't a path inside src/app.`,
+      `Module "routes" has route "/abs", which isn't a path inside src/app.`,
+    ])
   })
 
   it("refuses to start with a broken registry, with a clear message", () => {
