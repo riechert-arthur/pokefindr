@@ -179,7 +179,7 @@ describe("PhotonGeocoder", () => {
     const results = await new PhotonGeocoder().search("98101", { limit: 5, near: [-122.3, 47.6] })
     const { url } = request()
     expect(url.origin + url.pathname).toBe("https://photon.komoot.io/api/")
-    expect(Object.fromEntries(url.searchParams)).toMatchObject({ q: "98101", lang: "en", limit: "15", bbox: "-180,17,-64,72", lon: "-122.3", lat: "47.6" })
+    expect(Object.fromEntries(url.searchParams)).toMatchObject({ q: "98101", lang: "en", limit: "50", bbox: "-180,17,-64,72", lon: "-122.3", lat: "47.6" })
     expect(results).toEqual([
       { label: "Denver, CO", lng: -104.98, lat: 39.74, bbox: [-105.11, 39.61, -104.6, 39.91], kind: "city", state: "CO" },
       { label: "98101, Seattle, WA", lng: -122.33, lat: 47.61, bbox: undefined, kind: "postcode", state: "WA" },
@@ -225,6 +225,15 @@ describe("PhotonGeocoder", () => {
       new URL(String(url)).searchParams.has("osm_tag") ? new Response(JSON.stringify({ features: [] })) : new Response("busy", { status: 429 }),
     ))
     await expect(new PhotonGeocoder().search("Mall of Am")).rejects.toBeInstanceOf(GeocoderError)
+  })
+
+  it("keeps the US results when Canadian ones fill most of Photon's answer near the border (#375)", async () => {
+    const house = (n: number, city: string, state: string, countrycode: string) =>
+      feature([-122 - n / 100, 48], { type: "house", housenumber: "270", street: "1st Street", city, state, countrycode })
+    const answer = [...Array.from({ length: 14 }, (_, i) => house(i, `Town ${i}`, "British Columbia", "CA")), house(20, "Yachats", "Oregon", "US"), house(21, "Fernley", "Nevada", "US")]
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>(async () => new Response(JSON.stringify({ features: answer }))))
+    const results = await new PhotonGeocoder().search("270 1st", { limit: 5, near: [-122.33, 47.61] })
+    expect(results.map((r) => r.label)).toEqual(["270 1st Street, Yachats, OR", "270 1st Street, Fernley, NV"])
   })
 
   it("asks for everything when the query has a number", async () => {
