@@ -1,4 +1,4 @@
-import { Fragment, type FC } from "react"
+import type { FC } from "react"
 import { getTranslations } from "next-intl/server"
 import { setPageLocale, type LocaleParams } from "@/i18n/static"
 import { pageMetadata } from "@/i18n/seo"
@@ -18,10 +18,12 @@ const ChangelogPage: FC<LocaleParams> = async ({ params }) => {
   const t = await getTranslations({ locale, namespace: "content.changelog" })
   return (
     <div className="max-w-3xl mx-auto p-6 text-foreground">
-      {RELEASES.map((release) => (
-        <Fragment key={release.version}>
-          <h1 className="text-3xl font-bold mb-4">{t("title", { version: release.version })}</h1>
-          <p className="mb-4">{t(`${release.key}.released`)}</p>
+      <h1 className="text-3xl font-bold mb-6">{t("heading")}</h1>
+      {/* Newest first. */}
+      {[...RELEASES].reverse().map((release) => (
+        <section key={release.version} className="mb-8">
+          <h2 className="text-2xl font-bold mb-2">{t("title", { version: release.version })}</h2>
+          <p className="mb-4 text-muted-foreground">{t(`${release.key}.released`)}</p>
 
           <p className="mb-4">{t(`${release.key}.intro`)}</p>
 
@@ -35,7 +37,7 @@ const ChangelogPage: FC<LocaleParams> = async ({ params }) => {
               </li>
             ))}
           </ul>
-        </Fragment>
+        </section>
       ))}
     </div>
   )

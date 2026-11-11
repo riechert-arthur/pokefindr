@@ -846,6 +846,7 @@ content:
     meta:
       title: "Novedades de PokeFindr"
       description: "Cada versión de PokeFindr y lo que cambió: mejoras del mapa, cuentas, reseñas y más."
+    heading: Novedades de PokeFindr
     title: Novedades de la versión {version}
     v1_1:
       released: Publicada el 10 de mayo de 2025
@@ -868,11 +869,29 @@ content:
         settings: <b>Página de configuración</b> – Administra tu perfil, tus preferencias y la información de tu cuenta.
         sso: <b>Inicio de sesión único (SSO)</b> – Inicia sesión con Google u otros proveedores.
         ratings: <b>Calificaciones con estrellas</b> – Los lugares ahora tienen calificaciones con estrellas según las reseñas de los usuarios.
+    v2_0:
+      released: Publicada el 11 de noviembre de 2026
+      intro: PokeFindr 2.0 es un rediseño completo, con un mapa nuevo, un asistente al que puedes preguntarle con tus propias palabras y más formas de encontrar cartas Pokémon cerca de ti.
+      items:
+        design: <b>Un nuevo diseño</b> – PokeFindr tiene un diseño completamente nuevo, en modo claro y oscuro.
+        search: <b>Busca en cualquier lugar</b> – Busca una dirección, ciudad o estado y mira qué hay cerca, ordenado por distancia, o qué hay cerca de ti.
+        kinds: <b>Tiendas de cartas y eventos</b> – El mapa ahora muestra tiendas de cartas y próximos eventos junto a las máquinas expendedoras, y puedes filtrar por tienda.
+        states: <b>Explora por estado</b> – Elige un estado para ver cuántos lugares tiene y sus ciudades principales.
+        details: <b>Detalles del lugar</b> – Abre cualquier lugar para ver su dirección, reseñas y qué más hay cerca, o reporta un problema.
+        add: <b>Agrega un lugar</b> – ¿Conoces una tienda de cartas o un evento que nos falta? Agrégalo y aparecerá en el mapa cuando un moderador lo revise.
+        assistant: <b>Asistente de PokeFindr</b> – Pregunta desde tu panel con tus propias palabras, como "máquinas expendedoras cerca de Seattle" o "torneos de cartas este fin de semana".
+        routes: <b>Planifica rutas</b> – El asistente planifica una ruta con varias paradas, la muestra por las calles en el mismo chat y la abre en Google Maps.
+        chat: <b>Tu chat se queda</b> – Tu conversación con el asistente sigue ahí cuando vuelves, hasta que empiezas una nueva.
+        mcp: <b>PokeFindr en tu app de IA</b> – Conecta Claude, ChatGPT, Cursor y otras apps para buscar en PokeFindr desde ahí.
+        spanish: <b>En español</b> – PokeFindr ya está disponible en español, con distancias en millas o kilómetros.
+        profile: <b>Fotos de perfil</b> – Agrega una foto de perfil y administra tu cuenta en la nueva página de configuración.
     modal:
       items:
-        accounts: <b>Cuentas gratis</b> – Ahora puedes crear una cuenta gratis.
-        settings: <b>Página de configuración</b> – Administra tu perfil y la información de tu cuenta.
-        sso: <b>Inicio de sesión único (SSO)</b> – Inicia sesión con Google (pronto más proveedores).
+        design: <b>Un nuevo diseño</b> – PokeFindr tiene un diseño nuevo, en modo claro y oscuro.
+        map: <b>Un mapa nuevo</b> – Busca en cualquier lugar y encuentra también tiendas de cartas y eventos.
+        assistant: <b>Asistente de PokeFindr</b> – Pregunta con tus propias palabras y planifica rutas con varias paradas.
+        spanish: <b>En español</b> – PokeFindr ya está disponible en español.
+      more: Ver todas las novedades
       close: ¡Entendido!
   developers:
     meta:

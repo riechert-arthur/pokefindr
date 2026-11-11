@@ -14,6 +14,8 @@ const ids = <K extends string, I extends string>(release: K, items: readonly I[]
 export const CHANGELOG_RELEASES = [
   { version: "1.1", key: "v1_1", published: "2025-05-10", items: ids("v1_1", ["load", "grouping", "precise", "data", "zoom", "search", "ui", "discord"]) },
   { version: "1.2", key: "v1_2", published: "2025-05-19", items: ids("v1_2", ["accounts", "reviews", "settings", "sso", "ratings"]) },
+  // The redesign (R0 to R11). `published` is the day it reaches production: move it, and the "released" messages, if that changes (#347).
+  { version: "2.0", key: "v2_0", published: "2026-11-11", items: ids("v2_0", ["design", "search", "kinds", "states", "details", "add", "assistant", "routes", "chat", "mcp", "spanish", "profile"]) },
 ] as const satisfies readonly { version: string; key: ReleaseKey; published: `${number}-${number}-${number}`; items: readonly string[] }[]
 
 /** The newest release (the list is oldest first). */
