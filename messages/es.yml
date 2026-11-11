@@ -400,11 +400,13 @@ nav:
 ui:
   theme:
     group: Tema
+    current: "Tema: {theme}"
     light: Claro
     dark: Oscuro
     system: Sistema
   language:
     label: Idioma
+    current: "Idioma: {language}"
     saveFailed: No se pudo guardar tu idioma
     saveFailedBody: Quedó elegido en este dispositivo. Vuelve a intentarlo desde la configuración para usarlo en los demás.
   starRating:
@@ -798,7 +800,7 @@ faq:
       answer: Sí. Elige qué tipos de lugares mostrar y fija un radio de búsqueda de 5, 10, 25 o 50 millas.
     add:
       question: ¿Cómo puedo agregar un lugar nuevo?
-      answer: Las máquinas expendedoras vienen de la lista oficial, así que avísanos de una que falte a través de <support>Soporte</support>. Las tiendas de cartas y los eventos los puedes agregar tú mismo con Agregar un lugar en el mapa. Un moderador revisa cada uno antes de que lo vean todos.
+      answer: Las máquinas expendedoras vienen de la lista oficial, así que avísanos de una que falte a través de <support>Soporte</support>. Las tiendas de cartas y los eventos los puedes agregar tú mismo. Inicia sesión y usa Agregar un lugar en el mapa. Un moderador revisa cada uno antes de que lo vean todos.
     report:
       question: ¿Puedo reportar información desactualizada o incorrecta?
       answer: Sí. Envíanosla a través de <support>Soporte</support> y la corregiremos.

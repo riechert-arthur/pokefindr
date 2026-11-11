@@ -6,15 +6,15 @@ import { NavigationIcon, PlusIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { StarRating } from "@/components/pokefindr/StarRating"
 import { StatusBadge } from "@/components/pokefindr/StatusBadge"
-import { SubmissionBadge } from "@/components/pokefindr/SubmissionBadge"
+import { SubmissionBadge, SubmissionNote } from "@/components/pokefindr/SubmissionBadge"
 import type { MySubmission } from "@/lib/submissions/schemas"
-import { DEFAULT_RADIUS, mapUrl } from "@/lib/map/url-state"
+import { DEFAULT_RADIUS, mapUrl, roundPlace } from "@/lib/map/url-state"
 import type { UpcomingEvent } from "@/lib/types/highlights"
 import { useFormat } from "@/i18n/format"
 import { useDistance } from "@/i18n/useDistance"
 import { useTranslations } from "next-intl"
 
-/** How many reviews or events a tile lists, so the tiles stay the same height. */
+/** How many rows a tile lists (reviews, submissions, events), so the tiles stay the same height. */
 export const TILE_ROWS = 3
 
 /**
@@ -171,9 +171,20 @@ export function ReviewsTile({ reviews }: { reviews: MyReview[] | "error" | null 
   )
 }
 
-/** A live submission opens its place; one still pending (or off the map) opens the map around it, where the person sees their pending pins. */
-const submissionHref = (s: MySubmission) =>
-  s.locationId && s.locationActive ? mapUrl("/map", { location: s.locationId }) : mapUrl("/map", { q: [s.city, s.state].filter(Boolean).join(", ") || s.name, lng: s.lng, lat: s.lat, r: DEFAULT_RADIUS })
+const submissionPlace = (s: MySubmission) => [s.city, s.state].filter(Boolean).join(", ")
+/** Live and still on the map: the place itself. */
+const isLive = (s: MySubmission) => s.status === "approved" && Boolean(s.locationId) && s.locationActive !== false
+
+/**
+ * A live submission opens its place; a pending one, the map around it, where
+ * its pending pin shows. Anything else (not approved, ended, gone) has no pin,
+ * so it opens the map's US view, whose "Your submissions" list says why.
+ */
+function submissionHref(s: MySubmission) {
+  if (isLive(s) && s.locationId) return mapUrl("/map", { location: s.locationId })
+  if (s.status === "pending") return mapUrl("/map", { q: submissionPlace(s) || s.name, lng: roundPlace(s.lng), lat: roundPlace(s.lat), r: DEFAULT_RADIUS })
+  return "/map"
+}
 
 export function SubmissionsTile({ submissions }: { submissions: MySubmission[] | "error" | null }) {
   const t = useTranslations("dashboard.tiles")
@@ -206,7 +217,7 @@ export function SubmissionsTile({ submissions }: { submissions: MySubmission[] |
                 <span className="shrink-0">
                   <SubmissionBadge submission={s} />
                 </span>
-                <span className="min-w-0 truncate">{[s.city, s.state].filter(Boolean).join(", ")}</span>
+                <span className="min-w-0 truncate">{s.status === "pending" || isLive(s) ? submissionPlace(s) : <SubmissionNote submission={s} />}</span>
               </>
             }
           />

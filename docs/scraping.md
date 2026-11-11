@@ -121,7 +121,7 @@ to spot. No route returns every location: `queryFeatures()` always takes a limit
 | --- | --- | --- | --- |
 | `/api/locations?bbox=` (the map) | 500 | 300 square degrees | `truncated`; the pill says to zoom in |
 | `/api/locations/near` (the results list) | 200 | a 50-mile radius | `truncated`; `counts` and `total` cover every match |
-| `/api/locations/search` | 20 (5 by default) | — | — |
+| `/api/locations/search` | 20 (5 by default) | — | every word must match, 12 words at most; a ZIP matches only whole (no prefix walking) |
 | `/api/locations/cities` | 30 cities | one state | counts only |
 | `/api/locations/counts` | 10 points | a 50-mile radius each | counts only |
 | `/api/locations/[id]` | 1 | — | — |

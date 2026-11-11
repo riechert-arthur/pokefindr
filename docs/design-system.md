@@ -127,7 +127,7 @@ Three folders (a test enforces the naming rules and that each component has a st
 |---|---|
 | `KindDot`, `KindIcon` | A kind's colored circle with icon; the bare icon in the kind's color |
 | `TypeChip` | Toggle chip to show or hide one kind, with an optional count |
-| `StatusBadge` | Live · Sample · Pending review · Coming soon · Sponsored |
+| `StatusBadge` | Live · Sample · Pending review · Sponsored |
 | `EmptyState` | What a list or panel shows when it has nothing: title, one or two sentences, an action |
 | `SponsoredSlot` | The shell for one labeled, dismissible sponsored card (`compact` or `strip`) |
 | `StarRating` | Read-only stars ("4.5 out of 5 stars", half-star steps), or a 1–5 radio group with arrow keys when given `onChange` |

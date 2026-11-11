@@ -15,7 +15,7 @@ const SelectValue = SelectPrimitive.Value
 const SelectTrigger = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger> & {
-    /** The down arrow; off where there's no room for it (the app rail's language picker). */
+    /** The down arrow; off where there's no room for it. */
     chevron?: boolean
   }
 >(({ className, children, chevron = true, ...props }, ref) => (
