@@ -62,14 +62,16 @@ describe("AppRail", () => {
     expect(discord.getAttribute("rel")).toBe("noopener noreferrer")
   })
 
-  it("keeps the language badge, and grows it to the rail's width when expanded (#356)", () => {
+  it("keeps the language badge, and grows it to the rail's width with the language's name when expanded (#356)", () => {
     const { rerender } = render(<AppRail expanded={false} />)
     const badge = () => screen.getByRole("combobox", { name: "Language" })
-    expect(badge()).toHaveTextContent("en")
+    expect(screen.getByText("en")).not.toHaveClass("hidden")
+    expect(screen.getByText("English")).toHaveClass("sm:hidden")
     expect(badge()).not.toHaveClass("w-full")
     rerender(<AppRail expanded />)
-    expect(badge()).toHaveClass("w-full")
-    expect(badge()).toHaveClass("border")
+    expect(badge()).toHaveClass("w-full", "border", "px-1.5")
+    expect(screen.getByText("en")).toHaveClass("hidden")
+    expect(screen.getByText("English")).not.toHaveClass("sm:hidden")
   })
 
   it("names each link by its label, without aria-label or title", () => {

@@ -27,6 +27,13 @@ interface LanguageSwitcherProps {
   /** When the list opens or closes (the app rail stays expanded while it's open). */
   onOpenChange?: (open: boolean) => void
   className?: string
+  /**
+   * Compact only: also renders the language's name ("English") with these
+   * classes, and the code with `codeClassName`, so a caller can switch
+   * between them (the app rail shows the name when expanded).
+   */
+  nameClassName?: string
+  codeClassName?: string
 }
 
 /**
@@ -39,7 +46,7 @@ export function LanguageSwitcher({ locales = PUBLIC_LOCALES, ...props }: Languag
   return locales.length < 2 ? null : <Switcher locales={locales} {...props} />
 }
 
-function Switcher({ variant = "full", locales, chevron = true, onOpenChange, className }: LanguageSwitcherProps & { locales: readonly Locale[] }) {
+function Switcher({ variant = "full", locales, chevron = true, onOpenChange, className, nameClassName, codeClassName }: LanguageSwitcherProps & { locales: readonly Locale[] }) {
   const locale = useLocale()
   const t = useTranslations("ui.language")
   const router = useRouter()
@@ -80,10 +87,18 @@ function Switcher({ variant = "full", locales, chevron = true, onOpenChange, cla
       <SelectTrigger
         chevron={chevron}
         aria-label={t("label")}
-        className={cn(variant === "compact" ? "h-8 w-auto gap-1.5 px-2 text-caption uppercase" : "w-48", className)}
+        className={cn(variant === "compact" ? "h-8 w-auto gap-1.5 px-2 text-caption" : "w-48", className)}
       >
         {variant === "compact" && <GlobeIcon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />}
-        {variant === "compact" ? <span>{locale}</span> : <SelectValue />}
+        {variant === "compact" ? (
+          // One span: the trigger's line clamp applies to its direct span, which would override `hidden`.
+          <span>
+            <span className={cn("uppercase", codeClassName)}>{locale}</span>
+            {nameClassName !== undefined && <span className={nameClassName}>{languageName(locale as Locale)}</span>}
+          </span>
+        ) : (
+          <SelectValue />
+        )}
       </SelectTrigger>
       <SelectContent>
         {locales.map((l) => (
