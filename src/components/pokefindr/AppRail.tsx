@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl"
 import { Link, usePathname } from "@/i18n/navigation"
 import { useEffect, useRef, useState, type ComponentType, type Ref, type SVGProps } from "react"
-import { BookOpenIcon, HouseIcon, InboxIcon, MapPinIcon, SettingsIcon, ShieldIcon } from "lucide-react"
+import { ArrowUpRightIcon, BookOpenIcon, HouseIcon, InboxIcon, MapPinIcon, SettingsIcon, ShieldIcon } from "lucide-react"
 import { Logo } from "@/components/brand/Logo"
 import { DiscordIcon } from "@/components/icons/DiscordIcon"
 import { LanguageSwitcher } from "@/components/pokefindr/LanguageSwitcher"
@@ -80,8 +80,20 @@ function RailLink({ item, current, expanded }: { item: RailItem; current: boolea
       className={cn(linkClass, current && "bg-muted text-foreground")}
       {...(item.external && { target: "_blank", rel: "noopener noreferrer" })}
     >
-      <Icon className="size-5 shrink-0" aria-hidden />
+      <span className="relative grid shrink-0">
+        <Icon className="size-5" aria-hidden />
+        {/* Leaves the site (#369): a small arrow on the icon's corner while only the icon shows. */}
+        {item.external && (
+          <ArrowUpRightIcon
+            aria-hidden
+            data-external="corner"
+            className={cn("absolute -right-1.5 -top-1.5 size-3 rounded-full bg-card", expanded ? "hidden" : "max-sm:hidden")}
+          />
+        )}
+      </span>
       <span className={labelClass(expanded)}>{t(item.label)}</span>
+      {/* With the label showing, the arrow ends the row instead, as external links do. */}
+      {item.external && <ArrowUpRightIcon aria-hidden data-external="end" className={cn("ml-auto size-4 shrink-0", !expanded && "sm:hidden")} />}
     </Link>
   )
 }
