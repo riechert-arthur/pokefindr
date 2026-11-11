@@ -803,7 +803,7 @@ settings:
     body: The language PokeFindr uses for you, on every device you sign in on.
   assistant:
     title: Assistant
-    body: We keep the text of your assistant conversations for 30 days. Clear it now if you like.
+    body: We keep the text of your assistant conversations for 30 days, and your current chat stays in this browser until you start a new one or log out. Clear both now if you like.
 
 # The landing page (/).
 landing:

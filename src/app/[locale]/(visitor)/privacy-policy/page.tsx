@@ -19,7 +19,7 @@ const PrivacyPolicyPage: FC<LocaleParams> = async ({ params }) => {
     <div lang="en" className="max-w-3xl mx-auto p-6 text-foreground">
       <EnglishOnlyNotice href="/privacy-policy" />
       <h1 className="text-3xl font-bold mb-4">PRIVACY NOTICE</h1>
-      <p className="mb-4">Last updated November 8, 2026</p>
+      <p className="mb-4">Last updated November 11, 2026</p>
 
       <p className="mb-4">
         This privacy notice for <strong>PokeFindr</strong> (
@@ -153,7 +153,13 @@ const PrivacyPolicyPage: FC<LocaleParams> = async ({ params }) => {
         answer, we keep your thumbs up or down and the reason you picked with
         that record; a comment you write is kept 30 days, like the text, and
         is deleted when you clear your history. We read the ratings and
-        comments to improve the assistant.
+        comments to improve the assistant. Your current conversation is also
+        saved in your browser on that device, so it&apos;s still there when you
+        come back to the dashboard, with a small cookie that only says it&apos;s
+        there. Both are removed when you start a new chat, log out or clear your
+        assistant history. If your session simply ends without logging out, they
+        stay on the device until you next do one of those, or until 30 days pass
+        without a new message, whichever comes first.
       </p>
       <p className="mb-4">
         <strong>Automatically Collected Information:</strong>

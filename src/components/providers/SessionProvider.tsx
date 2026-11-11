@@ -10,6 +10,7 @@ import {
 } from "react";
 import axios from "axios";
 import { subscribeAuth } from "@/lib/auth/broadcast";
+import { clearAllChats } from "@/lib/assistant/saved-chat";
 import type { Role } from "@/lib/auth/roles";
 
 export interface AuthUser {
@@ -51,8 +52,12 @@ export const SessionContextProvider: FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     fetchSession();
 
-    // Re-read the session when another tab logs in or out.
-    return subscribeAuth(() => fetchSession());
+    // Re-read the session when another tab logs in or out. Logging out also
+    // drops the assistant chat kept in this browser (#346).
+    return subscribeAuth((message) => {
+      if (message === "logout") clearAllChats();
+      fetchSession();
+    });
   }, []);
 
   return (

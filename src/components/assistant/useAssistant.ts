@@ -1,32 +1,15 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
-import type { AssistantCard } from "@/lib/types/assistant"
+import type { AssistantCard, ChatMessage } from "@/lib/types/assistant"
 import type { AssistantEvent, AssistantTurn } from "@/lib/types/assistant-stream"
 import { clipHistory, memoryOf } from "@/lib/assistant/memory"
+import { chatKey, clearChat, loadChat, onChatsCleared, saveChat } from "@/lib/assistant/saved-chat"
 import { track } from "@/lib/analytics"
 import { useApiError, type ApiErrorBody } from "@/i18n/useApiError"
 
-export type ChatMessage =
-  | { id: number; role: "user"; text: string }
-  | {
-      id: number
-      role: "assistant"
-      text: string
-      cards: AssistantCard[]
-      /** What it's doing while no text has come yet ("Searching locations…"). */
-      status: string | null
-      /** Shown under the answer when the turn failed or stopped short. */
-      note: string | null
-      /** What the next turn remembers of this one (the server's summary with place ids). */
-      memory: string | null
-      /** The turn's id in the server's log, for feedback. */
-      turnId: string | null
-      done: boolean
-      /** The input check blocked the question (#253): neither is sent back as history. */
-      blocked?: boolean
-    }
+export type { ChatMessage }
 
 /** What a turn that ended without `done` remembers: what came, cards included, so follow-ups can still use its places. */
 const partialMemory = (m: { text: string; cards: AssistantCard[] }) => (m.text || m.cards.length ? memoryOf(m.text, m.cards) : null)
@@ -76,21 +59,89 @@ async function refusalNote(res: Response, t: ChatMessages, apiError: ReturnType<
   return apiError(body, t("failed"))
 }
 
+/** The chat as it's kept when the viewer leaves: an answer still streaming ends there, as Stop ends it. */
+const settled = (messages: readonly ChatMessage[], stopped: string): ChatMessage[] =>
+  messages.map((m) => (m.role === "assistant" && !m.done ? { ...m, status: null, done: true, note: m.note ?? stopped, memory: partialMemory(m) } : m))
+
 /**
  * The assistant conversation on the page: sends each message with the
  * history to /api/assistant and fills in the answer as its events stream
  * (text, a status while tools run, cards). `stop` aborts the answer and
  * keeps what came; `reset` starts a new chat.
+ *
+ * With `userId`, the chat is kept in this browser (#346): restored when the
+ * page opens, saved after each answer and when the viewer leaves mid-answer,
+ * and removed by `reset` ("New chat").
  */
-export function useAssistant() {
+export function useAssistant(userId: string | null = null) {
   const t = useTranslations("assistant.chat")
   const apiError = useApiError()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [busy, setBusy] = useState(false)
+  // Whose saved chat `messages` holds. State, not a ref, so nothing is saved
+  // over a chat in the same commit that restores it.
+  const [restoredFor, setRestoredFor] = useState<string | null>(null)
   const ctl = useRef<AbortController | null>(null)
   const nextId = useRef(1)
   const messagesRef = useRef(messages)
   messagesRef.current = messages
+  const stoppedRef = useRef(t("stopped"))
+  stoppedRef.current = t("stopped")
+
+  const adopt = useCallback((saved: ChatMessage[]) => {
+    nextId.current = saved.reduce((max, m) => Math.max(max, m.id), 0) + 1
+    // Now, not on the next render: a save as the page unmounts must see it.
+    messagesRef.current = saved
+    setMessages(saved)
+  }, [])
+
+  // Before the first paint, so a returning viewer never sees the empty dashboard flash in.
+  useLayoutEffect(() => {
+    if (!userId) return
+    ctl.current?.abort()
+    adopt(loadChat(userId))
+    setRestoredFor(userId)
+  }, [userId, adopt])
+
+  // Follow the saved chat: logout or "Clear assistant history" in this tab
+  // empties it, and so does New chat, logout or a newer answer in another tab
+  // (its `storage` event), so no tab saves an old copy back over it.
+  useEffect(() => {
+    if (!userId) return
+    const drop = () => {
+      ctl.current?.abort()
+      adopt([])
+    }
+    const onStorage = (e: StorageEvent) => {
+      // `key` is null when the whole storage was cleared.
+      if (e.key !== null && e.key !== chatKey(userId)) return
+      if (e.newValue === null) return drop()
+      // Mid-answer here: keep this tab's; it's saved when the answer ends.
+      if (!ctl.current) adopt(loadChat(userId))
+    }
+    window.addEventListener("storage", onStorage)
+    const off = onChatsCleared(drop)
+    return () => {
+      window.removeEventListener("storage", onStorage)
+      off()
+    }
+  }, [userId, adopt])
+
+  // After each change, but not while an answer streams: it's saved when it ends, or when the viewer leaves.
+  useEffect(() => {
+    if (userId && restoredFor === userId && !busy) saveChat(userId, messages)
+  }, [messages, busy, userId, restoredFor])
+
+  // Leaving the page (another page, a reload, closing the tab) keeps the answer that was streaming, stopped.
+  useEffect(() => {
+    if (!userId || restoredFor !== userId) return
+    const keep = () => saveChat(userId, settled(messagesRef.current, stoppedRef.current))
+    window.addEventListener("pagehide", keep)
+    return () => {
+      window.removeEventListener("pagehide", keep)
+      keep()
+    }
+  }, [userId, restoredFor])
 
   useEffect(() => () => ctl.current?.abort(), [])
 
@@ -158,7 +209,8 @@ export function useAssistant() {
   const reset = useCallback(() => {
     ctl.current?.abort()
     setMessages([])
-  }, [])
+    if (userId) clearChat(userId)
+  }, [userId])
 
   return { messages, busy, send, stop, reset }
 }

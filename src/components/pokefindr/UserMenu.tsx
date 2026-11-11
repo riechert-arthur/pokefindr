@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { broadcastAuth } from "@/lib/auth/broadcast"
+import { clearAllChats } from "@/lib/assistant/saved-chat"
 import { UserAvatar, type UserAvatarSize } from "@/components/pokefindr/UserAvatar"
 import { cn } from "@/lib/utils"
 
@@ -51,6 +52,8 @@ export function UserMenu({ size = "md", userName, imageUrl, className, variant =
     setLoggingOut(true)
     try {
       await axios.post("/api/auth/logout", undefined, { withCredentials: true })
+      // The assistant chat kept in this browser goes with the session (#346).
+      clearAllChats()
       broadcastAuth("logout")
       router.refresh()
       router.push("/login")
