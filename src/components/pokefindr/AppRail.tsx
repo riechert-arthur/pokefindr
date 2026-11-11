@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl"
 import { Link, usePathname } from "@/i18n/navigation"
 import { useEffect, useRef, useState, type ComponentType, type Ref, type SVGProps } from "react"
-import { ArrowUpRightIcon, BookOpenIcon, HouseIcon, InboxIcon, MapPinIcon, SettingsIcon, ShieldIcon } from "lucide-react"
+import { BookOpenIcon, ExternalLinkIcon, HouseIcon, InboxIcon, MapPinIcon, SettingsIcon, ShieldIcon } from "lucide-react"
 import { Logo } from "@/components/brand/Logo"
 import { DiscordIcon } from "@/components/icons/DiscordIcon"
 import { LanguageSwitcher } from "@/components/pokefindr/LanguageSwitcher"
@@ -48,6 +48,14 @@ const linkClass =
 const labelClass = (expanded: boolean) => cn("truncate whitespace-nowrap", !expanded && "sm:sr-only")
 
 /**
+ * For something drawn two ways, collapsed and expanded (the logo, the language
+ * code and name, Discord's arrow). The phone drawer always shows its labels,
+ * so there it counts as expanded.
+ */
+const onlyCollapsed = (expanded: boolean) => (expanded ? "hidden" : "max-sm:hidden")
+const onlyExpanded = (expanded: boolean) => (expanded ? undefined : "sm:hidden")
+
+/**
  * A picker badge's width (theme, language): collapsed, 44px centered on the
  * icons' 40px column; expanded and in the phone drawer, the rows' width plus
  * the same 2px each side. Same left edge and padding either way, so the icon
@@ -84,16 +92,12 @@ function RailLink({ item, current, expanded }: { item: RailItem; current: boolea
         <Icon className="size-5" aria-hidden />
         {/* Leaves the site (#369): a small arrow on the icon's corner while only the icon shows. */}
         {item.external && (
-          <ArrowUpRightIcon
-            aria-hidden
-            data-external="corner"
-            className={cn("absolute -right-1.5 -top-1.5 size-3 rounded-full bg-card", expanded ? "hidden" : "max-sm:hidden")}
-          />
+          <ExternalLinkIcon aria-hidden data-external="corner" className={cn("absolute -right-2.5 -top-2 size-3", onlyCollapsed(expanded))} />
         )}
       </span>
       <span className={labelClass(expanded)}>{t(item.label)}</span>
       {/* With the label showing, the arrow ends the row instead, as external links do. */}
-      {item.external && <ArrowUpRightIcon aria-hidden data-external="end" className={cn("ml-auto size-4 shrink-0", !expanded && "sm:hidden")} />}
+      {item.external && <ExternalLinkIcon aria-hidden data-external="end" className={cn("ml-auto size-4 shrink-0", onlyExpanded(expanded))} />}
     </Link>
   )
 }
@@ -216,8 +220,8 @@ export function AppRail({ signedIn = false, canModerate = false, isAdmin = false
         )}
       >
         <Link href="/" aria-label={t("logoHome")} className="mb-2 flex h-10 shrink-0 items-center rounded-md px-[5px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          <Logo size={30} title="" className={expanded ? "hidden" : "max-sm:hidden"} />
-          <Logo variant="full" size={30} title="" className={cn("whitespace-nowrap", !expanded && "sm:hidden")} />
+          <Logo size={30} title="" className={onlyCollapsed(expanded)} />
+          <Logo variant="full" size={30} title="" className={cn("whitespace-nowrap", onlyExpanded(expanded))} />
         </Link>
         {MAIN.map((item) => (
           <RailLink key={item.href} item={item} current={isCurrent(item.href)} expanded={expanded} />
@@ -237,7 +241,7 @@ export function AppRail({ signedIn = false, canModerate = false, isAdmin = false
             variant="compact"
             // Collapsed on desktop, "EN" fills the badge, so its arrow (the trigger's last svg) hides.
             className={cn(badgeClass(expanded), !expanded && "sm:[&>svg:last-child]:hidden")}
-            labelClassNames={{ code: expanded ? "hidden" : "max-sm:hidden", name: cn(!expanded && "sm:hidden") }}
+            labelClassNames={{ code: onlyCollapsed(expanded), name: cn(onlyExpanded(expanded)) }}
             onOpenChange={setMenuOpen}
           />
           {/*
