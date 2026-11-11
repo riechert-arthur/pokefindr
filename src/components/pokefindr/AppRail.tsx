@@ -47,6 +47,14 @@ const linkClass =
 /** A row's label: always read out, shown when expanded and in the phone drawer. */
 const labelClass = (expanded: boolean) => cn("truncate whitespace-nowrap", !expanded && "sm:sr-only")
 
+/**
+ * A picker badge's width (theme, language): collapsed, 44px centered on the
+ * icons' 40px column; expanded and in the phone drawer, the rows' width plus
+ * the same 2px each side. Same left edge and padding either way, so the icon
+ * doesn't move as the rail opens. `[&>span]:mr-auto` pushes the arrow to the end.
+ */
+const badgeClass = (expanded: boolean) => cn("-mx-0.5 gap-1 px-1 max-sm:w-[calc(100%+4px)] [&>span]:mr-auto", expanded ? "w-[calc(100%+4px)]" : "w-11")
+
 const matches = (query: string) => typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(query).matches
 
 /** From `sm` up the rail expands; below, it's the phone drawer, which always shows its labels. */
@@ -97,8 +105,9 @@ interface AppRailProps {
 /**
  * The app's side navigation on the map and in-app pages, from the redesign
  * prototype: a 64px card-colored rail with the logo, then Home, Blog and Map,
- * the current page shaded. Discord, Settings and the theme toggle sit at the
- * bottom; the prototype leaves them out, but the app needs them somewhere.
+ * the current page shaded. Discord, Settings and the language and theme
+ * pickers sit at the bottom; the prototype leaves them out, but the app needs
+ * them somewhere.
  *
  * Hovering over it (with a mouse) or tabbing into it widens it to 208px with a
  * label beside each icon (#291). The wide panel overlays the page, so the 64px
@@ -112,7 +121,7 @@ export function AppRail({ signedIn = false, canModerate = false, isAdmin = false
 
   const [hovered, setHovered] = useState(false)
   const [focused, setFocused] = useState(false)
-  // The language list opens in a portal, outside the rail: keep the rail open while it is.
+  // The language and theme lists open in a portal, outside the rail: keep the rail open while one is.
   const [menuOpen, setMenuOpen] = useState(false)
   // Escape collapses it until focus or the pointer leaves.
   const [dismissed, setDismissed] = useState(false)
@@ -214,9 +223,9 @@ export function AppRail({ signedIn = false, canModerate = false, isAdmin = false
           */}
           <LanguageSwitcher
             variant="compact"
-            className={cn("-mx-0.5 gap-1 px-1 max-sm:w-[calc(100%+4px)] [&>span]:mr-auto", expanded ? "w-[calc(100%+4px)]" : "w-11 sm:[&>svg:last-child]:hidden")}
-            codeClassName={expanded ? "hidden" : "max-sm:hidden"}
-            nameClassName={cn("truncate", !expanded && "sm:hidden")}
+            // Collapsed on desktop, "EN" fills the badge, so its arrow (the trigger's last svg) hides.
+            className={cn(badgeClass(expanded), !expanded && "sm:[&>svg:last-child]:hidden")}
+            labelClassNames={{ code: expanded ? "hidden" : "max-sm:hidden", name: cn(!expanded && "sm:hidden") }}
             onOpenChange={setMenuOpen}
           />
           {/*
@@ -227,7 +236,7 @@ export function AppRail({ signedIn = false, canModerate = false, isAdmin = false
           */}
           <ThemeToggle
             variant="compact"
-            className={cn("-mx-0.5 gap-1 px-1 max-sm:w-[calc(100%+4px)] [&>span]:mr-auto", expanded ? "w-[calc(100%+4px)]" : "w-11")}
+            className={badgeClass(expanded)}
             labelClassName={labelClass(expanded)}
             onOpenChange={setMenuOpen}
           />

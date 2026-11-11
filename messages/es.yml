@@ -401,11 +401,13 @@ nav:
 ui:
   theme:
     group: Tema
+    current: "Tema: {theme}"
     light: Claro
     dark: Oscuro
     system: Sistema
   language:
     label: Idioma
+    current: "Idioma: {language}"
     saveFailed: No se pudo guardar tu idioma
     saveFailedBody: Quedó elegido en este dispositivo. Vuelve a intentarlo desde la configuración para usarlo en los demás.
   starRating:
