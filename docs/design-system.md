@@ -147,6 +147,7 @@ Three folders (a test enforces the naming rules and that each component has a st
 | `UserAvatar` | **The only way to show a person.** Their picture (`imageUrl`), or the first letter of their name on `bg-brand`, or a person icon when the name doesn't start with a letter. Sizes `xs` (22px, review rows), `sm` (28px, sidebars), `md` (36px, headers, the default) and `lg` (64px, settings). Decorative (`aria-hidden`): always show the name next to it. A test in `__tests__/design/ui-convention.test.ts` fails on `AvatarFallback` or a hand-made initial anywhere else. |
 | `UserMenu` | The signed-in user's avatar (a `UserAvatar`): a dropdown with Settings and Log out, or `variant="list"` for the mobile nav drawer |
 | `brand/Logo` | The mark (`variant="mark"`) or mark + wordmark (`"full"`) |
+| `brand/AgentMark` | The assistant's mark: a comet in the logo's gradient (`brand` → `brand-2`), so it follows the logo into every theme. `thinking` turns it while the assistant works (not with reduced motion). Sizes `sm` 26px (each answer), `md` 34px, `lg` 44px (the home greeting). Decorative. |
 
 ## Which overlay?
 

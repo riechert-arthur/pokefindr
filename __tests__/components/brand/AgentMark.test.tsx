@@ -1,29 +1,51 @@
 import { render } from "../../helpers/intl"
 import { describe, expect, it } from "vitest"
 import { AgentMark } from "@/components/brand/AgentMark"
-import { Logo } from "@/components/brand/Logo"
 
-describe("AgentMark", () => {
-  it("is decorative, draws the pin glyph in primary-foreground on the brand gradient", () => {
-    const { container } = render(<AgentMark size="lg" />)
-    const mark = container.firstElementChild as HTMLElement
-    expect(mark).toHaveAttribute("aria-hidden", "true")
-    expect(mark).toHaveClass("from-brand", "to-brand-2", "text-primary-foreground")
-    expect(mark).not.toHaveClass("text-white")
-    expect(mark.querySelector("svg")).toHaveClass("lucide-agent-pin")
+const mark = (props: Parameters<typeof AgentMark>[0] = {}) => render(<AgentMark {...props} />).container.querySelector("svg") as SVGSVGElement
+
+describe("AgentMark (#386)", () => {
+  it("is decorative, with no tile behind it", () => {
+    const svg = mark()
+    expect(svg).toHaveAttribute("aria-hidden", "true")
+    expect(svg.getAttribute("class")).not.toMatch(/bg-|rounded/)
   })
 
-  it("draws the logo's own pin, so a change to the logo carries over", () => {
-    const pin = render(<AgentMark />).container.querySelector("path")
-    const logoPin = render(<Logo size={32} title="" />).container.querySelector("path")
-    expect(pin?.getAttribute("d")).toBe(logoPin?.getAttribute("d"))
+  it("draws two sweeps and a core in the logo's gradient, brand to brand-2, and no raw colors", () => {
+    const svg = mark()
+    const stops = [...svg.querySelectorAll("stop")].map((s) => s.getAttribute("style"))
+    expect(stops).toEqual(["stop-color: hsl(var(--brand));", "stop-color: hsl(var(--brand-2));"])
+    const id = svg.querySelector("linearGradient")!.id
+    const shapes = [...svg.querySelectorAll("path, circle")]
+    expect(shapes).toHaveLength(3)
+    for (const shape of shapes) expect(shape.getAttribute("fill")).toBe(`url(#${id})`)
+  })
+
+  it("gives each mark its own gradient id, so two on a page don't share one", () => {
+    const { container } = render(
+      <>
+        <AgentMark />
+        <AgentMark />
+      </>,
+    )
+    const ids = [...container.querySelectorAll("linearGradient")].map((g) => g.id)
+    expect(new Set(ids).size).toBe(2)
+  })
+
+  it("turns its sweeps only while thinking, never with reduced motion, and the core stays still", () => {
+    const sweeps = (svg: SVGSVGElement) => svg.querySelector("[data-sweeps]")!.getAttribute("class") ?? ""
+    expect(sweeps(mark())).not.toContain("animate-")
+    const thinking = mark({ thinking: true })
+    expect(sweeps(thinking)).toContain("animate-[spin_2.2s_linear_infinite]")
+    expect(sweeps(thinking)).toContain("motion-reduce:animate-none")
+    expect(thinking.querySelector("[data-sweeps] circle")).toBeNull()
   })
 
   it.each([
-    ["sm", "size-[26px]", "[&_svg]:size-4"],
-    ["md", "size-[34px]", "[&_svg]:size-5"],
-    ["lg", "size-11", "[&_svg]:size-[26px]"],
-  ] as const)("at %s, is a %s box with a %s glyph", (size, box, glyph) => {
-    expect(render(<AgentMark size={size} />).container.firstElementChild).toHaveClass(box, glyph)
+    ["sm", "size-[26px]"],
+    ["md", "size-[34px]"],
+    ["lg", "size-11"],
+  ] as const)("at %s, fills a %s box", (size, box) => {
+    expect(mark({ size })).toHaveClass(box)
   })
 })
