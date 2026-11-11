@@ -33,7 +33,7 @@ describe("RetailerFilter", () => {
   it("counts several picks, keeps a linked retailer outside the top list, and clears", async () => {
     const onChange = vi.fn()
     render(<RetailerFilter selected={["QFC", "Dillons"]} onChange={onChange} />)
-    const trigger = screen.getByRole("button", { name: "Retailer: 2 retailers" })
+    const trigger = screen.getByRole("button", { name: "2 retailers" })
     expect(trigger).toHaveTextContent("2 retailers")
     fireEvent.click(trigger)
     await waitFor(() => expect(screen.getByRole("checkbox", { name: /Dillons/ })).toBeChecked())

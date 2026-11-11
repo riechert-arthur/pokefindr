@@ -56,7 +56,7 @@ import type { Hotspot, UpcomingEvent } from "@/lib/types/highlights"
 import { cn } from "@/lib/utils"
 import { boundsOfRadius, milesBetween, radiusCircle, US_BOUNDS } from "@/lib/map/geo"
 import { STATES } from "@/lib/map/states"
-import { DEFAULT_RADIUS, RADII, loadMapSearchParams, mapSearchParams, nearMeParams, roundCamera, roundPlace, roundZoom, type MapSearchParams } from "@/lib/map/url-state"
+import { DEFAULT_RADIUS, loadMapSearchParams, mapSearchParams, nearMeParams, roundCamera, roundPlace, roundZoom, type MapSearchParams, type Radius } from "@/lib/map/url-state"
 import { initialMapView, shownKinds, viewKey, type InitialMapView } from "@/lib/map/initial-view"
 import { INITIAL_LOAD_STATE, nextLoadState, type MapLoadState } from "./mapLoadState"
 import { track } from "@/lib/analytics"
@@ -378,7 +378,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   }
 
   /** The results' radius toggle: the same place, a wider or narrower circle. */
-  const handleRadiusChange = (r: (typeof RADII)[number]) => {
+  const handleRadiusChange = (r: Radius) => {
     if (!place) return
     track("filter_change", { filter: "radius", value: String(r) })
     writeView({ r }, { history: "replace" })
@@ -774,7 +774,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
               place && (
               <ResultsSheet
                 label={nearMe ? null : (urlView.place?.label ?? null)}
-                radius={place.radius as (typeof RADII)[number]}
+                radius={place.radius as Radius}
                 onRadiusChange={handleRadiusChange}
                 kinds={kinds}
                 nearby={nearby}
@@ -787,7 +787,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         />
         {/* The filters across the top, right of the panel and clear of the account menu (#361). */}
         <MapFilterRow
-          radius={place ? (place.radius as (typeof RADII)[number]) : null}
+          radius={place ? (place.radius as Radius) : null}
           onRadiusChange={handleRadiusChange}
           vendingShown={kindSet.has("vending")}
           retailers={retailers ?? []}

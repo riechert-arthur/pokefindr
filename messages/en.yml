@@ -184,7 +184,6 @@ map:
     cooperativeWindows: Use Ctrl + scroll to zoom the map
     cooperativeMac: Use ⌘ + scroll to zoom the map
     cooperativeMobile: Use two fingers to move the map
-  # The Filters button and its popover.
   # The filter row across the top of the map.
   filters:
     # The row's accessible name.
@@ -195,7 +194,7 @@ map:
     # The Retailer chip. Once some are picked it says which: "Safeway", or "2 retailers".
     retailer: Retailer
     retailerCount: "{count, plural, one {# retailer} other {# retailers}}"
-    # Its name once picked. {value} is what the chip says.
+    # Its name with one retailer picked ("Retailer: Safeway"); with several, the chip's "2 retailers" is its name.
     retailerPicked: "Retailer: {value}"
     vendingTitle: Vending machines · retailer
     failed: Couldn't load retailers. Try again in a moment.

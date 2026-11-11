@@ -80,7 +80,7 @@ export function RetailerFilter({ selected, onChange }: RetailerFilterProps) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" aria-label={picked ? t("retailerPicked", { value: picked }) : t("retailer")} className={cn(filterChip, n > 0 && filterChipSet)}>
+        <Button type="button" variant="outline" aria-label={n === 1 ? t("retailerPicked", { value: selected[0] }) : undefined} className={cn(filterChip, n > 0 && filterChipSet)}>
           <span className="max-w-[16ch] truncate">{picked ?? t("retailer")}</span>
           <ChevronDownIcon className="size-4 opacity-60" aria-hidden />
         </Button>

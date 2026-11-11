@@ -39,6 +39,16 @@ describe("MapFilterRow (#361)", () => {
     expect(screen.queryByRole("radio", { name: "25 mi" })).not.toBeInTheDocument()
   })
 
+  it("doesn't reopen the radius menu by itself after the place goes away", () => {
+    const props = { onRadiusChange: vi.fn(), vendingShown: true, retailers: [], onRetailersChange: vi.fn() }
+    const { rerender } = render(<MapFilterRow radius={10} {...props} />)
+    fireEvent.click(screen.getByRole("button", { name: "Within 10 mi" }))
+    expect(screen.getByRole("radio", { name: "10 mi" })).toBeInTheDocument()
+    rerender(<MapFilterRow radius={null} {...props} />)
+    rerender(<MapFilterRow radius={25} {...props} />)
+    expect(screen.queryByRole("radio", { name: "25 mi" })).not.toBeInTheDocument()
+  })
+
   it("clears the picked retailers", () => {
     const { onRetailersChange } = row({ retailers: ["Safeway"] })
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }))

@@ -7,15 +7,13 @@ import { useFormat, type Format } from "@/i18n/format"
 import { useDistance } from "@/i18n/useDistance"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { RADII } from "@/lib/map/url-state"
+import { RADII, type Radius } from "@/lib/map/url-state"
 import type { LocationFeature, LocationKind, NearbyLocations } from "@/lib/types/locations"
 import { cn } from "@/lib/utils"
 import type { NearbyState } from "./useNearbyLocations"
 import { LocationRow } from "./LocationRow"
 import { SponsoredPlacement } from "@/components/ads/SponsoredPlacement"
 import { useTranslations } from "next-intl"
-
-type Radius = (typeof RADII)[number]
 
 interface ResultsSheetProps {
   /** "Seattle, WA", or null for the viewer's own location. */

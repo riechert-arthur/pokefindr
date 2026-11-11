@@ -7,12 +7,10 @@ import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useDistance } from "@/i18n/useDistance"
-import { RADII } from "@/lib/map/url-state"
+import { RADII, type Radius } from "@/lib/map/url-state"
 import { cn } from "@/lib/utils"
 import { filterChip } from "./filterChip"
 import { RetailerFilter } from "./RetailerFilter"
-
-type Radius = (typeof RADII)[number]
 
 interface MapFilterRowProps {
   /** The searched place's radius, first in the row; null without a place. */
@@ -36,10 +34,12 @@ export function MapFilterRow({ radius, onRadiusChange, vendingShown, retailers, 
   const t = useTranslations("map.filters")
   const { radius: radiusText } = useDistance()
   const [radiusOpen, setRadiusOpen] = useState(false)
+  // The place went away (back button, a new URL) with the menu open: don't reopen it with the next search.
+  if (radius === null && radiusOpen) setRadiusOpen(false)
   if (radius === null && !vendingShown) return null
 
   return (
-    <div role="group" aria-label={t("row")} className={cn("pointer-events-none flex items-center gap-2 overflow-x-auto p-1 [scrollbar-width:none] [&>*]:pointer-events-auto", className)}>
+    <div role="group" aria-label={t("row")} className={cn("pointer-events-none flex items-center gap-2 overflow-x-auto px-1 pb-3 pt-1 [scrollbar-width:none] [&>*]:pointer-events-auto", className)}>
       {radius !== null && (
         <Popover open={radiusOpen} onOpenChange={setRadiusOpen}>
           <PopoverTrigger asChild>
