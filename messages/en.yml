@@ -513,11 +513,7 @@ ui:
     light: Light
     dark: Dark
     system: System
-    # The one-button version: what clicking it does.
-    switchToLight: Switch to light theme
-    switchToDark: Switch to dark theme
-    # Its visible label, the theme a click switches to (part of the name above).
-    lightTheme: Light theme
+    # The app rail's on/off switch: on while the dark theme shows.
     darkTheme: Dark theme
   # The language switcher. Each language is listed in its own name ("English", "Español").
   language:

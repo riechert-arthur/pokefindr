@@ -219,7 +219,11 @@ export function AppRail({ signedIn = false, canModerate = false, isAdmin = false
             nameClassName={cn("truncate", !expanded && "sm:hidden")}
             onOpenChange={setMenuOpen}
           />
-          <ThemeToggle variant="toggle" className={linkClass} labelClassName={labelClass(expanded)} />
+          {/*
+            A switch, not a link: centered on the icons' column (2px in), with "Dark theme" beside it
+            when expanded, starting where the links' labels do (#355).
+          */}
+          <ThemeToggle variant="toggle" className="h-10 w-full gap-1 pl-0.5 text-body font-medium text-muted-foreground" labelClassName={labelClass(expanded)} />
         </div>
       </div>
     </nav>
