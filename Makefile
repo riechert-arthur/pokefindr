@@ -17,7 +17,12 @@ MAIL_SMTP_PORT ?= 1025
 # Each git branch gets its own local database, so migrations tried on one
 # branch never reach another (docs/database.md, "Branch databases").
 DB_NAME ?= $(shell scripts/dev/db-name.sh)
-export DB_PORT WEB_PORT STORYBOOK_PORT MAIL_UI_PORT MAIL_SMTP_PORT DB_NAME
+# What the dev image is built from. The image carries it as a label, and
+# `make run` rebuilds only when it changes: some Docker versions give a
+# rebuilt image a new id even when nothing changed, and Compose then
+# recreates init, web and Storybook on every run.
+DEV_IMAGE_INPUTS := $(shell cat Dockerfile.dev scripts/dev/entrypoint.sh | sha256sum | cut -c1-16)
+export DB_PORT WEB_PORT STORYBOOK_PORT MAIL_UI_PORT MAIL_SMTP_PORT DB_NAME DEV_IMAGE_INPUTS
 
 .PHONY: help run stop logs shell prune fresh reset preflight env
 
@@ -28,9 +33,12 @@ run: preflight env ## Start or update everything: db, migrations, seed data, web
 	@# Mount points for the node_modules and .next volumes. Created here so
 	@# Docker doesn't create them owned by root, which breaks a host npm install.
 	@mkdir -p node_modules .next
-	@# Build first, then a plain up. `up --build` makes some Compose v2
-	@# releases recreate init and web even when the image didn't change.
-	@docker compose build --quiet init
+	@# Build first (only when its inputs changed, see DEV_IMAGE_INPUTS), then a
+	@# plain up. `up --build` makes some Compose releases recreate init and web
+	@# even when the image didn't change.
+	@if [ "$$(docker image inspect -f '{{ index .Config.Labels "dev.pokefindr.inputs" }}' pokefindr-dev:latest 2>/dev/null)" != "$(DEV_IMAGE_INPUTS)" ]; then \
+	  docker compose build --quiet init; \
+	fi
 	@docker compose up --detach --wait || { \
 	  echo; echo "Startup failed. Last output from init and web:"; \
 	  docker compose logs --tail 40 init web storybook; exit 1; }
