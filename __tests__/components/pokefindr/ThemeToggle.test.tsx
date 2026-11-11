@@ -7,29 +7,25 @@ vi.mock("next-themes", () => ({ useTheme: () => ({ ...state, setTheme }) }))
 
 import { ThemeToggle } from "@/components/pokefindr/ThemeToggle"
 
-describe("ThemeToggle toggle variant (#355)", () => {
+describe("ThemeToggle compact variant (#355)", () => {
   it.each([
-    ["system", "light", false, "dark"],
-    ["system", "dark", true, "light"],
-    ["light", "light", false, "dark"],
-    ["dark", "dark", true, "light"],
-  ])("with theme %s showing %s, is a Dark theme switch (on: %s) that flips to %s", (theme, resolvedTheme, on, next) => {
-    state = { theme, resolvedTheme }
-    setTheme.mockClear()
-    render(<ThemeToggle variant="toggle" />)
-    const sw = screen.getByRole("switch", { name: "Dark theme" })
-    expect(sw).toHaveAttribute("aria-checked", String(on))
-    fireEvent.click(sw)
-    expect(setTheme).toHaveBeenCalledWith(next)
+    ["light", "Light"],
+    ["dark", "Dark"],
+    ["system", "System"],
+  ])("shows the chosen theme (%s) by name", (theme, name) => {
+    state = { theme, resolvedTheme: theme === "dark" ? "dark" : "light" }
+    render(<ThemeToggle variant="compact" labelClassName="sm:sr-only" />)
+    expect(screen.getByRole("combobox", { name: "Theme" })).toHaveTextContent(name)
+    expect(screen.getByText(name)).toHaveClass("sm:sr-only")
   })
 
-  it("flips from its label too, which can be screen-reader only", () => {
+  it("offers Light, Dark and System, and picks one", () => {
     state = { theme: "light", resolvedTheme: "light" }
     setTheme.mockClear()
-    render(<ThemeToggle variant="toggle" labelClassName="sr-only" />)
-    const label = screen.getByText("Dark theme")
-    expect(label).toHaveClass("sr-only")
-    fireEvent.click(label)
+    render(<ThemeToggle variant="compact" />)
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Theme" }), { key: "Enter" })
+    expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["Light", "Dark", "System"])
+    fireEvent.click(screen.getByRole("option", { name: "Dark" }))
     expect(setTheme).toHaveBeenCalledWith("dark")
   })
 })
