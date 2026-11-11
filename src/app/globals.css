@@ -72,7 +72,10 @@
     --shadow-xl: 0 2px 4px rgb(10 10 10 / 0.06), 0 24px 64px -12px rgb(10 10 10 / 0.24);
   }
 
-  .dark {
+  /* Holo Dark (#371) starts from these dark tokens and overrides some below. */
+  .dark,
+  .holo-dark {
+    /* Every dark theme in src/lib/design/themes.ts must be listed here (a test checks). */
     /* shadcn base */
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
@@ -128,6 +131,131 @@
     --shadow-md: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.45);
     --shadow-lg: 0 1px 2px rgb(0 0 0 / 0.4), 0 18px 50px -12px rgb(0 0 0 / 0.6);
     --shadow-xl: 0 2px 4px rgb(0 0 0 / 0.45), 0 24px 64px -12px rgb(0 0 0 / 0.7);
+  }
+
+  /*
+   * Holo Light and Holo Dark (#371): an original theme from the collecting
+   * hobby, not any official look. Trainer red for actions, type-energy colors
+   * for the kinds (fire, grass, psychic), bright route-map water, Rubik, rounder
+   * corners, and a foil glint (.foil, below). Text pairs meet WCAG AA: white on
+   * the red 5.9:1, the red on muted 5.0:1, muted text on cards 5.9:1 (light);
+   * 6.1:1, 4.6:1, 6.8:1 (dark). Source: the prototype's Holo switch.
+   */
+  .holo-light {
+    color-scheme: light;
+    --background: 222.9 46.7% 97.1%;
+    --foreground: 226.2 39.4% 12.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 226.2 39.4% 12.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 226.2 39.4% 12.9%;
+    --primary: 353 72.6% 44.5%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 221.5 41.9% 93.9%;
+    --secondary-foreground: 226.2 39.4% 12.9%;
+    --muted: 221.5 41.9% 93.9%;
+    --muted-foreground: 226.5 18.2% 43.1%;
+    --accent: 221.5 41.9% 93.9%;
+    --accent-foreground: 226.2 39.4% 12.9%;
+    --border: 222.9 33.3% 87.6%;
+    --input: 222.9 33.3% 87.6%;
+    --ring: 353 72.6% 44.5%;
+    --brand: 42.3 90.6% 46.1%;
+    --brand-2: 13.5 77.1% 53.7%;
+    --spark: 228 69% 54.5%;
+    --success: 132 55% 31%;
+    /* Warning and destructive are darker than Light's, which were tuned for white:
+       on the tinted background they're 5.1:1 and 5.1:1 (4.7:1 and 4.7:1 on muted). */
+    --warning: 32.1 94.6% 32%;
+    --destructive: 11.2 89.2% 41%;
+    --kind-vending: 13.5 77.1% 53.7%;
+    --kind-shop: 131.4 54.1% 40.2%;
+    --kind-event: 258.2 70% 59.4%;
+    --me: 228 69% 54.5%;
+    --map-water: 200.8 74.3% 80.2%;
+    --map-land: 77.1 41.2% 96.7%;
+    --map-line: 221.2 28.1% 77.6%;
+    --map-unsupported: 220 30% 92.2%;
+    --map-unsupported-line: 219 26.3% 85.1%;
+    --map-choro-hi: 353 72.6% 44.5%;
+    --map-radius: 228 69% 54.5%;
+    --radius: 0.75rem;
+    --shadow-md: 0 1px 0 rgb(20 26 46 / 0.06), 0 10px 28px rgb(20 26 46 / 0.12);
+  }
+
+  .holo-dark {
+    color-scheme: dark;
+    --background: 224.3 46.9% 9.6%;
+    --foreground: 225 54.5% 95.7%;
+    --card: 224 41.7% 14.1%;
+    --card-foreground: 225 54.5% 95.7%;
+    --popover: 224 41.7% 14.1%;
+    --popover-foreground: 225 54.5% 95.7%;
+    --primary: 354.3 100% 65.1%;
+    --primary-foreground: 351.4 67.7% 6.1%;
+    --secondary: 223.8 38.9% 18.6%;
+    --secondary-foreground: 225 54.5% 95.7%;
+    --muted: 223.8 38.9% 18.6%;
+    --muted-foreground: 225.7 26.3% 68.6%;
+    --accent: 223.8 38.9% 18.6%;
+    --accent-foreground: 225 54.5% 95.7%;
+    --border: 223.5 33.9% 23.1%;
+    --input: 223.5 33.9% 23.1%;
+    --ring: 354.3 100% 65.1%;
+    --brand: 45.9 100% 62.4%;
+    --brand-2: 10.9 100% 64.5%;
+    --spark: 228.5 100% 74.3%;
+    --success: 135.5 50.4% 53.3%;
+    --kind-vending: 14.7 100% 65.5%;
+    --kind-shop: 133.6 58.4% 55.7%;
+    --kind-event: 255.5 100% 77.3%;
+    --me: 228.5 100% 74.3%;
+    --map-water: 211.8 75% 17.3%;
+    --map-land: 223.6 41.8% 15.5%;
+    --map-line: 225.6 34.2% 31%;
+    --map-unsupported: 224.4 45.8% 11.6%;
+    --map-unsupported-line: 225.4 40.7% 17.8%;
+    --map-choro-hi: 354.3 100% 65.1%;
+    --map-dot-ring: 224 41.7% 14.1%;
+    --map-radius: 228.5 100% 74.3%;
+    --radius: 0.75rem;
+  }
+
+  /* The Holo themes' face: Rubik (src/app/fonts.ts), rounder than Noto Sans. */
+  :is(.holo-light, .holo-dark) body {
+    --font-sans: var(--font-holo);
+    font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  /*
+   * The Holo themes' foil glint (#371): a band of gold, blue and violet swept
+   * across on hover or keyboard focus, like a holo card catching the light.
+   * The image is three times the element's width and the band sits inside its
+   * middle third, so at rest (showing the right third) and after the sweep
+   * (the left third) nothing of it shows. Nothing in the other themes. This
+   * selector outranks Tailwind's transition-colors, so the color transitions
+   * are listed here too.
+   */
+  :is(.holo-light, .holo-dark) .foil {
+    background-image: linear-gradient(115deg, transparent 36%, rgb(255 214 90 / 0.45) 43%, rgb(120 200 255 / 0.45) 50%, rgb(190 140 255 / 0.4) 57%, transparent 64%);
+    background-size: 300% 100%;
+    background-position: 100% 0;
+    background-repeat: no-repeat;
+    transition:
+      background-position 0.7s ease,
+      color 150ms,
+      background-color 150ms,
+      border-color 150ms;
+  }
+  :is(.holo-light, .holo-dark) .foil:is(:hover, :focus-visible) {
+    background-position: 0 0;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :is(.holo-light, .holo-dark) .foil {
+      transition: none;
+    }
   }
 }
 
@@ -237,7 +365,7 @@
   }
 }
 /* The control icons are dark SVGs; invert them on the dark card. */
-.dark .maplibregl-map .maplibregl-ctrl button .maplibregl-ctrl-icon {
+:is(.dark, .holo-dark) .maplibregl-map .maplibregl-ctrl button .maplibregl-ctrl-icon {
   filter: invert(1);
 }
 

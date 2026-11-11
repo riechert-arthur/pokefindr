@@ -1,6 +1,7 @@
 "use client"
 
 import { useTheme } from "next-themes"
+import { lightOrDark } from "@/lib/design/themes"
 import { Toaster as Sonner } from "sonner"
 
 type ToasterProps = React.ComponentProps<typeof Sonner>
@@ -11,7 +12,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
 
   return (
     <Sonner
-      theme={(forcedTheme ?? theme) as ToasterProps["theme"]}
+      theme={lightOrDark(forcedTheme ?? theme) ?? "system"}
       className="toaster group"
       // Above the phone tab bar while it's shown (globals.css: .has-tabbar).
       offset={{ bottom: "var(--toast-bottom, 24px)" }}

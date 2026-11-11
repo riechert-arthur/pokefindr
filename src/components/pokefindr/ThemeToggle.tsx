@@ -1,19 +1,20 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Monitor, Moon, Sun, type LucideIcon } from "lucide-react"
+import { Monitor, Moon, MoonStar, Sparkles, Sun, type LucideIcon } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useTranslations } from "next-intl"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { COMPACT_TRIGGER, CompactLabel } from "@/components/pokefindr/CompactSelect"
+import { THEMES, type Theme } from "@/lib/design/themes"
 import { cn } from "@/lib/utils"
 
-/** Each option's label is its value's message in `ui.theme`. */
-const OPTIONS: { value: "light" | "dark" | "system"; icon: LucideIcon }[] = [
-  { value: "light", icon: Sun },
-  { value: "dark", icon: Moon },
-  { value: "system", icon: Monitor },
-]
+type Choice = Theme | "system"
+/** Each choice's label (a message in `ui.theme`) and icon. Records, so a theme added to THEMES can't be left out. */
+const LABELS: Record<Choice, "light" | "dark" | "holoLight" | "holoDark" | "system"> = { light: "light", dark: "dark", "holo-light": "holoLight", "holo-dark": "holoDark", system: "system" }
+const ICONS: Record<Choice, LucideIcon> = { light: Sun, dark: Moon, "holo-light": Sparkles, "holo-dark": MoonStar, system: Monitor }
+/** The themes in their order (src/lib/design/themes.ts), then System. */
+const OPTIONS = [...THEMES, "system" as const].map((value) => ({ value, label: LABELS[value], icon: ICONS[value] }))
 
 interface ThemeToggleProps {
   /**
@@ -43,19 +44,19 @@ export function ThemeToggle({ variant = "segmented", className, labelClassName, 
     return (
       <Select value={chosen.value} onValueChange={setTheme} onOpenChange={onOpenChange}>
         {/* The name says the choice, which the collapsed rail only shows as an icon. */}
-        <SelectTrigger aria-label={mounted ? t("current", { theme: t(chosen.value) }) : t("group")} className={cn(COMPACT_TRIGGER, className)}>
+        <SelectTrigger aria-label={mounted ? t("current", { theme: t(chosen.label) }) : t("group")} className={cn(COMPACT_TRIGGER, className)}>
           {/* Until the stored theme is known: an empty slot, not a wrong "System" that then flips. */}
           {mounted ? <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden /> : <span aria-hidden className="size-3.5 shrink-0" />}
           <CompactLabel>
-            <span className={labelClassName}>{mounted ? t(chosen.value) : ""}</span>
+            <span className={labelClassName}>{mounted ? t(chosen.label) : ""}</span>
           </CompactLabel>
         </SelectTrigger>
         <SelectContent>
-          {OPTIONS.map(({ value, icon: ItemIcon }) => (
+          {OPTIONS.map(({ value, label, icon: ItemIcon }) => (
             <SelectItem key={value} value={value}>
               <span className="flex items-center gap-2">
                 <ItemIcon className="size-4 text-muted-foreground" aria-hidden />
-                {t(value)}
+                {t(label)}
               </span>
             </SelectItem>
           ))}
@@ -65,8 +66,9 @@ export function ThemeToggle({ variant = "segmented", className, labelClassName, 
   }
 
   return (
-    <div role="group" aria-label={t("group")} className={cn("inline-flex rounded-lg border border-border bg-card p-0.5", className)}>
-      {OPTIONS.map(({ value, icon: Icon }) => (
+    // Five options: they wrap onto a second line on a phone.
+    <div role="group" aria-label={t("group")} className={cn("inline-flex flex-wrap rounded-lg border border-border bg-card p-0.5", className)}>
+      {OPTIONS.map(({ value, label, icon: Icon }) => (
         <button
           key={value}
           type="button"
@@ -80,7 +82,7 @@ export function ThemeToggle({ variant = "segmented", className, labelClassName, 
           )}
         >
           <Icon className="size-4" aria-hidden />
-          {t(value)}
+          {t(label)}
         </button>
       ))}
     </div>
