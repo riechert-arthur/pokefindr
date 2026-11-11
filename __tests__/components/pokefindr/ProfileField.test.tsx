@@ -71,6 +71,17 @@ describe("ProfileField", () => {
     expect(screen.getByRole("button", { name: "Update" })).toHaveFocus()
   })
 
+  it("reopens with the saved value selected, not what was typed before Escape (#379 review)", () => {
+    render(<Row />)
+    fireEvent.click(screen.getByRole("button", { name: "Update" }))
+    fireEvent.change(screen.getByRole("textbox", { name: "Username" }), { target: { value: "brock" } })
+    fireEvent.keyDown(screen.getByRole("textbox", { name: "Username" }), { key: "Escape" })
+    fireEvent.click(screen.getByRole("button", { name: "Update" }))
+    const input = screen.getByRole("textbox", { name: "Username" }) as HTMLInputElement
+    expect(input).toHaveValue("misty")
+    expect([input.selectionStart, input.selectionEnd]).toEqual([0, "misty".length])
+  })
+
   it("cancels on Escape and returns focus to Update", () => {
     const onSave = vi.fn(async () => undefined)
     render(<Row onSave={onSave} />)
