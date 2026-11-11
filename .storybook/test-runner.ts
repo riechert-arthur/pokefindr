@@ -33,14 +33,16 @@ type Locale = (typeof LOCALES)[number]
 
 /**
  * English in every theme, and each other language in light: colors don't
- * change with the language, so its other passes would repeat English's.
+ * change with the language, so its other passes would repeat English's. The
+ * Holo themes only change colors, radius and font, so their passes check
+ * color contrast alone, which keeps the run's time down.
  */
-const A11Y_PASSES: (readonly [Locale, Theme])[] = [
-  ["en", "light"],
-  ["en", "dark"],
-  ["en", "holo-light"],
-  ["en", "holo-dark"],
-  ...LOCALES.filter((l) => l !== "en").map((l) => [l, "light"] as const),
+const A11Y_PASSES: (readonly [Locale, Theme, "all" | "contrast"])[] = [
+  ["en", "light", "all"],
+  ["en", "dark", "all"],
+  ["en", "holo-light", "contrast"],
+  ["en", "holo-dark", "contrast"],
+  ...LOCALES.filter((l) => l !== "en").map((l) => [l, "light", "all"] as const),
 ]
 
 /**
@@ -121,9 +123,10 @@ const config: TestRunnerConfig = {
 
     const failures: string[] = []
     try {
-      for (const [locale, theme] of A11Y_PASSES) {
+      for (const [locale, theme, scope] of A11Y_PASSES) {
         await setGlobals(page, theme, locale)
-        const args = { spec: a11y.config, options: a11y.options, rules, context: a11y.context ?? DEFAULT_CONTEXT }
+        const options = scope === "contrast" ? { ...a11y.options, runOnly: { type: "rule" as const, values: ["color-contrast"] } } : a11y.options
+        const args = { spec: a11y.config, options, rules, context: a11y.context ?? DEFAULT_CONTEXT }
         const results = (await page.evaluate(async (a: typeof args) => {
           // The addon's own runs are off under the runner (see prepare above), so it
           // never loads axe; this is the copy injected above.

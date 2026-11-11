@@ -6,17 +6,15 @@ import { useTheme } from "next-themes"
 import { useTranslations } from "next-intl"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { COMPACT_TRIGGER, CompactLabel } from "@/components/pokefindr/CompactSelect"
-import type { Theme } from "@/lib/design/themes"
+import { THEMES, type Theme } from "@/lib/design/themes"
 import { cn } from "@/lib/utils"
 
-/** The themes (src/lib/design/themes.ts) and System; each label is a message in `ui.theme`. */
-const OPTIONS: { value: Theme | "system"; label: "light" | "dark" | "holoLight" | "holoDark" | "system"; icon: LucideIcon }[] = [
-  { value: "light", label: "light", icon: Sun },
-  { value: "dark", label: "dark", icon: Moon },
-  { value: "holo-light", label: "holoLight", icon: Sparkles },
-  { value: "holo-dark", label: "holoDark", icon: MoonStar },
-  { value: "system", label: "system", icon: Monitor },
-]
+type Choice = Theme | "system"
+/** Each choice's label (a message in `ui.theme`) and icon. Records, so a theme added to THEMES can't be left out. */
+const LABELS: Record<Choice, "light" | "dark" | "holoLight" | "holoDark" | "system"> = { light: "light", dark: "dark", "holo-light": "holoLight", "holo-dark": "holoDark", system: "system" }
+const ICONS: Record<Choice, LucideIcon> = { light: Sun, dark: Moon, "holo-light": Sparkles, "holo-dark": MoonStar, system: Monitor }
+/** The themes in their order (src/lib/design/themes.ts), then System. */
+const OPTIONS = [...THEMES, "system" as const].map((value) => ({ value, label: LABELS[value], icon: ICONS[value] }))
 
 interface ThemeToggleProps {
   /**

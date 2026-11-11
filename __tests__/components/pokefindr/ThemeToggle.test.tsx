@@ -15,7 +15,8 @@ describe("ThemeToggle compact variant (#355)", () => {
     ["holo-dark", "Holo Dark"],
     ["system", "System"],
   ])("shows the chosen theme (%s) by name", (theme, name) => {
-    state = { theme, resolvedTheme: theme === "dark" ? "dark" : "light" }
+    // next-themes resolves every theme to itself, and only System to light or dark.
+    state = { theme, resolvedTheme: theme === "system" ? "light" : theme }
     render(<ThemeToggle variant="compact" labelClassName="sm:sr-only" />)
     expect(screen.getByRole("combobox", { name: `Theme: ${name}` })).toHaveTextContent(name)
     expect(screen.getByText(name)).toHaveClass("sm:sr-only")

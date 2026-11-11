@@ -75,6 +75,7 @@
   /* Holo Dark (#371) starts from these dark tokens and overrides some below. */
   .dark,
   .holo-dark {
+    /* Every dark theme in src/lib/design/themes.ts must be listed here (a test checks). */
     /* shadcn base */
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
@@ -225,16 +226,24 @@
 
 @layer components {
   /*
-   * The Holo themes' foil glint (#371): a band of gold, blue and violet parked
-   * past the edge and swept across on hover or keyboard focus, like a holo card
-   * catching the light. Nothing in the other themes.
+   * The Holo themes' foil glint (#371): a band of gold, blue and violet swept
+   * across on hover or keyboard focus, like a holo card catching the light.
+   * The image is three times the element's width and the band sits inside its
+   * middle third, so at rest (showing the right third) and after the sweep
+   * (the left third) nothing of it shows. Nothing in the other themes. This
+   * selector outranks Tailwind's transition-colors, so the color transitions
+   * are listed here too.
    */
   :is(.holo-light, .holo-dark) .foil {
-    background-image: linear-gradient(115deg, transparent 25%, rgb(255 214 90 / 0.55) 38%, rgb(120 200 255 / 0.55) 48%, rgb(190 140 255 / 0.5) 56%, transparent 70%);
+    background-image: linear-gradient(115deg, transparent 36%, rgb(255 214 90 / 0.45) 43%, rgb(120 200 255 / 0.45) 50%, rgb(190 140 255 / 0.4) 57%, transparent 64%);
     background-size: 300% 100%;
     background-position: 100% 0;
     background-repeat: no-repeat;
-    transition: background-position 0.7s ease;
+    transition:
+      background-position 0.7s ease,
+      color 150ms,
+      background-color 150ms,
+      border-color 150ms;
   }
   :is(.holo-light, .holo-dark) .foil:is(:hover, :focus-visible) {
     background-position: 0 0;
