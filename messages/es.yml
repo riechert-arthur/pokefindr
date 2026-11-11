@@ -142,9 +142,9 @@ map:
     failed: No se pudieron cargar los comercios. Inténtalo de nuevo en un momento.
     loading: Cargando comercios…
     shopsTitle: Tiendas de cartas
-    shopsSoon: Abiertas ahora, venden cartas sueltas, organizan eventos. Estos filtros llegarán con datos reales de tiendas.
+    shopsSoon: Abiertas ahora, venden cartas sueltas, organizan eventos. Estos filtros llegarán más adelante.
     eventsTitle: Eventos
-    eventsSoon: Esta semana, este mes, tipo de evento. Llegarán cuando los eventos sean reales.
+    eventsSoon: Esta semana, este mes, tipo de evento. Estos filtros llegarán más adelante.
     clear: Borrar
     done: Listo
   results:
@@ -418,7 +418,6 @@ ui:
     live: Activo
     sample: Ejemplo
     pending: En revisión
-    comingSoon: Próximamente
     sponsored: Patrocinado
   search:
     label: Buscar una ubicación
@@ -802,7 +801,7 @@ faq:
       answer: Sí. Elige qué tipos de lugares mostrar y fija un radio de búsqueda de 5, 10, 25 o 50 millas.
     add:
       question: ¿Cómo puedo agregar un lugar nuevo?
-      answer: Las máquinas expendedoras vienen de la lista oficial, así que avísanos de una que falte a través de <support>Soporte</support>. Pronto podrás agregar tú mismo tiendas de cartas y eventos.
+      answer: Las máquinas expendedoras vienen de la lista oficial, así que avísanos de una que falte a través de <support>Soporte</support>. Las tiendas de cartas y los eventos los puedes agregar tú mismo. Inicia sesión y usa Agregar un lugar en el mapa. Un moderador revisa cada uno antes de que lo vean todos.
     report:
       question: ¿Puedo reportar información desactualizada o incorrecta?
       answer: Sí. Envíanosla a través de <support>Soporte</support> y la corregiremos.

@@ -43,7 +43,7 @@ export function HowItWorks() {
   )
 }
 
-/** "More than vending machines": each kind, live with its count or coming soon. */
+/** "More than vending machines": each kind, live, with its count once it has places. */
 export function LocationTypes({ counts }: { counts: Partial<Record<LocationKind, number>> | null }) {
   const f = useFormat()
   const t = useTranslations("landing.kinds")
@@ -55,16 +55,15 @@ export function LocationTypes({ counts }: { counts: Partial<Record<LocationKind,
       <div className="mt-9 grid gap-4 md:grid-cols-3">
         {KIND_ORDER.map((kind) => {
           const n = counts?.[kind] ?? 0
-          const live = n > 0
           return (
-            <article key={kind} className={cn(card, "flex flex-col gap-2.5", !live && "border-dashed bg-transparent")}>
+            <article key={kind} className={cn(card, "flex flex-col gap-2.5")}>
               <div className="flex items-center justify-between">
                 <KindDot kind={kind} size="lg" className="size-9 rounded-[10px] [&_svg]:size-[18px]" />
-                {live ? <StatusBadge status="live" /> : <StatusBadge status="coming-soon" />}
+                <StatusBadge status="live" />
               </div>
               <h3 className="text-subheading text-foreground">
                 {tk(`${kind}.label`)}
-                {live && ` · ${f.count(n)}`}
+                {n > 0 && ` · ${f.count(n)}`}
               </h3>
               <p className="text-body text-muted-foreground">{t(kind)}</p>
             </article>

@@ -3,16 +3,15 @@ import { useTranslations } from "next-intl"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
-export const STATUSES = ["live", "sample", "pending", "coming-soon", "sponsored"] as const
+export const STATUSES = ["live", "sample", "pending", "sponsored"] as const
 export type Status = (typeof STATUSES)[number]
 
-/** Each status's label (in the catalog's `ui.status`) and colors. */
-const STYLES: Record<Status, { label: "live" | "sample" | "pending" | "comingSoon" | "sponsored"; className: string }> = {
-  live: { label: "live", className: "border-success/40 text-success" },
-  sample: { label: "sample", className: "border-border text-muted-foreground" },
-  pending: { label: "pending", className: "border-warning/45 text-warning" },
-  "coming-soon": { label: "comingSoon", className: "border-dashed border-border text-muted-foreground" },
-  sponsored: { label: "sponsored", className: "border-border text-muted-foreground" },
+/** Each status's colors; its label is the status's message in `ui.status`. */
+const COLORS: Record<Status, string> = {
+  live: "border-success/40 text-success",
+  sample: "border-border text-muted-foreground",
+  pending: "border-warning/45 text-warning",
+  sponsored: "border-border text-muted-foreground",
 }
 
 interface StatusBadgeProps {
@@ -22,13 +21,12 @@ interface StatusBadgeProps {
   className?: string
 }
 
-/** Small outlined badge for a status: Live, Sample, Pending review, Coming soon, Sponsored. */
+/** Small outlined badge for a status: Live, Sample, Pending review, Sponsored. */
 export function StatusBadge({ status, children, className }: StatusBadgeProps) {
   const t = useTranslations("ui.status")
-  const s = STYLES[status]
   return (
-    <Badge variant="outline" data-status={status} className={cn("h-5 rounded-full bg-background px-2 text-overline uppercase", s.className, className)}>
-      {children ?? t(s.label)}
+    <Badge variant="outline" data-status={status} className={cn("h-5 rounded-full bg-background px-2 text-overline uppercase", COLORS[status], className)}>
+      {children ?? t(status)}
     </Badge>
   )
 }
