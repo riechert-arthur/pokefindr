@@ -8,9 +8,9 @@ export const dynamic = "force-dynamic"
 
 /**
  * GET /api/locations/search?q=kroger&types=vending&near=-104.99,39.74&limit=5
- *   Active locations whose retailer, name, address or city contains `q`
- *   (or whose machine id is `q`), closest to `near` first, as a GeoJSON
- *   FeatureCollection.
+ *   Active locations where every word of `q` matches the retailer or name,
+ *   address, city, state, whole ZIP or machine id (see searchLocations),
+ *   closest to `near` first, as a GeoJSON FeatureCollection.
  */
 export async function GET(request: NextRequest) {
   const blocked = await guardRoute(request, RATE_RULES.locations, { bots: true })
