@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useId, useState } from "react"
+import { useEffect, useState } from "react"
 import { Monitor, Moon, Sun, type LucideIcon } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useTranslations } from "next-intl"
-import { Switch } from "@/components/ui/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 
 /** Each option's label is its value's message in `ui.theme`. */
@@ -16,34 +16,49 @@ const OPTIONS: { value: "light" | "dark" | "system"; icon: LucideIcon }[] = [
 
 interface ThemeToggleProps {
   /**
-   * "segmented" shows light, dark and system (settings). "toggle" is a "Dark
-   * theme" switch (the app rail): on while dark is showing, whether chosen or
-   * from the system, so every flip changes the theme.
+   * "segmented" shows the options side by side (settings). "compact" is a
+   * badge that opens them as a list, like the language picker (the app rail).
    */
-  variant?: "segmented" | "toggle"
+  variant?: "segmented" | "compact"
   className?: string
-  /** The switch's label ("Dark theme"), e.g. screen-reader only while the app rail is collapsed. */
+  /** Compact: the chosen theme's name ("Light"), e.g. screen-reader only while the app rail is collapsed. */
   labelClassName?: string
+  /** Compact: when the list opens or closes (the app rail stays expanded while it's open). */
+  onOpenChange?: (open: boolean) => void
 }
 
-/** Light / dark (/ system) theme switch. Renders a neutral placeholder until mounted, so SSR and client markup match. */
-export function ThemeToggle({ variant = "segmented", className, labelClassName }: ThemeToggleProps) {
+/** Light / dark / system theme picker. Shows System until mounted, so SSR and client markup match. */
+export function ThemeToggle({ variant = "segmented", className, labelClassName, onOpenChange }: ThemeToggleProps) {
   const t = useTranslations("ui.theme")
-  const { theme, resolvedTheme, setTheme } = useTheme()
+  const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   const current = mounted ? (theme ?? "system") : "system"
-  const id = useId()
 
-  if (variant === "toggle") {
-    const isDark = mounted && resolvedTheme === "dark"
-    const Icon = isDark ? Moon : Sun
+  if (variant === "compact") {
+    // An unknown stored value shows as System, which is what next-themes falls back to.
+    const chosen = OPTIONS.find((o) => o.value === current) ?? OPTIONS[OPTIONS.length - 1]
+    const Icon = chosen.icon
     return (
-      // The whole label flips the switch, so a caller can frame it (the app rail's badge).
-      <label htmlFor={id} className={cn("flex cursor-pointer items-center gap-2", className)}>
-        <Switch id={id} checked={isDark} onCheckedChange={(on) => setTheme(on ? "dark" : "light")} thumb={<Icon aria-hidden />} />
-        <span className={labelClassName}>{t("darkTheme")}</span>
-      </label>
+      <Select value={chosen.value} onValueChange={setTheme} onOpenChange={onOpenChange}>
+        <SelectTrigger aria-label={t("group")} className={cn("h-8 w-auto gap-1.5 px-2 text-caption", className)}>
+          <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+          {/* One span: the trigger's line clamp applies to its direct span, which would override a hiding class. */}
+          <span>
+            <span className={labelClassName}>{t(chosen.value)}</span>
+          </span>
+        </SelectTrigger>
+        <SelectContent>
+          {OPTIONS.map(({ value, icon: ItemIcon }) => (
+            <SelectItem key={value} value={value}>
+              <span className="flex items-center gap-2">
+                <ItemIcon className="size-4 text-muted-foreground" aria-hidden />
+                {t(value)}
+              </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     )
   }
 
