@@ -13,12 +13,13 @@ describe("landing sections", () => {
     expect(screen.getAllByRole("heading", { level: 3 }).map((h) => h.textContent)).toEqual(["Search your city", "See what's nearby", "Get directions"])
   })
 
-  it("marks kinds with locations live, with their count, and the rest coming soon", () => {
+  it("marks every kind live, with its count once it has places (#358)", () => {
     render(<LocationTypes counts={{ vending: 1457 }} />)
     const vending = screen.getByRole("heading", { name: "Vending machines · 1,457" }).closest("article")!
     expect(within(vending).getByText("Live")).toBeInTheDocument()
     const shops = screen.getByRole("heading", { name: "Card shops" }).closest("article")!
-    expect(within(shops).getByText("Coming soon")).toBeInTheDocument()
+    expect(within(shops).getByText("Live")).toBeInTheDocument()
+    expect(screen.queryByText("Coming soon")).not.toBeInTheDocument()
   })
 
   it("opens the first question, one at a time, with links in the answers", () => {

@@ -45,7 +45,7 @@ describe("StatusBadge", () => {
   it.each([
     ["live", "Live", "text-success"],
     ["pending", "Pending review", "text-warning"],
-    ["coming-soon", "Coming soon", "border-dashed"],
+    ["sponsored", "Sponsored", "text-muted-foreground"],
   ] as const)("renders %s", (status, label, cls) => {
     render(<StatusBadge status={status} />)
     expect(screen.getByText(label)).toHaveClass(cls)

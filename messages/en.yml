@@ -539,7 +539,6 @@ ui:
     live: Live
     sample: Sample
     pending: Pending review
-    comingSoon: Coming soon
     sponsored: Sponsored
   # The search box on the landing page and the map.
   search:
@@ -889,7 +888,7 @@ faq:
     add:
       question: How can I add a new location?
       # <support> opens our Discord server.
-      answer: Vending machines come from the official list, so report a missing one through <support>Support</support>. Adding card shops and events yourself is coming soon.
+      answer: Vending machines come from the official list, so report a missing one through <support>Support</support>. You can add card shops and events yourself with Add a place on the map. A moderator checks each one before everyone can see it.
     report:
       question: Can I report outdated or incorrect information?
       # <support> opens our Discord server.
