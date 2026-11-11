@@ -58,7 +58,7 @@ const meta = {
   title: "Dashboard/RouteCard",
   component: AssistantCardView,
   parameters: { layout: "padded" },
-  args: { card },
+  args: { card, newestRoute: true },
   decorators: [(Story) => <div style={{ width: 420 }}>{Story()}</div>],
 } satisfies Meta<typeof AssistantCardView>
 
@@ -69,6 +69,9 @@ export const AlongTheStreets: Story = { beforeEach: () => stubRouteApi(() => Res
 
 /** Routing failed or isn't set up: a dashed line, and the card says so. */
 export const StraightLines: Story = { beforeEach: () => stubRouteApi(() => Response.json(straight)) }
+
+/** An older route card in the conversation: its preview waits for a click. */
+export const OlderRoute: Story = { args: { newestRoute: false }, beforeEach: () => stubRouteApi(() => Response.json(routed)) }
 
 /** The route couldn't load: no map, just the stops. */
 export const RouteUnavailable: Story = { beforeEach: () => stubRouteApi(() => new Response("", { status: 503 })) }

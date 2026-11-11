@@ -28,13 +28,17 @@ export function useStreetRoute(ids: readonly string[]): StreetRouteState {
   useEffect(() => {
     const all = key.split(",")
     const asked = all.filter((id) => UUID.test(id)).slice(0, MAX_ROUTE_STOPS)
-    const set = (value: StreetRouteState) => setState({ key, value })
+    const ctl = new AbortController()
+    // An answer for ids that have since changed (one that arrived as they did) mustn't replace the new one's state.
+    const set = (value: StreetRouteState) => {
+      if (!ctl.signal.aborted) setState({ key, value })
+    }
     if (asked.length < 2) {
       set({ status: "gone" })
       return
     }
-    set({ status: "loading" })
-    const ctl = new AbortController()
+    // Already loading for these ids (the first render): no extra render.
+    setState((s) => (s.key === key && s.value.status === "loading" ? s : { key, value: { status: "loading" } }))
     fetch(`/api/route?ids=${asked.join(",")}`, { signal: ctl.signal })
       .then(async (r) => {
         // Only a 404 (or a 400 for a link it can't route) means the places are gone; anything else is a failure to retry later.
