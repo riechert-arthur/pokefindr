@@ -11,6 +11,7 @@ const json = (body: unknown) => new Response(JSON.stringify(body))
 const ROUTES: Record<string, unknown> = {
   "/api/locations/aggregates": { counts: [{ country: "US", region: "WA", kind: "vending", count: 1200 }, { country: "US", region: "OR", kind: "vending", count: 257 }, { country: "US", region: "WA", kind: "shop", count: 3 }] },
   "/api/my-reviews": { reviews: [{ id: "r1", rating: 4, comment: "Stocked Tuesday", location: { id: "loc-1", name: "Safeway", city: "Seattle", state: "WA" } }] },
+  "/api/submissions?mine": { submissions: [{ id: "s1", kind: "shop", status: "pending", rejectReason: null, name: "Rose City Card Exchange", address: "1820 SE Hawthorne Blvd", city: "Portland", state: "OR", lng: -122.64, lat: 45.51, startsAt: null, locationId: null, locationActive: null }] },
   "/api/highlights": { hotspots: [], events: [{ id: "e1", title: "Card show", startsAt: "2026-11-14T18:00:00Z", endsAt: null, city: "Denver", state: "CO", lng: -104.99, lat: 39.74, isSample: true }] },
 }
 
@@ -29,7 +30,10 @@ describe("Dashboard", () => {
     expect(screen.getByRole("link", { name: "Manage your reviews" })).toHaveAttribute("href", "/home/reviews")
     expect(await screen.findByText("Card show")).toBeInTheDocument()
     expect(screen.getByRole("region", { name: "Upcoming events" })).toHaveTextContent("Sample")
-    expect(screen.getByRole("region", { name: "Your submissions" })).toHaveTextContent("Coming soon")
+    const submissions = screen.getByRole("region", { name: "Your submissions" })
+    expect(await screen.findByRole("link", { name: /Rose City Card Exchange/ })).toHaveTextContent("Pending review")
+    expect(submissions).not.toHaveTextContent("Coming soon")
+    expect(screen.getByRole("link", { name: "Add a place" })).toHaveAttribute("href", "/map?add=1")
   })
 
   it("passes a tapped suggestion to the assistant, and the shared location once given", async () => {
@@ -95,6 +99,7 @@ describe("Dashboard", () => {
     expect(await screen.findByText(/Couldn.t load your reviews/)).toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Manage your reviews" })).toHaveAttribute("href", "/home/reviews")
     expect(await screen.findByText(/Couldn.t load events/)).toBeInTheDocument()
+    expect(await screen.findByText(/Couldn.t load your submissions/)).toBeInTheDocument()
   })
 
   it("is in Spanish on a Spanish page, with the count formatted for it", async () => {

@@ -480,6 +480,7 @@ dashboard:
       title: Tus aportes
       body: Las tiendas de cartas y los eventos que agregues aparecen aquí mientras esperan revisión.
       add: Agregar un lugar
+      error: No se pudieron cargar tus aportes. Revisa tu conexión y vuelve a cargar la página.
     events:
       title: Próximos eventos
       error: No pudimos cargar los eventos. Revisa tu conexión y recarga la página.

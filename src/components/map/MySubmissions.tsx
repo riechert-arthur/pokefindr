@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { KindDot } from "@/components/pokefindr/KindDot"
 import { KINDS } from "@/components/pokefindr/kinds"
-import { StatusBadge } from "@/components/pokefindr/StatusBadge"
+import { SubmissionBadge } from "@/components/pokefindr/SubmissionBadge"
 import type { MySubmission } from "@/lib/submissions/schemas"
 import { cn } from "@/lib/utils"
 import { Marker } from "./engine"
@@ -90,17 +90,7 @@ export function SubmissionRows({ submissions, onOpen }: { submissions: readonly 
             <span className="min-w-0 flex-1">
               <span className="flex flex-wrap items-center gap-1.5 text-body font-semibold text-foreground">
                 {s.name}
-                {s.status === "pending" ? (
-                  <StatusBadge status="pending" />
-                ) : s.status === "approved" && s.locationActive === false ? (
-                  <StatusBadge status="sample">{s.kind === "event" ? t("ended") : t("offMap")}</StatusBadge>
-                ) : s.status === "approved" ? (
-                  <StatusBadge status="live" />
-                ) : (
-                  <StatusBadge status="sample" className="border-destructive/40 text-destructive">
-                    {t("notApproved")}
-                  </StatusBadge>
-                )}
+                <SubmissionBadge submission={s} />
               </span>
               <span className="block truncate text-body text-muted-foreground">
                 {s.status === "rejected"

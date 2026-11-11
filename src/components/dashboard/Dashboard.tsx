@@ -11,6 +11,7 @@ import { useSidebar } from "@/components/providers/SidebarContextProvider"
 import { useSessionContext } from "@/components/providers/SessionProvider"
 import { DEFAULT_RADIUS } from "@/lib/map/url-state"
 import { LOCATE_GIVE_UP_MS } from "@/lib/map/locate"
+import type { MySubmission } from "@/lib/submissions/schemas"
 import type { Highlights, UpcomingEvent } from "@/lib/types/highlights"
 import type { RegionCount } from "@/lib/types/locations"
 import { EventsTile, NearYouTile, ReviewsTile, SubmissionsTile, type MyReview, type NearState } from "./DashboardTiles"
@@ -61,6 +62,7 @@ export function Dashboard({ assistant, initialChatting = false }: DashboardProps
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const [vending, setVending] = useState<number | null>(null)
   const [reviews, setReviews] = useState<MyReview[] | "error" | null>(null)
+  const [submissions, setSubmissions] = useState<MySubmission[] | "error" | null>(null)
   const [events, setEvents] = useState<UpcomingEvent[] | "error" | null>(null)
   const [near, setNear] = useState<NearState>({ status: "idle" })
   const [viewer, setViewer] = useState<{ lng: number; lat: number } | null>(null)
@@ -80,6 +82,12 @@ export function Dashboard({ assistant, initialChatting = false }: DashboardProps
       .catch((err) => {
         quiet(err)
         if (!ctl.signal.aborted) setReviews("error")
+      })
+    getJson<{ submissions: MySubmission[] }>("/api/submissions?mine", ctl.signal)
+      .then((r) => setSubmissions(r.submissions))
+      .catch((err) => {
+        quiet(err)
+        if (!ctl.signal.aborted) setSubmissions("error")
       })
     getJson<Highlights>("/api/highlights", ctl.signal)
       .then((h) => setEvents(h.events))
@@ -174,7 +182,7 @@ export function Dashboard({ assistant, initialChatting = false }: DashboardProps
               <div className="mt-2 grid grid-cols-1 gap-2.5 min-[480px]:grid-cols-2 min-[861px]:grid-cols-4">
                 <NearYouTile near={near} onLocate={locate} />
                 <ReviewsTile reviews={reviews} />
-                <SubmissionsTile />
+                <SubmissionsTile submissions={submissions} />
                 <EventsTile events={events} />
               </div>
             </>

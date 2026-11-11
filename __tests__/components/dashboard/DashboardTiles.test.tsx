@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { render, screen, within } from "../../helpers/intl"
 import { EventsTile, NearYouTile, ReviewsTile, SubmissionsTile, TILE_ROWS, type MyReview } from "@/components/dashboard/DashboardTiles"
+import type { MySubmission } from "@/lib/submissions/schemas"
 import type { UpcomingEvent } from "@/lib/types/highlights"
 import { LONG_NAME } from "@/stories/dashboard/fixtures"
 
@@ -62,7 +63,7 @@ describe("tiles", () => {
       <>
         <NearYouTile near={{ status: "idle" }} onLocate={() => {}} />
         <ReviewsTile reviews={[review(1)]} />
-        <SubmissionsTile />
+        <SubmissionsTile submissions={[]} />
         <EventsTile events={[event(1)]} />
       </>,
     )
@@ -73,5 +74,25 @@ describe("tiles", () => {
       const footer = tile.lastElementChild as HTMLElement
       expect(footer.querySelectorAll("a, button")).toHaveLength(1)
     }
+  })
+})
+
+describe("SubmissionsTile (#357)", () => {
+  const submission = (over: Partial<MySubmission>): MySubmission => ({ id: "s1", kind: "shop", status: "pending", rejectReason: null, name: "Rose City Card Exchange", address: "1820 SE Hawthorne Blvd", city: "Portland", state: "OR", lng: -122.64, lat: 45.51, startsAt: null, locationId: null, locationActive: null, createdAt: "2026-11-01T18:00:00Z", reviewedAt: null, ...over })
+
+  it("lists each submission with its status: a live one opens its place, a pending one the map around it", () => {
+    render(<SubmissionsTile submissions={[submission({ id: "s1" }), submission({ id: "s2", name: "Mile High Cards", status: "approved", locationId: "loc-9", locationActive: true })]} />)
+    expect(screen.getByRole("link", { name: /Rose City Card Exchange/ })).toHaveTextContent("Pending review")
+    expect(screen.getByRole("link", { name: /Rose City Card Exchange/ }).getAttribute("href")).toMatch(/^\/map\?.*lng=-122\.64/)
+    const live = screen.getByRole("link", { name: /Mile High Cards/ })
+    expect(live).toHaveTextContent("Live")
+    expect(live).toHaveAttribute("href", "/map?location=loc-9")
+  })
+
+  it("says what will appear before there's anything, and opens Add a place", () => {
+    render(<SubmissionsTile submissions={[]} />)
+    expect(screen.getByText(/appear here while they wait for review/)).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Add a place" })).toHaveAttribute("href", "/map?add=1")
+    expect(screen.queryByText("Coming soon")).not.toBeInTheDocument()
   })
 })
