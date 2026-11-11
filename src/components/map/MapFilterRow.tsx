@@ -44,7 +44,7 @@ export function MapFilterRow({ radius, onRadiusChange, vendingShown, retailers, 
         <Popover open={radiusOpen} onOpenChange={setRadiusOpen}>
           <PopoverTrigger asChild>
             <Button type="button" variant="outline" className={filterChip}>
-              <RadiusIcon className="size-4 text-muted-foreground" aria-hidden data-filter-icon />
+              <RadiusIcon aria-hidden />
               {t("within", { radius: radiusText(radius) })}
               <ChevronDownIcon className="size-4 opacity-60" aria-hidden />
             </Button>
@@ -78,7 +78,7 @@ export function MapFilterRow({ radius, onRadiusChange, vendingShown, retailers, 
       {vendingShown && <RetailerFilter selected={retailers} onChange={onRetailersChange} />}
       {vendingShown && retailers.length > 0 && (
         <Button type="button" variant="ghost" className="h-9 shrink-0 rounded-full px-3 text-body font-medium text-primary hover:bg-card" onClick={() => onRetailersChange([])}>
-          <XIcon className="size-4" aria-hidden data-filter-icon />
+          <XIcon aria-hidden />
           {t("clearAll")}
         </Button>
       )}

@@ -26,10 +26,16 @@ describe("MapFilterRow (#361)", () => {
   })
 
   it("starts each filter with an icon (#374)", () => {
-    row({ radius: 10, retailers: ["Safeway"] })
-    for (const name of ["Within 10 mi", "Retailer: Safeway", "Clear filters"]) {
-      expect(screen.getByRole("button", { name }).querySelector("[data-filter-icon]")).not.toBeNull()
+    const first = (name: string) => screen.getByRole("button", { name }).firstElementChild
+    const { unmount } = render(<MapFilterRow radius={10} onRadiusChange={vi.fn()} vendingShown retailers={[]} onRetailersChange={vi.fn()} />)
+    // Nothing picked: the Retailer chip's icon is muted, like the radius chip's.
+    for (const name of ["Within 10 mi", "Retailer"]) {
+      expect(first(name)?.tagName).toBe("svg")
+      expect(first(name)).toHaveAttribute("aria-hidden", "true")
     }
+    unmount()
+    row({ radius: 10, retailers: ["Safeway"] })
+    for (const name of ["Within 10 mi", "Retailer: Safeway", "Clear filters"]) expect(first(name)?.tagName).toBe("svg")
   })
 
   it("renders nothing when no filter applies", () => {
