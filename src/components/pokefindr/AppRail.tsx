@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl"
 import { Link, usePathname } from "@/i18n/navigation"
 import { useEffect, useRef, useState, type ComponentType, type Ref, type SVGProps } from "react"
-import { BookOpenIcon, ExternalLinkIcon, HouseIcon, InboxIcon, MapPinIcon, SettingsIcon, ShieldIcon } from "lucide-react"
+import { BookOpenIcon, ExternalLinkIcon, MessagesSquareIcon, HouseIcon, InboxIcon, MapPinIcon, SettingsIcon, ShieldIcon } from "lucide-react"
 import { Logo } from "@/components/brand/Logo"
 import { DiscordIcon } from "@/components/icons/DiscordIcon"
 import { LanguageSwitcher } from "@/components/pokefindr/LanguageSwitcher"
@@ -12,7 +12,7 @@ import { minWidth } from "@/lib/design/breakpoints"
 import { SUPPORT_URL } from "@/lib/links"
 import { cn } from "@/lib/utils"
 
-type NavLabel = "home" | "blog" | "map" | "discord" | "settings" | "moderate" | "admin"
+type NavLabel = "home" | "chat" | "blog" | "map" | "discord" | "settings" | "moderate" | "admin"
 
 interface RailItem {
   href: string
@@ -25,6 +25,8 @@ interface RailItem {
 /** The dashboard's own pages. */
 const MAIN: RailItem[] = [
   { href: "/home", label: "home", icon: HouseIcon },
+  // The assistant's conversation (#391).
+  { href: "/chat", label: "chat", icon: MessagesSquareIcon },
   { href: "/map", label: "map", icon: MapPinIcon },
 ]
 
@@ -122,7 +124,7 @@ interface AppRailProps {
 
 /**
  * The app's side navigation on the map and in-app pages, from the redesign
- * prototype: a 64px card-colored rail with the logo, then Home and Map,
+ * prototype: a 64px card-colored rail with the logo, then Home, Chat and Map,
  * the current page shaded. Blog, Discord, Settings and the language and theme
  * pickers sit at the bottom; the prototype leaves them out, but the app needs
  * them somewhere.

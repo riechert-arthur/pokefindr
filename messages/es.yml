@@ -380,6 +380,7 @@ common:
 
 nav:
   home: Inicio
+  chat: Chat
   blog: Blog
   map: Mapa
   discord: Discord
@@ -501,6 +502,9 @@ dashboard:
 
 assistant:
   newChat: Nuevo chat
+  continueChat: Continuar tu chat
+  emptyTitle: Pregúntale al asistente
+  emptyBody: Máquinas expendedoras, tiendas de cartas y eventos cerca de un lugar, qué se reabasteció o una ruta por varias paradas.
   followUp: Haz otra pregunta…
   disclaimer: Las distancias son en línea recta. Las respuestas pueden tener errores, así que revisa el mapa.
   composer:

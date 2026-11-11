@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { act, fireEvent, message, render, screen, waitFor } from "../../helpers/intl"
-import { Dashboard, SUGGESTIONS } from "@/components/dashboard/Dashboard"
+import { Dashboard } from "@/components/dashboard/Dashboard"
+import { SUGGESTIONS } from "@/components/assistant/Suggestions"
 
 vi.mock("@/i18n/navigation", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/i18n/navigation")>()), usePathname: () => "/home", useRouter: () => ({ push: vi.fn() }) }))
 vi.mock("@/components/providers/SidebarContextProvider", () => ({ useSidebar: () => ({ isSidebarOpen: false, toggleSidebar: vi.fn() }) }))
@@ -52,21 +53,6 @@ describe("Dashboard", () => {
     expect(screen.getByRole("link", { name: "Open on map" })).toHaveAttribute("href", "/map?r=10&near=me")
     expect(seen.at(-1)?.viewer).toEqual({ lng: -122.34, lat: 47.61 })
     expect(screen.getByRole("button", { name: "What's closest to me?" })).toBeInTheDocument()
-  })
-
-  it("steps the greeting, suggestions and tiles aside while chatting", async () => {
-    render(<Dashboard assistant={(p) => <button onClick={() => p.onChattingChange(true)}>start</button>} />)
-    fireEvent.click(screen.getByRole("button", { name: "start" }))
-    expect(screen.queryByRole("heading", { level: 1 })).toBeNull()
-    expect(screen.queryByRole("region", { name: "Near you" })).toBeNull()
-  })
-
-  it("starts in the chat layout when there's a saved chat, and switches back if the assistant has none (#346)", () => {
-    render(<Dashboard initialChatting assistant={(p) => <button onClick={() => p.onChattingChange(false)}>none saved</button>} />)
-    expect(screen.queryByRole("heading", { level: 1 })).toBeNull()
-    expect(screen.queryByRole("region", { name: "Near you" })).toBeNull()
-    fireEvent.click(screen.getByRole("button", { name: "none saved" }))
-    expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument()
   })
 
   it("leaves focus alone when the viewer moved on while locating", async () => {

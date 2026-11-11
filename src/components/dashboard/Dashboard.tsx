@@ -1,28 +1,18 @@
 "use client"
 
-import { Link } from "@/i18n/navigation"
 import { useCallback, useEffect, useState, type ReactNode } from "react"
-import { MenuIcon } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { AgentMark } from "@/components/brand/AgentMark"
-import { APP_NAV_ID } from "@/components/pokefindr/AppRail"
-import { UserMenu } from "@/components/pokefindr/UserMenu"
-import { useSidebar } from "@/components/providers/SidebarContextProvider"
-import { useSessionContext } from "@/components/providers/SessionProvider"
+import { SuggestionChips } from "@/components/assistant/Suggestions"
+import type { Viewer } from "@/lib/assistant/hand-off"
 import { DEFAULT_RADIUS } from "@/lib/map/url-state"
 import { LOCATE_GIVE_UP_MS } from "@/lib/map/locate"
 import type { MySubmission } from "@/lib/submissions/schemas"
 import type { Highlights, UpcomingEvent } from "@/lib/types/highlights"
 import type { RegionCount } from "@/lib/types/locations"
+import { DashboardFrame } from "./DashboardFrame"
 import { EventsTile, NearYouTile, ReviewsTile, SubmissionsTile, type MyReview, type NearState } from "./DashboardTiles"
 import { useFormat } from "@/i18n/format"
 import { useTranslations } from "next-intl"
-
-/** The prototype's suggestions, one tap to ask (dashboard.suggestions in the catalog). */
-export const SUGGESTIONS = ["portland", "denver", "washington", "phoenix"] as const
-
-const chip =
-  "rounded-full border border-border bg-card/85 px-3 py-1 text-body text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
 
 async function getJson<T>(url: string, signal: AbortSignal): Promise<T> {
   const res = await fetch(url, { signal })
@@ -35,39 +25,28 @@ const round2 = (n: number) => Math.round(n * 100) / 100
 
 interface DashboardProps {
   /**
-   * The assistant: the composer and, while chatting, the conversation. It
-   * gets the viewer's location once shared and a suggestion to ask, and says
-   * when a conversation has started (the greeting and tiles then make room).
+   * The way into the assistant (#391): the composer, which opens /chat to ask.
+   * It gets the viewer's location once shared, and a tapped suggestion to ask.
    */
-  /**
-   * Start in the chat layout, without the greeting, suggestions and tiles:
-   * this browser has a saved chat for the viewer (#346), which the assistant
-   * restores before its first paint. If it turns out there's none, the
-   * assistant switches back.
-   */
-  initialChatting?: boolean
-  assistant: (props: { viewer: { lng: number; lat: number } | null; suggestion: string | null; onSuggestionUsed: () => void; onChattingChange: (chatting: boolean) => void }) => ReactNode
+  assistant: (props: { viewer: Viewer | null; suggestion: string | null; onSuggestionUsed: () => void }) => ReactNode
 }
 
 /**
  * The signed-in home (/home), from the prototype: a centered greeting and
  * the assistant's composer, suggestions, then tiles for what's near, your
- * reviews, your submissions and upcoming events. Once a conversation starts,
- * the greeting, suggestions and tiles step aside for it.
+ * reviews, your submissions and upcoming events. The conversation itself
+ * happens on /chat (#391), so this page always keeps the account's tiles.
  */
-export function Dashboard({ assistant, initialChatting = false }: DashboardProps) {
+export function Dashboard({ assistant }: DashboardProps) {
   const f = useFormat()
   const t = useTranslations("dashboard")
-  const { session } = useSessionContext()
-  const { isSidebarOpen, toggleSidebar } = useSidebar()
   const [vending, setVending] = useState<number | null>(null)
   const [reviews, setReviews] = useState<MyReview[] | "error" | null>(null)
   const [submissions, setSubmissions] = useState<MySubmission[] | "error" | null>(null)
   const [events, setEvents] = useState<UpcomingEvent[] | "error" | null>(null)
   const [near, setNear] = useState<NearState>({ status: "idle" })
-  const [viewer, setViewer] = useState<{ lng: number; lat: number } | null>(null)
+  const [viewer, setViewer] = useState<Viewer | null>(null)
   const [suggestion, setSuggestion] = useState<string | null>(null)
-  const [chatting, setChatting] = useState(initialChatting)
 
   useEffect(() => {
     const ctl = new AbortController()
@@ -133,63 +112,26 @@ export function Dashboard({ assistant, initialChatting = false }: DashboardProps
   }, [])
 
   return (
-    <div className={isSidebarOpen ? "h-full max-sm:ml-16" : "h-full"}>
-      <div className="relative isolate flex h-full min-w-0 flex-col overflow-hidden">
-        {/* The prototype's soft glow in the logo's colors. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-[-10%] top-[-30%] -z-10 h-[70%] opacity-35 blur-[70px] [background:radial-gradient(35%_45%_at_30%_40%,hsl(var(--brand)/0.5),transparent_70%),radial-gradient(35%_45%_at_70%_35%,hsl(var(--brand-2)/0.45),transparent_70%)]"
-        />
-        <header className="flex items-center gap-1.5 px-4 py-3 sm:px-5">
-          <button type="button" onClick={toggleSidebar} className="mr-1 rounded p-1 sm:hidden" aria-label={t("openNav")} aria-controls={APP_NAV_ID} aria-expanded={isSidebarOpen}>
-            <MenuIcon className="size-6 text-muted-foreground" aria-hidden />
-          </button>
-          <span className="flex-1" />
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/map">{t("openMap")}</Link>
-          </Button>
-          <UserMenu userName={session?.username ?? t("guest")} imageUrl={session?.image} />
-        </header>
+    <DashboardFrame>
+      <main className="mx-auto flex min-h-0 w-full max-w-[780px] flex-1 flex-col justify-start gap-[18px] overflow-y-auto px-4 pb-7 pt-4 md:justify-center md:pt-2">
+        <div className="grid justify-items-center gap-2.5 text-center">
+          <AgentMark size="lg" />
+          <h1 className="mt-1.5 text-balance text-title text-foreground">{t("greeting")}</h1>
+          <p className="max-w-[52ch] text-subheading font-normal text-muted-foreground">
+            {vending === null ? t("introNoCount") : t("intro", { count: f.count(vending) })}
+          </p>
+        </div>
 
-        <main
-          className={
-            chatting
-              ? // Full width while chatting: the chat keeps its parts in the 780px column itself, so its scrollbar can sit at the window's edge (#383).
-                "flex min-h-0 w-full flex-1 flex-col gap-4 pb-4 pt-2"
-              : "mx-auto flex min-h-0 w-full max-w-[780px] flex-1 flex-col justify-start gap-[18px] overflow-y-auto px-4 pb-7 pt-4 md:justify-center md:pt-2"
-          }
-        >
-          {!chatting && (
-            <div className="grid justify-items-center gap-2.5 text-center">
-              <AgentMark size="lg" />
-              <h1 className="mt-1.5 text-balance text-title text-foreground">{t("greeting")}</h1>
-              <p className="max-w-[52ch] text-subheading font-normal text-muted-foreground">
-                {vending === null ? t("introNoCount") : t("intro", { count: f.count(vending) })}
-              </p>
-            </div>
-          )}
+        {assistant({ viewer, suggestion, onSuggestionUsed: () => setSuggestion(null) })}
 
-          {assistant({ viewer, suggestion, onSuggestionUsed: () => setSuggestion(null), onChattingChange: setChatting })}
-
-          {!chatting && (
-            <>
-              <div className="flex flex-wrap justify-center gap-2" aria-label={t("suggestionsLabel")}>
-                {(viewer ? (["closest", ...SUGGESTIONS] as const) : SUGGESTIONS).map((key) => t(`suggestions.${key}`)).map((s) => (
-                  <button key={s} type="button" className={chip} onClick={() => setSuggestion(s)}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-              <div className="mt-2 grid grid-cols-1 gap-2.5 min-[480px]:grid-cols-2 min-[861px]:grid-cols-4">
-                <NearYouTile near={near} onLocate={locate} />
-                <ReviewsTile reviews={reviews} />
-                <SubmissionsTile submissions={submissions} />
-                <EventsTile events={events} />
-              </div>
-            </>
-          )}
-        </main>
-      </div>
-    </div>
+        <SuggestionChips located={viewer !== null} onPick={setSuggestion} />
+        <div className="mt-2 grid grid-cols-1 gap-2.5 min-[480px]:grid-cols-2 min-[861px]:grid-cols-4">
+          <NearYouTile near={near} onLocate={locate} />
+          <ReviewsTile reviews={reviews} />
+          <SubmissionsTile submissions={submissions} />
+          <EventsTile events={events} />
+        </div>
+      </main>
+    </DashboardFrame>
   )
 }
