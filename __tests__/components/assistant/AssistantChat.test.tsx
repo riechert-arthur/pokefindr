@@ -63,6 +63,22 @@ describe("AssistantChat", () => {
     expect(onChattingChange).toHaveBeenLastCalledWith(false)
   })
 
+  it("starts a new chat mid-answer, dropping the answer, and answers the next question (#380 review)", async () => {
+    // The first answer hangs until it's aborted.
+    const hang = (_: unknown, init: RequestInit) => new Promise<Response>((_, reject) => init.signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError"))))
+    const fetchMock = vi.fn().mockImplementationOnce(hang).mockResolvedValueOnce(ndjson([{ type: "text", text: "Sure." }, done("Sure.")]))
+    vi.stubGlobal("fetch", fetchMock)
+    const { ask } = setup()
+    ask("machines in Seattle?")
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1))
+    fireEvent.click(screen.getByRole("button", { name: "New chat" }))
+    expect(screen.queryByText("machines in Seattle?")).toBeNull()
+    await act(async () => {}) // the aborted request settles
+    ask("machines in Portland?")
+    expect(await screen.findByText("Sure.")).toBeInTheDocument()
+    expect(screen.queryByText("machines in Seattle?")).toBeNull()
+  })
+
   it("leaves a blocked question and its reply out of the next request", async () => {
     const blocked: AssistantEvent = { type: "done", stop: "refusal", blocked: true, memory: "I can't help with that one.", usage: { inputTokens: 1, outputTokens: 1, cacheReadTokens: 0, cacheWriteTokens: 0, costMicros: 1 }, model: "fake", turnId: "turn-1" }
     const fetchMock = vi

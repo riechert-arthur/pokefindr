@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
+import { SquarePenIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { AgentMark } from "@/components/brand/AgentMark"
 import { AssistantCardView } from "./AssistantCards"
@@ -98,7 +99,9 @@ export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChatting
       {chatting && (
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex justify-end pb-1">
-            <Button type="button" variant="ghost" size="sm" onClick={reset} disabled={busy}>
+            {/* An outlined button with the usual new-conversation mark, so it reads as an action (#380). Mid-answer, it drops the answer too. */}
+            <Button type="button" variant="outline" size="sm" onClick={reset}>
+              <SquarePenIcon />
               {t("newChat")}
             </Button>
           </div>
