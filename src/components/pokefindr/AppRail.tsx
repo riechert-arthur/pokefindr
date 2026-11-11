@@ -22,12 +22,14 @@ interface RailItem {
   external?: boolean
 }
 
-/** The prototype's rail: Home, Blog, Map. */
+/** The dashboard's own pages. */
 const MAIN: RailItem[] = [
   { href: "/home", label: "home", icon: HouseIcon },
-  { href: "/blog", label: "blog", icon: BookOpenIcon },
   { href: "/map", label: "map", icon: MapPinIcon },
 ]
+
+/** The blog is a site page, outside the dashboard (no rail there), so it sits at the bottom with Discord, not with the dashboard's pages (#387). Never current here. */
+const BLOG: RailItem = { href: "/blog", label: "blog", icon: BookOpenIcon }
 
 const DISCORD: RailItem = { href: SUPPORT_URL, label: "discord", icon: DiscordIcon, external: true }
 const SETTINGS: RailItem = { href: "/settings", label: "settings", icon: SettingsIcon }
@@ -120,8 +122,8 @@ interface AppRailProps {
 
 /**
  * The app's side navigation on the map and in-app pages, from the redesign
- * prototype: a 64px card-colored rail with the logo, then Home, Blog and Map,
- * the current page shaded. Discord, Settings and the language and theme
+ * prototype: a 64px card-colored rail with the logo, then Home and Map,
+ * the current page shaded. Blog, Discord, Settings and the language and theme
  * pickers sit at the bottom; the prototype leaves them out, but the app needs
  * them somewhere.
  *
@@ -229,6 +231,7 @@ export function AppRail({ signedIn = false, canModerate = false, isAdmin = false
         {canModerate && <RailLink item={MODERATE} current={isCurrent(MODERATE.href)} expanded={expanded} />}
         {isAdmin && <RailLink item={ADMIN} current={isCurrent(ADMIN.href)} expanded={expanded} />}
         <div className="mt-auto flex flex-col items-start gap-2">
+          <RailLink item={BLOG} current={false} expanded={expanded} />
           <RailLink item={DISCORD} current={false} expanded={expanded} />
           {signedIn && <RailLink item={SETTINGS} current={isCurrent(SETTINGS.href)} expanded={expanded} />}
           {/*
