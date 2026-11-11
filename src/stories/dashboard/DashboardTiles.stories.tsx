@@ -2,12 +2,13 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite"
 import { expect } from "storybook/test"
 import { NextIntlClientProvider } from "next-intl"
 import { EventsTile, NearYouTile, ReviewsTile, SubmissionsTile, type MyReview, type NearState } from "@/components/dashboard/DashboardTiles"
+import type { MySubmission } from "@/lib/submissions/schemas"
 import type { UpcomingEvent } from "@/lib/types/highlights"
 import { MESSAGES } from "@/i18n/all-messages"
 import { inDays, longEvents, longReviews } from "./fixtures"
 
 /** The four tiles under the assistant on /home, in the dashboard's grid. */
-function Tiles({ columns = 4, near = { status: "idle" }, reviews, events }: { columns?: 1 | 2 | 4; near?: NearState; reviews: MyReview[] | "error" | null; events: UpcomingEvent[] | "error" | null }) {
+function Tiles({ columns = 4, near = { status: "idle" }, reviews, submissions = [], events }: { columns?: 1 | 2 | 4; near?: NearState; reviews: MyReview[] | "error" | null; submissions?: MySubmission[] | "error" | null; events: UpcomingEvent[] | "error" | null }) {
   // The grid's narrowest width at each column count, as in Dashboard.tsx: 748 px
   // (780 px less px-4) for 4 columns, 448 px (a 480 px window) for 2, and 288 px
   // (a 320 px phone) for 1.
@@ -17,7 +18,7 @@ function Tiles({ columns = 4, near = { status: "idle" }, reviews, events }: { co
     <div className={`grid gap-2.5 ${cols}`} style={{ width }}>
       <NearYouTile near={near} onLocate={() => {}} />
       <ReviewsTile reviews={reviews} />
-      <SubmissionsTile />
+      <SubmissionsTile submissions={submissions} />
       <EventsTile events={events} />
     </div>
   )
@@ -57,14 +58,21 @@ const events: UpcomingEvent[] = [
   { id: "e2", title: "League night", startsAt: inDays(8), endsAt: inDays(8, 3), city: "Boulder", state: "CO", lng: -105.27, lat: 40.01, isSample: true },
 ]
 
+const place = { address: "1820 SE Hawthorne Blvd", rejectReason: null, startsAt: null, lng: -122.64, lat: 45.51, createdAt: "2026-11-01T18:00:00Z", reviewedAt: null } as const
+const submissions: MySubmission[] = [
+  { ...place, id: "s1", kind: "shop", status: "pending", name: "Rose City Card Exchange", city: "Portland", state: "OR", locationId: null, locationActive: null },
+  { ...place, id: "s2", kind: "event", status: "approved", name: "Friday Night Trades", city: "Phoenix", state: "AZ", locationId: "l9", locationActive: true },
+  { ...place, id: "s3", kind: "shop", status: "rejected", rejectReason: "duplicate", name: "Mile High Cards", city: "Denver", state: "CO", locationId: null, locationActive: null },
+]
+
 /** Every tile with content; the events are sample data, so they carry the "Sample" badge. */
-export const Filled: Story = { args: { reviews, events } }
-/** Before the reviews and events arrive. */
-export const Loading: Story = { args: { reviews: null, events: null } }
+export const Filled: Story = { args: { reviews, submissions, events } }
+/** Before the reviews, submissions and events arrive. */
+export const Loading: Story = { args: { reviews: null, submissions: null, events: null } }
 /** Signed in with nothing yet. */
-export const Empty: Story = { args: { reviews: [], events: [] } }
-/** The reviews and events couldn't load. */
-export const LoadError: Story = { args: { reviews: "error", events: "error" } }
+export const Empty: Story = { args: { reviews: [], submissions: [], events: [] } }
+/** The reviews, submissions and events couldn't load. */
+export const LoadError: Story = { args: { reviews: "error", submissions: "error", events: "error" } }
 /** Near you after the browser refused the location. */
 export const NearDenied: Story = { args: { near: { status: "denied" }, reviews, events } }
 /** Near you with the count, and its link to the map. */

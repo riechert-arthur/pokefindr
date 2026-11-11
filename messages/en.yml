@@ -617,6 +617,7 @@ dashboard:
       title: Your submissions
       body: Card shops and events you add appear here while they wait for review.
       add: Add a place
+      error: Couldn't load your submissions. Check your connection and refresh.
     events:
       title: Upcoming events
       error: Couldn't load events. Check your connection and refresh.
