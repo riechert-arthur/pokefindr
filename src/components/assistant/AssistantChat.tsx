@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { AgentMark } from "@/components/brand/AgentMark"
@@ -17,6 +17,8 @@ interface AssistantChatProps {
   suggestion: string | null
   onSuggestionUsed: () => void
   onChattingChange: (chatting: boolean) => void
+  /** The signed-in viewer: their current chat is kept in this browser (#346). */
+  userId?: string | null
 }
 
 function AnswerView({ m }: { m: Extract<ChatMessage, { role: "assistant" }> }) {
@@ -44,17 +46,18 @@ function AnswerView({ m }: { m: Extract<ChatMessage, { role: "assistant" }> }) {
 /**
  * The dashboard's assistant: the composer (typing placeholder, Send, Stop)
  * and, once asked, the conversation above it with each answer's text and
- * cards. "New chat" clears it.
+ * cards. "New chat" clears it; until then it's kept in this browser (#346).
  */
-export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChattingChange }: AssistantChatProps) {
+export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChattingChange, userId = null }: AssistantChatProps) {
   const t = useTranslations("assistant")
-  const { messages, busy, send, stop, reset } = useAssistant()
+  const { messages, busy, send, stop, reset } = useAssistant(userId)
   const [text, setText] = useState("")
   const [focused, setFocused] = useState(false)
   const log = useRef<HTMLDivElement>(null)
   const chatting = messages.length > 0
 
-  useEffect(() => onChattingChange(chatting), [chatting, onChattingChange])
+  // Before paint, so a restored chat replaces the suggestions and tiles without them flashing in.
+  useLayoutEffect(() => onChattingChange(chatting), [chatting, onChattingChange])
 
   const ask = (q: string) => {
     if (busy) return

@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, fireEvent, render, screen, waitFor } from "../../helpers/intl"
 import { AssistantChat } from "@/components/assistant/AssistantChat"
+import { clearAllChats, loadChat, saveChat } from "@/lib/assistant/saved-chat"
+import type { ChatMessage } from "@/components/assistant/useAssistant"
 import type { AssistantEvent } from "@/lib/types/assistant-stream"
 
 const place = { id: "loc-1", name: "Safeway", kind: "vending" as const, address: "1 Pike St", city: "Seattle", state: "WA", lng: -122.34, lat: 47.61, miles: 0.4 }
@@ -17,16 +19,20 @@ const done = (memory: string): AssistantEvent => ({ type: "done", stop: "end_tur
 
 function setup(props: Partial<Parameters<typeof AssistantChat>[0]> = {}) {
   const onChattingChange = vi.fn()
-  render(<AssistantChat viewer={null} suggestion={null} onSuggestionUsed={vi.fn()} onChattingChange={onChattingChange} {...props} />)
+  const view = render(<AssistantChat viewer={null} suggestion={null} onSuggestionUsed={vi.fn()} onChattingChange={onChattingChange} {...props} />)
   const box = screen.getByRole("textbox", { name: "Message the assistant" })
   const ask = (q: string) => {
     fireEvent.change(box, { target: { value: q } })
     fireEvent.keyDown(box, { key: "Enter" })
   }
-  return { ask, onChattingChange }
+  return { ask, onChattingChange, unmount: view.unmount }
 }
 
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => {
+  vi.unstubAllGlobals()
+  localStorage.clear()
+  loadChat("reset")
+})
 
 describe("AssistantChat", () => {
   it("streams an answer with its cards, and sends the answer's memory back with the next question", async () => {
@@ -134,5 +140,89 @@ describe("AssistantChat", () => {
     ask("route through that one")
     await screen.findByText("Ok.")
     expect(JSON.parse(next.mock.calls[0][1].body).messages[1].content).toContain("(id loc-1)")
+  })
+})
+
+describe("AssistantChat keeps the current chat in this browser (#346)", () => {
+  const saved: ChatMessage[] = [
+    { id: 1, role: "user", text: "machines in Seattle?" },
+    { id: 2, role: "assistant", text: "Safeway is closest.", cards: [], status: null, note: null, memory: "Safeway is closest.\n[ids: loc-1]", turnId: "turn-1", done: true },
+  ]
+
+  it("shows a returning viewer their chat, and follow-ups still remember its places", async () => {
+    saveChat("u1", saved)
+    const fetchMock = vi.fn().mockResolvedValue(ndjson([{ type: "text", text: "Sure." }, done("Sure.")]))
+    vi.stubGlobal("fetch", fetchMock)
+    const { ask, onChattingChange } = setup({ userId: "u1" })
+    // There on the first render (layout effects, before paint), with no waiting: the tiles never flash in.
+    expect(screen.getByText("machines in Seattle?")).toBeInTheDocument()
+    expect(onChattingChange).toHaveBeenLastCalledWith(true)
+    ask("route through them")
+    await screen.findByText("Sure.")
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).messages[1]).toEqual({ role: "assistant", content: "Safeway is closest.\n[ids: loc-1]" })
+  })
+
+  it("keeps a new conversation after leaving the page, and New chat removes it", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(ndjson([{ type: "text", text: "Safeway." }, done("Safeway. [id loc-1]")])))
+    const first = setup({ userId: "u1" })
+    first.ask("closest machine?")
+    await screen.findByText("Safeway.")
+    first.unmount()
+
+    setup({ userId: "u1" })
+    expect(screen.getByText("Safeway.")).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "New chat" }))
+    expect(screen.queryByText("Safeway.")).toBeNull()
+    expect(loadChat("u1")).toEqual([])
+  })
+
+  it("starts empty for a different user on the same browser", () => {
+    saveChat("u1", saved)
+    const { onChattingChange } = setup({ userId: "u2" })
+    expect(screen.queryByText("machines in Seattle?")).toBeNull()
+    expect(onChattingChange).toHaveBeenLastCalledWith(false)
+  })
+
+  it("keeps an answer that was still streaming when the viewer left, stopped, with its places", async () => {
+    let enqueue!: (s: string) => void
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((_url: string, init: RequestInit) => {
+        const enc = new TextEncoder()
+        const body = new ReadableStream({
+          start(c) {
+            enqueue = (s) => c.enqueue(enc.encode(s))
+            init.signal!.addEventListener("abort", () => c.error(new DOMException("Aborted", "AbortError")))
+          },
+        })
+        return Promise.resolve(new Response(body))
+      }),
+    )
+    const { ask, unmount } = setup({ userId: "u1" })
+    ask("tell me everything")
+    await act(async () => enqueue(JSON.stringify({ type: "card", card: { type: "places", title: "1 near Seattle", total: 1, places: [place], near: null } }) + "\n"))
+    await act(async () => enqueue(JSON.stringify({ type: "text", text: "Partial answer" }) + "\n"))
+    await screen.findByText("Partial answer")
+    unmount()
+
+    const [, answer] = loadChat("u1")
+    expect(answer).toMatchObject({ role: "assistant", text: "Partial answer", done: true, status: null, note: "Stopped." })
+    expect(answer.role === "assistant" && answer.memory).toContain("(id loc-1)")
+  })
+
+  it("isn't brought back by the page saving as it closes after logout", () => {
+    saveChat("u1", saved)
+    const { unmount } = setup({ userId: "u1" })
+    clearAllChats()
+    unmount()
+    expect(localStorage.length).toBe(0)
+  })
+
+  it("keeps nothing without a signed-in user", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(ndjson([{ type: "text", text: "Hi." }, done("Hi.")])))
+    const { ask } = setup()
+    ask("hello")
+    await screen.findByText("Hi.")
+    expect(localStorage.length).toBe(0)
   })
 })

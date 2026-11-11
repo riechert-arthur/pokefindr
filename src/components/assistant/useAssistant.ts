@@ -1,10 +1,11 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 import type { AssistantCard } from "@/lib/types/assistant"
 import type { AssistantEvent, AssistantTurn } from "@/lib/types/assistant-stream"
 import { clipHistory, memoryOf } from "@/lib/assistant/memory"
+import { clearChat, loadChat, saveChat } from "@/lib/assistant/saved-chat"
 import { track } from "@/lib/analytics"
 import { useApiError, type ApiErrorBody } from "@/i18n/useApiError"
 
@@ -76,21 +77,60 @@ async function refusalNote(res: Response, t: ChatMessages, apiError: ReturnType<
   return apiError(body, t("failed"))
 }
 
+/** The chat as it's kept when the viewer leaves: an answer still streaming ends there, as Stop ends it. */
+const settled = (messages: readonly ChatMessage[], stopped: string): ChatMessage[] =>
+  messages.map((m) => (m.role === "assistant" && !m.done ? { ...m, status: null, done: true, note: m.note ?? stopped, memory: partialMemory(m) } : m))
+
 /**
  * The assistant conversation on the page: sends each message with the
  * history to /api/assistant and fills in the answer as its events stream
  * (text, a status while tools run, cards). `stop` aborts the answer and
  * keeps what came; `reset` starts a new chat.
+ *
+ * With `userId`, the chat is kept in this browser (#346): restored when the
+ * page opens, saved after each answer and when the viewer leaves mid-answer,
+ * and removed by `reset` ("New chat").
  */
-export function useAssistant() {
+export function useAssistant(userId: string | null = null) {
   const t = useTranslations("assistant.chat")
   const apiError = useApiError()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [busy, setBusy] = useState(false)
+  // Whose saved chat `messages` holds. State, not a ref, so nothing is saved
+  // over a chat in the same commit that restores it.
+  const [restoredFor, setRestoredFor] = useState<string | null>(null)
   const ctl = useRef<AbortController | null>(null)
   const nextId = useRef(1)
   const messagesRef = useRef(messages)
   messagesRef.current = messages
+  const stoppedRef = useRef(t("stopped"))
+  stoppedRef.current = t("stopped")
+
+  // Before the first paint, so a returning viewer never sees the empty dashboard flash in.
+  useLayoutEffect(() => {
+    if (!userId) return
+    ctl.current?.abort()
+    const saved = loadChat(userId)
+    nextId.current = saved.reduce((max, m) => Math.max(max, m.id), 0) + 1
+    setMessages(saved)
+    setRestoredFor(userId)
+  }, [userId])
+
+  // After each change, but not while an answer streams: it's saved when it ends, or when the viewer leaves.
+  useEffect(() => {
+    if (userId && restoredFor === userId && !busy) saveChat(userId, messages)
+  }, [messages, busy, userId, restoredFor])
+
+  // Leaving the page (another page, a reload, closing the tab) keeps the answer that was streaming, stopped.
+  useEffect(() => {
+    if (!userId || restoredFor !== userId) return
+    const keep = () => saveChat(userId, settled(messagesRef.current, stoppedRef.current))
+    window.addEventListener("pagehide", keep)
+    return () => {
+      window.removeEventListener("pagehide", keep)
+      keep()
+    }
+  }, [userId, restoredFor])
 
   useEffect(() => () => ctl.current?.abort(), [])
 
@@ -158,7 +198,8 @@ export function useAssistant() {
   const reset = useCallback(() => {
     ctl.current?.abort()
     setMessages([])
-  }, [])
+    if (userId) clearChat(userId)
+  }, [userId])
 
   return { messages, busy, send, stop, reset }
 }

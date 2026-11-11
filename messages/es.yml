@@ -620,7 +620,7 @@ settings:
     body: El idioma en que PokeFindr te habla, en cada dispositivo donde inicies sesión.
   assistant:
     title: Asistente
-    body: Guardamos el texto de tus conversaciones con el asistente durante 30 días. Puedes borrarlo ahora si quieres.
+    body: Guardamos el texto de tus conversaciones con el asistente durante 30 días, y tu chat actual se queda en este navegador hasta que empieces uno nuevo o cierres sesión. Puedes borrar ambos ahora si quieres.
 
 auth:
   meta:
