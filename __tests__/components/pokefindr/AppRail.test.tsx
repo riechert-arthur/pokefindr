@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, fireEvent, render, screen, waitFor } from "../../helpers/intl"
+import { act, fireEvent, render, screen, waitFor, within } from "../../helpers/intl"
 
 let pathname = "/map"
 vi.mock("@/i18n/navigation", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/i18n/navigation")>()), usePathname: () => pathname, useRouter: () => ({ replace: () => {} }) }))
@@ -36,9 +36,9 @@ describe("AppRail", () => {
   })
 
   it("marks nested routes", () => {
-    pathname = "/blog/some-post"
+    pathname = "/home/reviews"
     render(<AppRail />)
-    expect(current()).toEqual(["Blog"])
+    expect(current()).toEqual(["Home"])
   })
 
   it("shows Settings only when signed in", () => {
@@ -110,9 +110,9 @@ describe("AppRail", () => {
 
   it("keeps Blog out of the dashboard's pages, with the links at the bottom (#387)", () => {
     render(<AppRail signedIn />)
-    const names = screen.getAllByRole("link").map((a) => a.textContent)
-    expect(names.indexOf("Blog")).toBeGreaterThan(names.indexOf("Map"))
-    expect(names.indexOf("Blog")).toBe(names.indexOf("Discord") - 1)
+    const settings = screen.getByRole("link", { name: "Settings" })
+    const bottom = settings.closest(".mt-auto") as HTMLElement
+    expect(within(bottom).getAllByRole("link").map((a) => a.textContent)).toEqual(["Blog", "Discord", "Settings"])
   })
 
   it("names each link by its label, without aria-label or title", () => {

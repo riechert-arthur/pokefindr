@@ -28,7 +28,7 @@ const MAIN: RailItem[] = [
   { href: "/map", label: "map", icon: MapPinIcon },
 ]
 
-/** The blog is a site page without the rail, so it sits with the links that leave the dashboard, not with its pages (#387). */
+/** The blog is a site page, outside the dashboard (no rail there), so it sits at the bottom with Discord, not with the dashboard's pages (#387). Never current here. */
 const BLOG: RailItem = { href: "/blog", label: "blog", icon: BookOpenIcon }
 
 const DISCORD: RailItem = { href: SUPPORT_URL, label: "discord", icon: DiscordIcon, external: true }
@@ -231,7 +231,7 @@ export function AppRail({ signedIn = false, canModerate = false, isAdmin = false
         {canModerate && <RailLink item={MODERATE} current={isCurrent(MODERATE.href)} expanded={expanded} />}
         {isAdmin && <RailLink item={ADMIN} current={isCurrent(ADMIN.href)} expanded={expanded} />}
         <div className="mt-auto flex flex-col items-start gap-2">
-          <RailLink item={BLOG} current={isCurrent(BLOG.href)} expanded={expanded} />
+          <RailLink item={BLOG} current={false} expanded={expanded} />
           <RailLink item={DISCORD} current={false} expanded={expanded} />
           {signedIn && <RailLink item={SETTINGS} current={isCurrent(SETTINGS.href)} expanded={expanded} />}
           {/*
