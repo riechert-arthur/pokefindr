@@ -44,11 +44,14 @@ describe("TypeChip", () => {
 describe("StatusBadge", () => {
   it.each([
     ["live", "Live", "text-success"],
+    ["sample", "Sample", "text-muted-foreground"],
     ["pending", "Pending review", "text-warning"],
     ["sponsored", "Sponsored", "text-muted-foreground"],
-  ] as const)("renders %s", (status, label, cls) => {
+  ] as const)("renders %s with its label and colors", (status, label, cls) => {
     render(<StatusBadge status={status} />)
-    expect(screen.getByText(label)).toHaveClass(cls)
+    const badge = screen.getByText(label)
+    expect(badge).toHaveAttribute("data-status", status)
+    expect(badge).toHaveClass(cls)
   })
 })
 

@@ -5,6 +5,7 @@ import { Monitor, Moon, Sun, type LucideIcon } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useTranslations } from "next-intl"
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
+import { COMPACT_TRIGGER, CompactLabel } from "@/components/pokefindr/CompactSelect"
 import { cn } from "@/lib/utils"
 
 /** Each option's label is its value's message in `ui.theme`. */
@@ -27,7 +28,7 @@ interface ThemeToggleProps {
   onOpenChange?: (open: boolean) => void
 }
 
-/** Light / dark / system theme picker. Shows System until mounted, so SSR and client markup match. */
+/** Light / dark / system theme picker. The stored choice is only known once mounted, so SSR and client markup match until then. */
 export function ThemeToggle({ variant = "segmented", className, labelClassName, onOpenChange }: ThemeToggleProps) {
   const t = useTranslations("ui.theme")
   const { theme, setTheme } = useTheme()
@@ -41,12 +42,13 @@ export function ThemeToggle({ variant = "segmented", className, labelClassName, 
     const Icon = chosen.icon
     return (
       <Select value={chosen.value} onValueChange={setTheme} onOpenChange={onOpenChange}>
-        <SelectTrigger aria-label={t("group")} className={cn("h-8 w-auto gap-1.5 px-2 text-caption", className)}>
-          <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-          {/* One span: the trigger's line clamp applies to its direct span, which would override a hiding class. */}
-          <span>
-            <span className={labelClassName}>{t(chosen.value)}</span>
-          </span>
+        {/* The name says the choice, which the collapsed rail only shows as an icon. */}
+        <SelectTrigger aria-label={mounted ? t("current", { theme: t(chosen.value) }) : t("group")} className={cn(COMPACT_TRIGGER, className)}>
+          {/* Until the stored theme is known: an empty slot, not a wrong "System" that then flips. */}
+          {mounted ? <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden /> : <span aria-hidden className="size-3.5 shrink-0" />}
+          <CompactLabel>
+            <span className={labelClassName}>{mounted ? t(chosen.value) : ""}</span>
+          </CompactLabel>
         </SelectTrigger>
         <SelectContent>
           {OPTIONS.map(({ value, icon: ItemIcon }) => (

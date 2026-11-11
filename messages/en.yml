@@ -194,9 +194,9 @@ map:
     failed: Couldn't load retailers. Try again in a moment.
     loading: Loading retailers…
     shopsTitle: Card shops
-    shopsSoon: Open now, sells singles, hosts events. These filters arrive with real shop data.
+    shopsSoon: Open now, sells singles, hosts events. These filters come later.
     eventsTitle: Events
-    eventsSoon: This week, this month, event type. Coming once events are real.
+    eventsSoon: This week, this month, event type. These filters come later.
     clear: Clear
     done: Done
   # The list for a searched place.
@@ -510,12 +510,16 @@ ui:
   theme:
     # Accessible name of the light/dark/system button group.
     group: Theme
+    # The theme badge's name, with the chosen theme. {theme} is "Light", "Dark" or "System".
+    current: "Theme: {theme}"
     light: Light
     dark: Dark
     system: System
   # The language switcher. Each language is listed in its own name ("English", "Español").
   language:
     label: Language
+    # The compact picker's name, with the chosen language. {language} is like "English".
+    current: "Language: {language}"
     # When the choice couldn't be saved to their account.
     saveFailed: Couldn't save your language
     saveFailedBody: It's set on this device. Try again from settings to keep it on others.
@@ -880,7 +884,7 @@ faq:
     add:
       question: How can I add a new location?
       # <support> opens our Discord server.
-      answer: Vending machines come from the official list, so report a missing one through <support>Support</support>. You can add card shops and events yourself with Add a place on the map. A moderator checks each one before everyone can see it.
+      answer: Vending machines come from the official list, so report a missing one through <support>Support</support>. You can add card shops and events yourself. Log in, then use Add a place on the map. A moderator checks each one before everyone can see it.
     report:
       question: Can I report outdated or incorrect information?
       # <support> opens our Discord server.
