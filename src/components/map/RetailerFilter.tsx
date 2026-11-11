@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ChevronDownIcon } from "lucide-react"
+import { ChevronDownIcon, ShoppingBasketIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -81,6 +81,7 @@ export function RetailerFilter({ selected, onChange }: RetailerFilterProps) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button type="button" variant="outline" aria-label={n === 1 ? t("retailerPicked", { value: selected[0] }) : undefined} className={cn(filterChip, n > 0 && filterChipSet)}>
+          <ShoppingBasketIcon aria-hidden />
           <span className="max-w-[16ch] truncate">{picked ?? t("retailer")}</span>
           <ChevronDownIcon className="size-4 opacity-60" aria-hidden />
         </Button>
