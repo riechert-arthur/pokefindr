@@ -62,12 +62,15 @@ describe("RouteOverlay (#288)", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(String(fetchMock.mock.calls[0][0])).toBe(`/api/route?ids=${A},${B}`)
     expect(layers.at(-1)!.paint).not.toHaveProperty("line-dasharray")
-    expect(map.fitBounds).toHaveBeenCalledWith(
-      [
-        [-105.3, 39.7],
-        [-105, 39.8],
-      ],
-      expect.anything(),
+    // Framing runs in an effect after the markers render: wait for it rather than racing it.
+    await waitFor(() =>
+      expect(map.fitBounds).toHaveBeenCalledWith(
+        [
+          [-105.3, 39.7],
+          [-105, 39.8],
+        ],
+        expect.anything(),
+      ),
     )
     expect(toast).toHaveBeenCalledWith("Route on the map", expect.objectContaining({ description: "2 stops, in visiting order." }))
   })
@@ -77,14 +80,14 @@ describe("RouteOverlay (#288)", () => {
     show([A, B])
     await screen.findByRole("img", { name: "Stop 2: Target" })
     expect(layers.at(-1)!.paint).toHaveProperty("line-dasharray")
-    expect(toast).toHaveBeenCalledWith("Couldn't get street directions, showing straight lines.", expect.anything())
+    await waitFor(() => expect(toast).toHaveBeenCalledWith("Couldn't get street directions, showing straight lines.", expect.anything()))
   })
 
   it("says when some stops are gone", async () => {
     answer(200, route())
     show([A, B, C])
     await screen.findByRole("img", { name: "Stop 2: Target" })
-    expect(toast).toHaveBeenCalledWith("Some stops are gone", expect.anything())
+    await waitFor(() => expect(toast).toHaveBeenCalledWith("Some stops are gone", expect.anything()))
   })
 
   it("clears the route when its places are gone, and keeps it on another failure", async () => {
@@ -108,7 +111,7 @@ describe("RouteOverlay (#288)", () => {
     await screen.findByRole("img", { name: "Stop 2: Target" })
     const sent = new URL(String(fetchMock.mock.calls[0][0]), "http://x").searchParams.get("ids")!.split(",")
     expect(sent).toEqual([A, B, ...Array.from({ length: 7 }, () => C)])
-    expect(toast).toHaveBeenCalledWith("Some stops are gone", expect.anything())
+    await waitFor(() => expect(toast).toHaveBeenCalledWith("Some stops are gone", expect.anything()))
 
     const none = answer(200, route())
     const cleared = vi.fn()
