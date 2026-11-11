@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useId, useState } from "react"
 import { Monitor, Moon, Sun, type LucideIcon } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useTranslations } from "next-intl"
+import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 
 /** Each option's label is its value's message in `ui.theme`. */
@@ -15,13 +16,13 @@ const OPTIONS: { value: "light" | "dark" | "system"; icon: LucideIcon }[] = [
 
 interface ThemeToggleProps {
   /**
-   * "segmented" shows light, dark and system (settings). "toggle" is one
-   * button that switches between light and dark from whatever is showing
-   * (the app rail), so every click changes the theme.
+   * "segmented" shows light, dark and system (settings). "toggle" is a "Dark
+   * theme" switch (the app rail): on while dark is showing, whether chosen or
+   * from the system, so every flip changes the theme.
    */
   variant?: "segmented" | "toggle"
   className?: string
-  /** The toggle's label ("Dark theme"), e.g. screen-reader only while the app rail is collapsed. */
+  /** The switch's label ("Dark theme"), e.g. screen-reader only while the app rail is collapsed. */
   labelClassName?: string
 }
 
@@ -32,22 +33,18 @@ export function ThemeToggle({ variant = "segmented", className, labelClassName }
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   const current = mounted ? (theme ?? "system") : "system"
+  const id = useId()
 
   if (variant === "toggle") {
     const isDark = mounted && resolvedTheme === "dark"
-    // The icon and label show the theme a click switches to; the name says so in full.
-    const Icon = isDark ? Sun : Moon
-    const next = isDark ? "light" : "dark"
+    const Icon = isDark ? Moon : Sun
     return (
-      <button
-        type="button"
-        onClick={() => setTheme(next)}
-        aria-label={t(isDark ? "switchToLight" : "switchToDark")}
-        className={cn("flex items-center gap-3 rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground", className)}
-      >
-        <Icon className="size-5 shrink-0" aria-hidden />
-        <span className={labelClassName}>{t(isDark ? "lightTheme" : "darkTheme")}</span>
-      </button>
+      <div className={cn("flex items-center gap-2", className)}>
+        <Switch id={id} checked={isDark} onCheckedChange={(on) => setTheme(on ? "dark" : "light")} thumb={<Icon aria-hidden />} />
+        <label htmlFor={id} className={cn("cursor-pointer", labelClassName)}>
+          {t("darkTheme")}
+        </label>
+      </div>
     )
   }
 
