@@ -142,22 +142,33 @@ export interface LocationSearch {
 /** `%` and `_` are wildcards in LIKE; a search for them means the characters. */
 export const likeEscape = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`)
 
-/** Active locations whose retailer, name, address or city contains `q`: the search list's Locations group. */
+/** The most words of a search that are matched, so a query stays a bounded number of conditions. */
+const MAX_SEARCH_WORDS = 8
+
+/**
+ * The search list's Locations group: active locations where every word of `q`
+ * (split on spaces and commas) is in the retailer or name, address, city,
+ * state or ZIP, so an address followed by the start of the city
+ * ("15411 New Hampshire Ave, Silver") or a store and city ("Safeway Silver
+ * Spring") finds the place (#360). Or the machine whose ID is `q`.
+ */
 export async function searchLocations(
   { q, types, near, retailers = [], limit = 5 }: LocationSearch,
   db: Database = getDb(),
 ): Promise<LocationFeatureCollection> {
   const term = q.trim()
-  if (types.length === 0 || term === "") return { type: "FeatureCollection", features: [] }
-  const like = `%${likeEscape(term)}%`
+  const words = term.split(/[\s,]+/).filter(Boolean).slice(0, MAX_SEARCH_WORDS)
+  if (types.length === 0 || words.length === 0) return { type: "FeatureCollection", features: [] }
+  const everyWord = sql.join(
+    words.map((word) => {
+      const like = `%${likeEscape(word)}%`
+      return sql`(coalesce(l.retailer, l.name, '') ilike ${like} or l.address ilike ${like} or l.city ilike ${like} or l.state ilike ${like} or l.postal_code ilike ${like})`
+    }),
+    sql` and `,
+  )
   const fc = await queryFeatures(
     db,
-    sql`l.kind in (${kindsIn(types)}) and (
-      coalesce(l.retailer, l.name, '') ilike ${like}
-      or l.address ilike ${like}
-      or l.city ilike ${like}
-      or l."machineID" = ${term.toUpperCase()}
-    ) ${retailerIn(retailers)}`,
+    sql`l.kind in (${kindsIn(types)}) and ((${everyWord}) or l."machineID" = ${term.toUpperCase()}) ${retailerIn(retailers)}`,
     limit,
     near ? sql`ST_Distance(geog, ${pointOf(near)}), id` : sql`coalesce(retailer, name), city, id`,
     "searchLocations",

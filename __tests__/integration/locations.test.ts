@@ -174,6 +174,18 @@ describe("searchLocations", () => {
     expect(names(await searchLocations({ q: "k3", types: all }))).toEqual(["Kroger Denton"])
   })
 
+  it("matches every word across the fields, so an address and part of the city find the place (#360)", async () => {
+    await seed()
+    const all = ["vending", "shop", "event"] as const
+    expect(names(await searchLocations({ q: "1592 S Loop 288, Dent", types: all }))).toEqual(["Kroger Denton"])
+    expect(names(await searchLocations({ q: "1592 S Loop 288, Denton, TX", types: all }))).toEqual(["Kroger Denton"])
+    expect(names(await searchLocations({ q: "Kroger Dallas", types: all }))).toEqual(["Kroger Dallas"])
+    expect(names(await searchLocations({ q: "king soopers 9th", types: all }))).toEqual(["King Soopers Denver"])
+    // Every word has to match somewhere.
+    expect(names(await searchLocations({ q: "1592 S Loop 288, Dallas", types: all }))).toEqual([])
+    expect(names(await searchLocations({ q: " , ", types: all }))).toEqual([])
+  })
+
   it("filters by kind, ranks by distance from `near`, and limits", async () => {
     await seed()
     expect(names(await searchLocations({ q: "den", types: ["shop"] }))).toEqual(["Den of Cards Boulder"])
