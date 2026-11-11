@@ -164,6 +164,10 @@
     --brand-2: 13.5 77.1% 53.7%;
     --spark: 228 69% 54.5%;
     --success: 132 55% 31%;
+    /* Warning and destructive are darker than Light's, which were tuned for white:
+       on the tinted background they're 5.1:1 and 5.1:1 (4.7:1 and 4.7:1 on muted). */
+    --warning: 32.1 94.6% 32%;
+    --destructive: 11.2 89.2% 41%;
     --kind-vending: 13.5 77.1% 53.7%;
     --kind-shop: 131.4 54.1% 40.2%;
     --kind-event: 258.2 70% 59.4%;
