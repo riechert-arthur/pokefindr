@@ -2,8 +2,8 @@ import type { RoutePoint, RouteResult, Router } from "@/server/ports/router"
 import { milesBetween, round } from "@/lib/map/geo"
 
 /**
- * Straight lines between the stops, never `routed`. The default in dev and
- * CI, so neither needs an account, and the fallback whenever the real
+ * Straight lines between the stops, never `routed`. The default in tests and
+ * in production without a key (see ROUTER_PROVIDER), and the fallback whenever the real
  * provider fails, is slow or is over the daily cap.
  */
 export class FakeRouter implements Router {

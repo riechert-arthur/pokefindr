@@ -57,6 +57,14 @@ describe("Dashboard", () => {
     expect(screen.queryByRole("region", { name: "Near you" })).toBeNull()
   })
 
+  it("starts in the chat layout when there's a saved chat, and switches back if the assistant has none (#346)", () => {
+    render(<Dashboard initialChatting assistant={(p) => <button onClick={() => p.onChattingChange(false)}>none saved</button>} />)
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull()
+    expect(screen.queryByRole("region", { name: "Near you" })).toBeNull()
+    fireEvent.click(screen.getByRole("button", { name: "none saved" }))
+    expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument()
+  })
+
   it("leaves focus alone when the viewer moved on while locating", async () => {
     let answer!: PositionCallback
     vi.stubGlobal("navigator", { ...navigator, geolocation: { getCurrentPosition: vi.fn((ok: PositionCallback) => (answer = ok)) } })

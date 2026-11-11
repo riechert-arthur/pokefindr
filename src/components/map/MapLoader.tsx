@@ -14,7 +14,6 @@ const MapInstance = dynamic<MapInstanceProps>(() => import("./MapInstance"), {
   ssr: false,
 })
 
-export { hasWebGL } from "@/lib/map/webgl"
 
 const noSubscribe = () => () => {}
 

@@ -79,3 +79,24 @@ export type AssistantCard =
     }
   /** `area` is null for events anywhere. */
   | { type: "events"; title: string; area?: CardArea | null; events: AssistantEvent[] }
+
+/** One message of the conversation as the page shows it (useAssistant), and as it's kept in the browser (#346). */
+export type ChatMessage =
+  | { id: number; role: "user"; text: string }
+  | {
+      id: number
+      role: "assistant"
+      text: string
+      cards: AssistantCard[]
+      /** What it's doing while no text has come yet ("Searching locations…"). */
+      status: string | null
+      /** Shown under the answer when the turn failed or stopped short. */
+      note: string | null
+      /** What the next turn remembers of this one (the server's summary with place ids). */
+      memory: string | null
+      /** The turn's id in the server's log, for feedback. */
+      turnId: string | null
+      done: boolean
+      /** The input check blocked the question (#253): neither is sent back as history. */
+      blocked?: boolean
+    }

@@ -21,7 +21,8 @@ interface AssistantChatProps {
   userId?: string | null
 }
 
-function AnswerView({ m }: { m: Extract<ChatMessage, { role: "assistant" }> }) {
+/** `newestRoute`: the index of the conversation's newest route card in this answer, if it's here. */
+function AnswerView({ m, newestRoute }: { m: Extract<ChatMessage, { role: "assistant" }>; newestRoute: number }) {
   return (
     <div className="flex max-w-full items-start gap-2.5 text-body">
       <AgentMark size="sm" />
@@ -34,13 +35,24 @@ function AnswerView({ m }: { m: Extract<ChatMessage, { role: "assistant" }> }) {
         )}
         {m.text && <AssistantText text={m.text} />}
         {m.cards.map((c, i) => (
-          <AssistantCardView key={i} card={c} />
+          <AssistantCardView key={i} card={c} newestRoute={i === newestRoute} />
         ))}
         {m.note && <p className="text-caption text-muted-foreground">{m.note}</p>}
         {m.done && m.turnId && <FeedbackBar turnId={m.turnId} />}
       </div>
     </div>
   )
+}
+
+/** Where the conversation's newest route card is: its answer's id and its index among that answer's cards. */
+function newestRouteCard(messages: readonly ChatMessage[]): { messageId: number; card: number } | null {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i]
+    if (m.role !== "assistant") continue
+    const card = m.cards.findLastIndex((c) => c.type === "route")
+    if (card >= 0) return { messageId: m.id, card }
+  }
+  return null
 }
 
 /**
@@ -55,6 +67,8 @@ export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChatting
   const [focused, setFocused] = useState(false)
   const log = useRef<HTMLDivElement>(null)
   const chatting = messages.length > 0
+  // The newest route card opens its map preview by itself; older ones wait for a click (#349).
+  const newest = newestRouteCard(messages)
 
   // Before paint, so a restored chat replaces the suggestions and tiles without them flashing in.
   useLayoutEffect(() => onChattingChange(chatting), [chatting, onChattingChange])
@@ -95,7 +109,7 @@ export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChatting
                   {m.text}
                 </p>
               ) : (
-                <AnswerView key={m.id} m={m} />
+                <AnswerView key={m.id} m={m} newestRoute={newest?.messageId === m.id ? newest.card : -1} />
               ),
             )}
           </div>

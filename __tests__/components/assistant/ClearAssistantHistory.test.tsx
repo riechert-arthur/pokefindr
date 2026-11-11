@@ -12,7 +12,6 @@ afterEach(() => {
   vi.unstubAllGlobals()
   vi.clearAllMocks()
   localStorage.clear()
-  loadChat("reset")
 })
 
 describe("ClearAssistantHistory", () => {

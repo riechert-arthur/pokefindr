@@ -22,7 +22,7 @@ export const RATE_RULES = {
   avatar: { name: "avatar", perMinute: 4, burst: 6 },
   /** A moderator removing pictures (#290), per staff member: a handful of reviews, not a sweep of every account. */
   avatarModeration: { name: "avatarModeration", perMinute: 10, burst: 10 },
-  /** "Show on map" on an assistant route: one request per click, so a handful at once (#288). */
+  /** An assistant route: "Show on map", and the chat's preview of the newest route card (older cards load theirs on a click), so a handful at once (#288, #349). */
   route: { name: "route", perMinute: 30, burst: 10 },
 } as const satisfies Record<string, RateRule>
 

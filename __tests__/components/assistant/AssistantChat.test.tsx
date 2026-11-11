@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, fireEvent, render, screen, waitFor } from "../../helpers/intl"
 import { AssistantChat } from "@/components/assistant/AssistantChat"
 import { clearAllChats, loadChat, saveChat } from "@/lib/assistant/saved-chat"
-import type { ChatMessage } from "@/components/assistant/useAssistant"
+import type { ChatMessage } from "@/lib/types/assistant"
 import type { AssistantEvent } from "@/lib/types/assistant-stream"
 
 const place = { id: "loc-1", name: "Safeway", kind: "vending" as const, address: "1 Pike St", city: "Seattle", state: "WA", lng: -122.34, lat: 47.61, miles: 0.4 }
@@ -31,7 +31,6 @@ function setup(props: Partial<Parameters<typeof AssistantChat>[0]> = {}) {
 afterEach(() => {
   vi.unstubAllGlobals()
   localStorage.clear()
-  loadChat("reset")
 })
 
 describe("AssistantChat", () => {
@@ -210,12 +209,31 @@ describe("AssistantChat keeps the current chat in this browser (#346)", () => {
     expect(answer.role === "assistant" && answer.memory).toContain("(id loc-1)")
   })
 
-  it("isn't brought back by the page saving as it closes after logout", () => {
+  it("empties on logout in this tab, and the page saving as it closes doesn't bring it back", () => {
     saveChat("u1", saved)
     const { unmount } = setup({ userId: "u1" })
-    clearAllChats()
+    act(() => clearAllChats())
+    expect(screen.queryByText("machines in Seattle?")).toBeNull()
     unmount()
     expect(localStorage.length).toBe(0)
+  })
+
+  it("follows another tab: its New chat or logout empties this one, and its newer answer shows here", async () => {
+    saveChat("u1", saved)
+    setup({ userId: "u1" })
+    const newer: ChatMessage[] = [...saved, { id: 3, role: "user", text: "and in Tacoma?" }, { ...saved[1], id: 4, text: "Fred Meyer." }]
+    act(() => {
+      saveChat("u1", newer)
+      window.dispatchEvent(new StorageEvent("storage", { key: "pf-assistant-chat:u1", newValue: localStorage.getItem("pf-assistant-chat:u1") }))
+    })
+    expect(screen.getByText("Fred Meyer.")).toBeInTheDocument()
+    act(() => {
+      localStorage.removeItem("pf-assistant-chat:u1")
+      window.dispatchEvent(new StorageEvent("storage", { key: "pf-assistant-chat:u1", newValue: null }))
+    })
+    expect(screen.queryByText("Fred Meyer.")).toBeNull()
+    // And this tab doesn't save its old copy back.
+    expect(loadChat("u1")).toEqual([])
   })
 
   it("keeps nothing without a signed-in user", async () => {

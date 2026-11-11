@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { clearAllChats, clearChat, loadChat, saveChat } from "@/lib/assistant/saved-chat"
-import type { ChatMessage } from "@/components/assistant/useAssistant"
+import { clearAllChats, clearChat, loadChat, onChatsCleared, saveChat } from "@/lib/assistant/saved-chat"
+import type { ChatMessage } from "@/lib/types/assistant"
 
 const q = (id: number, text: string): ChatMessage => ({ id, role: "user", text })
 const a = (id: number, text: string): ChatMessage => ({ id, role: "assistant", text, cards: [], status: null, note: null, memory: `${text} [id loc-${id}]`, turnId: `t${id}`, done: true })
@@ -10,7 +10,7 @@ const DAY = 24 * 60 * 60 * 1000
 afterEach(() => {
   localStorage.clear()
   vi.restoreAllMocks()
-  loadChat("reset-the-cleared-flag")
+  document.cookie = "pf-chat=; path=/; max-age=0"
 })
 
 describe("the assistant chat kept in the browser (#346)", () => {
@@ -37,6 +37,8 @@ describe("the assistant chat kept in the browser (#346)", () => {
     ["not JSON", "{oops"],
     ["an older format", JSON.stringify({ v: 0, savedAt: Date.now(), messages: chat })],
     ["a bad message", JSON.stringify({ v: 1, savedAt: Date.now(), messages: [{ id: "1", role: "user", text: "hi" }] })],
+    ["a card that would crash rendering", JSON.stringify({ v: 1, savedAt: Date.now(), messages: [chat[0], { ...chat[1], cards: [{ type: "route", stops: null }] }] })],
+    ["a card of an unknown type", JSON.stringify({ v: 1, savedAt: Date.now(), messages: [chat[0], { ...chat[1], cards: [{ type: "weather" }] }] })],
   ])("drops %s, and removes it", (_, raw) => {
     localStorage.setItem("pf-assistant-chat:u1", raw)
     expect(loadChat("u1")).toEqual([])
@@ -61,19 +63,36 @@ describe("the assistant chat kept in the browser (#346)", () => {
     expect(loadChat("u2")).toEqual([])
   })
 
-  it("clears every chat on logout, and saves nothing more until a chat is next loaded", () => {
+  it("clears every chat on logout and tells this tab's open chat", () => {
     saveChat("u1", chat)
     saveChat("u2", chat)
     localStorage.setItem("other", "kept")
+    const cleared = vi.fn()
+    const off = onChatsCleared(cleared)
     clearAllChats()
+    off()
     expect(localStorage.length).toBe(1)
-    // The dashboard saving as it unmounts on the way to /login.
+    expect(cleared).toHaveBeenCalledTimes(1)
+  })
+
+  it("doesn't write a chat that's already saved, so restoring or leaving isn't counted as use", () => {
+    const now = Date.now()
+    saveChat("u1", chat, now - 29 * DAY)
+    const setItem = vi.spyOn(Storage.prototype, "setItem")
+    saveChat("u1", chat, now)
+    expect(setItem).not.toHaveBeenCalled()
+    // Still dated from the last real change, so it expires a day later.
+    expect(loadChat("u1", now + 2 * DAY)).toEqual([])
+  })
+
+  it("leaves a cookie with the user's id while a chat is saved, for the server to render the chat layout", () => {
     saveChat("u1", chat)
-    expect(localStorage.getItem("pf-assistant-chat:u1")).toBeNull()
-    // The next sign-in's dashboard loads (nothing), then saves again.
-    expect(loadChat("u1")).toEqual([])
+    expect(document.cookie).toContain("pf-chat=u1")
+    clearChat("u1")
+    expect(document.cookie).not.toContain("pf-chat=u1")
     saveChat("u1", chat)
-    expect(loadChat("u1")).toEqual(chat)
+    clearAllChats()
+    expect(document.cookie).not.toContain("pf-chat=u1")
   })
 
   it("does nothing, without throwing, when storage is blocked or full", () => {

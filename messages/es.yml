@@ -549,6 +549,8 @@ assistant:
     preview: Vista previa de la ruta
     drive: "{minutes, number} min en auto · {distance}"
     straightPreview: "Líneas rectas: no se pudo obtener la ruta por calles"
+    previewSkipped: Algunas paradas ya no están, así que la ruta las omite.
+    showPreview: Ver la ruta en el mapa
     start: Inicio
     leg: "+{distance}"
     topRetailers: Tiendas con más máquinas

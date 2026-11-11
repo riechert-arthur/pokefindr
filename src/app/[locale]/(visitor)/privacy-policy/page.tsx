@@ -155,8 +155,11 @@ const PrivacyPolicyPage: FC<LocaleParams> = async ({ params }) => {
         is deleted when you clear your history. We read the ratings and
         comments to improve the assistant. Your current conversation is also
         saved in your browser on that device, so it&apos;s still there when you
-        come back to the dashboard. It&apos;s removed when you start a new chat,
-        log out or clear your assistant history, or after 30 days without use.
+        come back to the dashboard, with a small cookie that only says it&apos;s
+        there. Both are removed when you start a new chat, log out or clear your
+        assistant history. If your session simply ends without logging out, they
+        stay on the device until you next do one of those, or until 30 days pass
+        without a new message, whichever comes first.
       </p>
       <p className="mb-4">
         <strong>Automatically Collected Information:</strong>
