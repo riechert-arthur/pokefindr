@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl"
 import { SquarePenIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { DASHBOARD_COLUMN as COLUMN } from "@/components/dashboard/column"
 import { AgentMark } from "@/components/brand/AgentMark"
 import { AssistantCardView } from "./AssistantCards"
 import { AssistantText } from "./AssistantText"
@@ -62,13 +63,6 @@ function newestRouteCard(messages: readonly ChatMessage[]): { messageId: number;
  * and, once asked, the conversation above it with each answer's text and
  * cards. "New chat" clears it; until then it's kept in this browser (#346).
  */
-/**
- * The conversation's reading column (the dashboard's 780px). While chatting,
- * the page gives the chat its full width, so the scrolling box can span it and
- * keep its scrollbar at the window's edge (#383); each part sits in this column.
- */
-const COLUMN = "mx-auto w-full max-w-[780px] px-4"
-
 export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChattingChange, userId = null }: AssistantChatProps) {
   const t = useTranslations("assistant")
   const { messages, busy, send, stop, reset } = useAssistant(userId)
@@ -107,9 +101,9 @@ export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChatting
       {chatting && (
         <div className="flex min-h-0 flex-1 flex-col">
           <div className={cn(COLUMN, "flex justify-end pb-1")}>
-            {/* An outlined button with the usual new-conversation mark, so it reads as an action (#380). */}
-            <Button type="button" variant="outline" size="sm" onClick={reset} disabled={busy} className="bg-card">
-              <SquarePenIcon aria-hidden />
+            {/* An outlined button with the usual new-conversation mark, so it reads as an action (#380). Mid-answer, it drops the answer too. */}
+            <Button type="button" variant="outline" size="sm" onClick={reset}>
+              <SquarePenIcon />
               {t("newChat")}
             </Button>
           </div>
@@ -129,7 +123,7 @@ export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChatting
           </div>
         </div>
       )}
-      <div className={chatting ? COLUMN : undefined}>
+      <div className={COLUMN}>
         <Composer
           value={text}
           onChange={setText}
