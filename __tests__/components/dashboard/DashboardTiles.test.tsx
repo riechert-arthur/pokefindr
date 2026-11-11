@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { render, screen, within } from "../../helpers/intl"
+import { message, render, screen, within } from "../../helpers/intl"
 import { EventsTile, NearYouTile, ReviewsTile, SubmissionsTile, TILE_ROWS, type MyReview } from "@/components/dashboard/DashboardTiles"
 import type { MySubmission } from "@/lib/submissions/schemas"
 import type { UpcomingEvent } from "@/lib/types/highlights"
@@ -87,6 +87,17 @@ describe("SubmissionsTile (#357)", () => {
     const live = screen.getByRole("link", { name: /Mile High Cards/ })
     expect(live).toHaveTextContent("Live")
     expect(live).toHaveAttribute("href", "/map?location=loc-9")
+  })
+
+  it("says why one wasn't approved, and opens the map's list of submissions for it, since it has no pin", () => {
+    render(<SubmissionsTile submissions={[submission({ status: "rejected", rejectReason: "duplicate" }), submission({ id: "s3", name: "Card show", kind: "event", status: "approved", locationId: "loc-3", locationActive: false })]} />)
+    const rejected = screen.getByRole("link", { name: /Rose City Card Exchange/ })
+    expect(rejected).toHaveTextContent("Not approved")
+    expect(rejected).toHaveTextContent(message()("map.submissions.rejectReasons.duplicate"))
+    expect(rejected).toHaveAttribute("href", "/map")
+    const ended = screen.getByRole("link", { name: /Card show/ })
+    expect(ended).toHaveTextContent(message()("map.submissions.over"))
+    expect(ended).toHaveAttribute("href", "/map")
   })
 
   it("says what will appear before there's anything, and opens Add a place", () => {

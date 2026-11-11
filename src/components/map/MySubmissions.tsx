@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { KindDot } from "@/components/pokefindr/KindDot"
 import { KINDS } from "@/components/pokefindr/kinds"
-import { SubmissionBadge } from "@/components/pokefindr/SubmissionBadge"
+import { SubmissionBadge, SubmissionNote } from "@/components/pokefindr/SubmissionBadge"
 import type { MySubmission } from "@/lib/submissions/schemas"
 import { cn } from "@/lib/utils"
 import { Marker } from "./engine"
@@ -76,7 +76,6 @@ export function PendingMarkers({ submissions, onOpen }: { submissions: readonly 
 
 /** "Your submissions" in the US sheet: each with its status, and why when it wasn't approved. */
 export function SubmissionRows({ submissions, onOpen }: { submissions: readonly MySubmission[]; onOpen: (s: MySubmission) => void }) {
-  const t = useTranslations("map.submissions")
   return (
     <>
       {submissions.slice(0, 5).map((s) => (
@@ -93,15 +92,7 @@ export function SubmissionRows({ submissions, onOpen }: { submissions: readonly 
                 <SubmissionBadge submission={s} />
               </span>
               <span className="block truncate text-body text-muted-foreground">
-                {s.status === "rejected"
-                  ? s.rejectReason
-                    ? t(`rejectReasons.${s.rejectReason}`)
-                    : t("notApproved")
-                  : s.status === "approved" && s.locationActive === false
-                    ? s.kind === "event"
-                      ? t("over")
-                      : t("gone")
-                    : t(s.status)}
+                <SubmissionNote submission={s} />
               </span>
             </span>
           </button>
