@@ -73,7 +73,8 @@ function cardTitle(card: Extract<AssistantCard, { title: string }>, t: CardMessa
 }
 
 /** One tool result as the composer shows it: places, a route, counts or events. */
-export function AssistantCardView({ card }: { card: AssistantCard }) {
+/** `newestRoute`: this is the conversation's newest route card, whose map preview opens by itself (#349). */
+export function AssistantCardView({ card, newestRoute = false }: { card: AssistantCard; newestRoute?: boolean }) {
   const f = useFormat()
   const { distance, radius } = useDistance()
   const t = useTranslations("assistant.cards")
@@ -118,7 +119,7 @@ export function AssistantCardView({ card }: { card: AssistantCard }) {
           </>
         }
       >
-        <RoutePreview ids={card.stops.map((s) => s.id)} />
+        <RoutePreview ids={card.stops.map((s) => s.id)} autoOpen={newestRoute} />
         <ol className="py-1">
           {card.stops.map((s, i) => (
             <li key={s.id} className="flex items-center gap-2.5 px-3 py-[7px] text-body">

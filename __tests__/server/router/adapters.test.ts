@@ -150,10 +150,22 @@ describe("OsrmRouter (#348)", () => {
     await new OsrmRouter().route(STOPS, { signal })
     const [url, init] = fetchMock.mock.calls[0]
     const u = new URL(String(url))
-    expect(u.origin + u.pathname).toBe("https://router.project-osrm.org/route/v1/driving/-104.99,39.74;-105.02,39.71;-104.95,39.68")
+    expect(u.origin + u.pathname).toBe("https://router.project-osrm.org/route/v1/driving/-104.990000,39.740000;-105.020000,39.710000;-104.950000,39.680000")
     expect(Object.fromEntries(u.searchParams)).toEqual({ overview: "full", geometries: "geojson", steps: "false", radiuses: "1000;1000;1000" })
-    expect(new Headers(init?.headers).get("User-Agent")).toMatch(/^PokeFindr/)
+    expect(new Headers(init?.headers).get("User-Agent")).toBe("PokeFindr (+https://github.com/riechert-arthur/pokefindr)")
     expect(init?.signal).toBe(signal)
+  })
+
+  it("writes coordinates in fixed decimals, never exponents", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () => new Response(JSON.stringify(osrmAnswer)))
+    vi.stubGlobal("fetch", fetchMock)
+    await new OsrmRouter().route([[1e-7, 51.5], [0.1, 51.6], [-0.0000001, 51.7]])
+    expect(new URL(String(fetchMock.mock.calls[0][0])).pathname).toBe("/route/v1/driving/0.000000,51.500000;0.100000,51.600000;-0.000000,51.700000")
+  })
+
+  it("keeps to the demo server's one request a second; a self-hosted OSRM uses the default budget", () => {
+    expect(new OsrmRouter().budget).toEqual({ perMinute: 60, burst: 1 })
+    expect(new OsrmRouter("https://osrm.example.com").budget).toBeUndefined()
   })
 
   it("keeps a self-hosted instance's path", async () => {

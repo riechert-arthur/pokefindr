@@ -6,7 +6,7 @@ import { getServerConfig } from "@/server/config"
 import { withinServerBudget } from "@/server/api-rate-limit"
 import { straightLine } from "@/server/adapters/router/fake"
 import type { RateRule } from "@/server/ports/rate-limiter"
-import type { RoutePoint, Router } from "@/server/ports/router"
+import type { RouteBudget, RoutePoint, Router } from "@/server/ports/router"
 import type { RouteStop, StreetRoute } from "@/lib/types/routes"
 import { queryFeatures } from "./locations"
 import { log } from "@/server/log"
@@ -32,10 +32,10 @@ export async function getRouteStops(ids: readonly string[], db: Database = getDb
  * ROUTER_DAILY_CAP over any 24 hours. A bucket of half the cap that refills
  * half the cap a day can't spend more than the cap in any 24 hours.
  */
-export function providerBudget(dailyCap: number): RateRule[] {
+export function providerBudget(dailyCap: number, perMinute: RouteBudget = { perMinute: 30, burst: 30 }): RateRule[] {
   const half = Math.floor(dailyCap / 2)
   return [
-    { name: "router-minute", perMinute: 30, burst: 30 },
+    { name: "router-minute", ...perMinute },
     { name: "router-day", perMinute: half / (24 * 60), burst: half },
   ]
 }
@@ -57,9 +57,9 @@ export async function streetRoute(
 ): Promise<StreetRoute> {
   const points: RoutePoint[] = stops.map((s) => [s.lng, s.lat])
   const fallback = () => ({ ...straightLine(points), stops })
-  // Not set up (dev, CI): straight lines, without spending the budget.
+  // Not set up (tests, or production without a key): straight lines, without spending the budget.
   if (router.free) return fallback()
-  if (!(await underBudget(providerBudget(getServerConfig().ROUTER_DAILY_CAP)))) {
+  if (!(await underBudget(providerBudget(getServerConfig().ROUTER_DAILY_CAP, router.budget)))) {
     console.warn("[route] over the routing budget; drawing straight lines")
     return fallback()
   }
