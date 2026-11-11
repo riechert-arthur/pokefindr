@@ -3,5 +3,7 @@ export async function register() {
     // Fail fast on start-up if required environment variables are missing.
     const { getServerConfig } = await import("@/server/config")
     getServerConfig()
+    // And on a broken module registry: building the entitlement table checks it (#323).
+    await import("@/core/access/entitlements")
   }
 }

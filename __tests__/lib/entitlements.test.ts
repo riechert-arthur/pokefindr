@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest"
 import { ADMIN_SECTIONS, groupsFor } from "@/lib/admin/sections"
 import { can, ENTITLEMENTS, entitlementsOf, rolesWith, type Entitlement } from "@/lib/auth/entitlements"
 import { ROLES } from "@/lib/auth/roles"
+import { RULES } from "@/core/access/entitlements"
 
 describe("entitlements", () => {
   // The whole permission table. A change here is a change to who can do
@@ -44,10 +45,10 @@ describe("entitlements", () => {
     })
   })
 
-  it("gives nothing without a role", () => {
-    for (const e of Object.keys(ENTITLEMENTS) as (keyof typeof ENTITLEMENTS)[]) {
-      expect(can(null, e)).toBe(false)
-      expect(can(undefined, e)).toBe(false)
+  it("gives nothing without a role, except what's public", () => {
+    for (const e of Object.keys(ENTITLEMENTS) as Entitlement[]) {
+      expect(can(null, e)).toBe(RULES[e].audience === "public")
+      expect(can(undefined, e)).toBe(RULES[e].audience === "public")
     }
   })
 
@@ -137,9 +138,9 @@ describe("access decisions", () => {
       expect(fine).not.toMatch(ROLE_CHECK)
   })
 
-  it("are made in src/lib/auth/entitlements.ts, not by comparing role names", () => {
+  it("are made in src/core/access/entitlements.ts, not by comparing role names", () => {
     const offenders = files(SRC)
-      .filter((f) => !f.endsWith(path.join("lib", "auth", "entitlements.ts")))
+      .filter((f) => !f.endsWith(path.join("core", "access", "entitlements.ts")))
       .flatMap((f) =>
         readFileSync(f, "utf8")
           .split("\n")
