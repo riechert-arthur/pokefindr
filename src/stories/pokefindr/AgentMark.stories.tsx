@@ -6,16 +6,23 @@ const meta = { title: "PokeFindr/AgentMark", component: AgentMark, args: { size:
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** The mark at its default size, 34 px. */
+/** The mark at its default size, 34 px, at rest. */
 export const Default: Story = {}
 
-/** At 26, 34 and 44 px (the conversation, the default, the home greeting), next to the logo at the same heights. */
+/** While the assistant is working: the sweeps turn (not with reduced motion). */
+export const Thinking: Story = { args: { thinking: true } }
+
+/** At 26, 34 and 44 px (the conversation, the default, the home greeting), at rest and thinking, next to the logo at the same heights. */
 export const Sizes: Story = {
   render: () => (
-    <div className="flex items-end gap-3">
-      {(["sm", "md", "lg"] as const).map((s) => <AgentMark key={s} size={s} />)}
-      <span className="w-3" />
-      {[26, 34, 44].map((px) => <Logo key={px} size={px} title="" />)}
+    <div className="grid gap-4">
+      {[false, true].map((thinking) => (
+        <div key={String(thinking)} className="flex items-end gap-3">
+          {(["sm", "md", "lg"] as const).map((s) => <AgentMark key={s} size={s} thinking={thinking} />)}
+          <span className="w-3" />
+          {[26, 34, 44].map((px) => <Logo key={px} size={px} title="" />)}
+        </div>
+      ))}
     </div>
   ),
 }

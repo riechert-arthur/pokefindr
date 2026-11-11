@@ -28,11 +28,11 @@ interface AssistantChatProps {
 function AnswerView({ m, newestRoute }: { m: Extract<ChatMessage, { role: "assistant" }>; newestRoute: number }) {
   return (
     <div className="flex max-w-full items-start gap-2.5 text-body">
-      <AgentMark size="sm" />
+      {/* The mark turns while the answer is coming, in place of separate typing dots (#386). */}
+      <AgentMark size="sm" thinking={!m.done} />
       <div className="grid min-w-0 flex-1 gap-2">
         {m.status && (
-          <p className="flex items-center gap-2 text-muted-foreground" role="status">
-            <span aria-hidden className="h-1.5 w-[22px] animate-pulse rounded-full bg-[radial-gradient(circle,hsl(var(--muted-foreground))_2.5px,transparent_3px)] bg-[length:8px_6px] bg-repeat-x motion-reduce:animate-none" />
+          <p className="text-muted-foreground" role="status">
             {m.status}
           </p>
         )}
