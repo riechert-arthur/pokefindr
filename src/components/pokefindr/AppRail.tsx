@@ -220,17 +220,16 @@ export function AppRail({ signedIn = false, canModerate = false, isAdmin = false
             onOpenChange={setMenuOpen}
           />
           {/*
-            The theme badge (#355): framed like the language badge, with a switch in it. Collapsed,
-            44px and centered on the icons' column; expanded (and in the phone drawer), as wide as
-            the rail with "Dark theme" beside the switch. The switch doesn't move as the rail opens.
+            The theme badge (#355): a picker like the language badge, since there are more than two
+            themes. Collapsed, 44px and centered on the icons' column: the theme's icon and the arrow.
+            Expanded (and in the phone drawer), as wide as the rail with the theme's name. The icon
+            doesn't move as the rail opens.
           */}
           <ThemeToggle
-            variant="toggle"
-            className={cn(
-              "-mx-0.5 h-8 gap-1.5 rounded-md border border-input px-[3px] text-caption text-foreground shadow-sm hover:bg-muted max-sm:w-[calc(100%+4px)]",
-              expanded ? "w-[calc(100%+4px)]" : "w-11",
-            )}
+            variant="compact"
+            className={cn("-mx-0.5 gap-1 px-1 max-sm:w-[calc(100%+4px)] [&>span]:mr-auto", expanded ? "w-[calc(100%+4px)]" : "w-11")}
             labelClassName={labelClass(expanded)}
+            onOpenChange={setMenuOpen}
           />
         </div>
       </div>
