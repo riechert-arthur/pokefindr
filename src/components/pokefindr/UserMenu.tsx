@@ -91,7 +91,8 @@ export function UserMenu({ size = "md", userName, imageUrl, className, variant =
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className={cn("rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", className)}
+        // The ring is offset from the avatar: ring and the avatar's fill are both the theme's primary (#377).
+        className={cn("rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background", className)}
         aria-label={t("trigger", { name: userName })}
       >
         <UserAvatar size={size} name={userName} imageUrl={imageUrl} />
