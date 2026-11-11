@@ -1,5 +1,9 @@
+import type { ComponentType } from "react"
 import { can, type Entitlement } from "@/lib/auth/entitlements"
 import type { Role } from "@/lib/auth/roles"
+import { staffSections } from "@/core/shell/contributions"
+import type { ModuleManifest } from "@/core/shell/module"
+import { MODULES } from "@/modules/registry"
 
 /**
  * The admin's sections (#152), grouped as in the prototype's sidebar. Each
@@ -13,6 +17,8 @@ export interface AdminSection {
   sub: string
   /** What opening it needs. */
   entitlement: Entitlement
+  /** A module's section (`staff.console.section`, #324): its body, loaded when opened. Core's are in AdminApp. */
+  load?: () => Promise<{ default: ComponentType<Record<string, never>> }>
 }
 
 export interface AdminGroup {
@@ -21,7 +27,7 @@ export interface AdminGroup {
   sections: readonly AdminSection[]
 }
 
-export const ADMIN_GROUPS: readonly AdminGroup[] = [
+const CORE_GROUPS: readonly AdminGroup[] = [
   {
     id: "moderation",
     label: "Moderation",
@@ -58,6 +64,23 @@ export const ADMIN_GROUPS: readonly AdminGroup[] = [
     sections: [{ id: "users", label: "Users", sub: "Find someone and change their role. Super admins only.", entitlement: "users.manage" }],
   },
 ]
+
+/**
+ * Core's groups with each module's sections added (#324): to the group it
+ * names, at the end, or as a new group after the others.
+ */
+export function withModuleSections(groups: readonly AdminGroup[], modules: readonly ModuleManifest[]): AdminGroup[] {
+  const out = groups.map((g) => ({ ...g, sections: [...g.sections] }))
+  for (const s of staffSections(modules)) {
+    const section: AdminSection = { id: s.id, label: s.label, sub: s.sub, entitlement: s.entitlement as Entitlement, load: s.load }
+    const group = out.find((g) => g.id === s.group)
+    if (group) group.sections.push(section)
+    else out.push({ id: s.group, label: s.group.charAt(0).toUpperCase() + s.group.slice(1), sections: [section] })
+  }
+  return out
+}
+
+export const ADMIN_GROUPS: readonly AdminGroup[] = withModuleSections(CORE_GROUPS, MODULES)
 
 export const ADMIN_SECTIONS: readonly AdminSection[] = ADMIN_GROUPS.flatMap((g) => g.sections)
 export const DEFAULT_SECTION = "queue"

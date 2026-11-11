@@ -61,6 +61,7 @@ import { INITIAL_LOAD_STATE, nextLoadState, type MapLoadState } from "./mapLoadS
 import { track } from "@/lib/analytics"
 import { useTranslations } from "next-intl"
 import { useStateName } from "./useStateName"
+import { Slot } from "@/core/shell/Slot"
 
 type SelectedLocation = Omit<LocationPopupProps, "onClose" | "onDetails">
 
@@ -664,6 +665,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         {submissions && <PendingMarkers submissions={submissions} onOpen={openSubmission} />}
         {adding && addPin && <AddPin pin={addPin} kind={addKind} onMove={moveAddPin} />}
         {params.route && params.route.length >= 2 && <RouteOverlay ids={params.route} colors={colors} onClear={() => void setParams({ route: null })} />}
+        {/* Layers modules draw on the map (#324). */}
+        <Slot name="map.layer" props={{}} />
         <FullscreenControl position="bottom-right" />
         <LocateControl onLocate={handleLocate} onError={handleLocateError} autoLocate={view.nearMe} />
         <NavigationControl position="bottom-right" showCompass={false} />
@@ -712,6 +715,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
               >
                 <PlusIcon className="size-5" aria-hidden />
               </Button>
+              {/* Actions modules add next to Add a place (#324). */}
+              <Slot name="map.action" props={{}} />
             </>
           }
           kinds={kinds}

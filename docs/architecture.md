@@ -147,8 +147,10 @@ src/
   modules/
     registry.ts                # the only list of built-in modules
     plans.ts                   # plan → modules
+    registry.server.ts         # the server half: each module's module.server.ts
     reviews/
-      module.ts                # the manifest
+      module.ts                # the manifest (client-safe)
+      module.server.ts         # server-side contributions: tools, job code, sitemap
       index.ts                 # public API for modules that `require` this one
       server/                  # services, queries ("server-only")
       ui/                      # components that fill slots
@@ -201,10 +203,26 @@ export default defineModule({
     "dashboard.tile":           () => import("./ui/UpcomingEventsTile"),
     "org.console.section":      { id: "events", entitlement: "events.manage", load: () => import("./ui/OrgEvents") },
     "staff.console.section":    { id: "events", entitlement: "events.moderate", load: () => import("./ui/EventQueue") },
-    "assistant.tools":          () => import("./server/assistant-tools"),
-    "mcp.tools":                () => import("./server/mcp-tools"),
-    "jobs":                     { "expire-events": () => import("./server/expire-events") },
-    "sitemap":                  () => import("./server/sitemap"),
+    "jobs":                     { "expire-events": { schedule: "5 6 * * *" } },  // code in module.server.ts
+  },
+})
+```
+
+The manifest is imported by the browser too (slots render there), so it holds only data and lazy
+UI imports. What runs on the server goes in `module.server.ts`, listed in
+`src/modules/registry.server.ts`, and the registry checks the two halves agree (#324):
+
+```ts
+// src/modules/events/module.server.ts
+import { defineServerModule } from "@/core/shell/server-slots"
+
+export default defineServerModule({
+  id: "events",
+  contributes: {
+    "assistant.tools": [{ items: [listEvents] }],
+    "mcp.tools":       [{ entitlement: "events.manage", items: [myEvents] }],
+    jobs:              { "expire-events": expireEventsJob },
+    sitemap:           async () => [{ path: "/events" }],
   },
 })
 ```
@@ -257,11 +275,20 @@ flowchart LR
 
 - **Typed:** each slot's props live in `src/core/shell/slots.ts`. Changing a slot's contract is a
   core change, reviewed as one.
+- **Isolated:** each contribution renders inside its own error boundary, so one module failing
+  leaves the rest of the page working.
 - **Gated:** a contribution can name an entitlement. `<Slot>` leaves it out when the viewer's
   `can()` is false, so modules don't each repeat the check.
 - **Lazy:** contributions are dynamic imports, so a page only loads the modules it shows.
 - **Server-side lists** use the same idea: the assistant's tools, MCP tools, jobs and sitemap
-  entries are collected from the registry, filtered by what the caller may use.
+  entries are collected from `registry.server.ts`, filtered by what the caller may use
+  (`src/core/shell/server-slots.ts`).
+- **Crons:** `vercel.json` can't import code, so `npm run modules:sync` writes its `crons` from
+  core's list (`src/server/lib/jobs/crons.ts`) and each manifest's `jobs`. A test fails when it's
+  out of date.
+- **Trying it:** `src/core/shell/test-modules.tsx` fills every UI slot with a labelled box. Wrap a
+  tree in `<SlotModules modules={[TEST_MODULE]}>`, or pick **Slots → test module** in Storybook's
+  toolbar.
 
 The slots we need first come straight from today's hard-wired screens: `LocationDetails`,
 `MapInstance`, `Dashboard`/`DashboardTiles`, `AdminApp`, the assistant's `tools.ts`, MCP's

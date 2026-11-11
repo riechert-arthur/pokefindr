@@ -24,3 +24,11 @@ src/modules/<id>/
   boundary lint (#325) and the removal check (#326) enforce that.
 
 There are no modules yet: the first is `ads` (#327), then the extractions in #328–#333.
+
+## Slots
+
+What a module adds to core screens goes in its manifest's `contributes`, by slot name
+(`src/core/shell/slots.ts` lists them and their props). Server-side contributions (assistant and
+MCP tools, job code, sitemap entries) go in `module.server.ts`, listed in `registry.server.ts`, so
+the browser bundle never reaches them. After adding or changing a scheduled job, run
+`npm run modules:sync` to update `vercel.json`.

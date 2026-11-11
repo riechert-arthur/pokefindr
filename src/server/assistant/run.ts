@@ -10,7 +10,7 @@ import type {
   BetaToolUseBlock,
 } from "@anthropic-ai/sdk/resources/beta/messages/messages"
 import { getAnthropic } from "@/server/container"
-import { ASSISTANT_TOOLS, inputJsonSchema, runTool, type ToolContext } from "./tools"
+import { assistantTools, inputJsonSchema, runTool, type ToolContext } from "./tools"
 import { SYSTEM_PROMPT, turnContext } from "./prompt"
 import { memoryOf } from "@/lib/assistant/memory"
 import { costMicros } from "./pricing"
@@ -68,8 +68,11 @@ export function getClaude(): ClaudeStreamer | null {
 /** Most messages of history a turn sends; older ones are dropped. */
 export const MAX_TURNS = 20
 
-/** The tools as the API takes them, in a fixed order (they're part of the cached prefix). */
-const API_TOOLS: BetaTool[] = ASSISTANT_TOOLS.map((t) => ({
+/**
+ * The tools as the API takes them, in a fixed order (they're part of the
+ * cached prefix): core's and the modules' ungated ones (#324).
+ */
+const API_TOOLS: BetaTool[] = assistantTools().map((t) => ({
   name: t.name,
   description: t.description,
   input_schema: inputJsonSchema(t),

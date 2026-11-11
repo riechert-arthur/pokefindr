@@ -1,6 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from "vitest"
 
+vi.mock("server-only", () => ({}))
+
 // As once Spanish is public (#186).
 vi.mock("@/i18n/routing", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/i18n/routing")>()), PUBLIC_LOCALES: ["en", "es"] }))
 vi.mock("@/lib/blog-utils", () => ({ readAllBlogPostMetadata: async () => [{ slug: "first-post", published: "2025-01-02" }] }))

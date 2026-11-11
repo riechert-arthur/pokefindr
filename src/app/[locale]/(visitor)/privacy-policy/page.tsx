@@ -1,6 +1,7 @@
 import type { FC } from "react"
 import { setPageLocale, type LocaleParams } from "@/i18n/static"
 import { EnglishOnlyNotice } from "@/components/EnglishOnlyNotice"
+import { Slot } from "@/core/shell/Slot"
 import { englishOnlyMetadata } from "@/i18n/seo"
 import type { Metadata } from "next"
 
@@ -293,6 +294,9 @@ const PrivacyPolicyPage: FC<LocaleParams> = async ({ params }) => {
         </a>
         .
       </p>
+
+      {/* What modules collect or share (#324). */}
+      <Slot name="legal.privacy.section" props={{}} />
 
       <p className="mb-4">
         By using PokeFindr, you acknowledge that you have read and understood

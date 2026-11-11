@@ -7,6 +7,8 @@ import { submissionCreatedJob, submissionReviewedJob } from "@/server/services/s
 import { expireEventsJob } from "@/server/services/expire-events"
 import { pruneRateLimitsJob } from "@/server/adapters/rate-limiter/postgres"
 import { recheckHeldReviewsJob } from "@/server/services/recheck-held-reviews"
+import { moduleJobs } from "@/core/shell/server-slots"
+import { SERVER_MODULES } from "@/modules/registry.server"
 
 /** Does nothing. Exists so the cron, queue and CLI wiring can be tested on its own. */
 const noop = defineJob({
@@ -33,6 +35,8 @@ export const jobs: Record<string, Job<any>> = {
   "expire-events": expireEventsJob,
   "prune-rate-limits": pruneRateLimitsJob,
   "recheck-held-reviews": recheckHeldReviewsJob,
+  // Each registered module's (`jobs`, #324), declared in its module.ts and coded in its module.server.ts.
+  ...moduleJobs(SERVER_MODULES),
 }
 
 export function isJobName(name: string): boolean {

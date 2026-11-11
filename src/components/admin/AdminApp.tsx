@@ -17,6 +17,7 @@ import { AdsSwitches } from "@/components/admin/AdsSwitches"
 import { UsersTable } from "@/components/admin/UsersTable"
 import { RefreshSummary } from "@/components/admin/useRefreshSummary"
 import { DEFAULT_SECTION, groupsFor, sectionFor } from "@/lib/admin/sections"
+import { ModuleContribution } from "@/core/shell/Slot"
 import { moderationCounts, useAdminSummary } from "@/components/admin/useAdminSummary"
 import { can } from "@/lib/auth/entitlements"
 import type { Role } from "@/lib/auth/roles"
@@ -70,7 +71,7 @@ export function AdminApp({ role, username, image = null }: { role: Role; usernam
             )}
           </header>
           <SummaryCards summary={summary} role={role} onOpen={(id) => void setParam(id === DEFAULT_SECTION ? null : id)} />
-          {SECTIONS[section.id]?.()}
+          {SECTIONS[section.id]?.() ?? (section.load && <ModuleContribution key={section.id} id={`staff.console.section ${section.id}`} load={section.load} props={{}} />)}
         </div>
       </div>
     </RefreshSummary.Provider>

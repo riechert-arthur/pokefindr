@@ -10,6 +10,7 @@ import type { LocationKind } from "@/lib/types/locations"
 import { getRegionCounts } from "@/server/services/region-counts"
 import { getVendingCells, VENDING_CELL_DEG } from "@/server/services/locations"
 import { SponsoredPlacement } from "@/components/ads/SponsoredPlacement"
+import { Slot } from "@/core/shell/Slot"
 import { bannersFor } from "@/config/banners"
 import { AD_PLACEMENTS_TAG, readPlacementFlags } from "@/server/services/ad-placements"
 import { setPageLocale, type LocaleParams } from "@/i18n/static"
@@ -113,6 +114,8 @@ export default async function LandingPage({ params }: LocaleParams) {
       <div className="isolate">
         <Hero stats={counts?.hero ?? null} background={<HeroMap cells={cells ?? []} cellSize={VENDING_CELL_DEG} />} />
         <HowItWorks />
+        {/* Bands modules add between the sections (#324). */}
+        <Slot name="landing.section" props={{}} />
         <SponsoredPlacement placement="landing" reserve={ads?.landing === true && bannersFor("landing").length > 0} />
         <LocationTypes counts={counts?.kinds ?? null} />
         <FaqSection />

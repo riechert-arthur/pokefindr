@@ -4,6 +4,9 @@ import { zodToJsonSchema } from "zod-to-json-schema"
 import { eventDateProblem, submissionSchema, type SubmissionInput } from "@/lib/submissions/schemas"
 import { REJECT_REASON_LABELS, SHOP_SELLS } from "@/lib/submissions/constants"
 import type { McpAccountScope } from "@/lib/mcp/scopes"
+import type { Role } from "@/lib/auth/roles"
+import { moduleMcpTools } from "@/core/shell/server-slots"
+import { SERVER_MODULES } from "@/modules/registry.server"
 import { STATES } from "@/lib/map/states"
 import { listUserReviews } from "@/server/services/reviews"
 import { createSubmission, listMySubmissions } from "@/server/services/submissions"
@@ -182,6 +185,9 @@ export const submitPlace = tool({
 })
 
 export const ACCOUNT_TOOLS: readonly AccountTool[] = [myReviews, mySubmissions, submitPlace]
+
+/** Core's account tools, then those the registered modules contribute (`mcp.tools`, #324) that `role` may use. */
+export const accountTools = (role: Role | null = null): AccountTool[] => [...ACCOUNT_TOOLS, ...moduleMcpTools(SERVER_MODULES, role)]
 
 export function accountInputJsonSchema(t: AccountTool) {
   const schema = zodToJsonSchema(t.input, { $refStrategy: "none" }) as Record<string, unknown>
