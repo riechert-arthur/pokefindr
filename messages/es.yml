@@ -409,7 +409,6 @@ ui:
     darkTheme: Tema oscuro
   language:
     label: Idioma
-    current: "Idioma: {language}"
     saveFailed: No se pudo guardar tu idioma
     saveFailedBody: Quedó elegido en este dispositivo. Vuelve a intentarlo desde la configuración para usarlo en los demás.
   starRating:

@@ -18,12 +18,8 @@ export function languageName(locale: Locale): string {
 }
 
 interface LanguageSwitcherProps {
-  /**
-   * "full" for settings: the language's name. "compact" for the footer: a
-   * globe and the code. "rail" for the app rail: a globe, then the language's
-   * name in `labelClassName` (hidden while the rail is collapsed).
-   */
-  variant?: "full" | "compact" | "rail"
+  /** "full" for settings: the language's name. "compact" for the footer and app rail: a globe and the code. */
+  variant?: "full" | "compact"
   /** The languages offered; the public ones unless a story says otherwise. Hidden with fewer than two. */
   locales?: readonly Locale[]
   /** The trigger's down arrow; off in the narrow app rail. */
@@ -31,7 +27,6 @@ interface LanguageSwitcherProps {
   /** When the list opens or closes (the app rail stays expanded while it's open). */
   onOpenChange?: (open: boolean) => void
   className?: string
-  labelClassName?: string
 }
 
 /**
@@ -44,7 +39,7 @@ export function LanguageSwitcher({ locales = PUBLIC_LOCALES, ...props }: Languag
   return locales.length < 2 ? null : <Switcher locales={locales} {...props} />
 }
 
-function Switcher({ variant = "full", locales, chevron = true, onOpenChange, className, labelClassName }: LanguageSwitcherProps & { locales: readonly Locale[] }) {
+function Switcher({ variant = "full", locales, chevron = true, onOpenChange, className }: LanguageSwitcherProps & { locales: readonly Locale[] }) {
   const locale = useLocale()
   const t = useTranslations("ui.language")
   const router = useRouter()
@@ -80,25 +75,16 @@ function Switcher({ variant = "full", locales, chevron = true, onOpenChange, cla
     else if (sessionLoading) unsaved.current = picked
   }
 
-  const name = languageName(locale as Locale)
   return (
     <Select value={locale} onValueChange={choose} onOpenChange={onOpenChange} disabled={pending}>
-      {variant === "rail" ? (
-        // A rail row: no border or arrow. The name includes the label it shows.
-        <SelectTrigger chevron={false} aria-label={t("current", { language: name })} className={cn("justify-start border-0 shadow-none", className)}>
-          <GlobeIcon className="size-5 shrink-0" aria-hidden />
-          <span className={labelClassName}>{name}</span>
-        </SelectTrigger>
-      ) : (
-        <SelectTrigger
-          chevron={chevron}
-          aria-label={t("label")}
-          className={cn(variant === "compact" ? "h-8 w-auto gap-1.5 px-2 text-caption uppercase" : "w-48", className)}
-        >
-          {variant === "compact" && <GlobeIcon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />}
-          {variant === "compact" ? <span>{locale}</span> : <SelectValue />}
-        </SelectTrigger>
-      )}
+      <SelectTrigger
+        chevron={chevron}
+        aria-label={t("label")}
+        className={cn(variant === "compact" ? "h-8 w-auto gap-1.5 px-2 text-caption uppercase" : "w-48", className)}
+      >
+        {variant === "compact" && <GlobeIcon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />}
+        {variant === "compact" ? <span>{locale}</span> : <SelectValue />}
+      </SelectTrigger>
       <SelectContent>
         {locales.map((l) => (
           <SelectItem key={l} value={l} lang={l}>
