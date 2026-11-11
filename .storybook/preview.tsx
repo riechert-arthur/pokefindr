@@ -49,7 +49,7 @@ const preview: Preview = {
   globalTypes: {
     theme: {
       description: "Theme",
-      toolbar: { title: "Theme", icon: "mirror", items: ["light", "dark"], dynamicTitle: true },
+      toolbar: { title: "Theme", icon: "mirror", items: ["light", "dark", "holo-light", "holo-dark"], dynamicTitle: true },
     },
     // The language, like the app's /es prefix (docs/i18n.md).
     locale: {

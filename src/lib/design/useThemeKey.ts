@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react"
+import { DARK_THEMES } from "@/lib/design/themes"
 
 /**
  * A string that changes whenever the theme on <html> changes (its class or
@@ -54,5 +55,6 @@ export function useIsDark(): boolean {
 }
 
 function isDarkSnapshot(): boolean {
-  return document.documentElement.classList.contains("dark")
+  const classes = document.documentElement.classList
+  return DARK_THEMES.some((theme) => classes.contains(theme))
 }

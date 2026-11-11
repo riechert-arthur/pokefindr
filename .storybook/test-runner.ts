@@ -26,19 +26,23 @@ type A11yParameters = {
   options?: RunOptions
 }
 
-type Theme = "light" | "dark"
+type Theme = "light" | "dark" | "holo-light" | "holo-dark"
 /** Every story is checked in each language (#186). */
 const LOCALES = ["en", "es"] as const
 type Locale = (typeof LOCALES)[number]
 
 /**
- * English in both themes, and each other language in light: colors don't
- * change with the language, so its dark pass would repeat English's.
+ * English in every theme, and each other language in light: colors don't
+ * change with the language, so its other passes would repeat English's. The
+ * Holo themes only change colors, radius and font, so their passes check
+ * color contrast alone, which keeps the run's time down.
  */
-const A11Y_PASSES: (readonly [Locale, "light" | "dark"])[] = [
-  ["en", "light"],
-  ["en", "dark"],
-  ...LOCALES.filter((l) => l !== "en").map((l) => [l, "light"] as const),
+const A11Y_PASSES: (readonly [Locale, Theme, "all" | "contrast"])[] = [
+  ["en", "light", "all"],
+  ["en", "dark", "all"],
+  ["en", "holo-light", "contrast"],
+  ["en", "holo-dark", "contrast"],
+  ...LOCALES.filter((l) => l !== "en").map((l) => [l, "light", "all"] as const),
 ]
 
 /**
@@ -72,7 +76,7 @@ async function setGlobals(page: Page, theme: Theme, locale: Locale) {
 }
 
 /**
- * Runs axe on every story after it renders, in light and dark, in each
+ * Runs axe on every story after it renders, in every theme, in each
  * language (longer Spanish labels can overflow or overlap).
  *
  * Waivers are per story, through the same parameters the a11y panel reads:
@@ -119,9 +123,10 @@ const config: TestRunnerConfig = {
 
     const failures: string[] = []
     try {
-      for (const [locale, theme] of A11Y_PASSES) {
+      for (const [locale, theme, scope] of A11Y_PASSES) {
         await setGlobals(page, theme, locale)
-        const args = { spec: a11y.config, options: a11y.options, rules, context: a11y.context ?? DEFAULT_CONTEXT }
+        const options = scope === "contrast" ? { ...a11y.options, runOnly: { type: "rule" as const, values: ["color-contrast"] } } : a11y.options
+        const args = { spec: a11y.config, options, rules, context: a11y.context ?? DEFAULT_CONTEXT }
         const results = (await page.evaluate(async (a: typeof args) => {
           // The addon's own runs are off under the runner (see prepare above), so it
           // never loads axe; this is the copy injected above.

@@ -11,21 +11,24 @@ describe("ThemeToggle compact variant (#355)", () => {
   it.each([
     ["light", "Light"],
     ["dark", "Dark"],
+    ["holo-light", "Holo Light"],
+    ["holo-dark", "Holo Dark"],
     ["system", "System"],
   ])("shows the chosen theme (%s) by name", (theme, name) => {
-    state = { theme, resolvedTheme: theme === "dark" ? "dark" : "light" }
+    // next-themes resolves every theme to itself, and only System to light or dark.
+    state = { theme, resolvedTheme: theme === "system" ? "light" : theme }
     render(<ThemeToggle variant="compact" labelClassName="sm:sr-only" />)
     expect(screen.getByRole("combobox", { name: `Theme: ${name}` })).toHaveTextContent(name)
     expect(screen.getByText(name)).toHaveClass("sm:sr-only")
   })
 
-  it("offers Light, Dark and System, and picks one", () => {
+  it("offers Light, Dark, Holo Light, Holo Dark and System, and picks one (#371)", () => {
     state = { theme: "light", resolvedTheme: "light" }
     setTheme.mockClear()
     render(<ThemeToggle variant="compact" />)
     fireEvent.keyDown(screen.getByRole("combobox", { name: "Theme: Light" }), { key: "Enter" })
-    expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["Light", "Dark", "System"])
-    fireEvent.click(screen.getByRole("option", { name: "Dark" }))
-    expect(setTheme).toHaveBeenCalledWith("dark")
+    expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["Light", "Dark", "Holo Light", "Holo Dark", "System"])
+    fireEvent.click(screen.getByRole("option", { name: "Holo Dark" }))
+    expect(setTheme).toHaveBeenCalledWith("holo-dark")
   })
 })
