@@ -26,18 +26,20 @@ type A11yParameters = {
   options?: RunOptions
 }
 
-type Theme = "light" | "dark"
+type Theme = "light" | "dark" | "holo-light" | "holo-dark"
 /** Every story is checked in each language (#186). */
 const LOCALES = ["en", "es"] as const
 type Locale = (typeof LOCALES)[number]
 
 /**
- * English in both themes, and each other language in light: colors don't
- * change with the language, so its dark pass would repeat English's.
+ * English in every theme, and each other language in light: colors don't
+ * change with the language, so its other passes would repeat English's.
  */
-const A11Y_PASSES: (readonly [Locale, "light" | "dark"])[] = [
+const A11Y_PASSES: (readonly [Locale, Theme])[] = [
   ["en", "light"],
   ["en", "dark"],
+  ["en", "holo-light"],
+  ["en", "holo-dark"],
   ...LOCALES.filter((l) => l !== "en").map((l) => [l, "light"] as const),
 ]
 
@@ -72,7 +74,7 @@ async function setGlobals(page: Page, theme: Theme, locale: Locale) {
 }
 
 /**
- * Runs axe on every story after it renders, in light and dark, in each
+ * Runs axe on every story after it renders, in every theme, in each
  * language (longer Spanish labels can overflow or overlap).
  *
  * Waivers are per story, through the same parameters the a11y panel reads:

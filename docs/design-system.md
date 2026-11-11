@@ -12,7 +12,7 @@ lives in this repo. Browse every component in Storybook: `make run` starts it on
 ## Tokens
 
 All colors are CSS variables in [`src/app/globals.css`](../src/app/globals.css), defined once for
-light (`:root`) and once for dark (`.dark`). Values are HSL channels, so Tailwind can add opacity
+light (`:root`) and once for dark (`.dark`), with the Holo themes overriding some of them (see Themes). Values are HSL channels, so Tailwind can add opacity
 (`bg-primary/10`); a few, like `chart-*`, alias another token instead. **Use the Tailwind class, never a raw color.** Dark mode then works for free.
 
 | Token | Class examples | Use for |
@@ -38,6 +38,15 @@ To add a token: add it to both `:root` and `.dark` in `globals.css`, map it in
 `COLOR_TOKENS` in `src/lib/design/tokens.ts` (a test checks each of those is channels in both
 themes, and that every token Tailwind uses is defined). An alias (`--chart-6: var(--primary)`)
 doesn't go in `COLOR_TOKENS`. Check contrast in both themes.
+
+### Themes
+
+People pick one of four themes, or System (which follows the device between Light and Dark): **Light**, **Dark**, **Holo Light** and **Holo Dark** (#371). Each is a class on `<html>`, set by next-themes from the list in [`src/lib/design/themes.ts`](../src/lib/design/themes.ts).
+
+- **Holo** is an original look from the collecting hobby: trainer red for actions, type-energy colors for the kinds, bright route-map water, Rubik (`--font-holo`, from `src/app/fonts.ts`), `--radius` 0.75rem, and a foil glint on primary buttons and pressed chips (the `foil` class: nothing in the other themes, off with reduced motion). It uses no Pokémon characters, logos or official artwork; keep it that way.
+- **Holo Dark builds on Dark:** `.holo-dark` shares the `.dark` block and overrides some tokens after it, and Tailwind's `dark:` variant and `useIsDark()` count it as dark. So a component styled for dark works in Holo Dark without changes.
+- **What a theme may override:** colors, `--radius`, the font and shadows. Not spacing, sizes or type scale, so layouts don't change between themes.
+- **Adding a token:** also give it a value in `.holo-light` and `.holo-dark` when Holo needs a different one; otherwise they inherit Light's and Dark's. Check contrast in all four.
 
 ## Type
 

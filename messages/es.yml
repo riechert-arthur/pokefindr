@@ -403,6 +403,8 @@ ui:
     current: "Tema: {theme}"
     light: Claro
     dark: Oscuro
+    holoLight: Holo claro
+    holoDark: Holo oscuro
     system: Sistema
   language:
     label: Idioma

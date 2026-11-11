@@ -5,7 +5,8 @@ import { SCREENS } from "./src/lib/design/breakpoints"
 import { FONT_SIZE } from "./src/lib/design/type-scale"
 
 export default {
-    darkMode: ["class"],
+    // Holo Dark is a dark theme too (src/lib/design/themes.ts).
+    darkMode: ["variant", ["&:is(.dark *)", "&:is(.holo-dark *)"]],
     content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
