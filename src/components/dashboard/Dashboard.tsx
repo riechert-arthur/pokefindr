@@ -14,6 +14,8 @@ import { LOCATE_GIVE_UP_MS } from "@/lib/map/locate"
 import type { MySubmission } from "@/lib/submissions/schemas"
 import type { Highlights, UpcomingEvent } from "@/lib/types/highlights"
 import type { RegionCount } from "@/lib/types/locations"
+import { cn } from "@/lib/utils"
+import { DASHBOARD_COLUMN } from "./column"
 import { EventsTile, NearYouTile, ReviewsTile, SubmissionsTile, type MyReview, type NearState } from "./DashboardTiles"
 import { useFormat } from "@/i18n/format"
 import { useTranslations } from "next-intl"
@@ -35,17 +37,18 @@ const round2 = (n: number) => Math.round(n * 100) / 100
 
 interface DashboardProps {
   /**
-   * The assistant: the composer and, while chatting, the conversation. It
-   * gets the viewer's location once shared and a suggestion to ask, and says
-   * when a conversation has started (the greeting and tiles then make room).
-   */
-  /**
    * Start in the chat layout, without the greeting, suggestions and tiles:
    * this browser has a saved chat for the viewer (#346), which the assistant
    * restores before its first paint. If it turns out there's none, the
    * assistant switches back.
    */
   initialChatting?: boolean
+  /**
+   * The assistant: the composer and, while chatting, the conversation. It
+   * gets the viewer's location once shared and a suggestion to ask, and says
+   * when a conversation has started (the greeting and tiles then make room).
+   * It gets the window's full width and places its parts in DASHBOARD_COLUMN.
+   */
   assistant: (props: { viewer: { lng: number; lat: number } | null; suggestion: string | null; onSuggestionUsed: () => void; onChattingChange: (chatting: boolean) => void }) => ReactNode
 }
 
@@ -152,14 +155,15 @@ export function Dashboard({ assistant, initialChatting = false }: DashboardProps
         </header>
 
         <main
+          // Full width; each part sits in DASHBOARD_COLUMN itself, the assistant's too.
           className={
             chatting
-              ? "mx-auto flex min-h-0 w-full max-w-[780px] flex-1 flex-col gap-4 px-4 pb-4 pt-2"
-              : "mx-auto flex min-h-0 w-full max-w-[780px] flex-1 flex-col justify-start gap-[18px] overflow-y-auto px-4 pb-7 pt-4 md:justify-center md:pt-2"
+              ? "flex min-h-0 w-full flex-1 flex-col gap-4 pb-4 pt-2"
+              : "flex min-h-0 w-full flex-1 flex-col justify-start gap-[18px] overflow-y-auto pb-7 pt-4 md:justify-center md:pt-2"
           }
         >
           {!chatting && (
-            <div className="grid justify-items-center gap-2.5 text-center">
+            <div className={cn(DASHBOARD_COLUMN, "grid justify-items-center gap-2.5 text-center")}>
               <AgentMark size="lg" />
               <h1 className="mt-1.5 text-balance text-title text-foreground">{t("greeting")}</h1>
               <p className="max-w-[52ch] text-subheading font-normal text-muted-foreground">
@@ -171,7 +175,7 @@ export function Dashboard({ assistant, initialChatting = false }: DashboardProps
           {assistant({ viewer, suggestion, onSuggestionUsed: () => setSuggestion(null), onChattingChange: setChatting })}
 
           {!chatting && (
-            <>
+            <div className={cn(DASHBOARD_COLUMN, "flex flex-col gap-[18px]")}>
               <div className="flex flex-wrap justify-center gap-2" aria-label={t("suggestionsLabel")}>
                 {(viewer ? (["closest", ...SUGGESTIONS] as const) : SUGGESTIONS).map((key) => t(`suggestions.${key}`)).map((s) => (
                   <button key={s} type="button" className={chip} onClick={() => setSuggestion(s)}>
@@ -185,7 +189,7 @@ export function Dashboard({ assistant, initialChatting = false }: DashboardProps
                 <SubmissionsTile submissions={submissions} />
                 <EventsTile events={events} />
               </div>
-            </>
+            </div>
           )}
         </main>
       </div>
