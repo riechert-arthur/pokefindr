@@ -3,9 +3,11 @@ import typography from "@tailwindcss/typography"
 import defaultTheme from "tailwindcss/defaultTheme"
 import { SCREENS } from "./src/lib/design/breakpoints"
 import { FONT_SIZE } from "./src/lib/design/type-scale"
+import { DARK_THEMES } from "./src/lib/design/themes"
 
 export default {
-    darkMode: ["class"],
+    // `dark:` applies in every dark theme (Dark, Holo Dark): src/lib/design/themes.ts.
+    darkMode: ["variant", DARK_THEMES.map((theme) => `&:is(.${theme} *)`)],
     content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",

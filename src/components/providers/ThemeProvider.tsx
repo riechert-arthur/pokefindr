@@ -2,6 +2,7 @@
 
 import type { ComponentProps } from "react"
 import { ThemeProvider as NextThemesProvider } from "next-themes"
+import { THEMES } from "@/lib/design/themes"
 
 /**
  * Light/dark theme. Sets the `dark` class on <html>, which switches every
@@ -10,5 +11,5 @@ import { ThemeProvider as NextThemesProvider } from "next-themes"
  * flash of half-transitioned colors when the theme flips.
  */
 export function ThemeProvider(props: ComponentProps<typeof NextThemesProvider>) {
-  return <NextThemesProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange {...props} />
+  return <NextThemesProvider attribute="class" themes={[...THEMES]} defaultTheme="system" enableSystem disableTransitionOnChange {...props} />
 }

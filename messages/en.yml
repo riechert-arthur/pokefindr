@@ -517,6 +517,9 @@ ui:
     current: "Theme: {theme}"
     light: Light
     dark: Dark
+    # The Holo themes (#371): the app's own collecting-inspired colors, in light and dark.
+    holoLight: Holo Light
+    holoDark: Holo Dark
     system: System
   # The language switcher. Each language is listed in its own name ("English", "Español").
   language:

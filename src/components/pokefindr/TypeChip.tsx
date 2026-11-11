@@ -37,7 +37,7 @@ export function TypeChip({ kind, pressed, onPressedChange, count, short, classNa
       className={cn(
         "inline-flex h-8 items-center gap-2 whitespace-nowrap rounded-full border bg-card pl-1.5 pr-3 text-body font-medium shadow-sm transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        pressed ? "border-foreground text-foreground" : "border-border text-muted-foreground hover:text-foreground",
+        pressed ? "foil border-foreground text-foreground" : "border-border text-muted-foreground hover:text-foreground",
         className,
       )}
     >
