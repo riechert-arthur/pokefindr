@@ -7,6 +7,14 @@ description: Write, review, and simplify Go, Swift, Objective-C, and TypeScript 
 
 Optimize for the amount of code and state a maintainer must understand, not for the apparent completeness of each local branch.
 
+## In this repo (PokeFindr)
+
+This section is local to PokeFindr; the rest of the skill is copied from [Lakr233/code-clarity](https://github.com/Lakr233/code-clarity) (upstream commit `a0d5802`, MIT, see `LICENSE`).
+
+- **The repo's own skills win.** Where this skill disagrees with `verify-changes`, `schema-change`, `location-data`, `milestone-prs`, `review-and-merge` or `docs/`, follow those.
+- **Never change formatting tooling.** Don't edit `.prettierrc.toml`, don't run `prettier --write` or add a `prettier --check` gate, and skip the formatter steps in `references/formatting-consistency.md`. The code isn't formatted at the config's width, so a formatter run rewrites whole files (see `verify-changes`). Match the surrounding style: double quotes, no semicolons, and the long single-line statements the code already uses.
+- **TypeScript and Next.js only.** Use the TypeScript bullet below and sections 1–4 of [references/typescript-and-electron.md](references/typescript-and-electron.md). The Electron section, and the Go, Swift and Objective-C guidance, don't apply. Its examples use single quotes and semicolons; write double quotes and no semicolons here.
+
 ## Working method
 
 ### 1. Establish the real contract
@@ -77,7 +85,7 @@ Apply the language's own grain:
 - **Go:** Return concrete types and define small interfaces at the consumer. Create a sentinel or typed error only when callers use `errors.Is`/`errors.As` to choose different behavior; wrapping an error makes it API. Keep `context.Context` explicit and first. Handle errors before the normal path and avoid result structs that only rename a short, unambiguous return tuple.
 - **Swift:** Use structs for values and classes/actors for identity, resource ownership, or isolated mutation. Use an enum when cases are mutually exclusive and switched exhaustively; keep an independent binary fact as a boolean. Treat every `await` inside an actor as a point where assumptions may need revalidation. Use a protocol for a shared capability with real substitutes, a closure for one local operation that genuinely varies, and a concrete dependency when nothing varies.
 - **Objective-C:** Keep object, Core Foundation, file-descriptor, Mach-port, and allocation ownership explicit even under ARC. Prefer private class extensions over public surface expansion, categories only for cohesive capabilities, and one `NSError` path per caller recovery behavior. For the complete Objective-C review and formatting rules, read [references/objective-c.md](references/objective-c.md).
-- **TypeScript:** Use a discriminated union only for variants consumers handle differently, and use `never` for exhaustive switches. Derive secondary values from one typed source instead of mirroring flags. Narrow or validate `unknown` input once at the boundary; do not repeatedly validate internal typed values. Use `satisfies` for complete mappings without widening useful inference.
+- **TypeScript:** Use a discriminated union only for variants consumers handle differently, and use `never` for exhaustive switches. Derive secondary values from one typed source instead of mirroring flags. Narrow or validate `unknown` input once at the boundary; do not repeatedly validate internal typed values. Use `satisfies` for complete mappings without widening useful inference. For naming, type modeling, async errors and imports, read sections 1–4 of [references/typescript-and-electron.md](references/typescript-and-electron.md).
 
 For naming, control flow, functions, files, and local style, load only the relevant existing references:
 
