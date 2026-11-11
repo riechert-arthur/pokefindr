@@ -3,7 +3,7 @@
 import { useSyncExternalStore } from "react"
 import dynamic from "next/dynamic"
 import { useTranslations } from "next-intl"
-import { hasWebGL } from "@/components/map/MapLoader"
+import { hasWebGL } from "@/lib/map/webgl"
 import { useStreetRoute } from "@/components/map/useStreetRoute"
 import { useDistance } from "@/i18n/useDistance"
 

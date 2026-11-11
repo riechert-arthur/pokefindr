@@ -3,7 +3,7 @@ import { render, screen, waitFor } from "../../helpers/intl"
 import type { StreetRoute } from "@/lib/types/routes"
 
 const { webgl } = vi.hoisted(() => ({ webgl: { on: true } }))
-vi.mock("@/components/map/MapLoader", () => ({ hasWebGL: () => webgl.on }))
+vi.mock("@/lib/map/webgl", () => ({ hasWebGL: () => webgl.on }))
 // The map itself needs WebGL; the preview's own logic is what's under test.
 vi.mock("next/dynamic", () => ({
   default: () =>

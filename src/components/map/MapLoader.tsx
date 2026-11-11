@@ -3,6 +3,7 @@
 import { useSyncExternalStore, type FC } from "react"
 import dynamic from "next/dynamic"
 import { MapErrorBoundary } from "./MapErrorBoundary"
+import { hasWebGL } from "@/lib/map/webgl"
 import { MapFailed, MapLoading } from "./MapStatus"
 import type { MapInstanceProps } from "./MapInstance"
 import { initialMapView, type InitialMapView } from "@/lib/map/initial-view"
@@ -13,20 +14,7 @@ const MapInstance = dynamic<MapInstanceProps>(() => import("./MapInstance"), {
   ssr: false,
 })
 
-let webglSupported: boolean | undefined
-
-/** Whether the browser can create a WebGL context. Checked once per page load. */
-export function hasWebGL(): boolean {
-  if (webglSupported === undefined) {
-    try {
-      const canvas = document.createElement("canvas")
-      webglSupported = Boolean(canvas.getContext("webgl2") ?? canvas.getContext("webgl"))
-    } catch {
-      webglSupported = false
-    }
-  }
-  return webglSupported
-}
+export { hasWebGL } from "@/lib/map/webgl"
 
 const noSubscribe = () => () => {}
 
