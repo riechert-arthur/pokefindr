@@ -403,9 +403,6 @@ ui:
     light: Claro
     dark: Oscuro
     system: Sistema
-    switchToLight: Cambiar al tema claro
-    switchToDark: Cambiar al tema oscuro
-    lightTheme: Tema claro
     darkTheme: Tema oscuro
   language:
     label: Idioma
