@@ -510,12 +510,16 @@ ui:
   theme:
     # Accessible name of the light/dark/system button group.
     group: Theme
+    # The theme badge's name, with the chosen theme. {theme} is "Light", "Dark" or "System".
+    current: "Theme: {theme}"
     light: Light
     dark: Dark
     system: System
   # The language switcher. Each language is listed in its own name ("English", "Español").
   language:
     label: Language
+    # The compact picker's name, with the chosen language. {language} is like "English".
+    current: "Language: {language}"
     # When the choice couldn't be saved to their account.
     saveFailed: Couldn't save your language
     saveFailedBody: It's set on this device. Try again from settings to keep it on others.

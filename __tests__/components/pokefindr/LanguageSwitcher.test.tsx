@@ -58,7 +58,7 @@ describe("LanguageSwitcher (#182)", () => {
   it("saves the choice to a signed-in person's profile", async () => {
     session.current = { username: "ash" }
     render(<LanguageSwitcher locales={["en", "es"]} variant="compact" />, { locale: "es" })
-    expect(screen.getByRole("combobox", { name: "Idioma" })).toHaveTextContent("es")
+    expect(screen.getByRole("combobox", { name: "Idioma: Español" })).toHaveTextContent("es")
     pick("English")
     expect(patch).toHaveBeenCalledWith("/api/user-settings", { locale: "en" }, { withCredentials: true })
   })
