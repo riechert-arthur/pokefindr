@@ -215,10 +215,19 @@ export function AppRail({ signedIn = false, canModerate = false, isAdmin = false
         <div className="mt-auto flex flex-col items-start gap-2">
           <RailLink item={DISCORD} current={false} expanded={expanded} />
           {signedIn && <RailLink item={SETTINGS} current={isCurrent(SETTINGS.href)} expanded={expanded} />}
-          {/* The rail is 64px wide: the globe and code, no arrow, centered on the icons' column. */}
-          <div className="flex w-10 justify-center">
-            <LanguageSwitcher variant="compact" chevron={false} className="px-1.5" onOpenChange={setMenuOpen} />
-          </div>
+          {/*
+            The language badge (#356). Collapsed: the globe and code, no arrow, 44px wide and
+            centered on the icons' 40px column (2px past it each side). Expanded (and in the phone
+            drawer): from the same left edge to 2px past the rows, with the language's name and the
+            arrow at the end. Same edge and padding either way, so the globe doesn't move.
+          */}
+          <LanguageSwitcher
+            variant="compact"
+            // Collapsed on desktop, "EN" fills the badge, so its arrow (the trigger's last svg) hides.
+            className={cn(badgeClass(expanded), !expanded && "sm:[&>svg:last-child]:hidden")}
+            labelClassNames={{ code: expanded ? "hidden" : "max-sm:hidden", name: cn(!expanded && "sm:hidden") }}
+            onOpenChange={setMenuOpen}
+          />
           {/*
             The theme badge (#355): a picker like the language badge, since there are more than two
             themes. Collapsed, 44px and centered on the icons' column: the theme's icon and the arrow.

@@ -7,6 +7,7 @@ import { useLocale, useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { useOptionalSession, useOptionalSessionLoading } from "@/components/providers/SessionProvider"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { COMPACT_TRIGGER, CompactLabel } from "@/components/pokefindr/CompactSelect"
 import { usePathname, useRouter } from "@/i18n/navigation"
 import { PUBLIC_LOCALES, type Locale } from "@/i18n/routing"
 import { cn } from "@/lib/utils"
@@ -22,11 +23,17 @@ interface LanguageSwitcherProps {
   variant?: "full" | "compact"
   /** The languages offered; the public ones unless a story says otherwise. Hidden with fewer than two. */
   locales?: readonly Locale[]
-  /** The trigger's down arrow; off in the narrow app rail. */
+  /** The trigger's down arrow; on unless a caller has no room for it. */
   chevron?: boolean
   /** When the list opens or closes (the app rail stays expanded while it's open). */
   onOpenChange?: (open: boolean) => void
   className?: string
+  /**
+   * Compact only: render both the code ("EN") and the language's name
+   * ("English"), each with its classes, so a caller can switch between them
+   * (the app rail shows the name when expanded). Without it, the code alone.
+   */
+  labelClassNames?: { code: string; name: string }
 }
 
 /**
@@ -39,7 +46,7 @@ export function LanguageSwitcher({ locales = PUBLIC_LOCALES, ...props }: Languag
   return locales.length < 2 ? null : <Switcher locales={locales} {...props} />
 }
 
-function Switcher({ variant = "full", locales, chevron = true, onOpenChange, className }: LanguageSwitcherProps & { locales: readonly Locale[] }) {
+function Switcher({ variant = "full", locales, chevron = true, onOpenChange, className, labelClassNames }: LanguageSwitcherProps & { locales: readonly Locale[] }) {
   const locale = useLocale()
   const t = useTranslations("ui.language")
   const router = useRouter()
@@ -79,11 +86,19 @@ function Switcher({ variant = "full", locales, chevron = true, onOpenChange, cla
     <Select value={locale} onValueChange={choose} onOpenChange={onOpenChange} disabled={pending}>
       <SelectTrigger
         chevron={chevron}
-        aria-label={t("label")}
-        className={cn(variant === "compact" ? "h-8 w-auto gap-1.5 px-2 text-caption uppercase" : "w-48", className)}
+        // Compact shows only a code or a name, so its name says both what it is and the choice.
+        aria-label={variant === "compact" ? t("current", { language: languageName(locale as Locale) }) : t("label")}
+        className={cn(variant === "compact" ? COMPACT_TRIGGER : "w-48", className)}
       >
         {variant === "compact" && <GlobeIcon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />}
-        {variant === "compact" ? <span>{locale}</span> : <SelectValue />}
+        {variant === "compact" ? (
+          <CompactLabel>
+            <span className={cn("uppercase", labelClassNames?.code)}>{locale}</span>
+            {labelClassNames && <span className={labelClassNames.name}>{languageName(locale as Locale)}</span>}
+          </CompactLabel>
+        ) : (
+          <SelectValue />
+        )}
       </SelectTrigger>
       <SelectContent>
         {locales.map((l) => (

@@ -68,6 +68,21 @@ describe("AppRail", () => {
     expect(discord.getAttribute("rel")).toBe("noopener noreferrer")
   })
 
+  it("keeps the language badge, and grows it to the rail's width with the language's name when expanded (#356)", () => {
+    const { rerender } = render(<AppRail expanded={false} />)
+    const badge = () => screen.getByRole("combobox", { name: "Language: English" })
+    expect(screen.getByText("en")).not.toHaveClass("hidden")
+    expect(screen.getByText("en")).toHaveClass("max-sm:hidden")
+    expect(screen.getByText("English")).toHaveClass("sm:hidden")
+    // Collapsed: 44px, arrow hidden on desktop; the phone drawer is always full width.
+    expect(badge()).toHaveClass("w-11", "-mx-0.5", "px-1", "sm:[&>svg:last-child]:hidden", "max-sm:w-[calc(100%+4px)]")
+    rerender(<AppRail expanded />)
+    expect(badge()).toHaveClass("w-[calc(100%+4px)]", "border", "-mx-0.5", "px-1")
+    expect(badge()).not.toHaveClass("sm:[&>svg:last-child]:hidden")
+    expect(screen.getByText("en")).toHaveClass("hidden")
+    expect(screen.getByText("English")).not.toHaveClass("sm:hidden")
+  })
+
   it("stays expanded while the theme list is open (#355)", async () => {
     render(<AppRail />)
     const nav = screen.getByRole("navigation", { name: "App navigation" })
