@@ -207,16 +207,17 @@ export function AppRail({ signedIn = false, canModerate = false, isAdmin = false
           <RailLink item={DISCORD} current={false} expanded={expanded} />
           {signedIn && <RailLink item={SETTINGS} current={isCurrent(SETTINGS.href)} expanded={expanded} />}
           {/*
-            The globe-and-code badge. Collapsed, it's centered on the icons' column with no arrow;
-            expanded (and in the phone drawer) it grows to the rail's width, arrow at the end (#356).
+            The language badge (#356). Collapsed: the globe and code, no arrow. Expanded (and in the
+            phone drawer): as wide as the rail, with the language's name and the arrow at the end.
+            Same left edge and padding either way, so the globe doesn't move as the rail opens.
           */}
-          <div className={cn("flex w-10 justify-center max-sm:w-full", expanded && "w-full")}>
-            <LanguageSwitcher
-              variant="compact"
-              className={cn("px-1.5 max-sm:w-full max-sm:px-2.5 [&>span]:mr-auto", expanded ? "w-full px-2.5" : "sm:[&>svg:last-child]:hidden")}
-              onOpenChange={setMenuOpen}
-            />
-          </div>
+          <LanguageSwitcher
+            variant="compact"
+            className={cn("px-1.5 max-sm:w-full [&>span]:mr-auto", expanded ? "w-full" : "sm:[&>svg:last-child]:hidden")}
+            codeClassName={expanded ? "hidden" : "max-sm:hidden"}
+            nameClassName={cn("truncate", !expanded && "sm:hidden")}
+            onOpenChange={setMenuOpen}
+          />
           <ThemeToggle variant="toggle" className={linkClass} labelClassName={labelClass(expanded)} />
         </div>
       </div>
