@@ -61,6 +61,21 @@ describe("AppRail", () => {
     expect(screen.getByRole("link", { name: "Admin" })).toHaveAttribute("href", "/admin")
   })
 
+  it("marks Discord as leaving the site: an arrow on the icon while collapsed, at the end of the row when expanded (#369)", () => {
+    const { rerender } = render(<AppRail expanded={false} />)
+    const arrow = (where: string) => screen.getByRole("link", { name: "Discord" }).querySelector(`[data-external="${where}"]`)
+    // Collapsed on desktop: the corner arrow; the phone drawer shows the row's end arrow instead.
+    expect(arrow("corner")).not.toHaveClass("hidden")
+    expect(arrow("corner")).toHaveClass("max-sm:hidden")
+    expect(arrow("end")).toHaveClass("sm:hidden")
+    expect(arrow("end")).not.toHaveClass("max-sm:hidden")
+    rerender(<AppRail expanded />)
+    expect(arrow("corner")).toHaveClass("hidden")
+    expect(arrow("end")).not.toHaveClass("sm:hidden")
+    // Only Discord leaves the site.
+    expect(screen.getByRole("link", { name: "Map" }).querySelector("[data-external]")).toBeNull()
+  })
+
   it("opens Discord in a new tab without an opener", () => {
     render(<AppRail />)
     const discord = screen.getByRole("link", { name: "Discord" })
