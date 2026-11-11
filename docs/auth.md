@@ -108,7 +108,7 @@ Everyone signed in has a role in `profiles.role` (migrations 0012 and 0022). It'
 update profiles set role = 'super_admin' where username = '…';
 ```
 
-What each role may do is decided in one place, `src/lib/auth/entitlements.ts` (#299). It maps each **entitlement**, named after what it allows (`moderation.decide`, `admin.jobs`), to the roles that have it:
+What each role may do is decided in one place, `src/core/access/entitlements.ts` (#299, #323). It maps each **entitlement**, named after what it allows (`moderation.decide`, `admin.jobs`), to who has it. The table is core's own entitlements followed by every registered module's, from their manifests (`src/modules/registry.ts`, docs/architecture.md). Each has an **audience**: `public` (anyone, signed in or not), `org` (anyone signed in, until organizations exist) or `platform` (the staff roles it lists). Core's are all `platform`. The old path, `src/lib/auth/entitlements.ts`, re-exports it until #338:
 
 ```ts
 import { can } from "@/lib/auth/entitlements"
@@ -119,9 +119,9 @@ can(role, "admin.jobs") // true for admins only
 - **Server checks:** admin API routes use `requireEntitlement(request, "admin.jobs")` from `src/server/admin/access.ts`. It answers 401 without a session and 404 to anyone without the entitlement, so the route's existence isn't shown.
 - **UI:** components use `can()` to hide what someone can't use. That's cosmetic; the server check is what protects the data.
 - **Admin sections:** each section in `src/lib/admin/sections.ts` names the entitlement it needs.
-- **Never compare role names elsewhere.** A test (`__tests__/lib/entitlements.test.ts`) fails on `role === "admin"`-style checks outside `entitlements.ts`.
+- **Never compare role names elsewhere.** A test (`__tests__/lib/entitlements.test.ts`) fails on `role === "admin"`-style checks outside `src/core/access/entitlements.ts`.
 
-**To add an entitlement,** add an entry with the roles that get it, use `can` or `requireEntitlement` where it applies, and update the snapshot in `__tests__/lib/entitlements.test.ts`.
+**To add an entitlement,** add it to the module that owns it (its `module.ts`, prefixed with the module's id), or to `CORE_ENTITLEMENTS` if it's about running PokeFindr itself, with its audience and, for `platform`, the roles that get it; use `can` or `requireEntitlement` where it applies, and update the snapshot in `__tests__/lib/entitlements.test.ts`.
 
 **To add a role,** add it to `ROLES` (`src/lib/auth/roles.ts`) and to the `profiles_role_check` constraint with a migration. Then list it under each entitlement it should have. A role that isn't listed anywhere can do nothing beyond a member.
 
