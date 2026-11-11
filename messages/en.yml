@@ -522,6 +522,8 @@ ui:
   # The language switcher. Each language is listed in its own name ("English", "Español").
   language:
     label: Language
+    # The app rail's language picker, which shows the current language's name.
+    current: "Language: {language}"
     # When the choice couldn't be saved to their account.
     saveFailed: Couldn't save your language
     saveFailedBody: It's set on this device. Try again from settings to keep it on others.

@@ -206,10 +206,7 @@ export function AppRail({ signedIn = false, canModerate = false, isAdmin = false
         <div className="mt-auto flex flex-col items-start gap-2">
           <RailLink item={DISCORD} current={false} expanded={expanded} />
           {signedIn && <RailLink item={SETTINGS} current={isCurrent(SETTINGS.href)} expanded={expanded} />}
-          {/* The rail is 64px wide: the globe and code, no arrow, centered on the icons' column. */}
-          <div className="flex w-10 justify-center">
-            <LanguageSwitcher variant="compact" chevron={false} className="px-1.5" onOpenChange={setMenuOpen} />
-          </div>
+          <LanguageSwitcher variant="rail" className={linkClass} labelClassName={labelClass(expanded)} onOpenChange={setMenuOpen} />
           <ThemeToggle variant="toggle" className={linkClass} labelClassName={labelClass(expanded)} />
         </div>
       </div>
