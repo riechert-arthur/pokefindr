@@ -44,7 +44,8 @@ export class OpenRouteServiceRouter implements Router {
           coordinates: stops.map(([lng, lat]) => [lng, lat]),
           radiuses: stops.map(() => SNAP_METERS),
           instructions: false,
-          preference: "recommended",
+          // The quickest drive (#348), as the Google Maps link next to it gives.
+          preference: "fastest",
         }),
         signal: opts?.signal,
       })

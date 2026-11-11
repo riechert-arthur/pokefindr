@@ -14,6 +14,7 @@ import { NominatimGeocoder } from "@/server/adapters/geocoder/nominatim"
 import { PhotonGeocoder } from "@/server/adapters/geocoder/photon"
 import { FakeRouter } from "@/server/adapters/router/fake"
 import { OpenRouteServiceRouter } from "@/server/adapters/router/openrouteservice"
+import { OsrmRouter } from "@/server/adapters/router/osrm"
 
 const config = (overrides: Partial<ServerConfig>) => ({ GEOCODER_PROVIDER: "fake", ...overrides }) as ServerConfig
 
@@ -31,8 +32,9 @@ describe("makeGeocoder", () => {
 })
 
 describe("makeRouter", () => {
-  it("builds the fake and OpenRouteService adapters", () => {
+  it("builds the fake, OpenRouteService and OSRM adapters", () => {
     expect(makeRouter(config({ ROUTER_PROVIDER: "fake" }))).toBeInstanceOf(FakeRouter)
+    expect(makeRouter(config({ ROUTER_PROVIDER: "osrm" }))).toBeInstanceOf(OsrmRouter)
     expect(makeRouter(config({ ROUTER_PROVIDER: "openrouteservice", ROUTER_API_KEY: "key" }))).toBeInstanceOf(OpenRouteServiceRouter)
   })
 })

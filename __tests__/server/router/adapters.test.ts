@@ -5,6 +5,7 @@ vi.mock("server-only", () => ({}))
 
 import { FakeRouter } from "@/server/adapters/router/fake"
 import { OpenRouteServiceRouter } from "@/server/adapters/router/openrouteservice"
+import { OsrmRouter } from "@/server/adapters/router/osrm"
 import { RouterError, type RoutePoint } from "@/server/ports/router"
 
 const STOPS: RoutePoint[] = [
@@ -62,7 +63,8 @@ describe("OpenRouteServiceRouter", () => {
     expect(init.signal).toBe(signal)
     expect(headers.get("Authorization")).toBe("ors-secret")
     expect(url.href).not.toContain("ors-secret")
-    expect(body).toMatchObject({ coordinates: STOPS, instructions: false })
+    // The quickest drive, as the Google Maps link gives (#348).
+    expect(body).toMatchObject({ coordinates: STOPS, instructions: false, preference: "fastest" })
     expect(body.radiuses).toHaveLength(3)
   })
 
@@ -122,6 +124,71 @@ describe("OpenRouteServiceRouter", () => {
     const error = await new OpenRouteServiceRouter("k").route(STOPS, { signal: ctl.signal }).catch((e) => e)
     expect(error).not.toBeInstanceOf(RouterError)
     expect(error.name).toBe("AbortError")
+  })
+})
+
+const osrmAnswer = {
+  code: "Ok",
+  routes: [
+    {
+      geometry: { type: "LineString", coordinates: orsAnswer.features[0].geometry.coordinates },
+      distance: 16093.44,
+      duration: 1260,
+      legs: [
+        { distance: 4828.032, duration: 420 },
+        { distance: 11265.408, duration: 840 },
+      ],
+    },
+  ],
+}
+
+describe("OsrmRouter (#348)", () => {
+  it("asks the demo server for the car route through the stops in order, with full GeoJSON geometry and who's asking", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () => new Response(JSON.stringify(osrmAnswer)))
+    vi.stubGlobal("fetch", fetchMock)
+    const signal = new AbortController().signal
+    await new OsrmRouter().route(STOPS, { signal })
+    const [url, init] = fetchMock.mock.calls[0]
+    const u = new URL(String(url))
+    expect(u.origin + u.pathname).toBe("https://router.project-osrm.org/route/v1/driving/-104.99,39.74;-105.02,39.71;-104.95,39.68")
+    expect(Object.fromEntries(u.searchParams)).toEqual({ overview: "full", geometries: "geojson", steps: "false", radiuses: "1000;1000;1000" })
+    expect(new Headers(init?.headers).get("User-Agent")).toMatch(/^PokeFindr/)
+    expect(init?.signal).toBe(signal)
+  })
+
+  it("keeps a self-hosted instance's path", async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () => new Response(JSON.stringify(osrmAnswer)))
+    vi.stubGlobal("fetch", fetchMock)
+    await new OsrmRouter("https://osrm.example.com/v").route(STOPS)
+    expect(String(fetchMock.mock.calls[0][0])).toMatch(/^https:\/\/osrm\.example\.com\/v\/route\/v1\/driving\//)
+  })
+
+  it("returns the same shape as OpenRouteService for the same drive", async () => {
+    mockFetch(orsAnswer)
+    const ors = await new OpenRouteServiceRouter("k").route(STOPS)
+    mockFetch(osrmAnswer)
+    expect(await new OsrmRouter().route(STOPS)).toEqual(ors)
+  })
+
+  it("turns an error status, NoRoute, a non-JSON body, a network failure or a wrong leg count into a RouterError", async () => {
+    mockFetch({ code: "TooBig" }, 400)
+    expect((await new OsrmRouter().route(STOPS).catch((e) => e)).status).toBe(400)
+    for (const body of [{ code: "NoRoute", routes: [] }, "<html>", { code: "Ok", routes: [{ ...osrmAnswer.routes[0], legs: [osrmAnswer.routes[0].legs[0]] }] }]) {
+      mockFetch(body)
+      await expect(new OsrmRouter().route(STOPS)).rejects.toBeInstanceOf(RouterError)
+    }
+    vi.stubGlobal("fetch", vi.fn(async () => Promise.reject(new TypeError("fetch failed"))))
+    await expect(new OsrmRouter().route(STOPS)).rejects.toBeInstanceOf(RouterError)
+  })
+
+  it("passes the caller's abort through as it is", async () => {
+    const ctl = new AbortController()
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      ctl.abort()
+      throw new DOMException("This operation was aborted", "AbortError")
+    }))
+    const error = await new OsrmRouter().route(STOPS, { signal: ctl.signal }).catch((e) => e)
+    expect(error).not.toBeInstanceOf(RouterError)
   })
 })
 
