@@ -401,6 +401,7 @@ nav:
 ui:
   theme:
     group: Tema
+    current: "Tema: {theme}"
     light: Claro
     dark: Oscuro
     system: Sistema

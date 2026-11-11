@@ -510,6 +510,8 @@ ui:
   theme:
     # Accessible name of the light/dark/system button group.
     group: Theme
+    # The theme badge's name, with the chosen theme. {theme} is "Light", "Dark" or "System".
+    current: "Theme: {theme}"
     light: Light
     dark: Dark
     system: System
