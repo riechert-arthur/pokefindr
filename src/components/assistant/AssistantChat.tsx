@@ -106,7 +106,8 @@ export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChatting
     <>
       {chatting && (
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className={cn(COLUMN, "flex justify-end pb-1")}>
+          {/* Room under "New chat", so the conversation doesn't scroll up against it (#382). */}
+          <div className={cn(COLUMN, "flex justify-end pb-3")}>
             {/* An outlined button with the usual new-conversation mark, so it reads as an action (#380). */}
             <Button type="button" variant="outline" size="sm" onClick={reset} disabled={busy} className="bg-card">
               <SquarePenIcon aria-hidden />
@@ -114,8 +115,10 @@ export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChatting
             </Button>
           </div>
           {/* Full width, so the scrollbar is at the window's edge and the margins scroll too. */}
-          <div ref={log} aria-live="polite" className="min-h-0 flex-1 overflow-y-auto py-2">
-            <div className={cn(COLUMN, "flex flex-col gap-4")}>
+          <div ref={log} aria-live="polite" className="min-h-0 flex-1 overflow-y-auto pb-2">
+            {/* A clear top edge: messages fade into the page as they scroll under the row above. */}
+            <div aria-hidden className="pointer-events-none sticky top-0 z-10 -mb-4 h-4 bg-gradient-to-b from-background to-transparent" />
+            <div className={cn(COLUMN, "flex flex-col gap-4 pt-2")}>
               {messages.map((m) =>
                 m.role === "user" ? (
                   <p key={m.id} className="max-w-[92%] self-end whitespace-pre-wrap rounded-[14px_14px_4px_14px] bg-foreground px-3 py-2 text-body text-background sm:max-w-[80%]">
