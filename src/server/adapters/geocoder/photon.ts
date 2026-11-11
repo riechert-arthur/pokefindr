@@ -21,6 +21,13 @@ interface PhotonFeature {
 
 /** The 50 states, DC and Puerto Rico. Photon has no country filter, so a box narrows the search. */
 const US_BBOX = "-180,17,-64,72"
+/**
+ * That box also holds most of Canada, whose results are dropped after Photon
+ * answers. Near the border they can fill a short list: from Seattle, 14 of 15
+ * results for "270 1st" were in British Columbia (#375). So a US search asks
+ * for this many (Photon's most), which left 30 US addresses there.
+ */
+const US_REQUEST_LIMIT = 50
 const AREA_LAYERS = ["city", "district", "county", "state"]
 
 /**
@@ -59,7 +66,7 @@ export class PhotonGeocoder implements Geocoder {
 
   private async request(query: string, limit: number, opts: GeocodeOptions | undefined, placesOnly: boolean): Promise<PhotonFeature[]> {
     const country = countryOf(opts).toUpperCase()
-    const params = new URLSearchParams({ q: query, lang: "en", limit: String(limit * 3) })
+    const params = new URLSearchParams({ q: query, lang: "en", limit: String(country === "US" ? US_REQUEST_LIMIT : limit * 3) })
     if (country === "US") params.set("bbox", US_BBOX)
     if (placesOnly) {
       for (const layer of AREA_LAYERS) params.append("layer", layer)
