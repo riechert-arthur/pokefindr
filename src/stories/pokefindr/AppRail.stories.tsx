@@ -22,6 +22,12 @@ export const Moderator: Story = {
   parameters: { nextjs: { navigation: { pathname: "/moderate" } } },
 }
 
+/** On /chat (#391): Chat is the current page. */
+export const OnChat: Story = {
+  args: { signedIn: true },
+  parameters: { nextjs: { navigation: { pathname: "/chat" } } },
+}
+
 /** On the dashboard, signed in: Settings appears at the bottom. */
 export const SignedIn: Story = {
   args: { signedIn: true },

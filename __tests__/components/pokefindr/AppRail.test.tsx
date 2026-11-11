@@ -108,6 +108,15 @@ describe("AppRail", () => {
     await waitFor(() => expect(nav).not.toHaveAttribute("data-expanded"))
   })
 
+  it("links the assistant's conversation as Chat, after Home, current on /chat (#391)", () => {
+    pathname = "/chat"
+    render(<AppRail />)
+    const names = screen.getAllByRole("link").map((a) => a.textContent)
+    expect(names.indexOf("Chat")).toBe(names.indexOf("Home") + 1)
+    expect(screen.getByRole("link", { name: "Chat" })).toHaveAttribute("href", "/chat")
+    expect(current()).toEqual(["Chat"])
+  })
+
   it("keeps Blog out of the dashboard's pages, with the links at the bottom (#387)", () => {
     render(<AppRail signedIn />)
     const settings = screen.getByRole("link", { name: "Settings" })
@@ -117,7 +126,7 @@ describe("AppRail", () => {
 
   it("names each link by its label, without aria-label or title", () => {
     render(<AppRail signedIn isAdmin />)
-    for (const name of ["Home", "Blog", "Map", "Admin", "Discord", "Settings"]) {
+    for (const name of ["Home", "Chat", "Blog", "Map", "Admin", "Discord", "Settings"]) {
       const link = screen.getByRole("link", { name })
       expect(link).not.toHaveAttribute("aria-label")
       expect(link).not.toHaveAttribute("title")

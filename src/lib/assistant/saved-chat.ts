@@ -2,7 +2,7 @@ import type { AssistantCard, ChatMessage } from "@/lib/types/assistant"
 
 /**
  * The viewer's current assistant chat, kept in this browser (#346), so
- * leaving /home or reloading doesn't lose it. One chat per signed-in user,
+ * leaving /chat or reloading doesn't lose it. One chat per signed-in user,
  * under their id, so someone else signing in here never sees it. "New chat",
  * logging out and "Clear assistant history" remove it, and it's dropped
  * after 30 days without a new message, as the server drops the text of its
@@ -10,7 +10,8 @@ import type { AssistantCard, ChatMessage } from "@/lib/types/assistant"
  *
  * Other tabs follow along through `storage` events (useAssistant), and a
  * small cookie (CHAT_COOKIE, the user's id, no content) tells the server to
- * render /home in its chat layout, so a reload doesn't flash the tiles.
+ * render /chat in its conversation layout, so a reload doesn't flash the
+ * empty state, and /home to link back to the conversation (#391).
  */
 
 const PREFIX = "pf-assistant-chat:"
@@ -19,7 +20,7 @@ const VERSION = 1
 const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000
 /** More than any conversation the API remembers (HISTORY_LIMITS.messages), so what's shown stays bounded. */
 const MAX_MESSAGES = 60
-/** Whose chat is saved in this browser; read by /home's server page (src/app/[locale]/(dashboard)/home/page.tsx). */
+/** Whose chat is saved in this browser; read by /chat's and /home's server pages (src/app/[locale]/(dashboard)/{chat,home}/page.tsx). */
 export const CHAT_COOKIE = "pf-chat"
 
 interface Saved {

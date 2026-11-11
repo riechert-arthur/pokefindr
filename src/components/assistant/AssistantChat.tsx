@@ -22,6 +22,8 @@ interface AssistantChatProps {
   onChattingChange: (chatting: boolean) => void
   /** The signed-in viewer: their current chat is kept in this browser (#346). */
   userId?: string | null
+  /** Focus the composer when it opens (a question just handed over from /home). */
+  autoFocus?: boolean
 }
 
 /** `newestRoute`: the index of the conversation's newest route card in this answer, if it's here. */
@@ -63,7 +65,7 @@ function newestRouteCard(messages: readonly ChatMessage[]): { messageId: number;
  * and, once asked, the conversation above it with each answer's text and
  * cards. "New chat" clears it; until then it's kept in this browser (#346).
  */
-export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChattingChange, userId = null }: AssistantChatProps) {
+export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChattingChange, userId = null, autoFocus = false }: AssistantChatProps) {
   const t = useTranslations("assistant")
   const { messages, busy, send, stop, reset } = useAssistant(userId)
   const [text, setText] = useState("")
@@ -82,7 +84,8 @@ export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChatting
     void send(q, viewer)
   }
 
-  useEffect(() => {
+  // Before paint, so a question handed over from /home shows as asked, not the empty state first.
+  useLayoutEffect(() => {
     if (!suggestion) return
     onSuggestionUsed()
     ask(suggestion)
@@ -135,6 +138,7 @@ export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChatting
           busy={busy}
           onStop={stop}
           onFocusChange={setFocused}
+          autoFocus={autoFocus}
           placeholder={chatting ? t("followUp") : focused ? undefined : <TypingPlaceholder />}
         />
         <p className="mt-2 text-center text-caption text-muted-foreground">{t("disclaimer")}</p>

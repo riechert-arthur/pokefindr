@@ -484,6 +484,8 @@ common:
 # The app's navigation: the side rail (desktop), the tab bar (phones) and the user menu.
 nav:
   home: Home
+  # The assistant's conversation (/chat).
+  chat: Chat
   blog: Blog
   map: Map
   discord: Discord
@@ -651,6 +653,11 @@ dashboard:
 # The answers themselves come from the model.
 assistant:
   newChat: New chat
+  # On /home, under the composer, while a conversation is saved: goes to /chat.
+  continueChat: Continue your chat
+  # /chat with no conversation yet.
+  emptyTitle: Ask the assistant
+  emptyBody: Vending machines, card shops and events near a place, what's restocked, or a route through several stops.
   # The composer's placeholder once a conversation has started.
   followUp: Ask a follow-up…
   # Under the composer.
