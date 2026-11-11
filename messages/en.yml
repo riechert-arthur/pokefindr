@@ -510,12 +510,11 @@ ui:
   theme:
     # Accessible name of the light/dark/system button group.
     group: Theme
+    # The theme badge's name, with the chosen theme. {theme} is "Light", "Dark" or "System".
+    current: "Theme: {theme}"
     light: Light
     dark: Dark
     system: System
-    # The one-button version: what clicking it does.
-    switchToLight: Switch to light theme
-    switchToDark: Switch to dark theme
   # The language switcher. Each language is listed in its own name ("English", "Español").
   language:
     label: Language

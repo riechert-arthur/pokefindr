@@ -401,11 +401,10 @@ nav:
 ui:
   theme:
     group: Tema
+    current: "Tema: {theme}"
     light: Claro
     dark: Oscuro
     system: Sistema
-    switchToLight: Cambiar al tema claro
-    switchToDark: Cambiar al tema oscuro
   language:
     label: Idioma
     saveFailed: No se pudo guardar tu idioma

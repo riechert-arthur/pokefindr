@@ -10,4 +10,5 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 export const Segmented: Story = {}
-export const Toggle: Story = { args: { variant: "toggle" } }
+/** The app rail's badge: the theme's icon and name, opening the list. */
+export const Compact: Story = { args: { variant: "compact" } }

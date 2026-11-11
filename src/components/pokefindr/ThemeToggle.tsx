@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import { Monitor, Moon, Sun, type LucideIcon } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useTranslations } from "next-intl"
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
+import { COMPACT_TRIGGER, CompactLabel } from "@/components/pokefindr/CompactSelect"
 import { cn } from "@/lib/utils"
 
 /** Each option's label is its value's message in `ui.theme`. */
@@ -15,37 +17,50 @@ const OPTIONS: { value: "light" | "dark" | "system"; icon: LucideIcon }[] = [
 
 interface ThemeToggleProps {
   /**
-   * "segmented" shows light, dark and system (settings). "toggle" is one icon
-   * button that switches between light and dark from whatever is showing
-   * (sidebar), so every click changes the theme.
+   * "segmented" shows the options side by side (settings). "compact" is a
+   * badge that opens them as a list, like the language picker (the app rail).
    */
-  variant?: "segmented" | "toggle"
+  variant?: "segmented" | "compact"
   className?: string
+  /** Compact: the chosen theme's name ("Light"), e.g. screen-reader only while the app rail is collapsed. */
+  labelClassName?: string
+  /** Compact: when the list opens or closes (the app rail stays expanded while it's open). */
+  onOpenChange?: (open: boolean) => void
 }
 
-/** Light / dark (/ system) theme switch. Renders a neutral placeholder until mounted, so SSR and client markup match. */
-export function ThemeToggle({ variant = "segmented", className }: ThemeToggleProps) {
+/** Light / dark / system theme picker. The stored choice is only known once mounted, so SSR and client markup match until then. */
+export function ThemeToggle({ variant = "segmented", className, labelClassName, onOpenChange }: ThemeToggleProps) {
   const t = useTranslations("ui.theme")
-  const { theme, resolvedTheme, setTheme } = useTheme()
+  const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   const current = mounted ? (theme ?? "system") : "system"
 
-  if (variant === "toggle") {
-    const isDark = mounted && resolvedTheme === "dark"
-    const Icon = isDark ? Moon : Sun
-    const next = isDark ? "light" : "dark"
-    const label = t(isDark ? "switchToLight" : "switchToDark")
+  if (variant === "compact") {
+    // An unknown stored value shows as System, which is what next-themes falls back to.
+    const chosen = OPTIONS.find((o) => o.value === current) ?? OPTIONS[OPTIONS.length - 1]
+    const Icon = chosen.icon
     return (
-      <button
-        type="button"
-        onClick={() => setTheme(next)}
-        aria-label={label}
-        title={label}
-        className={cn("rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground", className)}
-      >
-        <Icon className="size-6" aria-hidden />
-      </button>
+      <Select value={chosen.value} onValueChange={setTheme} onOpenChange={onOpenChange}>
+        {/* The name says the choice, which the collapsed rail only shows as an icon. */}
+        <SelectTrigger aria-label={mounted ? t("current", { theme: t(chosen.value) }) : t("group")} className={cn(COMPACT_TRIGGER, className)}>
+          {/* Until the stored theme is known: an empty slot, not a wrong "System" that then flips. */}
+          {mounted ? <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden /> : <span aria-hidden className="size-3.5 shrink-0" />}
+          <CompactLabel>
+            <span className={labelClassName}>{mounted ? t(chosen.value) : ""}</span>
+          </CompactLabel>
+        </SelectTrigger>
+        <SelectContent>
+          {OPTIONS.map(({ value, icon: ItemIcon }) => (
+            <SelectItem key={value} value={value}>
+              <span className="flex items-center gap-2">
+                <ItemIcon className="size-4 text-muted-foreground" aria-hidden />
+                {t(value)}
+              </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     )
   }
 

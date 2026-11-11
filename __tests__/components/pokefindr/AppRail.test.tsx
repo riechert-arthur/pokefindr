@@ -3,7 +3,13 @@ import { act, fireEvent, render, screen, waitFor } from "../../helpers/intl"
 
 let pathname = "/map"
 vi.mock("@/i18n/navigation", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/i18n/navigation")>()), usePathname: () => pathname, useRouter: () => ({ replace: () => {} }) }))
-vi.mock("@/components/pokefindr/ThemeToggle", () => ({ ThemeToggle: () => <button type="button">theme</button> }))
+const theme = vi.hoisted(() => ({ props: null as null | { onOpenChange?: (open: boolean) => void } }))
+vi.mock("@/components/pokefindr/ThemeToggle", () => ({
+  ThemeToggle: (props: { onOpenChange?: (open: boolean) => void }) => {
+    theme.props = props
+    return <button type="button">theme</button>
+  },
+}))
 
 import { AppRail } from "@/components/pokefindr/AppRail"
 
@@ -60,6 +66,16 @@ describe("AppRail", () => {
     const discord = screen.getByRole("link", { name: "Discord" })
     expect(discord.getAttribute("target")).toBe("_blank")
     expect(discord.getAttribute("rel")).toBe("noopener noreferrer")
+  })
+
+  it("stays expanded while the theme list is open (#355)", async () => {
+    render(<AppRail />)
+    const nav = screen.getByRole("navigation", { name: "App navigation" })
+    expect(nav).not.toHaveAttribute("data-expanded")
+    act(() => theme.props?.onOpenChange?.(true))
+    await waitFor(() => expect(nav).toHaveAttribute("data-expanded"))
+    act(() => theme.props?.onOpenChange?.(false))
+    await waitFor(() => expect(nav).not.toHaveAttribute("data-expanded"))
   })
 
   it("names each link by its label, without aria-label or title", () => {

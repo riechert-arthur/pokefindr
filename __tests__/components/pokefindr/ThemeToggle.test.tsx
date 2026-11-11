@@ -7,17 +7,25 @@ vi.mock("next-themes", () => ({ useTheme: () => ({ ...state, setTheme }) }))
 
 import { ThemeToggle } from "@/components/pokefindr/ThemeToggle"
 
-describe("ThemeToggle toggle variant", () => {
+describe("ThemeToggle compact variant (#355)", () => {
   it.each([
-    ["system", "light", "dark"],
-    ["system", "dark", "light"],
-    ["light", "light", "dark"],
-    ["dark", "dark", "light"],
-  ])("with theme %s showing %s, switches to %s", (theme, resolvedTheme, next) => {
-    state = { theme, resolvedTheme }
+    ["light", "Light"],
+    ["dark", "Dark"],
+    ["system", "System"],
+  ])("shows the chosen theme (%s) by name", (theme, name) => {
+    state = { theme, resolvedTheme: theme === "dark" ? "dark" : "light" }
+    render(<ThemeToggle variant="compact" labelClassName="sm:sr-only" />)
+    expect(screen.getByRole("combobox", { name: `Theme: ${name}` })).toHaveTextContent(name)
+    expect(screen.getByText(name)).toHaveClass("sm:sr-only")
+  })
+
+  it("offers Light, Dark and System, and picks one", () => {
+    state = { theme: "light", resolvedTheme: "light" }
     setTheme.mockClear()
-    render(<ThemeToggle variant="toggle" />)
-    fireEvent.click(screen.getByRole("button", { name: `Switch to ${next} theme` }))
-    expect(setTheme).toHaveBeenCalledWith(next)
+    render(<ThemeToggle variant="compact" />)
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Theme: Light" }), { key: "Enter" })
+    expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["Light", "Dark", "System"])
+    fireEvent.click(screen.getByRole("option", { name: "Dark" }))
+    expect(setTheme).toHaveBeenCalledWith("dark")
   })
 })
