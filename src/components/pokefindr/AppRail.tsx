@@ -206,7 +206,17 @@ export function AppRail({ signedIn = false, canModerate = false, isAdmin = false
         <div className="mt-auto flex flex-col items-start gap-2">
           <RailLink item={DISCORD} current={false} expanded={expanded} />
           {signedIn && <RailLink item={SETTINGS} current={isCurrent(SETTINGS.href)} expanded={expanded} />}
-          <LanguageSwitcher variant="rail" className={linkClass} labelClassName={labelClass(expanded)} onOpenChange={setMenuOpen} />
+          {/*
+            The globe-and-code badge. Collapsed, it's centered on the icons' column with no arrow;
+            expanded (and in the phone drawer) it grows to the rail's width, arrow at the end (#356).
+          */}
+          <div className={cn("flex w-10 justify-center max-sm:w-full", expanded && "w-full")}>
+            <LanguageSwitcher
+              variant="compact"
+              className={cn("px-1.5 max-sm:w-full max-sm:px-2.5 [&>span]:mr-auto", expanded ? "w-full px-2.5" : "sm:[&>svg:last-child]:hidden")}
+              onOpenChange={setMenuOpen}
+            />
+          </div>
           <ThemeToggle variant="toggle" className={linkClass} labelClassName={labelClass(expanded)} />
         </div>
       </div>

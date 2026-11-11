@@ -62,6 +62,16 @@ describe("AppRail", () => {
     expect(discord.getAttribute("rel")).toBe("noopener noreferrer")
   })
 
+  it("keeps the language badge, and grows it to the rail's width when expanded (#356)", () => {
+    const { rerender } = render(<AppRail expanded={false} />)
+    const badge = () => screen.getByRole("combobox", { name: "Language" })
+    expect(badge()).toHaveTextContent("en")
+    expect(badge()).not.toHaveClass("w-full")
+    rerender(<AppRail expanded />)
+    expect(badge()).toHaveClass("w-full")
+    expect(badge()).toHaveClass("border")
+  })
+
   it("names each link by its label, without aria-label or title", () => {
     render(<AppRail signedIn isAdmin />)
     for (const name of ["Home", "Blog", "Map", "Admin", "Discord", "Settings"]) {
