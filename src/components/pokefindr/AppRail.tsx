@@ -40,13 +40,12 @@ const EXPANDED_WIDTH = "w-52"
 const OPEN_DELAY = 150
 const CLOSE_DELAY = 250
 
-/** A 40px rounded icon button, as in the prototype's `.rail button`. */
-const itemClass =
-  "grid size-10 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-
 /** A 40px-tall row: the icon where the collapsed rail's button was, then the label. */
 const linkClass =
   "flex h-10 w-full items-center gap-3 rounded-md px-2.5 text-body font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none"
+
+/** A row's label: always read out, shown when expanded and in the phone drawer. */
+const labelClass = (expanded: boolean) => cn("truncate whitespace-nowrap", !expanded && "sm:sr-only")
 
 const matches = (query: string) => typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(query).matches
 
@@ -74,8 +73,7 @@ function RailLink({ item, current, expanded }: { item: RailItem; current: boolea
       {...(item.external && { target: "_blank", rel: "noopener noreferrer" })}
     >
       <Icon className="size-5 shrink-0" aria-hidden />
-      {/* Always read out, so the link keeps its name; shown when expanded and in the phone drawer. */}
-      <span className={cn("truncate whitespace-nowrap", !expanded && "sm:sr-only")}>{t(item.label)}</span>
+      <span className={labelClass(expanded)}>{t(item.label)}</span>
     </Link>
   )
 }
@@ -212,7 +210,7 @@ export function AppRail({ signedIn = false, canModerate = false, isAdmin = false
           <div className="flex w-10 justify-center">
             <LanguageSwitcher variant="compact" chevron={false} className="px-1.5" onOpenChange={setMenuOpen} />
           </div>
-          <ThemeToggle variant="toggle" className={cn(itemClass, "p-0 [&_svg]:size-5")} />
+          <ThemeToggle variant="toggle" className={linkClass} labelClassName={labelClass(expanded)} />
         </div>
       </div>
     </nav>

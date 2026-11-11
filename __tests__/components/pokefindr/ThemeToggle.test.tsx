@@ -20,4 +20,12 @@ describe("ThemeToggle toggle variant", () => {
     fireEvent.click(screen.getByRole("button", { name: `Switch to ${next} theme` }))
     expect(setTheme).toHaveBeenCalledWith(next)
   })
+
+  it("shows the theme it switches to as its label, part of its name", () => {
+    state = { theme: "light", resolvedTheme: "light" }
+    render(<ThemeToggle variant="toggle" labelClassName="sr-only" />)
+    const label = screen.getByText("Dark theme")
+    expect(label).toHaveClass("sr-only")
+    expect(screen.getByRole("button", { name: "Switch to dark theme" })).toContainElement(label)
+  })
 })

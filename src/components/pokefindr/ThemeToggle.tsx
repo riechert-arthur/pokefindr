@@ -15,16 +15,18 @@ const OPTIONS: { value: "light" | "dark" | "system"; icon: LucideIcon }[] = [
 
 interface ThemeToggleProps {
   /**
-   * "segmented" shows light, dark and system (settings). "toggle" is one icon
+   * "segmented" shows light, dark and system (settings). "toggle" is one
    * button that switches between light and dark from whatever is showing
-   * (sidebar), so every click changes the theme.
+   * (the app rail), so every click changes the theme.
    */
   variant?: "segmented" | "toggle"
   className?: string
+  /** The toggle's label ("Dark theme"), e.g. screen-reader only while the app rail is collapsed. */
+  labelClassName?: string
 }
 
 /** Light / dark (/ system) theme switch. Renders a neutral placeholder until mounted, so SSR and client markup match. */
-export function ThemeToggle({ variant = "segmented", className }: ThemeToggleProps) {
+export function ThemeToggle({ variant = "segmented", className, labelClassName }: ThemeToggleProps) {
   const t = useTranslations("ui.theme")
   const { theme, resolvedTheme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
@@ -33,18 +35,18 @@ export function ThemeToggle({ variant = "segmented", className }: ThemeTogglePro
 
   if (variant === "toggle") {
     const isDark = mounted && resolvedTheme === "dark"
-    const Icon = isDark ? Moon : Sun
+    // The icon and label show the theme a click switches to; the name says so in full.
+    const Icon = isDark ? Sun : Moon
     const next = isDark ? "light" : "dark"
-    const label = t(isDark ? "switchToLight" : "switchToDark")
     return (
       <button
         type="button"
         onClick={() => setTheme(next)}
-        aria-label={label}
-        title={label}
-        className={cn("rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground", className)}
+        aria-label={t(isDark ? "switchToLight" : "switchToDark")}
+        className={cn("flex items-center gap-3 rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground", className)}
       >
-        <Icon className="size-6" aria-hidden />
+        <Icon className="size-5 shrink-0" aria-hidden />
+        <span className={labelClassName}>{t(isDark ? "lightTheme" : "darkTheme")}</span>
       </button>
     )
   }
