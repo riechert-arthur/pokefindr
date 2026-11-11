@@ -19,6 +19,8 @@ interface ComposerProps {
   placeholder?: ReactNode
   onFocusChange?: (focused: boolean) => void
   disabled?: boolean
+  /** Focus the field when it mounts. */
+  autoFocus?: boolean
   className?: string
 }
 
@@ -27,7 +29,7 @@ interface ComposerProps {
  * round send button (Stop while answering). Enter sends, Shift+Enter adds a
  * line.
  */
-export function Composer({ value, onChange, onSubmit, busy = false, onStop, placeholder, onFocusChange, disabled, className }: ComposerProps) {
+export function Composer({ value, onChange, onSubmit, busy = false, onStop, placeholder, onFocusChange, disabled, autoFocus, className }: ComposerProps) {
   const t = useTranslations("assistant.composer")
   const ref = useRef<HTMLTextAreaElement>(null)
 
@@ -72,6 +74,7 @@ export function Composer({ value, onChange, onSubmit, busy = false, onStop, plac
           onFocus={() => onFocusChange?.(true)}
           onBlur={() => onFocusChange?.(false)}
           disabled={disabled}
+          autoFocus={autoFocus}
           aria-label={t("label")}
           maxLength={2000}
           className="block max-h-40 min-h-12 w-full resize-none border-0 bg-transparent py-2.5 text-[16px] leading-[1.45] text-foreground outline-none sm:text-[17px]"

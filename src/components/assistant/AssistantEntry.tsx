@@ -1,60 +1,60 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useLayoutEffect, useState } from "react"
 import { MessagesSquareIcon } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { Link, useRouter } from "@/i18n/navigation"
 import { handOff, type Viewer } from "@/lib/assistant/hand-off"
+import { loadChat } from "@/lib/assistant/saved-chat"
 import { Composer } from "./Composer"
+import { SuggestionChips } from "./Suggestions"
 import { TypingPlaceholder } from "./TypingPlaceholder"
 
 interface AssistantEntryProps {
   viewer: Viewer | null
-  /** A suggestion tapped on /home, to ask. */
-  suggestion: string | null
-  onSuggestionUsed: () => void
-  /** This browser has the viewer's conversation saved (#346): link back to it. */
+  userId: string | null
+  /** The server's answer to whether this browser has the viewer's conversation saved (#346), from its cookie. */
   hasSavedChat: boolean
 }
 
 /**
  * /home's way into the assistant (#391): the composer with its typing
- * placeholder. Asking, typed or a tapped suggestion, opens /chat, which asks
- * it there; /home itself never turns into the conversation.
+ * placeholder, then the suggestions. Asking, typed or tapped, opens /chat,
+ * which asks it there; /home itself never turns into the conversation.
  */
-export function AssistantEntry({ viewer, suggestion, onSuggestionUsed, hasSavedChat }: AssistantEntryProps) {
+export function AssistantEntry({ viewer, userId, hasSavedChat }: AssistantEntryProps) {
   const t = useTranslations("assistant")
   const router = useRouter()
   const [text, setText] = useState("")
   const [focused, setFocused] = useState(false)
+  const [saved, setSaved] = useState(hasSavedChat)
+
+  // Back and Forward reuse the server's answer from before a chat was saved
+  // or cleared, so check this browser's own copy before paint.
+  useLayoutEffect(() => setSaved(userId !== null && loadChat(userId).length > 0), [userId])
 
   const ask = (question: string) => {
     const q = question.trim()
     if (!q) return
-    handOff(q, viewer)
+    handOff(q)
     router.push("/chat")
   }
 
-  useEffect(() => {
-    if (!suggestion) return
-    onSuggestionUsed()
-    ask(suggestion)
-    // Only a new suggestion asks.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [suggestion])
-
   return (
-    <div>
-      <Composer value={text} onChange={setText} onSubmit={ask} onFocusChange={setFocused} placeholder={focused ? undefined : <TypingPlaceholder />} />
-      <p className="mt-2 text-center text-caption text-muted-foreground">{t("disclaimer")}</p>
-      {hasSavedChat && (
-        <p className="mt-2 text-center">
-          <Link href="/chat" className="inline-flex items-center gap-1.5 text-body text-primary underline-offset-4 hover:underline">
-            <MessagesSquareIcon className="size-4" aria-hidden />
-            {t("continueChat")}
-          </Link>
-        </p>
-      )}
-    </div>
+    <>
+      <div>
+        <Composer value={text} onChange={setText} onSubmit={ask} onFocusChange={setFocused} placeholder={focused ? undefined : <TypingPlaceholder />} />
+        <p className="mt-2 text-center text-caption text-muted-foreground">{t("disclaimer")}</p>
+        {saved && (
+          <p className="mt-2 text-center">
+            <Link href="/chat" className="inline-flex items-center gap-1.5 text-body text-primary underline-offset-4 hover:underline">
+              <MessagesSquareIcon className="size-4" aria-hidden />
+              {t("continueChat")}
+            </Link>
+          </p>
+        )}
+      </div>
+      <SuggestionChips located={viewer !== null} onPick={ask} />
+    </>
   )
 }

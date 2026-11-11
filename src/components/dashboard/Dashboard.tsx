@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from "react"
 import { AgentMark } from "@/components/brand/AgentMark"
-import { SuggestionChips } from "@/components/assistant/Suggestions"
-import type { Viewer } from "@/lib/assistant/hand-off"
+import { shareViewer, type Viewer } from "@/lib/assistant/hand-off"
 import { DEFAULT_RADIUS } from "@/lib/map/url-state"
 import { LOCATE_GIVE_UP_MS } from "@/lib/map/locate"
 import type { MySubmission } from "@/lib/submissions/schemas"
 import type { Highlights, UpcomingEvent } from "@/lib/types/highlights"
 import type { RegionCount } from "@/lib/types/locations"
+import { cn } from "@/lib/utils"
+import { DASHBOARD_COLUMN } from "./column"
 import { DashboardFrame } from "./DashboardFrame"
 import { EventsTile, NearYouTile, ReviewsTile, SubmissionsTile, type MyReview, type NearState } from "./DashboardTiles"
 import { useFormat } from "@/i18n/format"
@@ -26,9 +27,9 @@ const round2 = (n: number) => Math.round(n * 100) / 100
 interface DashboardProps {
   /**
    * The way into the assistant (#391): the composer, which opens /chat to ask.
-   * It gets the viewer's location once shared, and a tapped suggestion to ask.
+   * It gets the viewer's location once shared, and renders the suggestions.
    */
-  assistant: (props: { viewer: Viewer | null; suggestion: string | null; onSuggestionUsed: () => void }) => ReactNode
+  assistant: (props: { viewer: Viewer | null }) => ReactNode
 }
 
 /**
@@ -46,7 +47,6 @@ export function Dashboard({ assistant }: DashboardProps) {
   const [events, setEvents] = useState<UpcomingEvent[] | "error" | null>(null)
   const [near, setNear] = useState<NearState>({ status: "idle" })
   const [viewer, setViewer] = useState<Viewer | null>(null)
-  const [suggestion, setSuggestion] = useState<string | null>(null)
 
   useEffect(() => {
     const ctl = new AbortController()
@@ -94,6 +94,7 @@ export function Dashboard({ assistant }: DashboardProps) {
         clearTimeout(giveUp)
         const at = { lng: round2(pos.coords.longitude), lat: round2(pos.coords.latitude) }
         setViewer(at)
+        shareViewer(at)
         try {
           const { counts } = await getJson<{ counts: number[] }>(`/api/locations/counts?points=${at.lng},${at.lat}&r=${DEFAULT_RADIUS}`, new AbortController().signal)
           setNear({ status: "ready", count: counts[0] ?? 0 })
@@ -113,7 +114,7 @@ export function Dashboard({ assistant }: DashboardProps) {
 
   return (
     <DashboardFrame>
-      <main className="mx-auto flex min-h-0 w-full max-w-[780px] flex-1 flex-col justify-start gap-[18px] overflow-y-auto px-4 pb-7 pt-4 md:justify-center md:pt-2">
+      <main className={cn(DASHBOARD_COLUMN, "flex min-h-0 flex-1 flex-col justify-start gap-[18px] overflow-y-auto pb-7 pt-4 md:justify-center md:pt-2")}>
         <div className="grid justify-items-center gap-2.5 text-center">
           <AgentMark size="lg" />
           <h1 className="mt-1.5 text-balance text-title text-foreground">{t("greeting")}</h1>
@@ -122,9 +123,8 @@ export function Dashboard({ assistant }: DashboardProps) {
           </p>
         </div>
 
-        {assistant({ viewer, suggestion, onSuggestionUsed: () => setSuggestion(null) })}
+        {assistant({ viewer })}
 
-        <SuggestionChips located={viewer !== null} onPick={setSuggestion} />
         <div className="mt-2 grid grid-cols-1 gap-2.5 min-[480px]:grid-cols-2 min-[861px]:grid-cols-4">
           <NearYouTile near={near} onLocate={locate} />
           <ReviewsTile reviews={reviews} />

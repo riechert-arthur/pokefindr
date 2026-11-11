@@ -8,10 +8,12 @@ vi.mock("@/components/providers/SessionProvider", () => ({ useSessionContext: ()
 vi.mock("@/components/pokefindr/UserMenu", () => ({ UserMenu: () => null }))
 
 import { ChatDashboard } from "@/components/assistant/ChatDashboard"
-import { handOff, takeHandOff } from "@/lib/assistant/hand-off"
+import { handOff, shareViewer, takeHandOff } from "@/lib/assistant/hand-off"
 import { saveChat } from "@/lib/assistant/saved-chat"
 
 const done: AssistantEvent = { type: "done", stop: "end_turn", memory: "Sure.", usage: { inputTokens: 1, outputTokens: 1, cacheReadTokens: 0, cacheWriteTokens: 0, costMicros: 1 }, model: "claude-opus-5-5", turnId: "turn-1" }
+/** The empty state: the greeting's text and the suggestions, gone while chatting. */
+const emptyState = () => screen.queryByRole("group", { name: "Suggestions" })
 const answer = () => new Response([{ type: "text", text: "Sure." }, done].map((e) => JSON.stringify(e)).join("\n") + "\n", { headers: { "Content-Type": "application/x-ndjson" } })
 
 // Before each, not after: an unmounting chat saves itself (#346), after an afterEach would run.
@@ -22,12 +24,16 @@ afterEach(() => {
 })
 
 describe("ChatDashboard (#391)", () => {
-  it("asks the question handed over from /home, with its location, without showing the empty state first", async () => {
+  it("asks the question handed over from /home, with the shared location, and focuses the composer", async () => {
     const fetchMock = vi.fn(async () => answer())
     vi.stubGlobal("fetch", fetchMock)
-    handOff("machines in Seattle?", { lng: -122.34, lat: 47.61 })
+    shareViewer({ lng: -122.34, lat: 47.61 })
+    handOff("machines in Seattle?")
     render(<ChatDashboard userId="u1" hasSavedChat={false} />)
-    expect(screen.queryByRole("heading", { name: "Ask the assistant" })).toBeNull()
+    expect(emptyState()).toBeNull()
+    expect(screen.getByRole("textbox", { name: "Message the assistant" })).toHaveFocus()
+    // The page keeps its heading for screen readers during the conversation.
+    expect(screen.getByRole("heading", { level: 1, name: "Ask the assistant" })).toBeInTheDocument()
     expect(await screen.findByText("Sure.")).toBeInTheDocument()
     expect(screen.getByText("machines in Seattle?")).toBeInTheDocument()
     expect(JSON.parse((fetchMock.mock.calls[0] as unknown as [string, RequestInit])[1].body as string)).toEqual({ messages: [{ role: "user", content: "machines in Seattle?" }], viewer: { lng: -122.34, lat: 47.61 } })
@@ -37,10 +43,11 @@ describe("ChatDashboard (#391)", () => {
     vi.stubGlobal("fetch", vi.fn(async () => answer()))
     render(<ChatDashboard userId="u1" hasSavedChat={false} />)
     expect(screen.getByRole("heading", { name: "Ask the assistant" })).toBeInTheDocument()
+    expect(screen.getByRole("textbox", { name: "Message the assistant" })).not.toHaveFocus()
     const chip = screen.getAllByRole("button").find((b) => b.textContent?.includes("Denver"))!
     fireEvent.click(chip)
     expect(await screen.findByText("Sure.")).toBeInTheDocument()
-    await waitFor(() => expect(screen.queryByRole("heading", { name: "Ask the assistant" })).toBeNull())
+    await waitFor(() => expect(emptyState()).toBeNull())
   })
 
   it("opens on the saved conversation (#346), and shows the empty state when there turns out to be none", async () => {
@@ -49,11 +56,11 @@ describe("ChatDashboard (#391)", () => {
       { id: 2, role: "assistant", text: "Safeway is closest.", cards: [], status: null, note: null, memory: null, turnId: null, done: true },
     ])
     const { unmount } = render(<ChatDashboard userId="u1" hasSavedChat />)
-    expect(screen.queryByRole("heading", { name: "Ask the assistant" })).toBeNull()
+    expect(emptyState()).toBeNull()
     expect(screen.getByText("Safeway is closest.")).toBeInTheDocument()
     unmount()
     localStorage.clear()
     render(<ChatDashboard userId="u1" hasSavedChat />)
-    expect(await screen.findByRole("heading", { name: "Ask the assistant" })).toBeInTheDocument()
+    expect(await screen.findByRole("group", { name: "Suggestions" })).toBeInTheDocument()
   })
 })

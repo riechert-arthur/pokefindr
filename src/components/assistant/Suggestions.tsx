@@ -12,7 +12,7 @@ const chip =
 export function SuggestionChips({ located, onPick }: { located: boolean; onPick: (question: string) => void }) {
   const t = useTranslations("dashboard")
   return (
-    <div className="flex flex-wrap justify-center gap-2" aria-label={t("suggestionsLabel")}>
+    <div role="group" className="flex flex-wrap justify-center gap-2" aria-label={t("suggestionsLabel")}>
       {(located ? (["closest", ...SUGGESTIONS] as const) : SUGGESTIONS)
         .map((key) => t(`suggestions.${key}`))
         .map((s) => (

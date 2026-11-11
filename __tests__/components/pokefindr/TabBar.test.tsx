@@ -10,12 +10,13 @@ afterEach(() => {
 })
 
 describe("TabBar", () => {
-  it("links Home and Map and marks the current tab", () => {
+  it("links Home, Chat and Map and marks the current tab", () => {
     nav.pathname = "/home/reviews"
     render(<TabBar />)
     const tabs = screen.getAllByRole("link")
     expect(tabs.map((t) => [t.textContent, t.getAttribute("href"), t.getAttribute("aria-current")])).toEqual([
       ["Home", "/home", "page"],
+      ["Chat", "/chat", null],
       ["Map", "/map", null],
     ])
   })
@@ -23,7 +24,7 @@ describe("TabBar", () => {
   it("adds Add a place, Moderate and Admin when they're available", () => {
     nav.pathname = "/map"
     render(<TabBar canAdd canModerate isAdmin />)
-    expect(screen.getAllByRole("link").map((t) => t.textContent)).toEqual(["Home", "Map", "Add a place", "Moderate", "Admin"])
+    expect(screen.getAllByRole("link").map((t) => t.textContent)).toEqual(["Home", "Chat", "Map", "Add a place", "Moderate", "Admin"])
     expect(screen.getByRole("link", { name: "Map" })).toHaveAttribute("aria-current", "page")
   })
 

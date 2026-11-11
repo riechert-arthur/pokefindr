@@ -1,6 +1,14 @@
+import type { Metadata } from "next"
 import { cookies, headers } from "next/headers"
+import { getTranslations } from "next-intl/server"
+import { setPageLocale, type LocaleParams } from "@/i18n/static"
 import { ChatDashboard } from "@/components/assistant/ChatDashboard"
 import { CHAT_COOKIE } from "@/lib/assistant/saved-chat"
+
+export async function generateMetadata({ params }: LocaleParams): Promise<Metadata> {
+  const t = await getTranslations({ locale: await setPageLocale(params), namespace: "nav" })
+  return { title: `${t("chat")} · PokeFindr`, robots: { index: false } }
+}
 
 /**
  * /chat (#391): the conversation with the assistant. The middleware only lets

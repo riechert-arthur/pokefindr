@@ -13,12 +13,16 @@ describe("AgentMark (#386)", () => {
 
   it("draws two sweeps and a core in the logo's gradient, brand to brand-2, and no raw colors", () => {
     const svg = mark()
-    const stops = [...svg.querySelectorAll("stop")].map((s) => s.getAttribute("style"))
-    expect(stops).toEqual(["stop-color: hsl(var(--brand));", "stop-color: hsl(var(--brand-2));"])
-    const id = svg.querySelector("linearGradient")!.id
-    const shapes = [...svg.querySelectorAll("path, circle")]
-    expect(shapes).toHaveLength(3)
-    for (const shape of shapes) expect(shape.getAttribute("fill")).toBe(`url(#${id})`)
+    const stops = [...svg.querySelectorAll("stop")].map((s) => s.style.stopColor)
+    expect(stops).toEqual(["hsl(var(--brand))", "hsl(var(--brand-2))"])
+    // The shapes cut the still gradient out: two sweeps (one turned 180°) and the core.
+    const fill = svg.querySelector("rect")!
+    expect(fill.getAttribute("fill")).toBe(`url(#${svg.querySelector("linearGradient")!.id})`)
+    expect(fill.getAttribute("mask")).toBe(`url(#${svg.querySelector("mask")!.id})`)
+    const [first, second] = svg.querySelectorAll("mask path")
+    expect(second.getAttribute("d")).toBe(first.getAttribute("d"))
+    expect(second.getAttribute("transform")).toBe("rotate(180 12 12)")
+    expect(svg.querySelectorAll("mask circle")).toHaveLength(1)
   })
 
   it("gives each mark its own gradient id, so two on a page don't share one", () => {
@@ -39,6 +43,9 @@ describe("AgentMark (#386)", () => {
     expect(sweeps(thinking)).toContain("animate-[spin_2.2s_linear_infinite]")
     expect(sweeps(thinking)).toContain("motion-reduce:animate-none")
     expect(thinking.querySelector("[data-sweeps] circle")).toBeNull()
+    // With reduced motion, a still cue instead: the thinking mark is dimmed.
+    expect(thinking).toHaveClass("motion-reduce:opacity-50")
+    expect(mark()).not.toHaveClass("motion-reduce:opacity-50")
   })
 
   it.each([

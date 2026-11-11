@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl"
 import { SquarePenIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { DASHBOARD_COLUMN as COLUMN } from "@/components/dashboard/column"
 import { AgentMark } from "@/components/brand/AgentMark"
 import { AssistantCardView } from "./AssistantCards"
 import { AssistantText } from "./AssistantText"
@@ -21,6 +22,8 @@ interface AssistantChatProps {
   onChattingChange: (chatting: boolean) => void
   /** The signed-in viewer: their current chat is kept in this browser (#346). */
   userId?: string | null
+  /** Focus the composer when it opens (a question just handed over from /home). */
+  autoFocus?: boolean
 }
 
 /** `newestRoute`: the index of the conversation's newest route card in this answer, if it's here. */
@@ -62,14 +65,7 @@ function newestRouteCard(messages: readonly ChatMessage[]): { messageId: number;
  * and, once asked, the conversation above it with each answer's text and
  * cards. "New chat" clears it; until then it's kept in this browser (#346).
  */
-/**
- * The conversation's reading column (the dashboard's 780px). While chatting,
- * the page gives the chat its full width, so the scrolling box can span it and
- * keep its scrollbar at the window's edge (#383); each part sits in this column.
- */
-const COLUMN = "mx-auto w-full max-w-[780px] px-4"
-
-export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChattingChange, userId = null }: AssistantChatProps) {
+export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChattingChange, userId = null, autoFocus = false }: AssistantChatProps) {
   const t = useTranslations("assistant")
   const { messages, busy, send, stop, reset } = useAssistant(userId)
   const [text, setText] = useState("")
@@ -88,7 +84,8 @@ export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChatting
     void send(q, viewer)
   }
 
-  useEffect(() => {
+  // Before paint, so a question handed over from /home shows as asked, not the empty state first.
+  useLayoutEffect(() => {
     if (!suggestion) return
     onSuggestionUsed()
     ask(suggestion)
@@ -106,19 +103,20 @@ export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChatting
     <>
       {chatting && (
         <div className="flex min-h-0 flex-1 flex-col">
-          {/* Room under "New chat", so the conversation doesn't scroll up against it (#382). */}
-          <div className={cn(COLUMN, "flex justify-end pb-3")}>
-            {/* An outlined button with the usual new-conversation mark, so it reads as an action (#380). */}
-            <Button type="button" variant="outline" size="sm" onClick={reset} disabled={busy} className="bg-card">
-              <SquarePenIcon aria-hidden />
+          <div className={cn(COLUMN, "flex justify-end pb-1")}>
+            {/* An outlined button with the usual new-conversation mark, so it reads as an action (#380). Mid-answer, it drops the answer too. */}
+            <Button type="button" variant="outline" size="sm" onClick={reset}>
+              <SquarePenIcon />
               {t("newChat")}
             </Button>
           </div>
-          {/* Full width, so the scrollbar is at the window's edge and the margins scroll too. */}
-          <div ref={log} aria-live="polite" className="min-h-0 flex-1 overflow-y-auto pb-2">
-            {/* A clear top edge: messages fade into the page as they scroll under the row above. */}
-            <div aria-hidden className="pointer-events-none sticky top-0 z-10 -mb-4 h-4 bg-gradient-to-b from-background to-transparent" />
-            <div className={cn(COLUMN, "flex flex-col gap-4 pt-2")}>
+          {/*
+            Full width, so the scrollbar is at the window's edge and the margins scroll too.
+            A clear top edge (#382): messages fade out over the top 16px as they scroll under
+            "New chat". A mask, so the glow behind shows through; at rest the padding keeps them below it.
+          */}
+          <div ref={log} aria-live="polite" className="min-h-0 flex-1 overflow-y-auto pb-2 pt-4 [mask-image:linear-gradient(to_bottom,transparent,black_16px)]">
+            <div className={cn(COLUMN, "flex flex-col gap-4")}>
               {messages.map((m) =>
                 m.role === "user" ? (
                   <p key={m.id} className="max-w-[92%] self-end whitespace-pre-wrap rounded-[14px_14px_4px_14px] bg-foreground px-3 py-2 text-body text-background sm:max-w-[80%]">
@@ -132,7 +130,7 @@ export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChatting
           </div>
         </div>
       )}
-      <div className={chatting ? COLUMN : undefined}>
+      <div className={COLUMN}>
         <Composer
           value={text}
           onChange={setText}
@@ -140,6 +138,7 @@ export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChatting
           busy={busy}
           onStop={stop}
           onFocusChange={setFocused}
+          autoFocus={autoFocus}
           placeholder={chatting ? t("followUp") : focused ? undefined : <TypingPlaceholder />}
         />
         <p className="mt-2 text-center text-caption text-muted-foreground">{t("disclaimer")}</p>

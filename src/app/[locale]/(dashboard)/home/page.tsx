@@ -11,5 +11,5 @@ import { CHAT_COOKIE } from "@/lib/assistant/saved-chat"
 export default async function HomePage() {
   const userId = (await headers()).get("x-user-id")
   const savedChatFor = (await cookies()).get(CHAT_COOKIE)?.value
-  return <HomeDashboard hasSavedChat={Boolean(userId) && savedChatFor === userId} />
+  return <HomeDashboard userId={userId} hasSavedChat={Boolean(userId) && savedChatFor === userId} />
 }

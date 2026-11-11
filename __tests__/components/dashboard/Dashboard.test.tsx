@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { act, fireEvent, message, render, screen, waitFor } from "../../helpers/intl"
 import { Dashboard } from "@/components/dashboard/Dashboard"
-import { SUGGESTIONS } from "@/components/assistant/Suggestions"
+import { sharedViewer } from "@/lib/assistant/hand-off"
 
 vi.mock("@/i18n/navigation", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/i18n/navigation")>()), usePathname: () => "/home", useRouter: () => ({ push: vi.fn() }) }))
 vi.mock("@/components/providers/SidebarContextProvider", () => ({ useSidebar: () => ({ isSidebarOpen: false, toggleSidebar: vi.fn() }) }))
@@ -37,14 +37,12 @@ describe("Dashboard", () => {
     expect(screen.getByRole("link", { name: "Add a place" })).toHaveAttribute("href", "/map?add=1")
   })
 
-  it("passes a tapped suggestion to the assistant, and the shared location once given", async () => {
-    const seen: { suggestion: string | null; viewer: unknown }[] = []
+  it("passes the shared location to the assistant, and keeps it for /chat", async () => {
+    const seen: { viewer: unknown }[] = []
     const getCurrentPosition = vi.fn((ok: PositionCallback) => ok({ coords: { longitude: -122.33789, latitude: 47.61234 } } as GeolocationPosition))
     vi.stubGlobal("navigator", { ...navigator, geolocation: { getCurrentPosition } })
-    render(<Dashboard assistant={(p) => (seen.push({ suggestion: p.suggestion, viewer: p.viewer }), <div>composer</div>)} />)
-    const denver = message()(`dashboard.suggestions.${SUGGESTIONS[1]}`)
-    fireEvent.click(screen.getByRole("button", { name: denver }))
-    expect(seen.at(-1)?.suggestion).toBe(denver)
+    render(<Dashboard assistant={(p) => (seen.push({ viewer: p.viewer }), <div>composer</div>)} />)
+    expect(seen.at(-1)?.viewer).toBeNull()
 
     fireEvent.click(screen.getByRole("button", { name: "Use my location" }))
     expect(await screen.findByText("42")).toBeInTheDocument()
@@ -52,7 +50,7 @@ describe("Dashboard", () => {
     await waitFor(() => expect(screen.getByRole("link", { name: "Open on map" })).toHaveFocus())
     expect(screen.getByRole("link", { name: "Open on map" })).toHaveAttribute("href", "/map?r=10&near=me")
     expect(seen.at(-1)?.viewer).toEqual({ lng: -122.34, lat: 47.61 })
-    expect(screen.getByRole("button", { name: "What's closest to me?" })).toBeInTheDocument()
+    expect(sharedViewer()).toEqual({ lng: -122.34, lat: 47.61 })
   })
 
   it("leaves focus alone when the viewer moved on while locating", async () => {
@@ -92,7 +90,6 @@ describe("Dashboard", () => {
     render(<Dashboard assistant={() => null} />, { locale: "es" })
     expect(screen.getByRole("heading", { level: 1, name: message("es")("dashboard.greeting") })).toBeInTheDocument()
     await waitFor(() => expect(screen.getByText(/Pregunta por cualquiera de las 1457 máquinas expendedoras/)).toBeInTheDocument())
-    expect(screen.getByRole("button", { name: message("es")("dashboard.suggestions.denver") })).toBeInTheDocument()
     expect(screen.getByRole("region", { name: "Tus reseñas" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Usar mi ubicación" })).toBeInTheDocument()
   })

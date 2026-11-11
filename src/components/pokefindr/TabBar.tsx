@@ -3,17 +3,18 @@
 import { useTranslations } from "next-intl"
 import { Link, usePathname } from "@/i18n/navigation"
 import { useEffect, type ComponentType, type SVGProps } from "react"
-import { CirclePlusIcon, HouseIcon, InboxIcon, MapPinIcon, ShieldIcon } from "lucide-react"
+import { CirclePlusIcon, HouseIcon, InboxIcon, MapPinIcon, MessagesSquareIcon, ShieldIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface Tab {
   href: string
   /** Its label in the catalog's `nav` messages. */
-  label: "home" | "map" | "addPlace" | "moderate" | "admin"
+  label: "home" | "chat" | "map" | "addPlace" | "moderate" | "admin"
   icon: ComponentType<SVGProps<SVGSVGElement>>
 }
 
 const HOME: Tab = { href: "/home", label: "home", icon: HouseIcon }
+const CHAT: Tab = { href: "/chat", label: "chat", icon: MessagesSquareIcon }
 const MAP: Tab = { href: "/map", label: "map", icon: MapPinIcon }
 const ADD: Tab = { href: "/map?add=1", label: "addPlace", icon: CirclePlusIcon }
 const MODERATE: Tab = { href: "/moderate", label: "moderate", icon: InboxIcon }
@@ -30,7 +31,7 @@ interface TabBarProps {
 }
 
 /**
- * The phone's tab bar from the prototype (#160): Home, Map, Add a place,
+ * The phone's tab bar from the prototype (#160): Home, Chat (#391), Map, Add a place,
  * Moderate and Admin, in the layout below the page (not over it), above the bottom safe
  * area. Shown where the icon rail isn't (below `sm`). While it's there,
  * toasts sit above it (--toast-bottom, read by the Toaster).
@@ -38,7 +39,7 @@ interface TabBarProps {
 export function TabBar({ canAdd = false, canModerate = false, isAdmin = false, className }: TabBarProps) {
   const t = useTranslations("nav")
   const pathname = usePathname()
-  const tabs = [HOME, MAP, ...(canAdd ? [ADD] : []), ...(canModerate ? [MODERATE] : []), ...(isAdmin ? [ADMIN] : [])]
+  const tabs = [HOME, CHAT, MAP, ...(canAdd ? [ADD] : []), ...(canModerate ? [MODERATE] : []), ...(isAdmin ? [ADMIN] : [])]
 
   useEffect(() => {
     document.documentElement.classList.add("has-tabbar")
