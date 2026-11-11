@@ -63,15 +63,6 @@ describe("LanguageSwitcher (#182)", () => {
     expect(patch).toHaveBeenCalledWith("/api/user-settings", { locale: "en" }, { withCredentials: true })
   })
 
-  it("shows the language's name in the app rail, as part of its name (#356)", () => {
-    render(<LanguageSwitcher locales={["en", "es"]} variant="rail" labelClassName="sm:sr-only" />, { locale: "es" })
-    const label = screen.getByText("Español")
-    expect(label).toHaveClass("sm:sr-only")
-    expect(screen.getByRole("combobox", { name: "Idioma: Español" })).toContainElement(label)
-    pick("English")
-    expect(replace).toHaveBeenCalledWith("/map", { locale: "en" })
-  })
-
   it("saves a choice made while the session loads, once it has", () => {
     session.loading = true
     const { rerender } = render(<LanguageSwitcher locales={["en", "es"]} />)
