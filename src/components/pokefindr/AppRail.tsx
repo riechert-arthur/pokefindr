@@ -211,10 +211,18 @@ export function AppRail({ signedIn = false, canModerate = false, isAdmin = false
             <LanguageSwitcher variant="compact" chevron={false} className="px-1.5" onOpenChange={setMenuOpen} />
           </div>
           {/*
-            A switch, not a link: centered on the icons' column (2px in), with "Dark theme" beside it
-            when expanded, starting where the links' labels do (#355).
+            The theme badge (#355): framed like the language badge, with a switch in it. Collapsed,
+            44px and centered on the icons' column; expanded (and in the phone drawer), as wide as
+            the rail with "Dark theme" beside the switch. The switch doesn't move as the rail opens.
           */}
-          <ThemeToggle variant="toggle" className="h-10 w-full gap-1 pl-0.5 text-body font-medium text-muted-foreground" labelClassName={labelClass(expanded)} />
+          <ThemeToggle
+            variant="toggle"
+            className={cn(
+              "-mx-0.5 h-8 gap-1.5 rounded-md border border-input px-[3px] text-caption text-foreground shadow-sm hover:bg-muted max-sm:w-[calc(100%+4px)]",
+              expanded ? "w-[calc(100%+4px)]" : "w-11",
+            )}
+            labelClassName={labelClass(expanded)}
+          />
         </div>
       </div>
     </nav>
