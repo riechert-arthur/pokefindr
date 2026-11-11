@@ -108,6 +108,13 @@ describe("AppRail", () => {
     await waitFor(() => expect(nav).not.toHaveAttribute("data-expanded"))
   })
 
+  it("keeps Blog out of the dashboard's pages, with the links at the bottom (#387)", () => {
+    render(<AppRail signedIn />)
+    const names = screen.getAllByRole("link").map((a) => a.textContent)
+    expect(names.indexOf("Blog")).toBeGreaterThan(names.indexOf("Map"))
+    expect(names.indexOf("Blog")).toBe(names.indexOf("Discord") - 1)
+  })
+
   it("names each link by its label, without aria-label or title", () => {
     render(<AppRail signedIn isAdmin />)
     for (const name of ["Home", "Blog", "Map", "Admin", "Discord", "Settings"]) {
