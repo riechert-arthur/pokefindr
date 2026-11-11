@@ -4,6 +4,7 @@ import path from "node:path"
 import { describe, it, expect } from "vitest"
 import tailwindConfig from "../../tailwind.config"
 import { COLOR_TOKENS, HSL_CHANNELS, channelsToHsl } from "@/lib/design/tokens"
+import { DARK_THEMES, THEMES, type Theme } from "@/lib/design/themes"
 
 const ROOT = path.resolve(__dirname, "../..")
 const css = readFileSync(path.join(ROOT, "src/app/globals.css"), "utf8")
@@ -29,6 +30,23 @@ function block(selector: string): Map<string, string> {
 
 const light = block(":root")
 const dark = block(".dark")
+/**
+ * A theme's tokens as the browser resolves them: the light tokens, the dark
+ * ones for a dark theme, then every rule that names the theme's own class, in
+ * file order (`.dark, .holo-dark` and then `.holo-dark` for Holo Dark).
+ */
+function themeTokens(theme: Theme): Map<string, string> {
+  const merged = new Map([...light, ...((DARK_THEMES as readonly string[]).includes(theme) ? dark : [])])
+  if (theme === "light") return merged
+  for (const rule of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const selectors = rule[1].replace(/\/\*[\s\S]*?\*\//g, "").split(",").map((s) => s.trim())
+    if (!selectors.includes(`.${theme}`)) continue
+    for (const m of rule[2].matchAll(/--([\w-]+):\s*([^;]+);/g)) merged.set(m[1], m[2].trim())
+  }
+  return merged
+}
+/** Every theme people can pick (src/lib/design/themes.ts), so a new one is checked too. */
+const THEME_TOKENS = THEMES.map((theme) => [theme, themeTokens(theme)] as const)
 
 describe("design tokens", () => {
   it.each(COLOR_TOKENS)("defines %s in light and dark as HSL channels", (token) => {
@@ -62,10 +80,20 @@ describe("design tokens", () => {
     expect(channelsToHsl("-10 50% 50%")).toBeUndefined()
   })
 
-  // primary-foreground is the text on primary buttons, on avatar initials
-  // (brand, UserAvatar.tsx) and on the logo gradient (brand to brand-2).
+  // primary-foreground is the text on primary buttons and avatar initials
+  // (primary, UserAvatar.tsx), and the agent mark's glyph on the brand gradient
+  // (brand to brand-2, AgentMark.tsx). Checked in every theme.
+  // The logo's wordmark and the hero draw text in the brand gradient on the
+  // page background: large text, so 3:1. Checked in every theme.
+  it.each(["brand", "brand-2"])("keeps %s at 3:1 or more on the background, as large text", (fill) => {
+    for (const [name, mode] of THEME_TOKENS) {
+      const ratio = contrast(mode.get(fill)!, mode.get("background")!)
+      expect(ratio, `${name} ${fill}: ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(3)
+    }
+  })
+
   it.each(["primary", "brand-2", "brand"])("keeps primary-foreground at 4.5:1 or more on %s", (fill) => {
-    for (const [name, mode] of [["light", light], ["dark", dark]] as const) {
+    for (const [name, mode] of THEME_TOKENS) {
       const ratio = contrast(mode.get("primary-foreground")!, mode.get(fill)!)
       expect(ratio, `${name} ${fill}: ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5)
     }

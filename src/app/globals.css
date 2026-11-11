@@ -160,8 +160,9 @@
     --border: 222.9 33.3% 87.6%;
     --input: 222.9 33.3% 87.6%;
     --ring: 353 72.6% 44.5%;
-    --brand: 42.3 90.6% 46.1%;
-    --brand-2: 13.5 77.1% 53.7%;
+    /* Deep amber to trainer red: white on either is 4.6:1 or more (the agent mark). */
+    --brand: 36 90% 34%;
+    --brand-2: 353 72.6% 44.5%;
     --spark: 228 69% 54.5%;
     --success: 132 55% 31%;
     /* Warning and destructive are darker than Light's, which were tuned for white:
