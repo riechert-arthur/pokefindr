@@ -58,7 +58,10 @@ describe("AssistantChat", () => {
       { role: "user", content: "route through them" },
     ])
 
-    fireEvent.click(screen.getByRole("button", { name: "New chat" }))
+    // An outlined button with its icon, so it reads as an action (#380); the name stays "New chat".
+    const newChat = screen.getByRole("button", { name: "New chat" })
+    expect(newChat.querySelector("svg[aria-hidden]")).not.toBeNull()
+    fireEvent.click(newChat)
     expect(screen.queryByText("Sure.")).toBeNull()
     expect(onChattingChange).toHaveBeenLastCalledWith(false)
   })
