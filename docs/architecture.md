@@ -126,9 +126,26 @@ flowchart TB
 3. **A module imports another module only if it declares it in `requires`, and only through
    that module's `index.ts`.** No deep imports, and no import cycles.
 4. **`platform` and `ui` know nothing about the product.**
-5. **Lint enforces all of this** (`eslint-plugin-boundaries`, or `dependency-cruiser`), and CI
-   fails on a violation. #300's guard test against role-name checks is the same idea at a smaller
-   scale.
+5. **Lint enforces all of this** with `eslint-plugin-boundaries` (`boundaries.eslint.js`, #325).
+   The rules are warnings while the extractions run, and become errors when the boundaries are
+   locked (#338). #300's guard test against role-name checks is the same idea at a smaller scale.
+
+### Reading a boundary warning
+
+`npm run lint` shows them inline; `npm run lint:boundaries` counts and lists them all. Each message
+says what to do:
+
+| Warning starts with | What happened | What to do |
+| --- | --- | --- |
+| "Core can't import a module" | Core (or today's code outside `src/core` and `src/modules`) imported a module's file. | Add a slot in `src/core/shell/slots.ts` and fill it from the module's manifest, or read the module through `src/modules/registry.ts`. |
+| "Module "x" doesn't require "y"" | A module imported another it doesn't declare. | Add it to `requires` in the manifest if it really needs it; otherwise contribute to a slot, so it works without it. |
+| "Import @/modules/y (its index.ts)" | Something outside module `y` imported a file inside it. | Import `@/modules/y`, and export what's needed from its `index.ts`. (The registry may import `module.ts` and `module.server.ts`.) |
+| "Nothing imports from src/app" | Code imported a route file. | Move what's shared into core or the module that owns it. |
+| "The design system … and the platform … know nothing about the product" | `components/ui` and friends, or `server/ports`, `adapters`, `db`, `lib`, `src/i18n`, imported core or the registry. | Pass what's needed in as props or arguments. |
+
+What counts as which layer is in `boundaries.eslint.js`. Code that hasn't moved to `src/core` yet
+counts as core for "never imports a module", but the design system and platform may still import
+it, because it also holds shared utilities (`lib/utils`, `lib/design`).
 
 ## Code layout
 

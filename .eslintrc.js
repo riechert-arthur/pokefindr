@@ -162,9 +162,15 @@ const RESTRICTED_IMPORTS = [
   },
 ]
 
+// The architecture's dependency rules (#325), in their own file.
+const BOUNDARIES = require("./boundaries.eslint")
+
 module.exports = {
   extends: ["next/core-web-vitals", "next/typescript"],
+  plugins: BOUNDARIES.plugins,
+  settings: BOUNDARIES.settings,
   rules: {
+    ...BOUNDARIES.rules,
     "no-restricted-syntax": ["error", ...ENV_RULES],
     "no-restricted-imports": RESTRICTED_IMPORTS,
   },
