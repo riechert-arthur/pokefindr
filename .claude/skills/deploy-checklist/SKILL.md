@@ -21,6 +21,7 @@ The app refuses to start when a required variable is missing; `src/server/config
 - **Secrets:** `BETTER_AUTH_SECRET`, `JWT_SECRET`, `CRON_SECRET`. Use different values for staging and production, marked sensitive.
   - Changing production's `BETTER_AUTH_SECRET` or `JWT_SECRET` signs everyone out, so don't rotate them as a side effect.
 - **Mail:** `MAIL_PROVIDER`, `SMTP_URL`, `MAIL_FROM`.
+- **Street routes:** `ROUTER_API_KEY` (an OpenRouteService key from account.heigit.org), in Production and Preview. Without it the app starts, but every assistant route is a dashed straight line and the logs say `[router] no ROUTER_API_KEY in production` (#348).
 - **Optional:** OAuth providers, the Anthropic key, geocoder settings, `RATE_LIMIT_STORE` (defaults to `postgres` in production).
 - **Leftovers** from the Supabase and Mapbox days can be removed once nothing reads them.
 

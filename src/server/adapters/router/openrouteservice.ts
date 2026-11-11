@@ -1,7 +1,7 @@
 import "server-only"
 import { RouterError, type RouteOptions, type RoutePoint, type RouteResult, type Router } from "@/server/ports/router"
 import { endpoint } from "@/server/adapters/geocoder/shared"
-import { round } from "@/lib/map/geo"
+import { routedResult, SNAP_METERS } from "./shared"
 
 interface OrsResponse {
   features?: {
@@ -12,12 +12,6 @@ interface OrsResponse {
     }
   }[]
 }
-
-const METERS_PER_MILE = 1609.344
-/** How far a stop may be from a road and still be routed to it. ORS's default, 350 m, misses machines deep in a mall's lot. */
-const SNAP_METERS = 1000
-
-const finite = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n)
 
 /**
  * OpenRouteService (HeiGIT), driving, on OpenStreetMap data like the map.
@@ -44,7 +38,8 @@ export class OpenRouteServiceRouter implements Router {
           coordinates: stops.map(([lng, lat]) => [lng, lat]),
           radiuses: stops.map(() => SNAP_METERS),
           instructions: false,
-          preference: "recommended",
+          // The quickest drive (#348), as the Google Maps link next to it gives.
+          preference: "fastest",
         }),
         signal: opts?.signal,
       })
@@ -67,26 +62,5 @@ export class OpenRouteServiceRouter implements Router {
 function toResult(body: OrsResponse, stopCount: number): RouteResult {
   const feature = body.features?.[0]
   const coords = feature?.geometry?.type === "LineString" ? feature.geometry.coordinates : undefined
-  const segments = feature?.properties?.segments
-  if (!coords || coords.length < 2 || !segments || segments.length !== stopCount - 1)
-    throw new RouterError("OpenRouteService routing failed (unexpected answer)")
-  // Five decimals is about a meter: plenty for a line on the map, and a much smaller response.
-  const line: [number, number][] = []
-  for (const c of coords) {
-    if (!Array.isArray(c) || !finite(c[0]) || !finite(c[1])) throw new RouterError("OpenRouteService routing failed (unexpected answer)")
-    const p: [number, number] = [round(c[0], 5), round(c[1], 5)]
-    const last = line[line.length - 1]
-    if (!last || last[0] !== p[0] || last[1] !== p[1]) line.push(p)
-  }
-  // Stops on the same spot: still a line, of no length.
-  if (line.length === 1) line.push(line[0])
-  const legs = segments.map((s) => ({ miles: round((s.distance ?? 0) / METERS_PER_MILE, 1), minutes: Math.round((s.duration ?? 0) / 60) }))
-  const summary = feature.properties?.summary
-  return {
-    routed: true,
-    line: { type: "LineString", coordinates: line },
-    legs,
-    miles: round((summary?.distance ?? segments.reduce((sum, s) => sum + (s.distance ?? 0), 0)) / METERS_PER_MILE, 1),
-    minutes: Math.round((summary?.duration ?? segments.reduce((sum, s) => sum + (s.duration ?? 0), 0)) / 60),
-  }
+  return routedResult("OpenRouteService", coords, feature?.properties?.segments, stopCount, feature?.properties?.summary)
 }

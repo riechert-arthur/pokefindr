@@ -162,7 +162,18 @@ straight line when it couldn't be routed.
     like the map. It needs `ROUTER_API_KEY` (a free key from account.heigit.org), which stays on the
     server. `ROUTER_BASE_URL` points it at a self-hosted instance. Unset, `ROUTER_PROVIDER` is
     `openrouteservice` whenever the key is set.
-  - `fake`: straight lines, no account. The default without a key, so dev and CI need none.
+  - `osrm` (#348): [OSRM](https://project-osrm.org), car profile, on OpenStreetMap data. The
+    default in development with no key and no `ROUTER_BASE_URL`, on the project's public demo
+    server (`router.project-osrm.org`), so `make run` draws routes along the streets with no
+    account. The demo server allows light use only (one request a second, which the route
+    service keeps to), so config refuses it outside development: anywhere else `osrm` needs
+    `ROUTER_BASE_URL` pointing at a self-hosted OSRM. CI's `make run` job runs in development,
+    but its end-to-end tests never draw a route, so it sends nothing there.
+  - `fake`: straight lines, no account. The default in unit and integration tests, in production
+    without a key, and with a `ROUTER_BASE_URL` but no key or provider. Production needs
+    `ROUTER_API_KEY` for street routes (see the `deploy-checklist` skill).
+- **Fastest drive.** Both providers return the quickest driving route (OpenRouteService with
+  `preference: "fastest"`, OSRM by default), as the Google Maps link next to it does.
 - **Quota.** The free plan allows 2,000 routes a day and 40 a minute. Two server-wide buckets in
   the shared limiter keep under it: 30 a minute, and `ROUTER_DAILY_CAP` (default 1,800) over any
   24 hours, as a bucket of half the cap that refills half the cap a day. With the CDN caching
