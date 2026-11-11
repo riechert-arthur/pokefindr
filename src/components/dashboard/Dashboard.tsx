@@ -154,7 +154,8 @@ export function Dashboard({ assistant, initialChatting = false }: DashboardProps
         <main
           className={
             chatting
-              ? "mx-auto flex min-h-0 w-full max-w-[780px] flex-1 flex-col gap-4 px-4 pb-4 pt-2"
+              ? // Full width while chatting: the chat keeps its parts in the 780px column itself, so its scrollbar can sit at the window's edge (#383).
+                "flex min-h-0 w-full flex-1 flex-col gap-4 pb-4 pt-2"
               : "mx-auto flex min-h-0 w-full max-w-[780px] flex-1 flex-col justify-start gap-[18px] overflow-y-auto px-4 pb-7 pt-4 md:justify-center md:pt-2"
           }
         >

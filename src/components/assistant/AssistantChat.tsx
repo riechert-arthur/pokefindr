@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 import { SquarePenIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { AgentMark } from "@/components/brand/AgentMark"
 import { AssistantCardView } from "./AssistantCards"
 import { AssistantText } from "./AssistantText"
@@ -61,6 +62,13 @@ function newestRouteCard(messages: readonly ChatMessage[]): { messageId: number;
  * and, once asked, the conversation above it with each answer's text and
  * cards. "New chat" clears it; until then it's kept in this browser (#346).
  */
+/**
+ * The conversation's reading column (the dashboard's 780px). While chatting,
+ * the page gives the chat its full width, so the scrolling box can span it and
+ * keep its scrollbar at the window's edge (#383); each part sits in this column.
+ */
+const COLUMN = "mx-auto w-full max-w-[780px] px-4"
+
 export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChattingChange, userId = null }: AssistantChatProps) {
   const t = useTranslations("assistant")
   const { messages, busy, send, stop, reset } = useAssistant(userId)
@@ -98,27 +106,30 @@ export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChatting
     <>
       {chatting && (
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex justify-end pb-1">
+          <div className={cn(COLUMN, "flex justify-end pb-1")}>
             {/* An outlined button with the usual new-conversation mark, so it reads as an action (#380). */}
             <Button type="button" variant="outline" size="sm" onClick={reset} disabled={busy} className="bg-card">
               <SquarePenIcon aria-hidden />
               {t("newChat")}
             </Button>
           </div>
-          <div ref={log} aria-live="polite" className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-0.5 py-2">
-            {messages.map((m) =>
-              m.role === "user" ? (
-                <p key={m.id} className="max-w-[92%] self-end whitespace-pre-wrap rounded-[14px_14px_4px_14px] bg-foreground px-3 py-2 text-body text-background sm:max-w-[80%]">
-                  {m.text}
-                </p>
-              ) : (
-                <AnswerView key={m.id} m={m} newestRoute={newest?.messageId === m.id ? newest.card : -1} />
-              ),
-            )}
+          {/* Full width, so the scrollbar is at the window's edge and the margins scroll too. */}
+          <div ref={log} aria-live="polite" className="min-h-0 flex-1 overflow-y-auto py-2">
+            <div className={cn(COLUMN, "flex flex-col gap-4")}>
+              {messages.map((m) =>
+                m.role === "user" ? (
+                  <p key={m.id} className="max-w-[92%] self-end whitespace-pre-wrap rounded-[14px_14px_4px_14px] bg-foreground px-3 py-2 text-body text-background sm:max-w-[80%]">
+                    {m.text}
+                  </p>
+                ) : (
+                  <AnswerView key={m.id} m={m} newestRoute={newest?.messageId === m.id ? newest.card : -1} />
+                ),
+              )}
+            </div>
           </div>
         </div>
       )}
-      <div>
+      <div className={chatting ? COLUMN : undefined}>
         <Composer
           value={text}
           onChange={setText}
