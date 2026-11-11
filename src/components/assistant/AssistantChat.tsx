@@ -107,8 +107,12 @@ export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChatting
               {t("newChat")}
             </Button>
           </div>
-          {/* Full width, so the scrollbar is at the window's edge and the margins scroll too. */}
-          <div ref={log} aria-live="polite" className="min-h-0 flex-1 overflow-y-auto py-2">
+          {/*
+            Full width, so the scrollbar is at the window's edge and the margins scroll too.
+            A clear top edge (#382): messages fade out over the top 16px as they scroll under
+            "New chat". A mask, so the glow behind shows through; at rest the padding keeps them below it.
+          */}
+          <div ref={log} aria-live="polite" className="min-h-0 flex-1 overflow-y-auto pb-2 pt-4 [mask-image:linear-gradient(to_bottom,transparent,black_16px)]">
             <div className={cn(COLUMN, "flex flex-col gap-4")}>
               {messages.map((m) =>
                 m.role === "user" ? (
