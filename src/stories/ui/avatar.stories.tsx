@@ -6,7 +6,7 @@ export default meta
 export const Fallback: StoryObj<typeof meta> = {
   render: () => (
     <Avatar>
-      <AvatarFallback className="bg-brand font-semibold text-primary-foreground">M</AvatarFallback>
+      <AvatarFallback className="bg-primary font-semibold text-primary-foreground">M</AvatarFallback>
     </Avatar>
   ),
 }
