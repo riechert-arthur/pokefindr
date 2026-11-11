@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from "react"
+import { useId, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -46,10 +46,23 @@ export function ProfileField({ label, value, type = "text", autoComplete, editin
   // Only send focus back to Update after this row was open, not on first render.
   const wasEditing = useRef(false)
 
-  useEffect(() => {
+  // Opening the row starts from the saved value with no error. Set while
+  // rendering (React's way to follow a prop), so the input already shows it
+  // when the effect below selects it.
+  const [openedFor, setOpenedFor] = useState(editing)
+  if (editing !== openedFor) {
+    setOpenedFor(editing)
     if (editing) {
       setDraft(value)
       setError(null)
+    }
+  }
+
+  // A layout effect, so focus moves in the same commit as the row opening or
+  // closing. A passive effect can run a moment later, leaving focus on <body>
+  // in between: a screen reader loses its place, and a test can see it (#378).
+  useLayoutEffect(() => {
+    if (editing) {
       input.current?.focus()
       input.current?.select()
     } else if (wasEditing.current) {
@@ -59,8 +72,6 @@ export function ProfileField({ label, value, type = "text", autoComplete, editin
       if (!active || active === document.body || row.current?.contains(active)) update.current?.focus()
     }
     wasEditing.current = editing
-    // Reset the draft when the row opens, not each time the saved value changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing])
 
   async function submit(e: FormEvent) {
