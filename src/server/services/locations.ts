@@ -2,7 +2,7 @@ import "server-only"
 import { sql, type SQL } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
 import { locations } from "@/server/db/schema"
-import { OUTSIDE_LOWER_48 } from "@/lib/map/states"
+import { OUTSIDE_LOWER_48, stateCode } from "@/lib/map/states"
 import type { LocationFeature, LocationFeatureCollection, LocationKind, NearbyLocations, StateCities } from "@/lib/types/locations"
 import type { Bbox } from "@/lib/locations/bbox"
 import { NEAR_LIMIT } from "@/lib/locations/search"
@@ -129,7 +129,7 @@ export async function countLocationsNear(
 }
 
 export interface LocationSearch {
-  /** Matched against the retailer or name, address and city; a machine id must match exactly. */
+  /** Words (split on spaces and commas) that must each match the place; see searchLocations. */
   q: string
   types: readonly LocationKind[]
   /** [lng, lat]: closest first. Without it, by retailer. */
@@ -142,22 +142,44 @@ export interface LocationSearch {
 /** `%` and `_` are wildcards in LIKE; a search for them means the characters. */
 export const likeEscape = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`)
 
-/** Active locations whose retailer, name, address or city contains `q`: the search list's Locations group. */
+/** The most words a search matches; a longer one finds nothing rather than ignore some (it's capped at 100 characters too). */
+const MAX_SEARCH_WORDS = 12
+/** Punctuation around a typed word ("Ave.", "(Seattle)") that the place's own text won't have. */
+const EDGE_PUNCTUATION = /^[.;:!?()"']+|[.;:!?()"']+$/g
+
+/** A search's words: split on spaces and commas, edge punctuation off, one-letter words ("S" in "S Loop 288") left out unless that's all there is. */
+function searchWords(q: string): string[] {
+  const words = q.split(/[\s,]+/).map((w) => w.replace(EDGE_PUNCTUATION, "")).filter(Boolean)
+  const longer = words.filter((w) => w.length > 1)
+  return longer.length ? longer : words
+}
+
+/**
+ * The search list's Locations group (#360): active locations where every word
+ * of `q` matches, so an address and the start of the city ("15411 New
+ * Hampshire Ave, Silver"), a store and city ("Safeway Silver Spring") or a
+ * machine and city ("Q01430 Silver Spring") find the place. A word matches
+ * when it's in the retailer or name, address or city; when it's the state
+ * (its code or one-word name, "MD" or "Maryland"); when it's a whole 5-digit
+ * ZIP (no prefixes, so ZIPs can't be walked); or when it's the machine ID.
+ */
 export async function searchLocations(
   { q, types, near, retailers = [], limit = 5 }: LocationSearch,
   db: Database = getDb(),
 ): Promise<LocationFeatureCollection> {
-  const term = q.trim()
-  if (types.length === 0 || term === "") return { type: "FeatureCollection", features: [] }
-  const like = `%${likeEscape(term)}%`
+  const words = searchWords(q)
+  if (types.length === 0 || words.length === 0 || words.length > MAX_SEARCH_WORDS) return { type: "FeatureCollection", features: [] }
+  const everyWord = sql.join(
+    words.map((word) => {
+      const like = `%${likeEscape(word)}%`
+      const state = stateCode(word)
+      return sql`(coalesce(l.retailer, l.name, '') ilike ${like} or l.address ilike ${like} or l.city ilike ${like}${state ? sql` or l.state = ${state}` : sql``}${/^\d{5}$/.test(word) ? sql` or left(l.postal_code, 5) = ${word}` : sql``} or l."machineID" = ${word.toUpperCase()})`
+    }),
+    sql` and `,
+  )
   const fc = await queryFeatures(
     db,
-    sql`l.kind in (${kindsIn(types)}) and (
-      coalesce(l.retailer, l.name, '') ilike ${like}
-      or l.address ilike ${like}
-      or l.city ilike ${like}
-      or l."machineID" = ${term.toUpperCase()}
-    ) ${retailerIn(retailers)}`,
+    sql`l.kind in (${kindsIn(types)}) and (${everyWord}) ${retailerIn(retailers)}`,
     limit,
     near ? sql`ST_Distance(geog, ${pointOf(near)}), id` : sql`coalesce(retailer, name), city, id`,
     "searchLocations",

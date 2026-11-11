@@ -156,7 +156,7 @@ describe("searchLocations", () => {
         { machineId: "K1", retailer: "King Soopers", address: "1155 E 9th Ave", city: "Denver", state: "CO", geog: { lng: -104.97, lat: 39.73 } },
         { machineId: "K2", retailer: "King Soopers", address: "3050 E 3rd Ave", city: "Denver", state: "CO", geog: { lng: -104.95, lat: 39.72 } },
         { machineId: "K3", retailer: "Kroger", address: "1592 S Loop 288", city: "Denton", state: "TX", geog: { lng: -97.1, lat: 33.2 } },
-        { machineId: "K4", retailer: "Kroger", address: "100% Main St", city: "Dallas", state: "TX", geog: { lng: -96.8, lat: 32.8 } },
+        { machineId: "K4", retailer: "Kroger", address: "100% Main St", city: "Dallas", state: "TX", postalCode: "75201", geog: { lng: -96.8, lat: 32.8 } },
         { name: "Den of Cards", kind: "shop", address: "1 Pearl St", city: "Boulder", state: "CO", geog: { lng: -105.27, lat: 40.01 } },
         { machineId: "KOFF", retailer: "King Soopers", city: "Denver", geog: { lng: -104.97, lat: 39.73 }, isActive: false },
       ])
@@ -172,6 +172,33 @@ describe("searchLocations", () => {
     )
     expect(names(await searchLocations({ q: "loop 288", types: all }))).toEqual(["Kroger Denton"])
     expect(names(await searchLocations({ q: "k3", types: all }))).toEqual(["Kroger Denton"])
+  })
+
+  it("matches every word across the fields, so an address and part of the city find the place (#360)", async () => {
+    await seed()
+    const all = ["vending", "shop", "event"] as const
+    expect(names(await searchLocations({ q: "1592 S Loop 288, Dent", types: all }))).toEqual(["Kroger Denton"])
+    expect(names(await searchLocations({ q: "1592 S Loop 288, Denton, TX", types: all }))).toEqual(["Kroger Denton"])
+    expect(names(await searchLocations({ q: "Kroger Dallas", types: all }))).toEqual(["Kroger Dallas"])
+    expect(names(await searchLocations({ q: "king soopers 9th", types: all }))).toEqual(["King Soopers Denver"])
+    // Every word has to match somewhere.
+    expect(names(await searchLocations({ q: "1592 S Loop 288, Dallas", types: all }))).toEqual([])
+    expect(names(await searchLocations({ q: " , ", types: all }))).toEqual([])
+  })
+
+  it("ignores edge punctuation, and matches a state, a whole ZIP or a machine ID as a word (#360 review)", async () => {
+    await seed()
+    const all = ["vending", "shop", "event"] as const
+    expect(names(await searchLocations({ q: "1592 S. Loop 288., Dent", types: all }))).toEqual(["Kroger Denton"])
+    expect(names(await searchLocations({ q: "Kroger, Texas", types: all })).sort()).toEqual(["Kroger Dallas", "Kroger Denton"])
+    expect(names(await searchLocations({ q: "Kroger TX", types: all })).sort()).toEqual(["Kroger Dallas", "Kroger Denton"])
+    expect(names(await searchLocations({ q: "K3 Denton", types: all }))).toEqual(["Kroger Denton"])
+    expect(names(await searchLocations({ q: "Kroger 75201", types: all }))).toEqual(["Kroger Dallas"])
+    // No ZIP prefixes, and no letter matching a state by containing it.
+    expect(names(await searchLocations({ q: "752", types: all }))).toEqual([])
+    expect(names(await searchLocations({ q: "Kroger X", types: all })).sort()).toEqual(["Kroger Dallas", "Kroger Denton"])
+    // Too many words to match them all: nothing, rather than a guess.
+    expect(names(await searchLocations({ q: "Kroger 1592 S Loop 288 Denton TX 76205 near the south side of town today", types: all }))).toEqual([])
   })
 
   it("filters by kind, ranks by distance from `near`, and limits", async () => {
