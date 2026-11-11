@@ -30,6 +30,11 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run lint
+      # Architecture boundary warnings (#325), counted in the job summary. Warnings only until #338.
+      - name: Boundary violations
+        run: |
+          npm run -s lint:boundaries | tee boundaries.txt
+          { echo '### Boundary violations'; echo '```'; head -40 boundaries.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - run: npx tsc --noEmit
       - name: Build (no secrets needed)
         run: npm run build
