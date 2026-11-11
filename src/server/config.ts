@@ -80,9 +80,10 @@ const serverSchema = z.object({
   /**
    * Which router draws an assistant route along the streets (#288,
    * /api/route). Unset, it's `openrouteservice` when ROUTER_API_KEY is set;
-   * otherwise `osrm` on its public demo server in development, so `make run`
-   * draws street routes without an account (#348), and `fake` (straight
-   * lines) in tests, CI and production.
+   * otherwise, in development with no ROUTER_BASE_URL, `osrm` on its public
+   * demo server, so `make run` draws street routes without an account
+   * (#348); and `fake` (straight lines) everywhere else: tests, production,
+   * and a base URL with no key (it could be a self-hosted OpenRouteService).
    */
   ROUTER_PROVIDER: blankAsUnset(z.enum(ROUTER_PROVIDERS).optional()),
   /** OpenRouteService's API key (HeiGIT). Required for openrouteservice; stays on the server. */
@@ -174,7 +175,7 @@ const serverSchema = z.object({
   return {
     ...env,
     GEOCODER_PROVIDER: env.GEOCODER_PROVIDER ?? (env.NODE_ENV === "production" ? "photon" : "fake"),
-    ROUTER_PROVIDER: env.ROUTER_PROVIDER ?? (env.ROUTER_API_KEY ? "openrouteservice" : env.NODE_ENV === "development" ? "osrm" : "fake"),
+    ROUTER_PROVIDER: env.ROUTER_PROVIDER ?? (env.ROUTER_API_KEY ? "openrouteservice" : env.NODE_ENV === "development" && !env.ROUTER_BASE_URL ? "osrm" : "fake"),
     RATE_LIMIT_STORE: env.RATE_LIMIT_STORE ?? (env.NODE_ENV === "production" ? "postgres" : "memory"),
     MAIL_FROM: env.MAIL_FROM ?? "PokeFindr <no-reply@localhost>",
     MODERATION_PROVIDER:
@@ -186,9 +187,9 @@ const serverSchema = z.object({
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["GEOCODER_API_KEY"], message: `required when GEOCODER_PROVIDER is ${env.GEOCODER_PROVIDER}` })
   if (env.ROUTER_PROVIDER === "openrouteservice" && !env.ROUTER_API_KEY)
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["ROUTER_API_KEY"], message: "required when ROUTER_PROVIDER is openrouteservice" })
-  // OSRM's public demo server is for light use, never production (its usage policy).
-  if (env.ROUTER_PROVIDER === "osrm" && env.NODE_ENV === "production" && !env.ROUTER_BASE_URL)
-    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["ROUTER_BASE_URL"], message: "required for osrm in production (a self-hosted OSRM; the public demo server isn't allowed)" })
+  // OSRM's public demo server is for light use, so only local development may use it (its usage policy).
+  if (env.ROUTER_PROVIDER === "osrm" && env.NODE_ENV !== "development" && !env.ROUTER_BASE_URL)
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["ROUTER_BASE_URL"], message: "required for osrm outside development (a self-hosted OSRM; the public demo server is for local development only)" })
   if (Boolean(env.ANTHROPIC_FEDERATION_RULE_ID) !== Boolean(env.ANTHROPIC_ORGANIZATION_ID))
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
