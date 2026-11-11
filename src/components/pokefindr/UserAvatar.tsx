@@ -45,7 +45,8 @@ interface UserAvatarProps {
 
 /**
  * The only way to show a person: their picture, or the first letter of their name
- * on the brand color. Decorative, because the name is always shown next to it.
+ * on the current theme's color (its primary: blue, or trainer red in the Holo
+ * themes, #377). Decorative, because the name is always shown next to it.
  */
 export function UserAvatar({ name, imageUrl, size = "md", className }: UserAvatarProps) {
   const s = SIZES[size]
@@ -53,8 +54,8 @@ export function UserAvatar({ name, imageUrl, size = "md", className }: UserAvata
   return (
     <Avatar className={cn(s.box, className)} aria-hidden>
       {imageUrl && <AvatarImage src={imageUrl} alt="" className="object-cover" />}
-      {/* primary-foreground on brand is checked at 4.5:1 in both themes (__tests__/design/tokens.test.ts). */}
-      <AvatarFallback className={cn("bg-brand text-primary-foreground", s.text)}>
+      {/* primary-foreground on primary is checked at 4.5:1 in every theme (__tests__/design/tokens.test.ts). */}
+      <AvatarFallback className={cn("bg-primary text-primary-foreground", s.text)}>
         {initial ?? <UserIcon aria-hidden className={s.icon} />}
       </AvatarFallback>
     </Avatar>

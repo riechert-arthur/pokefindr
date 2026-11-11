@@ -29,6 +29,21 @@ function block(selector: string): Map<string, string> {
 
 const light = block(":root")
 const dark = block(".dark")
+/** A Holo theme's tokens: its base theme's, with its own rule's on top (the rule that names only it). */
+function holo(base: Map<string, string>, selector: string): Map<string, string> {
+  for (const rule of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (rule[1].replace(/\/\*[\s\S]*?\*\//g, "").trim() !== selector) continue
+    return new Map([...base, ...[...rule[2].matchAll(/--([\w-]+):\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()] as const)])
+  }
+  throw new Error(`No "${selector}" rule in globals.css`)
+}
+/** Every theme people can pick (src/lib/design/themes.ts). */
+const THEME_TOKENS = [
+  ["light", light],
+  ["dark", dark],
+  ["holo-light", holo(light, ".holo-light")],
+  ["holo-dark", holo(dark, ".holo-dark")],
+] as const
 
 describe("design tokens", () => {
   it.each(COLOR_TOKENS)("defines %s in light and dark as HSL channels", (token) => {
@@ -62,10 +77,11 @@ describe("design tokens", () => {
     expect(channelsToHsl("-10 50% 50%")).toBeUndefined()
   })
 
-  // primary-foreground is the text on primary buttons, on avatar initials
-  // (brand, UserAvatar.tsx) and on the logo gradient (brand to brand-2).
+  // primary-foreground is the text on primary buttons and avatar initials
+  // (primary, UserAvatar.tsx), and the agent mark's glyph on the brand gradient
+  // (brand to brand-2, AgentMark.tsx). Checked in every theme.
   it.each(["primary", "brand-2", "brand"])("keeps primary-foreground at 4.5:1 or more on %s", (fill) => {
-    for (const [name, mode] of [["light", light], ["dark", dark]] as const) {
+    for (const [name, mode] of THEME_TOKENS) {
       const ratio = contrast(mode.get("primary-foreground")!, mode.get(fill)!)
       expect(ratio, `${name} ${fill}: ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5)
     }
