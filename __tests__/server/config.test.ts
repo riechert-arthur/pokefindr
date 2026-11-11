@@ -80,6 +80,33 @@ describe("getServerConfig", () => {
     expect(getServerConfig().ROUTER_PROVIDER).toBe("openrouteservice")
   })
 
+  it("routes with OSRM's demo server in development without a key, so make run draws streets (#348)", () => {
+    vi.stubEnv("NODE_ENV", "development")
+    expect(getServerConfig().ROUTER_PROVIDER).toBe("osrm")
+    resetServerConfigForTests()
+    vi.stubEnv("ROUTER_API_KEY", "key")
+    expect(getServerConfig().ROUTER_PROVIDER).toBe("openrouteservice")
+  })
+
+  it("keeps tests on straight lines", () => {
+    expect(getServerConfig().ROUTER_PROVIDER).toBe("fake")
+  })
+
+  it.each([["production"], ["staging"], ["test"]])("refuses OSRM's demo server when NODE_ENV is %s, but allows a self-hosted OSRM", (nodeEnv) => {
+    vi.stubEnv("NODE_ENV", nodeEnv)
+    vi.stubEnv("ROUTER_PROVIDER", "osrm")
+    expect(() => getServerConfig()).toThrowError(/ROUTER_BASE_URL: required for osrm outside development/)
+    resetServerConfigForTests()
+    vi.stubEnv("ROUTER_BASE_URL", "https://osrm.example.com")
+    expect(getServerConfig().ROUTER_PROVIDER).toBe("osrm")
+  })
+
+  it("doesn't guess OSRM in development when ROUTER_BASE_URL is set without a key (it could be OpenRouteService)", () => {
+    vi.stubEnv("NODE_ENV", "development")
+    vi.stubEnv("ROUTER_BASE_URL", "https://ors.example.com/ors")
+    expect(getServerConfig().ROUTER_PROVIDER).toBe("fake")
+  })
+
   it("requires ROUTER_API_KEY for openrouteservice", () => {
     vi.stubEnv("ROUTER_PROVIDER", "openrouteservice")
     expect(() => getServerConfig()).toThrowError(/ROUTER_API_KEY: required when ROUTER_PROVIDER is openrouteservice/)

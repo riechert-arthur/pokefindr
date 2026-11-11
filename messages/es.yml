@@ -131,6 +131,9 @@ map:
     closePopup: Cerrar ventana emergente
     map: Mapa
     marker: Marcador del mapa
+    cooperativeWindows: Usa Ctrl + desplazamiento para hacer zoom en el mapa
+    cooperativeMac: Usa ⌘ + desplazamiento para hacer zoom en el mapa
+    cooperativeMobile: Usa dos dedos para mover el mapa
   filters:
     button: Filtros
     buttonCount: "{count, plural, one {Filtros, # comercio} other {Filtros, # comercios}}"
@@ -543,6 +546,11 @@ assistant:
     route: "Ruta · {count, plural, one {# parada} other {# paradas}} · {distance} en línea recta"
     showOnMap: Mostrar en el mapa
     googleMaps: Abrir en Google Maps
+    preview: Vista previa de la ruta
+    drive: "{minutes, number} min en auto · {distance}"
+    straightPreview: "Líneas rectas: no se pudo obtener la ruta por calles"
+    previewSkipped: Algunas paradas ya no están, así que la ruta las omite.
+    showPreview: Ver la ruta en el mapa
     start: Inicio
     leg: "+{distance}"
     topRetailers: Tiendas con más máquinas

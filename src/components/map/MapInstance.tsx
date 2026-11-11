@@ -47,6 +47,7 @@ import { useStateCities } from "./useStateCities"
 import { useHighlights } from "./useHighlights"
 import { HighlightMarkers } from "./HighlightMarkers"
 import { RouteOverlay } from "./RouteOverlay"
+import { useMapLocale } from "./useMapLocale"
 import { UsSheet, type StateTotal } from "./UsSheet"
 import { AddPlaceSheet, type Pin } from "./AddPlaceSheet"
 import { AddPin, PendingMarkers, useMySubmissions } from "./MySubmissions"
@@ -111,25 +112,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   tRef.current = t
   // MapInstance is client-only (MapLoader uses ssr: false), so this is right on first render.
   const isDark = useIsDark()
-  // MapLibre's own controls in the page's language. It reads these when the map
-  // is created; switching language loads a new page.
-  const mapLocale = useMemo(
-    () => ({
-      "NavigationControl.ZoomIn": t("controls.zoomIn"),
-      "NavigationControl.ZoomOut": t("controls.zoomOut"),
-      "NavigationControl.ResetBearing": t("controls.resetNorth"),
-      "GeolocateControl.FindMyLocation": t("controls.findMyLocation"),
-      "GeolocateControl.LocationNotAvailable": t("controls.locationNotAvailable"),
-      "FullscreenControl.Enter": t("controls.enterFullscreen"),
-      "FullscreenControl.Exit": t("controls.exitFullscreen"),
-      "AttributionControl.ToggleAttribution": t("controls.toggleAttribution"),
-      "AttributionControl.MapFeedback": t("controls.mapFeedback"),
-      "Popup.Close": t("controls.closePopup"),
-      "Map.Title": t("controls.map"),
-      "Marker.Title": t("controls.marker"),
-    }),
-    [t],
-  )
+  const mapLocale = useMapLocale()
   const themeKey = useThemeKey()
   // Re-read the token colors only when the theme changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps

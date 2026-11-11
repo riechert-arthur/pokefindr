@@ -26,6 +26,7 @@ import { MapTilerGeocoder } from "@/server/adapters/geocoder/maptiler"
 import { NominatimGeocoder } from "@/server/adapters/geocoder/nominatim"
 import { FakeRouter } from "@/server/adapters/router/fake"
 import { OpenRouteServiceRouter } from "@/server/adapters/router/openrouteservice"
+import { OsrmRouter } from "@/server/adapters/router/osrm"
 
 /**
  * Builds the adapter for each port from config. Services and routes get
@@ -51,6 +52,8 @@ export function makeRouter(config: ServerConfig): Router {
   switch (config.ROUTER_PROVIDER) {
     case "openrouteservice":
       return new OpenRouteServiceRouter(config.ROUTER_API_KEY!, config.ROUTER_BASE_URL)
+    case "osrm":
+      return new OsrmRouter(config.ROUTER_BASE_URL)
     case "fake":
       // Allowed, so a deploy without the key still works, but say so: every route is straight.
       if (config.NODE_ENV === "production") console.warn("[router] no ROUTER_API_KEY in production; assistant routes are straight lines")
