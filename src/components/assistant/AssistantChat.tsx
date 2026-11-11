@@ -99,9 +99,9 @@ export function AssistantChat({ viewer, suggestion, onSuggestionUsed, onChatting
       {chatting && (
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex justify-end pb-1">
-            {/* An outlined button with the usual new-conversation mark, so it reads as an action (#380). */}
-            <Button type="button" variant="outline" size="sm" onClick={reset} disabled={busy} className="bg-card">
-              <SquarePenIcon aria-hidden />
+            {/* An outlined button with the usual new-conversation mark, so it reads as an action (#380). Mid-answer, it drops the answer too. */}
+            <Button type="button" variant="outline" size="sm" onClick={reset}>
+              <SquarePenIcon />
               {t("newChat")}
             </Button>
           </div>

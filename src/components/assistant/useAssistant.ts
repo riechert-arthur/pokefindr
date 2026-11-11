@@ -200,8 +200,11 @@ export function useAssistant(userId: string | null = null) {
         update((m) => (m.done ? {} : { status: null, done: true, note: t("unreachable"), memory: partialMemory(m) }))
       }
     } finally {
-      ctl.current = null
-      setBusy(false)
+      // Unless "New chat" dropped this answer and another has started since.
+      if (ctl.current === abort) {
+        ctl.current = null
+        setBusy(false)
+      }
     }
   }, [t, apiError])
 
