@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from "react"
+import { useId, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -46,7 +46,10 @@ export function ProfileField({ label, value, type = "text", autoComplete, editin
   // Only send focus back to Update after this row was open, not on first render.
   const wasEditing = useRef(false)
 
-  useEffect(() => {
+  // A layout effect, so focus moves in the same commit as the row opening or
+  // closing. A passive effect can run a moment later, leaving focus on <body>
+  // in between: a screen reader loses its place, and a test can see it (#378).
+  useLayoutEffect(() => {
     if (editing) {
       setDraft(value)
       setError(null)
