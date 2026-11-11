@@ -223,9 +223,9 @@ export function AppRail({ signedIn = false, canModerate = false, isAdmin = false
           */}
           <LanguageSwitcher
             variant="compact"
-            className={cn("-mx-0.5 gap-1 px-1 max-sm:w-[calc(100%+4px)] [&>span]:mr-auto", expanded ? "w-[calc(100%+4px)]" : "w-11 sm:[&>svg:last-child]:hidden")}
-            codeClassName={expanded ? "hidden" : "max-sm:hidden"}
-            nameClassName={cn("truncate", !expanded && "sm:hidden")}
+            // Collapsed on desktop, "EN" fills the badge, so its arrow (the trigger's last svg) hides.
+            className={cn(badgeClass(expanded), !expanded && "sm:[&>svg:last-child]:hidden")}
+            labelClassNames={{ code: expanded ? "hidden" : "max-sm:hidden", name: cn(!expanded && "sm:hidden") }}
             onOpenChange={setMenuOpen}
           />
           {/*
