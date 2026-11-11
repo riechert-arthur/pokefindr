@@ -38,6 +38,13 @@ interface DashboardProps {
    * gets the viewer's location once shared and a suggestion to ask, and says
    * when a conversation has started (the greeting and tiles then make room).
    */
+  /**
+   * Start in the chat layout, without the greeting, suggestions and tiles:
+   * this browser has a saved chat for the viewer (#346), which the assistant
+   * restores before its first paint. If it turns out there's none, the
+   * assistant switches back.
+   */
+  initialChatting?: boolean
   assistant: (props: { viewer: { lng: number; lat: number } | null; suggestion: string | null; onSuggestionUsed: () => void; onChattingChange: (chatting: boolean) => void }) => ReactNode
 }
 
@@ -47,7 +54,7 @@ interface DashboardProps {
  * reviews, your submissions and upcoming events. Once a conversation starts,
  * the greeting, suggestions and tiles step aside for it.
  */
-export function Dashboard({ assistant }: DashboardProps) {
+export function Dashboard({ assistant, initialChatting = false }: DashboardProps) {
   const f = useFormat()
   const t = useTranslations("dashboard")
   const { session } = useSessionContext()
@@ -58,7 +65,7 @@ export function Dashboard({ assistant }: DashboardProps) {
   const [near, setNear] = useState<NearState>({ status: "idle" })
   const [viewer, setViewer] = useState<{ lng: number; lat: number } | null>(null)
   const [suggestion, setSuggestion] = useState<string | null>(null)
-  const [chatting, setChatting] = useState(false)
+  const [chatting, setChatting] = useState(initialChatting)
 
   useEffect(() => {
     const ctl = new AbortController()

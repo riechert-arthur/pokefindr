@@ -1,12 +1,16 @@
-import type { ChatMessage } from "@/components/assistant/useAssistant"
+import type { AssistantCard, ChatMessage } from "@/lib/types/assistant"
 
 /**
  * The viewer's current assistant chat, kept in this browser (#346), so
  * leaving /home or reloading doesn't lose it. One chat per signed-in user,
  * under their id, so someone else signing in here never sees it. "New chat",
  * logging out and "Clear assistant history" remove it, and it's dropped
- * after 30 days without use, as the server drops the text of its log.
- * Storage that's blocked or full just means the chat isn't kept.
+ * after 30 days without a new message, as the server drops the text of its
+ * log. Storage that's blocked or full just means the chat isn't kept.
+ *
+ * Other tabs follow along through `storage` events (useAssistant), and a
+ * small cookie (CHAT_COOKIE, the user's id, no content) tells the server to
+ * render /home in its chat layout, so a reload doesn't flash the tiles.
  */
 
 const PREFIX = "pf-assistant-chat:"
@@ -15,6 +19,8 @@ const VERSION = 1
 const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000
 /** More than any conversation the API remembers (HISTORY_LIMITS.messages), so what's shown stays bounded. */
 const MAX_MESSAGES = 60
+/** Whose chat is saved in this browser; read by /home's server page (src/app/[locale]/(dashboard)/home/page.tsx). */
+export const CHAT_COOKIE = "pf-chat"
 
 interface Saved {
   v: number
@@ -22,14 +28,8 @@ interface Saved {
   messages: ChatMessage[]
 }
 
-const keyOf = (userId: string) => `${PREFIX}${userId}`
-
-/**
- * Set by clearAllChats (logout, "Clear assistant history") until a chat is
- * next loaded, so the dashboard saving as it unmounts on the way to /login
- * can't put the chat back.
- */
-let cleared = false
+/** The storage key of a user's chat: `storage` events name it. */
+export const chatKey = (userId: string) => `${PREFIX}${userId}`
 
 function storage(): Storage | null {
   try {
@@ -39,51 +39,81 @@ function storage(): Storage | null {
   }
 }
 
-const isMessage = (m: unknown): m is ChatMessage => {
-  if (!m || typeof m !== "object") return false
-  const { id, role, text } = m as Record<string, unknown>
-  if (typeof id !== "number" || typeof text !== "string") return false
-  if (role === "user") return true
-  if (role !== "assistant") return false
-  const a = m as Record<string, unknown>
-  return Array.isArray(a.cards) && typeof a.done === "boolean"
+function setCookie(value: string | null) {
+  try {
+    document.cookie =
+      value === null ? `${CHAT_COOKIE}=; path=/; max-age=0; samesite=lax` : `${CHAT_COOKIE}=${encodeURIComponent(value)}; path=/; max-age=${MAX_AGE_MS / 1000}; samesite=lax`
+  } catch {
+    // No document (tests on the server) or cookies blocked: /home just renders its default layout.
+  }
+}
+
+const isObject = (x: unknown): x is Record<string, unknown> => typeof x === "object" && x !== null
+const objects = (x: unknown) => Array.isArray(x) && x.every(isObject)
+
+/** Enough of a card's shape that rendering it can't crash. */
+function isCard(c: unknown): c is AssistantCard {
+  if (!isObject(c)) return false
+  switch (c.type) {
+    case "places":
+      return objects(c.places)
+    case "route":
+      return objects(c.stops) && Array.isArray(c.legs) && typeof c.totalMiles === "number"
+    case "stats":
+      return isObject(c.byKind) && objects(c.topRetailers)
+    case "events":
+      return objects(c.events)
+    default:
+      return false
+  }
+}
+
+function isMessage(m: unknown): m is ChatMessage {
+  if (!isObject(m) || typeof m.id !== "number" || typeof m.text !== "string") return false
+  if (m.role === "user") return true
+  return m.role === "assistant" && Array.isArray(m.cards) && m.cards.every(isCard) && typeof m.done === "boolean"
+}
+
+function read(store: Storage, userId: string, now: number): Saved | null {
+  const raw = store.getItem(chatKey(userId))
+  if (!raw) return null
+  try {
+    const saved = JSON.parse(raw) as Partial<Saved>
+    if (saved.v === VERSION && typeof saved.savedAt === "number" && now - saved.savedAt <= MAX_AGE_MS && Array.isArray(saved.messages) && saved.messages.every(isMessage))
+      return saved as Saved
+  } catch {
+    // Not JSON: dropped below.
+  }
+  store.removeItem(chatKey(userId))
+  return null
 }
 
 /** The saved chat, or an empty list when there's none, it's too old, or it doesn't parse (which removes it). */
 export function loadChat(userId: string, now = Date.now()): ChatMessage[] {
-  cleared = false
   const store = storage()
   if (!store) return []
   try {
-    const raw = store.getItem(keyOf(userId))
-    if (!raw) return []
-    const saved = JSON.parse(raw) as Partial<Saved>
-    if (saved.v !== VERSION || typeof saved.savedAt !== "number" || now - saved.savedAt > MAX_AGE_MS || !Array.isArray(saved.messages) || !saved.messages.every(isMessage)) {
-      store.removeItem(keyOf(userId))
-      return []
-    }
-    return saved.messages
+    return read(store, userId, now)?.messages ?? []
   } catch {
-    try {
-      store.removeItem(keyOf(userId))
-    } catch {
-      // Blocked storage: nothing to remove.
-    }
     return []
   }
 }
 
-/** Saves the chat (its last messages); an empty one is removed. */
+/** Saves the chat (its last messages), unless it's what's already saved; an empty one is removed. */
 export function saveChat(userId: string, messages: readonly ChatMessage[], now = Date.now()): void {
   if (!messages.length) return clearChat(userId)
-  if (cleared) return
   const store = storage()
   if (!store) return
   let recent = messages.slice(-MAX_MESSAGES)
   // Start with a question, as the conversation does.
   while (recent[0]?.role === "assistant") recent = recent.slice(1)
   try {
-    store.setItem(keyOf(userId), JSON.stringify({ v: VERSION, savedAt: now, messages: recent } satisfies Saved))
+    const json = JSON.stringify(recent)
+    // Unchanged: no write, so restoring or leaving doesn't count as use, and two tabs showing
+    // the same chat don't keep re-saving it to each other.
+    if (JSON.stringify(read(store, userId, now)?.messages ?? null) === json) return
+    store.setItem(chatKey(userId), `{"v":${VERSION},"savedAt":${now},"messages":${json}}`)
+    setCookie(userId)
   } catch {
     // Full or blocked: the chat just isn't kept.
   }
@@ -91,25 +121,40 @@ export function saveChat(userId: string, messages: readonly ChatMessage[], now =
 
 export function clearChat(userId: string): void {
   try {
-    storage()?.removeItem(keyOf(userId))
+    storage()?.removeItem(chatKey(userId))
   } catch {
     // Blocked storage: nothing was saved.
+  }
+  setCookie(null)
+}
+
+const clearedListeners = new Set<() => void>()
+
+/** Calls `listener` when this tab clears every chat (logout, "Clear assistant history"). Returns an unsubscribe. */
+export function onChatsCleared(listener: () => void): () => void {
+  clearedListeners.add(listener)
+  return () => {
+    clearedListeners.delete(listener)
   }
 }
 
-/** Removes every saved chat in this browser: on logout, when whose they were may no longer be known. */
+/**
+ * Removes every saved chat in this browser: on logout, when whose they were
+ * may no longer be known. An open conversation in this tab empties too
+ * (onChatsCleared), and in other tabs through their `storage` events.
+ */
 export function clearAllChats(): void {
-  cleared = true
   const store = storage()
-  if (!store) return
   try {
     const keys: string[] = []
-    for (let i = 0; i < store.length; i++) {
+    for (let i = 0; store && i < store.length; i++) {
       const key = store.key(i)
       if (key?.startsWith(PREFIX)) keys.push(key)
     }
-    for (const key of keys) store.removeItem(key)
+    for (const key of keys) store?.removeItem(key)
   } catch {
     // Blocked storage: nothing was saved.
   }
+  setCookie(null)
+  for (const listener of clearedListeners) listener()
 }
