@@ -39,12 +39,11 @@ export function ThemeToggle({ variant = "segmented", className, labelClassName }
     const isDark = mounted && resolvedTheme === "dark"
     const Icon = isDark ? Moon : Sun
     return (
-      <div className={cn("flex items-center gap-2", className)}>
+      // The whole label flips the switch, so a caller can frame it (the app rail's badge).
+      <label htmlFor={id} className={cn("flex cursor-pointer items-center gap-2", className)}>
         <Switch id={id} checked={isDark} onCheckedChange={(on) => setTheme(on ? "dark" : "light")} thumb={<Icon aria-hidden />} />
-        <label htmlFor={id} className={cn("cursor-pointer", labelClassName)}>
-          {t("darkTheme")}
-        </label>
-      </div>
+        <span className={labelClassName}>{t("darkTheme")}</span>
+      </label>
     )
   }
 
