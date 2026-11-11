@@ -207,13 +207,14 @@ export function AppRail({ signedIn = false, canModerate = false, isAdmin = false
           <RailLink item={DISCORD} current={false} expanded={expanded} />
           {signedIn && <RailLink item={SETTINGS} current={isCurrent(SETTINGS.href)} expanded={expanded} />}
           {/*
-            The language badge (#356). Collapsed: the globe and code, no arrow. Expanded (and in the
-            phone drawer): as wide as the rail, with the language's name and the arrow at the end.
-            Same left edge and padding either way, so the globe doesn't move as the rail opens.
+            The language badge (#356). Collapsed: the globe and code, no arrow, 44px wide and
+            centered on the icons' 40px column (2px past it each side). Expanded (and in the phone
+            drawer): from the same left edge to 2px past the rows, with the language's name and the
+            arrow at the end. Same edge and padding either way, so the globe doesn't move.
           */}
           <LanguageSwitcher
             variant="compact"
-            className={cn("px-1.5 max-sm:w-full [&>span]:mr-auto", expanded ? "w-full" : "sm:[&>svg:last-child]:hidden")}
+            className={cn("-mx-0.5 gap-1 px-1 max-sm:w-[calc(100%+4px)] [&>span]:mr-auto", expanded ? "w-[calc(100%+4px)]" : "w-11 sm:[&>svg:last-child]:hidden")}
             codeClassName={expanded ? "hidden" : "max-sm:hidden"}
             nameClassName={cn("truncate", !expanded && "sm:hidden")}
             onOpenChange={setMenuOpen}
