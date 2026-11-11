@@ -231,7 +231,11 @@ describe("PhotonGeocoder", () => {
     const house = (n: number, city: string, state: string, countrycode: string) =>
       feature([-122 - n / 100, 48], { type: "house", housenumber: "270", street: "1st Street", city, state, countrycode })
     const answer = [...Array.from({ length: 14 }, (_, i) => house(i, `Town ${i}`, "British Columbia", "CA")), house(20, "Yachats", "Oregon", "US"), house(21, "Fernley", "Nevada", "US")]
-    vi.stubGlobal("fetch", vi.fn<typeof fetch>(async () => new Response(JSON.stringify({ features: answer }))))
+    // Photon returns at most the limit asked for, nearest first.
+    vi.stubGlobal("fetch", vi.fn<typeof fetch>(async (url) => {
+      const limit = Number(new URL(String(url)).searchParams.get("limit"))
+      return new Response(JSON.stringify({ features: answer.slice(0, limit) }))
+    }))
     const results = await new PhotonGeocoder().search("270 1st", { limit: 5, near: [-122.33, 47.61] })
     expect(results.map((r) => r.label)).toEqual(["270 1st Street, Yachats, OR", "270 1st Street, Fernley, NV"])
   })
