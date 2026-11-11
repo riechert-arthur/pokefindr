@@ -1,8 +1,9 @@
 # Architecture: core, modules and organizations
 
-**Status: proposed.** This describes where PokeFindr's structure is going, not how the code works
-today. The [migration path](#migration-path) says how we get from one to the other. Decisions
-still open are marked **(open)** and collected at the end.
+**Status: accepted** (#322). This describes where PokeFindr's structure is going, not yet how the
+code works today. The [migration path](#migration-path) says how we get from one to the other,
+and [Decisions](#decisions) records what was settled and what this milestone (R12) builds. When the
+boundaries are locked (#338), this page becomes the description of how the code works.
 
 PokeFindr is moving to the model Rippling uses. One shared core holds the data every feature
 needs, and features are **modules**. An **organization** can be anyone: a person, a shop, a
@@ -30,7 +31,9 @@ named extension points. Two goals follow from that:
 - [Removing a module](#removing-a-module)
 - [Module catalog](#module-catalog)
 - [Migration path](#migration-path)
-- [Open questions](#open-questions)
+- [Decisions](#decisions)
+- [Trade-offs](#trade-offs)
+- [Working with agents](#working-with-agents)
 
 ## The model at a glance
 
@@ -351,8 +354,9 @@ erDiagram
 - **Every account gets a personal organization** on the `free` plan when it signs up, with the
   account as its owner. It's what a person acts as by default. They can also join or create other
   organizations and switch between them in the shell.
-- **Plans are code, not rows.** `src/modules/plans.ts` maps each plan to its modules, reviewed in
-  PRs. `PLANS` in the database only holds the ids, so subscriptions can reference them. A custom
+- **Plans are code, not rows.** `src/modules/plans.ts` maps each plan to its modules, and to any
+  **perks**: single entitlements the plan grants on their own, such as `ads.hidden`
+  ([decision 3](#decisions)). It's reviewed in PRs. `PLANS` in the database only holds the ids, so subscriptions can reference them. A custom
   deal is a new plan entry.
 - **The plan sets what an organization *may* install, and installs say what it *has*.** That
   lets an organization keep a module off without changing plan, and lets us switch a module off
@@ -375,9 +379,12 @@ erDiagram
 const FREE = ["reviews", "events", "contributions", "reports", "assistant", "routes", "mcp", "ads"] as const
 
 export const PLANS = {
-  free: FREE,                                  // every personal organization starts here
-  paid: [...FREE, "listings", "analytics"],    // adds the organization modules
-} as const satisfies Record<string, readonly ModuleId[]>
+  free: { modules: FREE },                                   // every personal organization starts here
+  paid: {
+    modules: [...FREE, "listings", "analytics"],             // adds the organization modules
+    perks: ["ads.hidden"],                                   // single entitlements, e.g. ad-free
+  },
+} as const satisfies Record<string, { modules: readonly ModuleId[]; perks?: readonly Entitlement[] }>
 
 // Later: more plans are new bundles, e.g. a business tier, or a custom deal for one customer.
 ```
@@ -466,7 +473,9 @@ sequenceDiagram
 - **Every organization-owned row has an `org_id`.** Queries for organization data go through a
   scoped helper (`orgScoped(db, orgId)`) that adds the filter, so no query can forget it. Postgres
   row-level security on those tables is the backstop, so a bug in one query still can't read
-  another organization's rows. **(open: whether to turn RLS on from the start.)**
+  another organization's rows. RLS is on from the first organization-owned table
+  ([decision 5](#decisions)); tables without an `org_id` (core's location graph, public content)
+  don't use it.
 - **Migrations stay in one ordered folder** (`database/migrations`). A module's migrations are
   prefixed with its id in the description (`0031_events_org_id.ts`). Removing a module leaves
   its tables in the database, unused and harmless. A separate, deliberate migration drops them
@@ -475,7 +484,7 @@ sequenceDiagram
   unreachable until the module is back. Nothing is deleted automatically.
 - **Public content stays public.** Plans gate what someone can *do*, not what the public can
   *read*: reviews, events and locations shown on the map don't disappear for viewers on a
-  smaller plan. **(open)**
+  smaller plan ([decision 4](#decisions)).
 
 ## Removing a module
 
@@ -533,8 +542,8 @@ flowchart LR
   g --> h
 ```
 
-1. **Entitlements in one place** (#299, PR #300). Every access check already goes through
-   `can()`/`requireEntitlement()`. This step is in progress.
+1. **Entitlements in one place** (#299, PR #300, merged). Every access check goes through
+   `can()`/`requireEntitlement()`.
 2. **The module system.** `defineModule`, the registry, `<Slot>` and server-side slot lists, the
    entitlement table built from manifests, the boundary lint rule (warnings first).
 3. **The removal check in CI**, starting with modules that have been extracted.
@@ -552,22 +561,96 @@ flowchart LR
 Each step leaves `main` working, and the lint rule switches from warnings to errors once step 5
 is done.
 
-## Open questions
+R12 covers steps 2–5, then locks the boundaries (#338). Steps 6–8 are decided but deferred
+([decision 7](#decisions)).
 
-1. **Who are the organizations?** *Decided:* anyone. Organizations have no type, and what they
-   can do comes only from the modules in the plan they buy. Plans start as `free` and `paid`.
-   Every account gets a personal organization on `free`.
-2. **Can a person belong to several organizations?** Assumed: yes. Their personal organization,
-   plus any they create or are invited to, with a switcher in the shell. Rippling assumes one
-   company per employee.
-3. **What goes in `free` and `paid`?** The example in "Organizations, plans and installs" is a
-   starting point. Assumed: everything the public can do today stays in `free`.
-4. **Do plans gate reading, or only doing?** Assumed: only doing. Public content stays visible
-   whatever the plan.
-5. **Row-level security from the start?** Recommendation: yes for organization-owned tables, as
-   the backstop behind `orgScoped()`.
-6. **Billing.** Out of scope here. Plans can be set by staff by hand (#294's user management)
+## Decisions
+
+Settled in #322. Each one was an assumption or recommendation in the proposal (PR #301), accepted
+as written.
+
+1. **Who are the organizations?** Anyone. Organizations have no type, and what they can do comes
+   only from the modules in their plan. Plans start as `free` and `paid`, and every account gets
+   a personal organization on `free`.
+2. **Can a person belong to several organizations?** Yes: their personal organization, plus any
+   they create or are invited to, with an organization switcher in the shell. (Rippling assumes
+   one company per employee; we don't.)
+3. **What's in `free` and `paid`?** Everything free today stays free. `paid` adds the new
+   organization modules, `listings` and `analytics`. Plans can also grant **perks**, single
+   entitlements outside any module bundle, in a `perks` list next to `modules`. The first is
+   `ads.hidden` (ad-free).
+4. **Do plans gate reading, or only doing?** Only doing. Public content (locations, reviews,
+   events) stays visible to everyone, whatever plan the viewer or the author is on.
+5. **Row-level security from the start?** Yes, on every organization-owned table, as the backstop
+   behind `orgScoped()`. Tables with no `org_id` don't use it.
+6. **Billing.** Out of scope. Staff set an organization's plan by hand (#294's user management)
    until a billing provider is chosen.
+7. **How much of this R12 builds.** The module system and the extractions, then stop and decide
+   again:
+   - **In R12:** settle and merge this page (#322); manifests, registry and entitlements from
+     manifests (#323); slots (#324); the boundary lint (#325); the removal check (#326); the `ads`
+     pilot (#327); extracting events, reports, reviews, contributions, the assistant and routes,
+     and MCP (#328–#333); keeping agents inside one module (#339); locking the boundaries (#338).
+     Those are migration steps 2–5.
+   - **Deferred:** organizations, plans, installs, row-level security and the organization console
+     (#334–#337, steps 6–8). They're decided above, so the module work is built to fit them, but
+     whether and when to build them is a separate call once the extractions show what the module
+     system costs in practice. Until then, an `org` audience means "signed in" (#323), and plan
+     perks such as `ads.hidden` aren't sold to anyone.
+
+## Trade-offs
+
+What the module system costs, and what we chose it over.
+
+**What it costs:**
+
+- **Indirection.** A screen no longer imports the feature it shows; it renders a `<Slot>`, and
+  the registry decides what fills it. Following a feature from the page to the database takes
+  one more hop, through the manifest.
+- **Slot contracts.** Each slot's props are an interface core has to keep stable. Adding a field
+  for one module is a core change, reviewed as one. A slot designed too narrowly gets redesigned
+  (the `ads` pilot, #327, is where we expect to learn this).
+- **`org_id` everywhere** (once organizations exist). Every organization-owned table, query and
+  test carries it, through `orgScoped()` and RLS. Forgetting it is a security bug, not a style
+  issue, which is why RLS backs it up.
+- **CI time.** The removal check builds and tests the app once per module, on every PR. With
+  eight modules that's eight extra jobs; they run in parallel, but they cost runner minutes.
+- **Moving code.** The extractions touch most of the app's files once. They're behavior-neutral
+  `git mv`s, one module per PR, but every open branch has to merge them.
+
+**Cheaper alternatives we didn't choose:**
+
+- **Plan flags only.** Keep the code as it is and add `if (plan.has("events"))` checks where
+  needed. It's quick, but features stay tangled across shared files, nothing proves a feature can
+  be switched off cleanly, and the checks spread through the code.
+- **Folders only.** Move each feature into `src/features/<id>/` without manifests, slots or
+  lint. It tidies the tree, but core still imports features directly, so removing one still
+  breaks the build, and nothing stops the folders from leaking into each other again.
+
+We accept the costs because both goals at the top of this page need the parts the alternatives
+leave out: bundles need manifests and a registry, and safe removal needs core to never import a
+module, which only lint and the removal check can keep true.
+
+## Working with agents
+
+Much of PokeFindr is built by AI agents working in parallel. The module structure is meant to
+help with that as much as with plans:
+
+- **One module per agent.** An agent working on reviews reads one folder, its manifest and its
+  README, instead of six directories (`components/`, `lib/`, `server/services/`, `app/api/`,
+  the schema, the catalogs). It needs less context and makes fewer wrong guesses about where
+  things live.
+- **Parallel work without collisions.** The R11 run (seven agents at once) kept touching the same
+  shared files: `AdminApp.tsx`, `lib/admin/sections.ts`, `lib/auth/entitlements.ts`, the API
+  routes. It also needed migration numbers reserved by hand. With modules, the shared touch
+  points shrink to the registry and the slot contracts, which change rarely and in their own
+  small PRs.
+- **Objective feedback.** The boundary lint (#325) and the removal check (#326) tell an agent the
+  moment it reaches outside its module, instead of a reviewer finding it later. #339 adds the
+  same rule while the agent works (a hook that blocks edits outside its module) and a way to ask
+  for what it needs instead: a module change request ticket.
+- **Smaller diffs to review.** A change that stays inside one module can be reviewed, by an agent
+  or a person, with just that module's context.
 
 ## Not in scope
 
