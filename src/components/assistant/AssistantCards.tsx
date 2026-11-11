@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/pokefindr/StatusBadge"
 import { KIND_ORDER } from "@/components/pokefindr/kinds"
 import { DEFAULT_RADIUS, RADII, mapUrl, roundPlace } from "@/lib/map/url-state"
 import { safeHref } from "@/lib/assistant/safe-link"
+import { RoutePreview } from "./RoutePreview"
 import { track } from "@/lib/analytics"
 import type { AssistantCard, AssistantPlace } from "@/lib/types/assistant"
 import { useFormat } from "@/i18n/format"
@@ -117,6 +118,7 @@ export function AssistantCardView({ card }: { card: AssistantCard }) {
           </>
         }
       >
+        <RoutePreview ids={card.stops.map((s) => s.id)} />
         <ol className="py-1">
           {card.stops.map((s, i) => (
             <li key={s.id} className="flex items-center gap-2.5 px-3 py-[7px] text-body">
