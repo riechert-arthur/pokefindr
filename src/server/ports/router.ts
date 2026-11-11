@@ -26,12 +26,20 @@ export interface RouteOptions {
   signal?: AbortSignal
 }
 
+/** How fast a provider may be asked, server-wide (a token bucket). */
+export interface RouteBudget {
+  perMinute: number
+  burst: number
+}
+
 export interface Router {
   /**
    * True when a call costs no provider quota (straight lines), so the route
    * service skips the server-wide budget. Unset counts as metered.
    */
   readonly free?: boolean
+  /** The provider's own per-minute limit, when stricter than the route service's default (30 a minute). */
+  readonly budget?: RouteBudget
   /** A route through `stops` (2 or more) in the order given. */
   route(stops: readonly RoutePoint[], opts?: RouteOptions): Promise<RouteResult>
 }

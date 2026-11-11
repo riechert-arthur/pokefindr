@@ -1,7 +1,7 @@
 import "server-only"
-import { RouterError, type RouteOptions, type RoutePoint, type RouteResult, type Router } from "@/server/ports/router"
+import { RouterError, type RouteBudget, type RouteOptions, type RoutePoint, type RouteResult, type Router } from "@/server/ports/router"
 import { endpoint } from "@/server/adapters/geocoder/shared"
-import { round } from "@/lib/map/geo"
+import { routedResult, SNAP_METERS } from "./shared"
 
 interface OsrmResponse {
   code?: string
@@ -16,13 +16,12 @@ interface OsrmResponse {
 /** The project's public demo server: light use only, never production (its usage policy). */
 export const OSRM_DEMO_URL = "https://router.project-osrm.org"
 
-const METERS_PER_MILE = 1609.344
-/** How far a stop may be from a road and still be routed to it, as for OpenRouteService. */
-const SNAP_METERS = 1000
 /** The demo server's policy asks every caller to say who it is. */
-const USER_AGENT = "PokeFindr/dev (+https://github.com/riechert-arthur/pokefindr)"
-
-const finite = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n)
+const USER_AGENT = "PokeFindr (+https://github.com/riechert-arthur/pokefindr)"
+/** The demo server's policy: at most one request a second. A self-hosted OSRM uses the route service's default budget. */
+const DEMO_BUDGET: RouteBudget = { perMinute: 60, burst: 1 }
+/** Fixed decimals (about 10 cm): String(1e-7) is "1e-7", which OSRM can't parse. */
+const coord = (n: number) => n.toFixed(6)
 
 /**
  * OSRM (#348), car profile: the fastest drive, on OpenStreetMap data like
@@ -32,10 +31,14 @@ const finite = (n: unknown): n is number => typeof n === "number" && Number.isFi
  * https://project-osrm.org/docs/v5.24.0/api/#route-service
  */
 export class OsrmRouter implements Router {
-  constructor(private readonly baseUrl = OSRM_DEMO_URL) {}
+  readonly budget?: RouteBudget
+
+  constructor(private readonly baseUrl = OSRM_DEMO_URL) {
+    if (baseUrl === OSRM_DEMO_URL) this.budget = DEMO_BUDGET
+  }
 
   async route(stops: readonly RoutePoint[], opts?: RouteOptions): Promise<RouteResult> {
-    const coords = stops.map(([lng, lat]) => `${lng},${lat}`).join(";")
+    const coords = stops.map(([lng, lat]) => `${coord(lng)},${coord(lat)}`).join(";")
     const url = endpoint(this.baseUrl, `route/v1/driving/${coords}`)
     url.search = new URLSearchParams({
       overview: "full",
@@ -65,25 +68,7 @@ export class OsrmRouter implements Router {
 function toResult(body: OsrmResponse, stopCount: number): RouteResult {
   // "NoRoute" and friends come with a 200 on some versions.
   const route = body.code === "Ok" ? body.routes?.[0] : undefined
-  const coords = route?.geometry?.type === "LineString" ? route.geometry.coordinates : undefined
-  const legs = route?.legs
-  if (!route || !coords || coords.length < 2 || !legs || legs.length !== stopCount - 1)
-    throw new RouterError("OSRM routing failed (unexpected answer)")
-  const line: [number, number][] = []
-  for (const c of coords) {
-    if (!Array.isArray(c) || !finite(c[0]) || !finite(c[1])) throw new RouterError("OSRM routing failed (unexpected answer)")
-    const p: [number, number] = [round(c[0], 5), round(c[1], 5)]
-    const last = line[line.length - 1]
-    if (!last || last[0] !== p[0] || last[1] !== p[1]) line.push(p)
-  }
-  if (line.length === 1) line.push(line[0])
-  const distance = finite(route.distance) ? route.distance : legs.reduce((sum, l) => sum + (l.distance ?? 0), 0)
-  const duration = finite(route.duration) ? route.duration : legs.reduce((sum, l) => sum + (l.duration ?? 0), 0)
-  return {
-    routed: true,
-    line: { type: "LineString", coordinates: line },
-    legs: legs.map((l) => ({ miles: round((l.distance ?? 0) / METERS_PER_MILE, 1), minutes: Math.round((l.duration ?? 0) / 60) })),
-    miles: round(distance / METERS_PER_MILE, 1),
-    minutes: Math.round(duration / 60),
-  }
+  if (!route) throw new RouterError("OSRM routing failed (unexpected answer)")
+  const coords = route.geometry?.type === "LineString" ? route.geometry.coordinates : undefined
+  return routedResult("OSRM", coords, route.legs, stopCount, route)
 }
