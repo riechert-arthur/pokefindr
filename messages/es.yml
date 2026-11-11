@@ -403,7 +403,6 @@ ui:
     light: Claro
     dark: Oscuro
     system: Sistema
-    darkTheme: Tema oscuro
   language:
     label: Idioma
     saveFailed: No se pudo guardar tu idioma

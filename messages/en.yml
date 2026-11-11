@@ -517,8 +517,6 @@ ui:
     light: Light
     dark: Dark
     system: System
-    # The app rail's on/off switch: on while the dark theme shows.
-    darkTheme: Dark theme
   # The language switcher. Each language is listed in its own name ("English", "Español").
   language:
     label: Language
