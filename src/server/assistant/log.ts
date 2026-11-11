@@ -5,6 +5,7 @@ import { getDb, type Database } from "@/server/db/client"
 import { assistantFeedback, assistantPlaceViews, assistantTurnTexts, assistantTurns, assistantUsage, type AssistantOutcome } from "@/server/db/schema"
 import { defineJob } from "@/server/lib/jobs/types"
 import type { AssistantUsage } from "@/lib/types/assistant-stream"
+import { log, timed } from "@/server/log"
 
 /**
  * The assistant's turn log (#212): one row per turn for cost and review,
@@ -29,10 +30,34 @@ export interface ToolCall {
 /** Phrases that try to talk the model out of its instructions. */
 const INJECTION = /\b(ignore|disregard|forget)\b.{0,40}\b(instructions|rules|prompt)\b|\bsystem prompt\b|\byou are now\b|\bjailbreak\b|\bdeveloper mode\b/i
 
-/** Why a turn might need a look: a refusal, injection-looking input, a hit cap, or an unusual cost. */
-export function flagsFor({ question, outcome, tools, costMicros }: { question: string; outcome: AssistantOutcome; tools: readonly ToolCall[]; costMicros: number }): string[] {
+/** The turn-log flags a check adds: `moderated` when it held or blocked the question, `moderation_error` when it didn't run. */
+export function moderationFlags(check: { verdict: "allow" | "hold" | "block"; failed?: boolean } | null | undefined): string[] {
+  if (!check) return []
+  if (check.failed) return ["moderation_error"]
+  return check.verdict === "allow" ? [] : ["moderated"]
+}
+
+/**
+ * Why a turn might need a look: a refusal, injection-looking input, a hit
+ * cap, an unusual cost, or the input check (#253): `moderated` when it held
+ * or blocked the question, `moderation_error` when it didn't run.
+ */
+export function flagsFor({
+  question,
+  outcome,
+  tools,
+  costMicros,
+  moderation,
+}: {
+  question: string
+  outcome: AssistantOutcome
+  tools: readonly ToolCall[]
+  costMicros: number
+  moderation?: { verdict: "allow" | "hold" | "block"; failed?: boolean } | null
+}): string[] {
   const flags: string[] = []
   if (outcome === "refused") flags.push("refused")
+  flags.push(...moderationFlags(moderation))
   if (INJECTION.test(question)) flags.push("injection")
   if (outcome === "limited") flags.push("rate_limited")
   if (tools.some((t) => !t.ok && /limit of places/i.test(t.error ?? ""))) flags.push("place_cap")
@@ -57,7 +82,7 @@ export interface TurnRecord {
 
 /** Stores a turn, and writes one log line about it (no text). */
 export async function recordTurn(t: TurnRecord, db: Database = getDb()): Promise<void> {
-  await db.transaction(async (tx) => {
+  await timed("recordTurn", () => db.transaction(async (tx) => {
     await tx.insert(assistantTurns).values({
       id: t.id,
       userId: t.userId,
@@ -75,20 +100,17 @@ export async function recordTurn(t: TurnRecord, db: Database = getDb()): Promise
       flags: t.flags,
     })
     if (t.text) await tx.insert(assistantTurnTexts).values({ turnId: t.id, question: t.text.question, answer: t.text.answer, toolCalls: t.tools })
+  }))
+  log.info("assistant_turn", {
+    turnId: t.id,
+    userId: t.userId,
+    outcome: t.outcome,
+    model: t.model,
+    ...t.usage,
+    latencyMs: t.latencyMs,
+    tools: t.tools.map((x) => `${x.name}${x.ok ? "" : "!"}`),
+    flags: t.flags,
   })
-  console.info(
-    JSON.stringify({
-      event: "assistant_turn",
-      turnId: t.id,
-      userId: t.userId,
-      outcome: t.outcome,
-      model: t.model,
-      ...t.usage,
-      latencyMs: t.latencyMs,
-      tools: t.tools.map((x) => `${x.name}${x.ok ? "" : "!"}`),
-      flags: t.flags,
-    }),
-  )
 }
 
 /** Deletes the text of a user's turns and feedback comments ("clear my assistant history"); the rows stay, without text. */

@@ -106,7 +106,7 @@ describe("ReviewsSection", () => {
     fireEvent.click(screen.getByRole("radio", { name: /4/ }))
     fireEvent.change(screen.getByRole("textbox", { name: "Your review" }), { target: { value: "  Restocked Friday  " } })
     fireEvent.click(post)
-    await waitFor(() => expect(reviews.add).toHaveBeenCalledWith({ rating: 4, text: "Restocked Friday" }, "ash"))
+    await waitFor(() => expect(reviews.add).toHaveBeenCalledWith({ rating: 4, text: "Restocked Friday" }, "ash", null))
   })
 
   it("edits and deletes only the viewer's own reviews", async () => {

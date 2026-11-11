@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Map, Marker, MAP_STYLES } from "@/components/map/engine"
+import { can } from "@/lib/auth/entitlements"
 import { useIsDark } from "@/lib/design/useThemeKey"
 import { useSessionContext } from "@/components/providers/SessionProvider"
 import { REJECT_REASONS, REJECT_REASON_LABELS, SHOP_SELLS_LABELS, type RejectReason } from "@/lib/submissions/constants"
@@ -254,7 +255,7 @@ function Detail({ item, busy, onDecide }: { item: ModerationItem; busy: boolean;
         </dl>
 
         {item.status === "pending" ? (
-          item.sentByViewer && session?.role !== "admin" ? (
+          item.sentByViewer && !can(session?.role, "moderation.decideOwn") ? (
             <p className="text-body text-muted-foreground">You sent this one, so another moderator has to review it.</p>
           ) : rejecting ? (
             <fieldset className="flex flex-col gap-3 rounded-lg border border-border p-3">

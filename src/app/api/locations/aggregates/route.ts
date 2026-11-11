@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { getRegionCounts } from "@/server/services/region-counts"
 import { retailerParam } from "@/lib/locations/search"
 import { guardRoute, RATE_RULES } from "@/server/api-rate-limit"
+import { log } from "@/server/log"
 
 // Read at request time; the CDN cache below keeps that to about once an hour.
 export const dynamic = "force-dynamic"
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
       { headers: { "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" } },
     )
   } catch (err) {
-    console.error("[api/locations/aggregates] failed to load counts", err)
+    log.forRequest(request, "/api/locations/aggregates").logError("api.failed", err, { step: "failed to load counts" })
     return NextResponse.json({ error: "Failed to load counts" }, { status: 500 })
   }
 }

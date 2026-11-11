@@ -49,6 +49,7 @@ import type { LocationKind } from "@/lib/types/locations"
 import type { RejectReason, ShopSells, SubmissionKind, SubmissionStatus } from "@/lib/submissions/constants"
 import type { Role } from "@/lib/auth/roles"
 import type { Locale } from "@/i18n/routing"
+import type { ModerationCategory, ModerationVerdict, ReviewStatus, SubmissionTextCheck } from "@/lib/reviews/moderation"
 
 const createdAt = () => timestamp("created_at", { withTimezone: true }).defaultNow()
 
@@ -334,7 +335,7 @@ export const profiles = pgTable(
     onboarded: boolean("onboarded").notNull().default(false),
     rating: doublePrecision("rating"),
     metadata: jsonb("metadata"),
-    /** member, moderator (reviews submissions) or admin (migration 0012). */
+    /** member, moderator (reviews submissions), admin (migration 0012) or super_admin (an admin who manages users, migration 0022). */
     role: text("role").$type<Role>().notNull().default("member"),
     /** The language they picked, e.g. "es" (migration 0019); null until they pick one. */
     locale: text("locale").$type<Locale>(),
@@ -347,7 +348,7 @@ export const profiles = pgTable(
   (t) => [
     // One username per person, in any case (migration 0010).
     uniqueIndex("profiles_username_lower_key").on(sql`lower(${t.username})`),
-    check("profiles_role_check", sql`${t.role} in ('member', 'moderator', 'admin')`),
+    check("profiles_role_check", sql`${t.role} in ('member', 'moderator', 'admin', 'super_admin')`),
   ],
 )
 
@@ -478,11 +479,41 @@ export const locationRatings = pgTable(
     rating: integer("rating").notNull(),
     text: text("text"),
     createdAt: createdAt(),
+    /** Who sees it (#253, migration 0024): published for everyone; held or removed for its author only. */
+    status: text("status").$type<ReviewStatus>().notNull().default("published"),
+    /** The moderator who last approved or removed it, and when (for the undo window). */
+    moderatedBy: uuid("moderated_by").references(() => profiles.id, { onDelete: "set null" }),
+    moderatedAt: timestamp("moderated_at", { withTimezone: true }),
   },
   (t) => [
     index("location_ratings_location_id_idx").on(t.locationId),
     index("location_ratings_user_id_idx").on(t.userId),
     check("location_ratings_rating_range", sql`${t.rating} BETWEEN 1 AND 5`),
+    check("location_ratings_status_check", sql`${t.status} in ('published', 'held', 'removed')`),
+    index("location_ratings_held_created_idx").on(t.createdAt).where(sql`${t.status} = 'held'`),
+  ],
+)
+
+/** Each automatic check of a review's text (#253, migration 0024). */
+export const reviewModerationChecks = pgTable(
+  "review_moderation_checks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ratingId: uuid("rating_id").notNull().references(() => locationRatings.id, { onDelete: "cascade" }),
+    verdict: text("verdict").$type<ModerationVerdict>().notNull(),
+    categories: text("categories").array().$type<ModerationCategory[]>().notNull(),
+    reason: text("reason").notNull(),
+    model: text("model").notNull(),
+    promptVersion: text("prompt_version").notNull(),
+    /** The check didn't run (an outage or a timeout): the review was held and is checked again. */
+    failed: boolean("failed").notNull().default(false),
+    /** Millionths of a dollar. */
+    costMicros: integer("cost_micros").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("review_moderation_checks_rating_created_idx").on(t.ratingId, t.createdAt),
+    check("review_moderation_checks_verdict_check", sql`${t.verdict} in ('allow', 'hold', 'block')`),
   ],
 )
 
@@ -565,6 +596,25 @@ export const reportActions = pgTable(
   (t) => [
     index("report_actions_location_created_idx").on(t.locationId, t.createdAt),
     check("report_actions_action_check", sql`${t.action} in ('dismiss', 'fix', 'hide', 'reopen')`),
+  ],
+)
+
+/** Every role change made in User management (#294, migration 0023): who changed whose role, from what, to what. */
+export const roleChanges = pgTable(
+  "role_changes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+    /** Null once the person who made the change is deleted. */
+    changedBy: uuid("changed_by").references(() => profiles.id, { onDelete: "set null" }),
+    fromRole: text("from_role").$type<Role>().notNull(),
+    toRole: text("to_role").$type<Role>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("role_changes_user_created_idx").on(t.userId, t.createdAt),
+    check("role_changes_from_role_check", sql`${t.fromRole} in ('member', 'moderator', 'admin', 'super_admin')`),
+    check("role_changes_to_role_check", sql`${t.toRole} in ('member', 'moderator', 'admin', 'super_admin')`),
   ],
 )
 
@@ -663,7 +713,8 @@ export const assistantPlaceViews = pgTable(
   (t) => [uniqueIndex("assistant_place_views_user_day_location_key").on(t.userId, t.day, t.locationId)],
 )
 
-export const ASSISTANT_OUTCOMES = ["answered", "refused", "tool_limit", "max_tokens", "error", "stopped", "limited", "paused"] as const
+/** `blocked`: the input check blocked the question, so the model never saw it (#253, migration 0025). */
+export const ASSISTANT_OUTCOMES = ["answered", "refused", "tool_limit", "max_tokens", "error", "stopped", "limited", "paused", "blocked"] as const
 export type AssistantOutcome = (typeof ASSISTANT_OUTCOMES)[number]
 
 /** One assistant turn, without its text (migration 0007): for cost, abuse review and feedback. */
@@ -684,7 +735,7 @@ export const assistantTurns = pgTable(
     latencyMs: integer("latency_ms"),
     /** The tools it ran, names only: `{ name, ok }[]` (inputs are text, kept in assistant_turn_texts). */
     tools: jsonb("tools").$type<{ name: string; ok: boolean }[]>().notNull().default(sql`'[]'::jsonb`),
-    /** Why it might need a look: refused, injection, place_cap, cost_outlier. */
+    /** Why it might need a look: refused, injection, place_cap, cost_outlier, moderated, moderation_error. */
     flags: text("flags").array().notNull(),
     /** Which system prompt and tools answered (migration 0008). */
     promptVersion: text("prompt_version"),
@@ -692,7 +743,7 @@ export const assistantTurns = pgTable(
   (t) => [
     index("assistant_turns_user_created_idx").on(t.userId, t.createdAt),
     index("assistant_turns_created_idx").on(t.createdAt),
-    check("assistant_turns_outcome_check", sql`${t.outcome} in ('answered', 'refused', 'tool_limit', 'max_tokens', 'error', 'stopped', 'limited', 'paused')`),
+    check("assistant_turns_outcome_check", sql`${t.outcome} in ('answered', 'refused', 'tool_limit', 'max_tokens', 'error', 'stopped', 'limited', 'paused', 'blocked')`),
   ],
 )
 
@@ -753,6 +804,8 @@ export const locationSubmissions = pgTable(
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     locationId: uuid("location_id").references(() => locations.id, { onDelete: "set null" }),
     createdAt: createdAt().notNull(),
+    /** The automatic check of its name, notes and links (#253, migration 0024), shown to moderators. Null until it ran. */
+    textCheck: jsonb("text_check").$type<SubmissionTextCheck>(),
   },
   (t) => [
     index("location_submissions_submitted_by_created_idx").on(t.submittedBy, t.createdAt),

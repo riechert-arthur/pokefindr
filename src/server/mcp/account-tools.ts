@@ -10,6 +10,7 @@ import { createSubmission, listMySubmissions } from "@/server/services/submissio
 import { enqueueJob } from "@/server/lib/jobs/enqueue"
 import { ToolInputError, type ToolContext } from "@/server/assistant/tools"
 import { USER_WRITTEN_NOTE, plainUserText } from "@/server/assistant/untrusted"
+import { log } from "@/server/log"
 
 /**
  * The tools that act as the signed-in person (#134): their reviews and
@@ -44,7 +45,8 @@ const placeLink = (appUrl: string, id: string) => `${new URL("/map", appUrl)}?lo
 export const myReviews = tool({
   name: "my_reviews",
   title: "My reviews",
-  description: "The signed-in person's PokeFindr reviews, newest first (at most 20): the place, its rating out of 5, the text and the date.",
+  description:
+    "The signed-in person's PokeFindr reviews, newest first (at most 20): the place, its rating out of 5, the text, the date, and its status (published, held for a moderator, or removed by one).",
   scope: "account:read",
   input: z.object({}),
   readOnly: true,
@@ -56,6 +58,8 @@ export const myReviews = tool({
       reviews: reviews.slice(0, MAX_ROWS).map((r) => ({
         rating: r.rating,
         date: r.created ? new Date(r.created).toISOString().slice(0, 10) : null,
+        // Their own reviews only, so held and removed ones are shown, with what that means.
+        status: r.status,
         untrusted_text: plainUserText(r.comment ?? "", 500),
         place: {
           id: r.location.id,
@@ -166,7 +170,7 @@ export const submitPlace = tool({
     }
     // Moderators hear about it by email; a failure to queue doesn't lose the submission.
     await enqueueJob("submission-created", { submissionId: result.id }, { idempotencyKey: `submission-created:${result.id}` }).catch((err) =>
-      console.error("[mcp] couldn't queue the email to moderators", err),
+      log.logError("mcp.step_failed", err, { tool: "submit_place", step: "couldn't queue the email to moderators" }),
     )
     return {
       status: "pending",

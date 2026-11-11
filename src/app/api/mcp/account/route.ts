@@ -11,6 +11,7 @@ import { MCP_ACCOUNT_PATH, MCP_ACCOUNT_SCOPES } from "@/lib/mcp/scopes"
 import { mcpEndpoint, preflight, rpcError, serveMcp, withCors } from "@/server/mcp/http"
 import { oneAtATime } from "@/server/mcp/limits"
 import { createAccountServer } from "@/server/mcp/server"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 30
@@ -47,7 +48,7 @@ async function withPlaceBudget<T>(userId: string, call: (places: PlaceBudget, no
     try {
       return await call(places, now)
     } finally {
-      await savePlaceViews(userId, now, places, db).catch((err) => console.error("[mcp] couldn't record the places shown", err))
+      await savePlaceViews(userId, now, places, db).catch((err) => log.with({ route: "/api/mcp/account" }).logError("api.failed", err, { step: "couldn't record the places shown" }))
     }
   })
 }

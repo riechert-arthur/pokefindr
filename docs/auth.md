@@ -89,12 +89,90 @@ every connected app has to connect again.
 There's no "connected apps" page yet to disconnect an app from PokeFindr's side; people disconnect it
 in the app.
 
+## Roles and entitlements
+
+Everyone signed in has a role in `profiles.role` (migrations 0012 and 0022). It's read from the database on each request, not stored in the session, so a change applies on the person's next request (the client's `SessionProvider` keeps showing the old role until it fetches the session again, e.g. on the next page load).
+
+| Role | Can | Who grants it |
+| --- | --- | --- |
+| `member` | everything a signed-in person can: reviews, reports, submissions | sign-up; a super admin |
+| `moderator` | `/moderate`: the review queue and Reports, but not deciding their own submissions | a super admin, in Admin → Users |
+| `admin` | `/moderate`, all of `/admin` except Users, and deciding their own submissions | a super admin, in Admin → Users |
+| `super_admin` | everything an admin can, plus Admin → Users (`users.manage`) | SQL or the dev seed only |
+
+**Moderators' dashboard** (`/moderate`, #293): the review queue and Reports as two tabs (`?tab=reports`), inside the normal app layout, for whoever has `moderation.view`. The rail and tab bar show "Moderate" for `moderation.view` and "Admin" for `admin.open`, which moderators don't have: `/admin` redirects them to `/moderate` (old emails and bookmarks point there), and the review email links to `/moderate`. Admins keep the same two sections in `/admin`'s Moderation group too.
+
+**User management** (`/admin?section=users`, #294) lists users with their email (only super admins see emails), searches by username, name or the start of an email, filters by role, and changes a role after a confirm step (`src/server/services/user-admin.ts`, `GET /api/admin/users`, `PATCH /api/admin/users/:id`). A super admin can set member, moderator or admin, never their own role, and never `super_admin`, so a hijacked session can't create another one. Taking away the last super admin is refused too. Every change is written to `role_changes`. To make someone a super admin:
+
+```sql
+update profiles set role = 'super_admin' where username = '…';
+```
+
+What each role may do is decided in one place, `src/lib/auth/entitlements.ts` (#299). It maps each **entitlement**, named after what it allows (`moderation.decide`, `admin.jobs`), to the roles that have it:
+
+```ts
+import { can } from "@/lib/auth/entitlements"
+
+can(role, "admin.jobs") // true for admins only
+```
+
+- **Server checks:** admin API routes use `requireEntitlement(request, "admin.jobs")` from `src/server/admin/access.ts`. It answers 401 without a session and 404 to anyone without the entitlement, so the route's existence isn't shown.
+- **UI:** components use `can()` to hide what someone can't use. That's cosmetic; the server check is what protects the data.
+- **Admin sections:** each section in `src/lib/admin/sections.ts` names the entitlement it needs.
+- **Never compare role names elsewhere.** A test (`__tests__/lib/entitlements.test.ts`) fails on `role === "admin"`-style checks outside `entitlements.ts`.
+
+**To add an entitlement,** add an entry with the roles that get it, use `can` or `requireEntitlement` where it applies, and update the snapshot in `__tests__/lib/entitlements.test.ts`.
+
+**To add a role,** add it to `ROLES` (`src/lib/auth/roles.ts`) and to the `profiles_role_check` constraint with a migration. Then list it under each entitlement it should have. A role that isn't listed anywhere can do nothing beyond a member.
+
+## Profile pictures
+
+A person's picture is the URL in `users.image` (#290), the Better Auth column, so it rides along in
+the session (`/api/auth/user` returns it as `image`) and needs no migration. Google and Discord fill it
+when someone signs up with them; an upload replaces it. With none, `UserAvatar` shows initials.
+
+- **Upload and remove:** `POST` (multipart, `file`) and `DELETE /api/user-settings/avatar`, from the
+  "Profile picture" row in `/settings`. Same-site only, signed in, and rate limited per account
+  (`RATE_RULES.avatar`).
+- **Limits:** JPEG, PNG or WebP up to 2 MB, judged by the file's first bytes, not its name or
+  `Content-Type` (SVG and GIF are refused). The server (`src/server/services/avatars.ts`, with
+  `sharp`) crops to the center and re-encodes a 256×256 WebP, which drops EXIF and GPS data.
+- **Storage:** the image-store port (`src/server/ports/image-store.ts`), chosen by `IMAGE_STORE`:
+  `vercel-blob` in production (needs `BLOB_READ_WRITE_TOKEN`), `local` for `next dev` (files in
+  `public/uploads/`, gitignored), `memory` in tests, or `none`, which refuses uploads with a 503.
+  Unset, it's `vercel-blob` when the token is set, else `local`, or `none` in production.
+  The old file is deleted when a picture is replaced or removed, or the account is deleted.
+- **Moderation:** moderators and admins (`moderation.avatars`) can remove someone's picture from
+  their review on the map (`DELETE /api/admin/reviews/:id/avatar`, by review so a rename can't
+  point it at someone else; rate limited per staff member, `RATE_RULES.avatarModeration`).
+
 ## Local development
 
-`make run` seeds a confirmed account into local databases only:
+`make run` (or `npm run db:seed`) seeds confirmed, onboarded accounts into local databases only
+(localhost or the `db` container; `scripts/db/seed.ts` checks). They all use the password
+`pokefindr-dev-password!`:
 
-- **Email:** `dev@pokefindr.local`
-- **Password:** `pokefindr-dev-password!`
+| Email | Username | Role | For testing |
+| --- | --- | --- | --- |
+| `superadmin@pokefindr.local` | `superadmin` | super_admin | Admin → Users, plus everything an admin has |
+| `dev@pokefindr.local` | `dev` | admin | every section of `/admin` except Users |
+| `moderator@pokefindr.local` | `moderator` | moderator | `/moderate` (`/admin` sends it there); can't decide its own submissions; gets the review emails |
+| `ash@pokefindr.local` | `ash` | member | a plain member: no Admin link, `/admin` is a 404 |
+| `misty@pokefindr.local` | `misty` | member | the same |
+| `brock@pokefindr.local` | `brock` | member | the same |
+| `serena@pokefindr.local` | `serena` | member | the same, with emails and pages in Spanish (`locale` `es`) |
+
+The accounts are `DEV_ACCOUNTS` in `scripts/db/seedDevUsers.ts`; add an entry to seed another.
+Each run adds missing accounts and sets an existing account's role back to the seeded value, so a
+seeded account always means the same thing, on new and existing branch databases alike. To try
+a role change, use an account you signed up yourself. Accounts are matched by their fixed id, so
+one you signed up yourself is never changed: if its email or username is a seeded one, the seed
+skips that seeded account and says so (`email taken`, `username taken`).
+
+The seed also adds three pending submissions (from `ash`, `brock` and `serena`) and an open report
+(from `misty`), all named or marked as samples, so the review queue and Reports have something in
+them on a new database (`scripts/db/seedModeration.ts`). They have fixed ids: one you approve or
+reject stays decided on the next seed.
 
 Every email the app sends goes to Mailpit at http://localhost:8025. Running `npm run dev` outside
 Docker, `MAIL_PROVIDER` defaults to `console`, which prints each email (and its link) in the
@@ -123,6 +201,7 @@ npm run test:e2e
 | `MAIL_FROM` | in production | Its domain needs SPF and DKIM records with the SMTP provider |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | optional | Shows "Continue with Google" |
 | `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET` | optional | Shows "Continue with Discord" |
+| `BLOB_READ_WRITE_TOKEN` | in production, for profile pictures | Set by Vercel when a Blob store is connected. Without it, uploads answer 503 |
 
 Each OAuth provider's console must list `${APP_URL}/api/identity/callback/google` (or `/discord`) as
 a redirect URI. Preview deployments have changing URLs, so leave the OAuth variables unset there:

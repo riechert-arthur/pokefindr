@@ -14,6 +14,7 @@ const blankAsUnset = <T extends z.ZodTypeAny>(schema: T) =>
   z.preprocess((value) => (value === "" ? undefined : value), schema)
 
 export const GEOCODER_PROVIDERS = ["fake", "photon", "mapbox", "maptiler", "nominatim"] as const
+export const ROUTER_PROVIDERS = ["fake", "openrouteservice"] as const
 
 const serverSchema = z.object({
   // Only compared to "production", so any other value (e.g. "staging") is allowed.
@@ -77,6 +78,23 @@ const serverSchema = z.object({
   GEOCODER_BASE_URL: blankAsUnset(z.string().url().optional()),
 
   /**
+   * Which router draws an assistant route along the streets (#288,
+   * /api/route). Unset, it's `openrouteservice` when ROUTER_API_KEY is set
+   * and `fake` (straight lines) otherwise, so dev and CI need no account.
+   */
+  ROUTER_PROVIDER: blankAsUnset(z.enum(ROUTER_PROVIDERS).optional()),
+  /** OpenRouteService's API key (HeiGIT). Required for openrouteservice; stays on the server. */
+  ROUTER_API_KEY: blankAsUnset(z.string().min(1).optional()),
+  /** A self-hosted OpenRouteService instead of api.heigit.org/openrouteservice. */
+  ROUTER_BASE_URL: blankAsUnset(z.string().url().optional()),
+  /**
+   * The most routes asked of the provider in any 24 hours, over the whole
+   * server. Past it, /api/route draws straight lines. Keep it under the
+   * provider's free quota (OpenRouteService: 2,000 a day).
+   */
+  ROUTER_DAILY_CAP: blankAsUnset(z.coerce.number().int().min(2).default(1800)),
+
+  /**
    * How email is sent (src/server/container.ts): "console" prints it (local
    * dev and CI, and it refuses to run in production), "smtp" sends it
    * through SMTP_URL.
@@ -95,6 +113,17 @@ const serverSchema = z.object({
    * localhost default); elsewhere it defaults to one.
    */
   MAIL_FROM: blankAsUnset(z.string().min(1).optional()),
+
+  /**
+   * Where profile pictures are kept (#290, src/server/container.ts):
+   * "vercel-blob" (production, needs BLOB_READ_WRITE_TOKEN), "local" (files
+   * under public/uploads/, for `next dev`), "memory" (tests) or "none"
+   * (uploads are refused). Unset: vercel-blob when BLOB_READ_WRITE_TOKEN is
+   * set, else none in production and local everywhere else.
+   */
+  IMAGE_STORE: blankAsUnset(z.enum(["vercel-blob", "local", "memory", "none"]).optional()),
+  /** The Vercel Blob store's read-write token (Vercel sets it when a Blob store is connected to the project). */
+  BLOB_READ_WRITE_TOKEN: blankAsUnset(z.string().min(1).optional()),
 
   /** Claude API key for the assistant (/api/assistant). Unset (and no federation below), the assistant says it's unavailable. */
   ANTHROPIC_API_KEY: blankAsUnset(z.string().min(1).optional()),
@@ -126,18 +155,35 @@ const serverSchema = z.object({
   ASSISTANT_ENABLED: blankAsUnset(z.enum(["true", "false"]).default("true")).transform((v) => v === "true"),
   /** The most the assistant may spend a UTC day, over all users, in dollars. Past it, it pauses until midnight UTC. */
   ASSISTANT_DAILY_BUDGET_USD: blankAsUnset(z.coerce.number().positive().default(10)),
+
+  /**
+   * Who checks reviews (and, later, assistant questions) before others see
+   * them (#253, src/server/container.ts): "claude" (Claude Haiku through the
+   * assistant's Claude credentials) or "fake" (keyword rules, no account).
+   * Unset, production uses claude when a Claude key or federation is set,
+   * and everything else fake, so local dev and CI never spend money.
+   */
+  MODERATION_PROVIDER: blankAsUnset(z.enum(["fake", "claude"]).optional()),
+  /** The moderation model. */
+  MODERATION_MODEL: blankAsUnset(z.string().min(1).default("claude-haiku-5-5")),
 }).transform((env, ctx) => {
   if (env.NODE_ENV === "production" && env.MAIL_PROVIDER === "smtp" && !env.MAIL_FROM)
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["MAIL_FROM"], message: "required to send email in production" })
   return {
     ...env,
     GEOCODER_PROVIDER: env.GEOCODER_PROVIDER ?? (env.NODE_ENV === "production" ? "photon" : "fake"),
+    ROUTER_PROVIDER: env.ROUTER_PROVIDER ?? (env.ROUTER_API_KEY ? "openrouteservice" : "fake"),
     RATE_LIMIT_STORE: env.RATE_LIMIT_STORE ?? (env.NODE_ENV === "production" ? "postgres" : "memory"),
     MAIL_FROM: env.MAIL_FROM ?? "PokeFindr <no-reply@localhost>",
+    MODERATION_PROVIDER:
+      env.MODERATION_PROVIDER ?? (env.NODE_ENV === "production" && (env.ANTHROPIC_API_KEY || env.ANTHROPIC_FEDERATION_RULE_ID) ? "claude" : "fake"),
+    IMAGE_STORE: env.IMAGE_STORE ?? (env.BLOB_READ_WRITE_TOKEN ? "vercel-blob" : env.NODE_ENV === "production" ? "none" : "local"),
   }
 }).superRefine((env, ctx) => {
   if ((env.GEOCODER_PROVIDER === "mapbox" || env.GEOCODER_PROVIDER === "maptiler") && !env.GEOCODER_API_KEY)
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["GEOCODER_API_KEY"], message: `required when GEOCODER_PROVIDER is ${env.GEOCODER_PROVIDER}` })
+  if (env.ROUTER_PROVIDER === "openrouteservice" && !env.ROUTER_API_KEY)
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["ROUTER_API_KEY"], message: "required when ROUTER_PROVIDER is openrouteservice" })
   if (Boolean(env.ANTHROPIC_FEDERATION_RULE_ID) !== Boolean(env.ANTHROPIC_ORGANIZATION_ID))
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -147,6 +193,10 @@ const serverSchema = z.object({
   for (const p of ["GOOGLE", "DISCORD"] as const)
     if (Boolean(env[`${p}_CLIENT_ID`]) !== Boolean(env[`${p}_CLIENT_SECRET`]))
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: [`${p}_CLIENT_${env[`${p}_CLIENT_ID`] ? "SECRET" : "ID"}`], message: `${p.toLowerCase()} sign-in needs both ${p}_CLIENT_ID and ${p}_CLIENT_SECRET` })
+  if (env.MODERATION_PROVIDER === "claude" && !env.ANTHROPIC_API_KEY && !env.ANTHROPIC_FEDERATION_RULE_ID)
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["MODERATION_PROVIDER"], message: "claude needs ANTHROPIC_API_KEY or workload identity federation" })
+  if (env.IMAGE_STORE === "vercel-blob" && !env.BLOB_READ_WRITE_TOKEN)
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["BLOB_READ_WRITE_TOKEN"], message: "required when IMAGE_STORE is vercel-blob" })
   if (env.MAIL_PROVIDER === "smtp" && !env.SMTP_URL)
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["SMTP_URL"], message: "required when MAIL_PROVIDER is smtp" })
   if (env.GEOCODER_PROVIDER === "nominatim" && !env.GEOCODER_USER_AGENT)

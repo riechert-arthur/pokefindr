@@ -97,7 +97,7 @@ Vercel Queues is in beta (`queue/v2beta`), and `@vercel/queue` is pinned to an e
 
 ## Logs
 
-Each run logs one line: `[jobs] ok { job, trigger, messageId, deliveryCount, ms }`. Failures log `[jobs] failed …` with the error. The queue consumer also logs `dropping …`, `unknown job; retrying …` and `giving up on queue message`. Filter Vercel runtime logs on `[jobs]`.
+Each run logs one JSON line through the server logger ([logging.md](logging.md)): `job.ok { job, trigger, messageId, deliveryCount, ms, result }`, where `result` is the job's counts (the rows it touched). Failures log `job.failed` with the error's name, code and first line, never the raw error. The queue consumer also logs `job.message_dropped { reason }`, `job.unknown` and `job.gave_up`. Search Vercel runtime logs for `"event":"job.`. Pausing, resuming and running a job from the admin page log `admin.job.*` with the admin's id.
 
 ## Costs
 

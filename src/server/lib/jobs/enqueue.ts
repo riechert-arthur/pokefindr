@@ -4,6 +4,7 @@ import { getServerConfig } from "@/server/config"
 import { isJobName } from "./registry"
 import { runJob, UnknownJobError } from "./run"
 import { signJobMessage } from "./signing"
+import { log } from "@/server/log"
 
 /** The one Vercel Queues topic. Messages carry the job name, so adding a job needs no new topic. */
 export const JOBS_TOPIC = "jobs"
@@ -62,7 +63,7 @@ export async function enqueueJob(job: string, payload: unknown = null, options: 
   }
 
   if (options.idempotencyKey) {
-    console.info("[jobs] idempotencyKey is ignored off Vercel", { job })
+    log.info("job.idempotency_ignored", { job })
   }
   const done = new Promise<void>((resolve) => {
     setTimeout(() => {

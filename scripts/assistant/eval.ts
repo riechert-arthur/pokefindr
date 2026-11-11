@@ -9,6 +9,9 @@
  *   --baseline <file>          fail if the pass rate drops 5+ points below it
  *   --out <dir>                where reports go (default evals/assistant/results)
  *   --max-cost-usd <n>         stop starting cases past this spend (default 5)
+ *   --moderation <p>           check each question first, as /api/assistant does
+ *                              (#253): claude, fake or off (default: the configured
+ *                              MODERATION_PROVIDER, fake unless production)
  *
  * Calls the Claude API with ANTHROPIC_API_KEY, so every run costs money: use
  * a separate, spend-limited key (#209). EVAL_DATABASE_URL must name a
@@ -39,12 +42,15 @@ async function main() {
 
   const { getServerConfig } = await import("@/server/config")
   const { getDb } = await import("@/server/db/client")
-  const { getAnthropic } = await import("@/server/container")
+  const { getAnthropic, makeModerator } = await import("@/server/container")
   const { getClaude } = await import("@/server/assistant/run")
   const { FakeGeocoder } = await import("@/server/adapters/geocoder/fake")
   const { seedEvalData } = await import("../../evals/assistant/fixtures")
   const { gate, loadCases, runEval } = await import("../../evals/assistant/runner")
 
+  const moderation = arg("moderation")
+  if (moderation && !["claude", "fake", "off"].includes(moderation)) throw new Error("--moderation must be claude, fake or off")
+  if (moderation && moderation !== "off") process.env.MODERATION_PROVIDER = moderation
   const config = getServerConfig()
   const claude = getClaude()
   if (!claude) throw new Error("Set ANTHROPIC_API_KEY (a separate, spend-limited key) to run the eval.")
@@ -57,7 +63,7 @@ async function main() {
     if (!throwaway(name)) throw new Error(`EVAL_DATABASE_URL connects to "${name}", not an eval or test database. Nothing was changed.`)
     const now = new Date()
     await seedEvalData(sql, now)
-    console.log(`${cases.length} cases × ${reps} on ${config.ASSISTANT_MODEL} (effort ${config.ASSISTANT_EFFORT})\n`)
+    console.log(`${cases.length} cases × ${reps} on ${config.ASSISTANT_MODEL} (effort ${config.ASSISTANT_EFFORT}), moderation ${moderation === "off" ? "off" : config.MODERATION_PROVIDER}\n`)
     const report = await runEval({
       cases,
       reps,
@@ -68,6 +74,7 @@ async function main() {
       sql,
       geocoder: new FakeGeocoder(),
       judgeClient: process.argv.includes("--judge") ? getAnthropic() : null,
+      moderator: moderation === "off" ? null : makeModerator(config),
       now,
       maxCostMicros: Number(arg("max-cost-usd", "5")) * 1e6,
       onRow: (r) =>

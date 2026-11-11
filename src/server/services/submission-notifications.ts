@@ -1,4 +1,5 @@
 import "server-only"
+import { rolesWith } from "@/lib/auth/entitlements"
 import { and, eq, inArray, isNull, lt } from "drizzle-orm"
 import { z } from "zod/v3"
 import { getDb, type Database } from "@/server/db/client"
@@ -77,7 +78,7 @@ type Payload = { name?: string; city?: string; state?: string }
 /** A profile's language, or English when they haven't one. */
 
 /**
- * Tells every moderator and admin about a new submission, once each. Skips
+ * Tells everyone with `moderation.notify` about a new submission, once each. Skips
  * one that's no longer pending (someone already decided it).
  */
 export async function notifySubmissionCreated(submissionId: string, db: Database = getDb()): Promise<{ sent: number }> {
@@ -88,15 +89,15 @@ export async function notifySubmissionCreated(submissionId: string, db: Database
     .select({ id: users.id, email: users.email, locale: profiles.locale })
     .from(profiles)
     .innerJoin(users, eq(users.id, profiles.id))
-    .where(inArray(profiles.role, ["moderator", "admin"]))
-  // In each moderator's language (#185); the admin page itself is English.
+    .where(inArray(profiles.role, rolesWith("moderation.notify")))
+  // In each moderator's language (#185); the queue on /moderate is English.
   const email = (locale: Locale) =>
     submissionToReview({
       kind: row.s.kind,
       name: p.name ?? serverTranslator(locale)("email.toReview.unnamed"),
       place: [p.city, p.state].filter(Boolean).join(", "),
       submitter: row.submitter,
-      url: `${getServerConfig().APP_URL}/admin`,
+      url: `${getServerConfig().APP_URL}/moderate`,
       locale,
     })
   // Each moderator on their own: one bad address mustn't stop the rest. The

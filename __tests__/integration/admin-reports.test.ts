@@ -165,7 +165,7 @@ describe("admin reports", () => {
 
   it("gives moderators the Moderation counts only", async () => {
     const summary = await (await summaryRoute(req("/api/admin/summary", MOD))).json()
-    expect(Object.keys(summary).sort()).toEqual(["queue", "reports"])
+    expect(Object.keys(summary).sort()).toEqual(["queue", "reports", "reviews"])
   })
 
   it("refuses a bad action or an unknown location", async () => {

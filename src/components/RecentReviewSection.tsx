@@ -8,6 +8,8 @@ export interface Review {
   id: string
   rating: number
   comment: string
+  /** "held" until a moderator approves it, "removed" if one took it down (#253). */
+  status?: "published" | "held" | "removed"
   location: {
     name: string
     address: string
@@ -47,6 +49,8 @@ export const RecentReviewsSection: React.FC<RecentReviewsSectionProps> = ({ revi
               </div>
 
               <div className="px-4 py-3 flex-1 overflow-y-auto">
+                {review.status === "held" && <p className="mb-1.5 text-xs font-semibold text-warning">{t("pending")}</p>}
+                {review.status === "removed" && <p className="mb-1.5 text-xs font-semibold text-muted-foreground">{t("removed")}</p>}
                 <p className="text-sm text-foreground">{review.comment}</p>
                 {/* Images could go here */}
               </div>

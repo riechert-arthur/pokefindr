@@ -93,7 +93,7 @@ export default function ReviewsPage() {
   const saveEdit = form.handleSubmit(async (values) => {
     if (!current) return
     try {
-      await axios.patch(
+      const res = await axios.patch<{ status?: Review['status'] }>(
         `/api/reviews/${current.id}`,
         { text: values.text, rating: values.rating },
         { withCredentials: true }
@@ -101,7 +101,7 @@ export default function ReviewsPage() {
       setReviews((rs) =>
         rs.map((r) =>
           r.id === current.id
-            ? { ...r, comment: values.text, rating: values.rating }
+            ? { ...r, comment: values.text, rating: values.rating, status: res.data?.status ?? r.status }
             : r
         )
       )
@@ -129,7 +129,7 @@ export default function ReviewsPage() {
               <span className="sr-only">View notifications</span>
               <BellIcon className="size-6" />
             </button>*/}
-            <UserMenu userName={session?.username ?? tDashboard("guest")} size={40}  />
+            <UserMenu userName={session?.username ?? tDashboard("guest")} imageUrl={session?.image} />
           </div>
         </div>
       </header>

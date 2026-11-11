@@ -2,12 +2,14 @@ import "server-only"
 import { and, eq, sql } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
 import { cardShopDetails, eventDetails, highlights, locationRatings, locationSubmissions, locations, profiles, statusReports } from "@/server/db/schema"
-import { canModerate, type Role } from "@/lib/auth/roles"
+import { can } from "@/lib/auth/entitlements"
+import type { Role } from "@/lib/auth/roles"
 import type { RejectReason } from "@/lib/submissions/constants"
 import type { EventSubmission, ShopSubmission } from "@/lib/submissions/schemas"
 import { UNDO_MS, type ModerationCheck, type ModerationItem } from "@/lib/submissions/moderation"
 export { UNDO_MS }
 import { regionAt } from "@/server/geo/regions"
+import { CATEGORY_LABELS, type SubmissionTextCheck } from "@/lib/reviews/moderation"
 import { METERS_PER_MILE, pointOf } from "./locations"
 
 /** Moderators see places of the same kind this close as possible duplicates (the prototype's 0.25 mi). */
@@ -17,11 +19,6 @@ const DAY_MS = 24 * 60 * 60 * 1000
 export async function getRole(userId: string, db: Database = getDb()): Promise<Role | null> {
   const [row] = await db.select({ role: profiles.role }).from(profiles).where(eq(profiles.id, userId))
   return row?.role ?? null
-}
-
-/** Whether this user may review submissions. */
-export async function isModerator(userId: string, db: Database = getDb()): Promise<boolean> {
-  return canModerate(await getRole(userId, db))
 }
 
 type Payload = Partial<Omit<ShopSubmission, "kind" | "lng" | "lat"> & Omit<EventSubmission, "kind" | "lng" | "lat">>
@@ -40,13 +37,14 @@ interface Row extends Record<string, unknown> {
   submitterId: string
   submitter: string
   reviewer: string | null
+  textCheck: SubmissionTextCheck | null
 }
 
 const selectItems = sql`
   select s.id, s.kind, s.payload, s.status, s.reject_reason as "rejectReason", s.location_id as "locationId",
     round(ST_X(s.geog::geometry)::numeric, 6)::float8 as lng, round(ST_Y(s.geog::geometry)::numeric, 6)::float8 as lat,
     s.created_at as "createdAt", s.reviewed_at as "reviewedAt",
-    s.submitted_by as "submitterId", sp.username as submitter, rp.username as reviewer
+    s.submitted_by as "submitterId", sp.username as submitter, rp.username as reviewer, s.text_check as "textCheck"
   from ${locationSubmissions} s
   join ${profiles} sp on sp.id = s.submitted_by
   left join ${profiles} rp on rp.id = s.reviewed_by`
@@ -54,7 +52,9 @@ const selectItems = sql`
 /**
  * The automatic checks a moderator sees on a submission, as in the
  * prototype: inside a supported country (and the state the pin is in), a
- * possible duplicate within 0.25 mi, and the fields each kind should have.
+ * possible duplicate within 0.25 mi, the fields each kind should have,
+ * and the text check of its name, venue, hours and links (#253), which
+ * only informs: nothing is rejected automatically.
  */
 async function checksFor(row: Row, db: Database, now: Date): Promise<ModerationCheck[]> {
   const p = row.payload
@@ -87,6 +87,15 @@ async function checksFor(row: Row, db: Database, now: Date): Promise<ModerationC
     const ok = Number.isFinite(starts) && starts > now.getTime() - DAY_MS
     checks.push({ key: "date", ok, label: !p.startsAt ? "No date" : ok ? "Has a date" : "The date has passed" })
   }
+  const t = row.textCheck
+  if (t)
+    checks.push(
+      t.failed
+        ? { key: "text", ok: false, label: "Text not checked", detail: "The automatic check didn't run. Read the name and links yourself." }
+        : t.verdict === "allow"
+          ? { key: "text", ok: true, label: "Text looks fine" }
+          : { key: "text", ok: false, label: `Text flagged${t.categories.length ? `: ${t.categories.map((c) => CATEGORY_LABELS[c] ?? c).join(", ")}` : ""}`, detail: t.reason },
+    )
   return checks
 }
 
@@ -130,14 +139,11 @@ export type DecisionResult = { status: "done"; locationId?: string; reviewedAt?:
 
 type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0]
 
-/**
- * A moderator can't decide their own submission: someone else checks it.
- * Admins can, so a site with one admin isn't stuck.
- */
+/** Deciding your own submission needs `moderation.decideOwn`; without it, someone else checks it. */
 async function decidingOwn(tx: Tx, submittedBy: string, reviewerId: string): Promise<boolean> {
   if (submittedBy !== reviewerId) return false
   const [me] = await tx.select({ role: profiles.role }).from(profiles).where(eq(profiles.id, reviewerId))
-  return me?.role !== "admin"
+  return !can(me?.role, "moderation.decideOwn")
 }
 
 /** Locks the submission for this decision. */

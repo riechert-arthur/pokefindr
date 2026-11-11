@@ -4,7 +4,7 @@ import { NextRequest } from "next/server"
 import { getDb } from "@/server/db/client"
 import { locationSubmissions } from "@/server/db/schema"
 import { GET as summary } from "@/app/api/admin/summary/route"
-import { requireStaff, staffRole } from "@/server/admin/access"
+import { requireEntitlement, roleOf } from "@/server/admin/access"
 import { insertProfiles } from "./testDatabase"
 
 const MEMBER = randomUUID()
@@ -22,19 +22,21 @@ beforeEach(async () => {
 const req = (userId?: string) => new NextRequest("http://localhost/api/admin/summary", { headers: userId ? { "x-user-id": userId } : {} })
 
 describe("admin access", () => {
-  it("knows staff: moderators and admins", async () => {
-    expect(await staffRole(MEMBER)).toBeNull()
-    expect(await staffRole(null)).toBeNull()
-    expect(await staffRole(MOD)).toBe("moderator")
-    expect(await staffRole(ADMIN)).toBe("admin")
+  it("reads each user's role", async () => {
+    expect(await roleOf(MEMBER)).toBe("member")
+    expect(await roleOf(null)).toBeNull()
+    expect(await roleOf(randomUUID())).toBeNull()
+    expect(await roleOf(MOD)).toBe("moderator")
+    expect(await roleOf(ADMIN)).toBe("admin")
   })
 
   it("answers 401 without a session and 404 to anyone who isn't allowed", async () => {
-    expect((await requireStaff(req(), "moderator")) as Response).toHaveProperty("status", 401)
-    expect((await requireStaff(req(MEMBER), "moderator")) as Response).toHaveProperty("status", 404)
-    expect((await requireStaff(req(MOD), "admin")) as Response).toHaveProperty("status", 404)
-    expect(await requireStaff(req(MOD), "moderator")).toEqual({ userId: MOD, role: "moderator" })
-    expect(await requireStaff(req(ADMIN), "admin")).toEqual({ userId: ADMIN, role: "admin" })
+    expect((await requireEntitlement(req(), "moderation.view")) as Response).toHaveProperty("status", 401)
+    expect((await requireEntitlement(req(MEMBER), "moderation.view")) as Response).toHaveProperty("status", 404)
+    expect((await requireEntitlement(req(randomUUID()), "moderation.view")) as Response).toHaveProperty("status", 404)
+    expect((await requireEntitlement(req(MOD), "admin.jobs")) as Response).toHaveProperty("status", 404)
+    expect(await requireEntitlement(req(MOD), "moderation.view")).toEqual({ userId: MOD, role: "moderator" })
+    expect(await requireEntitlement(req(ADMIN), "admin.jobs")).toEqual({ userId: ADMIN, role: "admin" })
   })
 })
 

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 import { getLocationsNear } from "@/server/services/locations"
 import { nearQuerySchema } from "@/lib/locations/search"
 import { guardRoute, RATE_RULES } from "@/server/api-rate-limit"
+import { log } from "@/server/log"
 
 export const dynamic = "force-dynamic"
 
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
       headers: { "Cache-Control": "private, max-age=30" },
     })
   } catch (err) {
-    console.error("[api/locations/near] failed to load locations", err)
+    log.forRequest(request, "/api/locations/near").logError("api.failed", err, { step: "failed to load locations" })
     return NextResponse.json({ error: "Failed to load locations" }, { status: 500 })
   }
 }

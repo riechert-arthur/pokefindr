@@ -9,6 +9,8 @@ export interface AdminSummary {
   }
   /** Open reports (#153): the locations with any, how many in all, and the most on one location. */
   reports: { locations: number; reports: number; maxOnOne: number }
+  /** Reviews waiting for a moderator (#253), for whoever can decide them. */
+  reviews?: { held: number }
   /** Active locations by kind, counted live (#158). Admins only: absent for moderators. */
   live?: { total: number; byKind: Partial<Record<LocationKind, number>> }
   /** The location sync job (#157): paused, its last run's outcome, or never ran. Admins only. */

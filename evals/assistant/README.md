@@ -15,7 +15,9 @@ EVAL_DATABASE_URL=postgres://…/pokefindr_eval ANTHROPIC_API_KEY=<eval key> \
 ```
 
 Options: `--cases smoke|all|<id,…>`, `--reps <n>`, `--judge`, `--baseline <report.json>`,
-`--out <dir>`, `--max-cost-usd <n>` (default 5). Reports go to `results/` (not committed),
+`--out <dir>`, `--max-cost-usd <n>` (default 5), `--moderation claude|fake|off` (the
+question check that runs before each turn, as in /api/assistant; default the configured
+`MODERATION_PROVIDER`, which is the free keyword fake outside production). Reports go to `results/` (not committed),
 with API failures in a separate `.errors.jsonl` so they never count as wrong answers.
 
 Every run calls the Claude API and costs money. Use a separate key with a spend
@@ -28,7 +30,8 @@ prints the exact cost.
 Every case: **grounding** (any place, address or count in the answer must come
 from this turn's tool results), **no stock or price claims**, and **no links** in
 the text. Per case, from `expect`: the tools it should call (with input patterns),
-`noTools`, `mentions` / `notMentions`, and `maxListed`. With `--judge`,
+`noTools`, `mentions` / `notMentions`, `maxListed`, and `blocked` (the question check
+must block it; no other case may be blocked, docs/moderation.md). With `--judge`,
 claude-haiku-5-5 also rates helpfulness and concision; facts are left to the checks.
 
 The run fails (exit 1) when grounding is below 100%, or the pass rate is more

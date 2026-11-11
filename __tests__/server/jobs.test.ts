@@ -126,10 +126,16 @@ describe("message signing", () => {
   })
 })
 
+/** The JSON line written for `event` (#254, src/server/log.ts). */
+function logged(method: "info" | "error", event: string): Record<string, unknown> | undefined {
+  const calls = (console[method] as unknown as { mock: { calls: unknown[][] } }).mock.calls
+  return calls.map((c) => (typeof c[0] === "string" && c[0].startsWith("{") ? JSON.parse(c[0]) : null)).find((l) => l?.event === event)
+}
+
 describe("runJob", () => {
   it("runs a registered job and logs it", async () => {
     await expect(runJob("noop", { a: 1 }, { trigger: "cli" })).resolves.toEqual({ trigger: "cli", payload: { a: 1 } })
-    expect(console.info).toHaveBeenCalledWith("[jobs] ok", expect.objectContaining({ job: "noop", trigger: "cli" }))
+    expect(logged("info", "job.ok")).toMatchObject({ job: "noop", trigger: "cli", result: { trigger: "cli" } })
   })
 
   it("throws for an unknown job", async () => {
@@ -145,7 +151,7 @@ describe("runJob", () => {
   it("logs and rethrows a failing job", async () => {
     vi.spyOn(jobs.noop, "run").mockRejectedValueOnce(new Error("boom"))
     await expect(runJob("noop", null, { trigger: "cron" })).rejects.toThrow("boom")
-    expect(console.error).toHaveBeenCalledWith("[jobs] failed", expect.objectContaining({ job: "noop" }), expect.any(Error))
+    expect(logged("error", "job.failed")).toMatchObject({ job: "noop", errorName: "Error", msg: "boom" })
   })
 })
 
@@ -209,7 +215,7 @@ describe("enqueueJob", () => {
     vi.spyOn(jobs.noop, "run").mockRejectedValueOnce(new Error("boom"))
     const result = await enqueueJob("noop")
     if (result.mode === "inline") await expect(result.done).resolves.toBeUndefined()
-    expect(console.error).toHaveBeenCalledWith("[jobs] failed", expect.anything(), expect.any(Error))
+    expect(logged("error", "job.failed")).toBeTruthy()
   })
 
   it("off Vercel, honors delaySeconds", async () => {
@@ -268,7 +274,7 @@ describe("queue consumer", () => {
     const run = vi.spyOn(jobs.noop, "run")
     await expect(handleJobMessage(message, meta(1))).resolves.toBeUndefined()
     expect(run).not.toHaveBeenCalled()
-    expect(console.error).toHaveBeenCalledWith(expect.stringMatching(/^\[jobs\] dropping/), expect.anything())
+    expect(logged("error", "job.message_dropped")).toBeTruthy()
   })
 
   it("drops every message when CRON_SECRET is unset", async () => {
@@ -281,7 +287,7 @@ describe("queue consumer", () => {
 
   it("drops a signed message whose payload fails the job's schema", async () => {
     await expect(handleJobMessage(signed("typed", []), meta(1))).resolves.toBeUndefined()
-    expect(console.error).toHaveBeenCalledWith("[jobs] dropping queue message with an invalid payload", expect.anything())
+    expect(logged("error", "job.message_dropped")).toMatchObject({ reason: "invalid_payload" })
   })
 
   it("retries a signed message for a job this deployment doesn't know", async () => {

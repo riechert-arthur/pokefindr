@@ -9,24 +9,24 @@ const GROUPS: AdminGroup[] = [
     id: "moderation",
     label: "Moderation",
     sections: [
-      { id: "queue", label: "Review queue", sub: "", access: "moderator" },
-      { id: "reports", label: "Reports", sub: "", access: "moderator" },
+      { id: "queue", label: "Review queue", sub: "", entitlement: "moderation.view" },
+      { id: "reports", label: "Reports", sub: "", entitlement: "moderation.view" },
     ],
   },
   {
     id: "locations",
     label: "Locations",
     sections: [
-      { id: "coverage", label: "Coverage", sub: "", access: "admin" },
-      { id: "add-vending", label: "Add vending machine", sub: "", access: "admin" },
+      { id: "coverage", label: "Coverage", sub: "", entitlement: "admin.coverage" },
+      { id: "add-vending", label: "Add vending machine", sub: "", entitlement: "admin.vending" },
     ],
   },
   {
     id: "system",
     label: "System",
     sections: [
-      { id: "jobs", label: "Jobs", sub: "", access: "admin" },
-      { id: "ads", label: "Ads", sub: "", access: "admin" },
+      { id: "jobs", label: "Jobs", sub: "", entitlement: "admin.jobs" },
+      { id: "ads", label: "Ads", sub: "", entitlement: "admin.ads" },
     ],
   },
 ]

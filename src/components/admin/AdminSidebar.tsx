@@ -2,12 +2,13 @@
 
 import { Link } from "@/i18n/navigation"
 import { useEffect, useState, type ComponentType, type SVGProps } from "react"
-import { ChartBarIcon, ChevronDownIcon, FlagIcon, HouseIcon, InboxIcon, MapPinIcon, MegaphoneIcon, RefreshCwIcon, SquarePlusIcon } from "lucide-react"
+import { ChartBarIcon, ChevronDownIcon, FlagIcon, HouseIcon, InboxIcon, MapPinIcon, MegaphoneIcon, RefreshCwIcon, SquarePlusIcon, UsersIcon } from "lucide-react"
 import { Logo } from "@/components/brand/Logo"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { CountBadge } from "@/components/admin/CountBadge"
+import { UserAvatar } from "@/components/pokefindr/UserAvatar"
 import type { AdminGroup } from "@/lib/admin/sections"
+import { ROLE_LABELS, type Role } from "@/lib/auth/roles"
 import { cn } from "@/lib/utils"
-import { useFormat } from "@/i18n/format"
 
 const ICONS: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
   queue: InboxIcon,
@@ -16,6 +17,7 @@ const ICONS: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
   "add-vending": SquarePlusIcon,
   jobs: RefreshCwIcon,
   ads: MegaphoneIcon,
+  users: UsersIcon,
 }
 
 /** A section's count beside its name; red when something there is urgent. */
@@ -33,22 +35,6 @@ function readCollapsed(): Set<string> {
   } catch {
     return new Set()
   }
-}
-
-function Count({ count, hot, label }: SectionCount & { label: string }) {
-  // In the page's number format, like the summary cards.
-  const f = useFormat()
-  return (
-    <span
-      aria-label={`${count} ${label}`}
-      className={cn(
-        "ml-auto min-w-5 rounded-full px-1.5 text-center text-caption font-semibold tabular-nums",
-        hot ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground",
-      )}
-    >
-      {f.count(count)}
-    </span>
-  )
 }
 
 const itemClass =
@@ -72,7 +58,7 @@ export function AdminSidebar({
   current: string
   counts: Partial<Record<string, SectionCount>>
   onSelect: (section: string) => void
-  user: { username: string; role: string }
+  user: { username: string; role: Role; image?: string | null }
 }) {
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set())
   // Read after mount: the server doesn't know this browser's choice.
@@ -115,7 +101,7 @@ export function AdminSidebar({
               className="hidden items-center gap-1.5 rounded-md px-2.5 py-1 text-overline uppercase text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:flex"
             >
               {g.label}
-              {shut && waiting > 0 && <Count count={waiting} hot={hot} label="waiting" />}
+              {shut && waiting > 0 && <CountBadge count={waiting} hot={hot} label={`${waiting} waiting`} className="ml-auto" />}
               <ChevronDownIcon aria-hidden className={cn("size-3.5 transition-transform", !shut && "ml-auto", shut && waiting === 0 && "ml-auto", shut && "-rotate-90")} />
             </button>
             {/* Folding is desktop-only: on phones every section stays in the strip. */}
@@ -137,7 +123,7 @@ export function AdminSidebar({
                   >
                     <Icon aria-hidden className="size-4 shrink-0" />
                     <span className="whitespace-nowrap">{s.label}</span>
-                    {c && c.count > 0 && <Count count={c.count} hot={c.hot} label="waiting" />}
+                    {c && c.count > 0 && <CountBadge count={c.count} hot={c.hot} label={`${c.count} waiting`} className="ml-auto" />}
                   </a>
                 )
               })}
@@ -156,12 +142,10 @@ export function AdminSidebar({
           <span className="whitespace-nowrap">Open the map</span>
         </Link>
         <div className="hidden items-center gap-2.5 px-2.5 py-2 md:flex">
-          <Avatar className="size-7">
-            <AvatarFallback className="bg-primary text-caption font-semibold text-primary-foreground">{user.username.slice(0, 1).toUpperCase()}</AvatarFallback>
-          </Avatar>
+          <UserAvatar size="sm" name={user.username} imageUrl={user.image} />
           <span className="min-w-0 leading-tight">
             <span className="block truncate text-body text-foreground">{user.username}</span>
-            <span className="block text-caption capitalize text-muted-foreground">{user.role}</span>
+            <span className="block text-caption text-muted-foreground">{ROLE_LABELS[user.role]}</span>
           </span>
         </div>
       </div>

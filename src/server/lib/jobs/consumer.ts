@@ -5,6 +5,7 @@ import { getServerConfig } from "@/server/config"
 import { enqueueJob } from "./enqueue"
 import { InvalidJobPayloadError, JobPausedError, runJob, UnknownJobError } from "./run"
 import { verifyJobMessage } from "./signing"
+import { log } from "@/server/log"
 
 /**
  * Deliveries before a failing message is dropped, and the first retry delay.
@@ -40,14 +41,14 @@ export async function handleJobMessage(message: unknown, metadata: MessageMetada
   const where = { messageId: metadata.messageId, deliveryCount: metadata.deliveryCount }
   const parsed = jobMessageSchema.safeParse(message)
   if (!parsed.success) {
-    console.error("[jobs] dropping malformed queue message", where)
+    log.error("job.message_dropped", { ...where, reason: "malformed" })
     return
   }
   const { job, body, sig } = parsed.data
 
   const secret = getServerConfig().CRON_SECRET
   if (!secret || !verifyJobMessage(job, body, sig, secret)) {
-    console.error("[jobs] dropping queue message with a bad signature", { ...where, job, secretConfigured: Boolean(secret) })
+    log.error("job.message_dropped", { ...where, job, reason: "bad_signature", secretConfigured: Boolean(secret) })
     return
   }
 
@@ -55,7 +56,7 @@ export async function handleJobMessage(message: unknown, metadata: MessageMetada
   try {
     payload = JSON.parse(body)
   } catch {
-    console.error("[jobs] dropping queue message with an unreadable body", { ...where, job })
+    log.error("job.message_dropped", { ...where, job, reason: "unreadable_body" })
     return
   }
 
@@ -63,17 +64,17 @@ export async function handleJobMessage(message: unknown, metadata: MessageMetada
     await runJob(job, payload, { trigger: "queue", ...where })
   } catch (err) {
     if (err instanceof JobPausedError) {
-      console.info("[jobs] paused; holding the message", { ...where, job, reason: err.reason })
+      log.info("job.message_held", { ...where, job, reason: err.reason })
       // If this send fails, the throw below lets the queue redeliver the original.
       await enqueueJob(job, payload, { delaySeconds: PAUSED_RECHECK_SECONDS })
       return
     }
     if (err instanceof InvalidJobPayloadError) {
-      console.error("[jobs] dropping queue message with an invalid payload", { ...where, job, issues: err.issues })
+      log.error("job.message_dropped", { ...where, job, reason: "invalid_payload", issues: err.issues })
       return
     }
     if (err instanceof UnknownJobError) {
-      console.warn("[jobs] unknown job; retrying in case a newer deployment knows it", { ...where, job })
+      log.warn("job.unknown", { ...where, job, retrying: true })
     }
     throw err
   }
@@ -82,7 +83,7 @@ export async function handleJobMessage(message: unknown, metadata: MessageMetada
 /** Exponential backoff (10 s, 20 s, 40 s… capped at 10 min); gives up after {@link MAX_DELIVERIES}. */
 export function retryJobMessage(_error: unknown, metadata: MessageMetadata): RetryDirective {
   if (metadata.deliveryCount >= MAX_DELIVERIES) {
-    console.error("[jobs] giving up on queue message", { messageId: metadata.messageId, deliveries: metadata.deliveryCount })
+    log.error("job.gave_up", { messageId: metadata.messageId, deliveries: metadata.deliveryCount })
     return { acknowledge: true }
   }
   return { afterSeconds: Math.min(600, FIRST_RETRY_SECONDS * 2 ** (metadata.deliveryCount - 1)) }

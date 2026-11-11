@@ -20,10 +20,10 @@ describe("TabBar", () => {
     ])
   })
 
-  it("adds Add a place and Admin when they're available", () => {
+  it("adds Add a place, Moderate and Admin when they're available", () => {
     nav.pathname = "/map"
-    render(<TabBar canAdd isAdmin />)
-    expect(screen.getAllByRole("link").map((t) => t.textContent)).toEqual(["Home", "Map", "Add a place", "Admin"])
+    render(<TabBar canAdd canModerate isAdmin />)
+    expect(screen.getAllByRole("link").map((t) => t.textContent)).toEqual(["Home", "Map", "Add a place", "Moderate", "Admin"])
     expect(screen.getByRole("link", { name: "Map" })).toHaveAttribute("aria-current", "page")
   })
 

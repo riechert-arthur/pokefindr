@@ -1,6 +1,7 @@
 import "server-only"
 import { createMcpHandler, type AuthInfo, type McpHttpHandler, type McpServerFactory } from "@modelcontextprotocol/server"
 import { takeRequests } from "./limits"
+import { log } from "@/server/log"
 
 /** Largest MCP request body read: tool inputs are a few hundred bytes. */
 export const MAX_BODY_BYTES = 64 * 1024
@@ -43,7 +44,7 @@ export function mcpEndpoint(factory: McpServerFactory): McpHttpHandler {
   return createMcpHandler(factory, {
     legacy: "stateless",
     maxRequestBodySize: MAX_BODY_BYTES,
-    onerror: (err) => console.error("[mcp]", err),
+    onerror: (err) => log.logError("mcp.error", err),
   })
 }
 
@@ -79,7 +80,7 @@ export async function serveMcp(handler: McpHttpHandler, request: Request, key: s
   try {
     return withCors(await handler.fetch(forward, authInfo ? { authInfo } : undefined))
   } catch (err) {
-    console.error("[mcp] request failed", err)
+    log.forRequest(request, new URL(request.url).pathname).logError("mcp.request_failed", err)
     return rpcError(500, "Something went wrong. Try again.")
   }
 }

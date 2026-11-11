@@ -38,16 +38,16 @@ beforeEach(async () => {
 
 describe("reviews", () => {
   it("attaches reviews to the location id they were written for", async () => {
-    expect(await addReview({ locationId: store, userId: alice, rating: 5, text: "Stocked" })).toEqual(expect.any(String))
-    expect(await addReview({ locationId: nextDoor, userId: bob, rating: 2, text: "Empty" })).toEqual(expect.any(String))
+    expect(await addReview({ locationId: store, userId: alice, rating: 5, text: "Stocked" })).toEqual({ id: expect.any(String), status: "published", checkFailed: false })
+    expect(await addReview({ locationId: nextDoor, userId: bob, rating: 2, text: "Empty" })).toEqual({ id: expect.any(String), status: "published", checkFailed: false })
 
-    expect(await listLocationReviews(store)).toEqual([{ rating: 5, text: "Stocked", username: "alice" }])
-    expect(await listLocationReviews(nextDoor)).toEqual([{ rating: 2, text: "Empty", username: "bob" }])
+    expect(await listLocationReviews(store)).toEqual([{ rating: 5, text: "Stocked", username: "alice", image: null }])
+    expect(await listLocationReviews(nextDoor)).toEqual([{ rating: 2, text: "Empty", username: "bob", image: null }])
   })
 
   it("lists a location's reviews for the panel, newest first, with the average and the viewer's own marked", async () => {
-    const first = await addReview({ locationId: store, userId: alice, rating: 5, text: "Stocked" })
-    const second = await addReview({ locationId: store, userId: bob, rating: 2, text: "" })
+    const first = (await addReview({ locationId: store, userId: alice, rating: 5, text: "Stocked" }))!.id
+    const second = (await addReview({ locationId: store, userId: bob, rating: 2, text: "" }))!.id
     const asAlice = await getPanelReviews(store, alice)
     expect(asAlice.count).toBe(2)
     expect(asAlice.average).toBe(3.5)
@@ -73,14 +73,14 @@ describe("reviews", () => {
   it("lists, updates and deletes only the user's own reviews", async () => {
     await addReview({ locationId: store, userId: alice, rating: 4, text: "Good" })
     const [mine] = await listUserReviews(alice)
-    expect(mine).toMatchObject({ rating: 4, comment: "Good", location: { id: store, name: "Frys" } })
+    expect(mine).toMatchObject({ rating: 4, comment: "Good", status: "published", location: { id: store, name: "Frys" } })
     expect(await listUserReviews(bob)).toEqual([])
 
-    expect(await updateReview(mine.id, bob, { rating: 1, text: "Hijacked" })).toBe(false)
+    expect(await updateReview(mine.id, bob, { rating: 1, text: "Hijacked" })).toBeNull()
     expect(await deleteReview(mine.id, bob)).toBe(false)
 
-    expect(await updateReview(mine.id, alice, { rating: 5, text: "Great" })).toBe(true)
-    expect(await listLocationReviews(store)).toEqual([{ rating: 5, text: "Great", username: "alice" }])
+    expect(await updateReview(mine.id, alice, { rating: 5, text: "Great" })).toEqual({ status: "published", checkFailed: false })
+    expect(await listLocationReviews(store)).toEqual([{ rating: 5, text: "Great", username: "alice", image: null }])
 
     expect(await deleteReview(mine.id, alice)).toBe(true)
     expect(await listUserReviews(alice)).toEqual([])

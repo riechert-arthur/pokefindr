@@ -20,6 +20,9 @@ describe("middleware without a session", () => {
     const res = await middleware(new NextRequest("http://localhost/settings"))
     expect(res.status).toBe(307)
     expect(res.headers.get("location")).toBe("http://localhost/login")
+    for (const path of ["/moderate", "/es/moderate?tab=reports"]) {
+      expect((await middleware(new NextRequest(`http://localhost${path}`))).headers.get("location"), path).toMatch(/\/login(\?|$)/)
+    }
   })
 
   it("treats a bad token on an API call as signed out", async () => {

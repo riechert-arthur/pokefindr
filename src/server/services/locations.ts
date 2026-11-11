@@ -6,6 +6,7 @@ import { OUTSIDE_LOWER_48 } from "@/lib/map/states"
 import type { LocationFeature, LocationFeatureCollection, LocationKind, NearbyLocations, StateCities } from "@/lib/types/locations"
 import type { Bbox } from "@/lib/locations/bbox"
 import { NEAR_LIMIT } from "@/lib/locations/search"
+import { timed } from "@/server/log"
 
 /** The most locations one viewport request returns (#201); `truncated` says when there were more. */
 export const BBOX_LIMIT = 500
@@ -45,8 +46,10 @@ export async function queryFeatures(
   limit: number,
   // Unqualified columns, so it applies to both CTEs below.
   orderBy: SQL = sql`"machineID", id`,
+  /** The name a slow query is logged under (db.slow). */
+  op = "queryFeatures",
 ): Promise<LocationFeatureCollection> {
-  const rows = await db.execute<{ fc: LocationFeatureCollection }>(sql`
+  const rows = await timed(op, () => db.execute<{ fc: LocationFeatureCollection }>(sql`
     with matched as (
       select l.* from ${locations} l
       where l.is_active and l.geog is not null and ${where}
@@ -68,7 +71,7 @@ export async function queryFeatures(
       ), '[]'::json),
       'truncated', (select count(*) from matched) > (select count(*) from page)
     ) as fc
-  `)
+  `))
   return rows[0].fc
 }
 
@@ -111,7 +114,7 @@ export async function countLocationsNear(
   if (points.length === 0) return []
   if (types.length === 0) return points.map(() => 0)
   const values = sql.join(points.map(([lng, lat], i) => sql`(${i}::int, ${lng}::float8, ${lat}::float8)`), sql`, `)
-  const rows = await db.execute<{ i: number; n: number }>(sql`
+  const rows = await timed("countLocationsNear", () => db.execute<{ i: number; n: number }>(sql`
     select p.i, count(l.id)::int as n
     from (values ${values}) as p(i, lng, lat)
     left join ${locations} l
@@ -119,7 +122,7 @@ export async function countLocationsNear(
       and ST_DWithin(l.geog, ST_SetSRID(ST_MakePoint(p.lng, p.lat), 4326)::geography, ${radiusMiles * METERS_PER_MILE})
       ${retailerIn(retailers)}
     group by p.i
-  `)
+  `))
   const counts = points.map(() => 0)
   for (const { i, n } of rows) counts[i] = n
   return counts
@@ -157,6 +160,7 @@ export async function searchLocations(
     ) ${retailerIn(retailers)}`,
     limit,
     near ? sql`ST_Distance(geog, ${pointOf(near)}), id` : sql`coalesce(retailer, name), city, id`,
+    "searchLocations",
   )
   delete fc.truncated
   return fc
@@ -186,7 +190,7 @@ export async function getLocationsNear(
 ): Promise<NearbyLocations> {
   if (types.length === 0) return { type: "FeatureCollection", features: [], counts: {}, total: 0, truncated: false }
   const point = pointOf(center)
-  const rows = await db.execute<{ fc: NearbyLocations }>(sql`
+  const rows = await timed("getLocationsNear", () => db.execute<{ fc: NearbyLocations }>(sql`
     with matched as (
       -- On the sphere (use_spheroid false), as the map measures (milesBetween),
       -- so the list holds exactly the dots the map shows inside the circle.
@@ -209,7 +213,7 @@ export async function getLocationsNear(
       'total', (select count(*)::int from matched),
       'truncated', (select count(*) from matched) > (select count(*) from page)
     ) as fc
-  `)
+  `))
   return rows[0].fc
 }
 
@@ -237,7 +241,7 @@ export async function getTopCities(
       ${retailerIn(retailers)}
   `
   const name = cityName(sql`m.city`)
-  const [cities, counts] = await Promise.all([
+  const [cities, counts] = await timed("getTopCities", () => Promise.all([
     db.execute<StateCities["cities"][number]>(sql`
       select ${preferredSpelling(name)} as city,
         count(*)::int as count,
@@ -250,7 +254,7 @@ export async function getTopCities(
       limit ${limit}
     `),
     db.execute<{ kind: LocationKind; n: number }>(sql`select m.kind, count(*)::int as n from (${matched}) m group by m.kind`),
-  ])
+  ]))
   const byKind: StateCities["counts"] = {}
   let total = 0
   for (const { kind, n } of counts) {
