@@ -6,18 +6,11 @@ import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { NEWEST_RELEASE } from "@/lib/changelog"
+import { NEWEST_RELEASE, releasedOn } from "@/lib/changelog"
 
-/**
- * The release the pop-up announces: the newest in src/lib/changelog.ts, and
- * its changes in shorter words than the changelog page. A new release
- * needs its own list here, with its messages in content.changelog.
- */
-const RELEASE = {
-  version: NEWEST_RELEASE.version,
-  released: `${NEWEST_RELEASE.key}.released`,
-  items: ["modal.items.design", "modal.items.map", "modal.items.assistant", "modal.items.spanish"],
-} as const
+/** The release the pop-up announces: the newest in src/lib/changelog.ts, with its highlights (or, without them, all its changes). */
+const RELEASE = NEWEST_RELEASE
+const ITEMS = "highlights" in RELEASE ? RELEASE.highlights : RELEASE.items
 const CURRENT_CHANGELOG_VERSION = RELEASE.version
 const SEEN_KEY = "changelog_seen_version"
 
@@ -53,17 +46,18 @@ const ChangelogModal: FC = () => {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent className="max-w-md">
+      {/* On phones, a margin and rounded corners rather than edge to edge. */}
+      <DialogContent className="w-[calc(100%-2rem)] max-w-md rounded-lg">
         <DialogHeader>
           <DialogTitle>{t("title", { version: CURRENT_CHANGELOG_VERSION })}</DialogTitle>
-          <DialogDescription>{t(RELEASE.released)}</DialogDescription>
+          <DialogDescription>{t("released", { date: releasedOn(RELEASE) })}</DialogDescription>
         </DialogHeader>
         <ul className="grid list-disc gap-1.5 pl-5 text-body">
-          {RELEASE.items.map((key) => (
+          {ITEMS.map((key) => (
             <li key={key}>{t.rich(key, { b: (chunks) => <strong>{chunks}</strong>, i: (chunks) => <i>{chunks}</i> })}</li>
           ))}
         </ul>
-        <DialogFooter className="gap-2 sm:justify-between">
+        <DialogFooter className="gap-2 sm:justify-between sm:space-x-0">
           <Button asChild variant="ghost" onClick={handleClose}>
             <Link href="/changelog">{t("modal.more")}</Link>
           </Button>
