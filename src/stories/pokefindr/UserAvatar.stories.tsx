@@ -13,7 +13,7 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** No picture: the first letter on the brand color. */
+/** No picture: the first letter on the theme's primary color (#377). */
 export const Default: Story = {}
 /**
  * Every size, as the review rows (xs), admin sidebar (sm), header (md) and settings (lg) use them.
