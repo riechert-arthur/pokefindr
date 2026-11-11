@@ -1,13 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { SlidersHorizontalIcon } from "lucide-react"
+import { ChevronDownIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { useFormat } from "@/i18n/format"
 import { useTranslations } from "next-intl"
+import { filterChip, filterChipSet } from "./filterChip"
 
 export interface RetailerOption {
   retailer: string
@@ -38,17 +39,14 @@ interface RetailerFilterProps {
   /** The URL's `retailer=`; empty means every retailer. */
   selected: readonly string[]
   onChange: (retailers: string[]) => void
-  /** Vending machines are shown; the filter only applies to them. */
-  vendingShown: boolean
 }
 
 /**
- * The map's Filters button and popover, as in the prototype: vending
- * machines by retailer (the 12 biggest, with their machine counts), with a
- * badge counting the picked ones. Shops and events say their filters come
- * with real data.
+ * The Retailer chip in the map's filter row (#361) and its list: vending
+ * machines by retailer (the 12 biggest, with their machine counts). The chip
+ * names the pick ("Safeway", "2 retailers") and turns solid while one is set.
  */
-export function RetailerFilter({ selected, onChange, vendingShown }: RetailerFilterProps) {
+export function RetailerFilter({ selected, onChange }: RetailerFilterProps) {
   const f = useFormat()
   const [open, setOpen] = useState(false)
   const [list, setList] = useState<RetailerOption[] | null>(null)
@@ -76,39 +74,29 @@ export function RetailerFilter({ selected, onChange, vendingShown }: RetailerFil
   const toggle = (retailer: string, on: boolean) => onChange(on ? [...selected, retailer] : selected.filter((r) => r !== retailer))
   const n = selected.length
   const t = useTranslations("map.filters")
+  // What the chip says once retailers are picked.
+  const picked = n === 0 ? null : n === 1 ? selected[0] : t("retailerCount", { count: n })
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          aria-label={n ? t("buttonCount", { count: n }) : t("button")}
-          className="relative size-[42px] shrink-0 rounded-xl bg-card shadow-md"
-        >
-          <SlidersHorizontalIcon aria-hidden />
-          {n > 0 && (
-            <span aria-hidden className="absolute -right-1.5 -top-1.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-primary px-1 text-overline font-bold tracking-normal text-primary-foreground">
-              {n}
-            </span>
-          )}
+        <Button type="button" variant="outline" aria-label={picked ? t("retailerPicked", { value: picked }) : t("retailer")} className={cn(filterChip, n > 0 && filterChipSet)}>
+          <span className="max-w-[16ch] truncate">{picked ?? t("retailer")}</span>
+          <ChevronDownIcon className="size-4 opacity-60" aria-hidden />
         </Button>
       </PopoverTrigger>
       {/* Fits the screen (phones): the sections scroll, Clear and Done stay. */}
       <PopoverContent
-        align="end"
+        align="start"
         sideOffset={6}
         collisionPadding={8}
-        aria-label={t("button")}
+        aria-label={t("retailer")}
         className="flex max-h-[var(--radix-popover-content-available-height)] w-[280px] flex-col rounded-xl p-3"
       >
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div>
             <h3 className="mb-2 text-body font-semibold">{t("vendingTitle")}</h3>
-            {!vendingShown ? (
-              <p className="px-1 py-0.5 text-caption text-muted-foreground">{t("vendingOff")}</p>
-            ) : failed ? (
+            {failed ? (
               <p className="px-1 py-0.5 text-caption text-muted-foreground">{t("failed")}</p>
             ) : !list ? (
               <p className="px-1 py-0.5 text-caption text-muted-foreground">{t("loading")}</p>
@@ -127,16 +115,8 @@ export function RetailerFilter({ selected, onChange, vendingShown }: RetailerFil
               </div>
             )}
           </div>
-          <div className="mt-2 border-t border-border pt-2">
-            <h3 className="mb-1 text-body font-semibold">{t("shopsTitle")}</h3>
-            <p className="px-1 py-0.5 text-caption text-muted-foreground">{t("shopsSoon")}</p>
-          </div>
-          <div className="mt-2 border-t border-border pt-2">
-            <h3 className="mb-1 text-body font-semibold">{t("eventsTitle")}</h3>
-            <p className="px-1 py-0.5 text-caption text-muted-foreground">{t("eventsSoon")}</p>
-          </div>
         </div>
-        <div className={cn("mt-2 flex justify-between border-t border-border pt-2.5")}>
+        <div className="mt-2 flex justify-between border-t border-border pt-2.5">
           <Button type="button" variant="ghost" size="sm" onClick={() => onChange([])} disabled={!n}>
             {t("clear")}
           </Button>

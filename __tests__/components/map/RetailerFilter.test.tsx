@@ -16,8 +16,8 @@ afterEach(() => vi.unstubAllGlobals())
 describe("RetailerFilter", () => {
   it("lists retailers with their counts and picks one", async () => {
     const onChange = vi.fn()
-    render(<RetailerFilter selected={[]} onChange={onChange} vendingShown />)
-    fireEvent.click(screen.getByRole("button", { name: "Filters" }))
+    render(<RetailerFilter selected={[]} onChange={onChange} />)
+    fireEvent.click(screen.getByRole("button", { name: "Retailer" }))
     await waitFor(() => expect(screen.getByText("Safeway")).toBeInTheDocument())
     expect(screen.getByText("417")).toBeInTheDocument()
     fireEvent.click(screen.getByRole("checkbox", { name: /Safeway/ }))
@@ -25,11 +25,16 @@ describe("RetailerFilter", () => {
     expect(screen.getByRole("button", { name: "Clear" })).toBeDisabled()
   })
 
-  it("badges the picked count, keeps a linked retailer outside the top list, and clears", async () => {
+  it("names the pick on the chip", () => {
+    render(<RetailerFilter selected={["Safeway"]} onChange={vi.fn()} />)
+    expect(screen.getByRole("button", { name: "Retailer: Safeway" })).toHaveTextContent("Safeway")
+  })
+
+  it("counts several picks, keeps a linked retailer outside the top list, and clears", async () => {
     const onChange = vi.fn()
-    render(<RetailerFilter selected={["QFC", "Dillons"]} onChange={onChange} vendingShown />)
-    const trigger = screen.getByRole("button", { name: "Filters, 2 retailers" })
-    expect(trigger).toHaveTextContent("2")
+    render(<RetailerFilter selected={["QFC", "Dillons"]} onChange={onChange} />)
+    const trigger = screen.getByRole("button", { name: "Retailer: 2 retailers" })
+    expect(trigger).toHaveTextContent("2 retailers")
     fireEvent.click(trigger)
     await waitFor(() => expect(screen.getByRole("checkbox", { name: /Dillons/ })).toBeChecked())
     expect(screen.getByRole("checkbox", { name: /QFC/ })).toBeChecked()
@@ -42,8 +47,8 @@ describe("RetailerFilter", () => {
   it("tries again when reopened after the list failed to load", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {})
     vi.stubGlobal("fetch", vi.fn(async () => new Response("", { status: 500 })))
-    render(<RetailerFilter selected={[]} onChange={vi.fn()} vendingShown />)
-    const button = screen.getByRole("button", { name: "Filters" })
+    render(<RetailerFilter selected={[]} onChange={vi.fn()} />)
+    const button = screen.getByRole("button", { name: "Retailer" })
     fireEvent.click(button)
     await waitFor(() => expect(screen.getByText(/Couldn.t load retailers/)).toBeInTheDocument())
     fireEvent.click(screen.getByRole("button", { name: "Done" }))
@@ -53,9 +58,4 @@ describe("RetailerFilter", () => {
     expect(screen.queryByText(/Couldn.t load retailers/)).not.toBeInTheDocument()
   })
 
-  it("asks to turn on vending machines first", () => {
-    render(<RetailerFilter selected={[]} onChange={vi.fn()} vendingShown={false} />)
-    fireEvent.click(screen.getByRole("button", { name: "Filters" }))
-    expect(screen.getByText("Turn on vending machines to filter by retailer.")).toBeInTheDocument()
-  })
 })

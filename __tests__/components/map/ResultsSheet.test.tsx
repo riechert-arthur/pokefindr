@@ -47,11 +47,9 @@ describe("ResultsSheet", () => {
     expect(screen.getByRole("heading", { name: "2 vending machines near you" })).toBeInTheDocument()
   })
 
-  it("changes the radius and opens a row", () => {
-    const { onRadiusChange, onOpen } = renderSheet()
-    expect(screen.getByRole("radio", { name: "10 mi" })).toHaveAttribute("aria-checked", "true")
-    fireEvent.click(screen.getByRole("radio", { name: "25 mi" }))
-    expect(onRadiusChange).toHaveBeenCalledWith(25)
+  it("opens a row, and leaves the radius to the filter row (#361)", () => {
+    const { onOpen } = renderSheet()
+    expect(screen.queryByRole("radio", { name: "10 mi" })).not.toBeInTheDocument()
     fireEvent.click(screen.getByText("Safeway"))
     expect(onOpen).toHaveBeenCalledWith(RESULTS.features[2])
   })

@@ -14,7 +14,7 @@ const PANEL_MIN_H = 110
  * panel on phones.
  */
 export function cameraPadding(container?: HTMLElement | null, { sheet = false }: { sheet?: boolean } = {}): Required<PaddingOptions> {
-  if (typeof window === "undefined" || window.matchMedia(DESKTOP).matches) return { top: 40, bottom: 60, left: 400, right: 60 }
+  if (typeof window === "undefined" || window.matchMedia(DESKTOP).matches) return { top: 64, bottom: 60, left: 400, right: 60 }
   const panel = parseFloat(container?.style.getPropertyValue("--map-panel-h") ?? "") || 0
   const height = container?.clientHeight ?? window.innerHeight
   // `sheet`: a list (results, details) opens in the panel right after this

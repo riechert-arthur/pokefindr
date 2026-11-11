@@ -20,6 +20,6 @@ describe("cameraPadding", () => {
 
   it("keeps the column clear on desktop", () => {
     vi.stubGlobal("matchMedia", (q: string) => ({ matches: true, media: q }))
-    expect(cameraPadding(null, { sheet: true })).toEqual({ top: 40, bottom: 60, left: 400, right: 60 })
+    expect(cameraPadding(null, { sheet: true })).toEqual({ top: 64, bottom: 60, left: 400, right: 60 })
   })
 })

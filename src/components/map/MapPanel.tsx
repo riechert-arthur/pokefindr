@@ -8,8 +8,8 @@ import { useTranslations } from "next-intl"
 
 interface MapPanelProps {
   search: ReactNode
-  /** Beside the search box: the Filters button. */
-  filter?: ReactNode
+  /** Beside the search box: the Add a place button. */
+  actions?: ReactNode
   kinds: readonly LocationKind[]
   /** Each kind's US total, for the chips; null until loaded. */
   kindTotals: Partial<Record<LocationKind, number>> | null
@@ -26,7 +26,7 @@ interface MapPanelProps {
  * a 360px column down the left; on phones it sits at the bottom, at most
  * 55% of the height, and lifts the map's bottom controls above it.
  */
-export function MapPanel({ search, filter, kinds, kindTotals, onKindsChange, sheet, sheetLabel }: MapPanelProps) {
+export function MapPanel({ search, actions, kinds, kindTotals, onKindsChange, sheet, sheetLabel }: MapPanelProps) {
   const ref = useRef<HTMLDivElement>(null)
   const t = useTranslations("map")
 
@@ -56,7 +56,7 @@ export function MapPanel({ search, filter, kinds, kindTotals, onKindsChange, she
     >
       <div className="pointer-events-auto flex flex-none items-start gap-2">
         <div className="min-w-0 flex-1">{search}</div>
-        {filter}
+        {actions}
       </div>
       <div
         role="group"

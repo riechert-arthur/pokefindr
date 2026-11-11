@@ -185,20 +185,25 @@ map:
     cooperativeMac: Use ⌘ + scroll to zoom the map
     cooperativeMobile: Use two fingers to move the map
   # The Filters button and its popover.
+  # The filter row across the top of the map.
   filters:
-    button: Filters
-    # The button's name when retailers are picked.
-    buttonCount: "{count, plural, one {Filters, # retailer} other {Filters, # retailers}}"
+    # The row's accessible name.
+    row: Map filters
+    # The radius chip, once a place is searched. {radius} is like "10 mi".
+    within: "Within {radius}"
+    radiusTitle: Search radius
+    # The Retailer chip. Once some are picked it says which: "Safeway", or "2 retailers".
+    retailer: Retailer
+    retailerCount: "{count, plural, one {# retailer} other {# retailers}}"
+    # Its name once picked. {value} is what the chip says.
+    retailerPicked: "Retailer: {value}"
     vendingTitle: Vending machines · retailer
-    vendingOff: Turn on vending machines to filter by retailer.
     failed: Couldn't load retailers. Try again in a moment.
     loading: Loading retailers…
-    shopsTitle: Card shops
-    shopsSoon: Open now, sells singles, hosts events. These filters arrive with real shop data.
-    eventsTitle: Events
-    eventsSoon: This week, this month, event type. Coming once events are real.
     clear: Clear
     done: Done
+    # Shown while retailers are picked.
+    clearAll: Clear filters
   # The list for a searched place.
   results:
     # {places} is a count like "12 places"; {place} the place searched.
@@ -208,7 +213,6 @@ map:
     you: you
     sortedFromCenter: Sorted by distance from the center
     sortedFromYou: Sorted by distance from you
-    within: Within
     failed: Couldn't load these results
     tryAgain: Try again
     loading: Loading results

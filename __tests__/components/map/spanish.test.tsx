@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { render, screen } from "../../helpers/intl"
 import { MapStatusPill } from "@/components/map/MapStatusPill"
+import { MapFilterRow } from "@/components/map/MapFilterRow"
 import { ResultsSheet } from "@/components/map/ResultsSheet"
 import { ReportForm } from "@/components/map/ReportForm"
 import { ReviewSummary } from "@/components/map/Reviews"
@@ -30,8 +31,13 @@ describe("the map in Spanish (#179)", () => {
     vi.stubGlobal("navigator", { ...navigator, languages: ["es-MX"], language: "es-MX" })
     render(<ResultsSheet label="Ciudad de México" radius={5} onRadiusChange={() => {}} kinds={["vending"]} nearby={{ status: "ready", results: RESULTS, reload: () => {} }} onOpen={() => {}} />, { locale: "es" })
     expect(screen.getByRole("heading", { name: "1 máquina expendedora cerca de Ciudad de México" })).toBeInTheDocument()
-    expect(screen.getByRole("radio", { name: "8 km" })).toBeInTheDocument()
     expect(screen.getByText("1,6 km")).toBeInTheDocument()
+  })
+
+  it("names the radius chip in kilometers for a browser in Mexico (#361)", () => {
+    vi.stubGlobal("navigator", { ...navigator, languages: ["es-MX"], language: "es-MX" })
+    render(<MapFilterRow radius={5} onRadiusChange={() => {}} vendingShown={false} retailers={[]} onRetailersChange={() => {}} />, { locale: "es" })
+    expect(screen.getByRole("button", { name: "A menos de 8 km" })).toBeInTheDocument()
   })
 
   it("agrees with the kind's gender in the report form", () => {
