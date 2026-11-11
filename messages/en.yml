@@ -943,10 +943,13 @@ content:
     meta:
       title: "PokeFindr changelog: what's new"
       description: "Every PokeFindr release and what it changed: map updates, accounts, reviews and more."
+    # The page's heading, above the releases (newest first).
+    heading: What's new in PokeFindr
     # The heading of each release.
     title: What's New in Version {version}
+    # Under each release's heading. {date} is the day it came out.
+    released: "Released {date, date, long}"
     v1_1:
-      released: Released May 10, 2025
       intro: We’ve made improvements to make it easier and faster to find vending machines near you.
       items:
         load: <b>Faster Map Load</b> – The map now opens more quickly and runs smoothly.
@@ -958,7 +961,6 @@ content:
         ui: <b>UI Updates</b> – Made the sidebar less intrusive.
         discord: <b>Discord Community</b> – We now have a discord community for users to ask for support or request new features. Click support on the home page.
     v1_2:
-      released: Released May 19, 2025
       intro: This update introduces several new features and improvements.
       items:
         # <i> is a note in italics.
@@ -967,12 +969,31 @@ content:
         settings: <b>Settings Page</b> – Manage your profile, preferences, and account information.
         sso: <b>SSO (Single Sign-On)</b> – Log in using Google or other providers.
         ratings: <b>Star Ratings</b> – Locations now have star ratings based on user reviews.
-    # The pop-up shown once on the signed-in pages after a release. Shorter than the page.
-    modal:
+    v2_0:
+      intro: PokeFindr 2.0 is a complete redesign, with a new map, an assistant you can ask in plain words, and more ways to find Pokémon cards near you.
       items:
-        accounts: <b>Free User Accounts</b> – Users can now create accounts for free.
-        settings: <b>Settings Page</b> – Manage your profile and account information.
-        sso: <b>SSO (Single Sign-On)</b> – Log in using Google (more providers coming).
+        design: <b>A Fresh Look</b> – PokeFindr is redesigned from top to bottom, in light and dark.
+        search: <b>Search Anywhere</b> – Look up an address, city or state, and see what's nearby sorted by distance, or what's near you.
+        kinds: <b>Card Shops and Events</b> – The map now shows card shops and upcoming events alongside vending machines, and you can filter by retailer.
+        states: <b>Explore by State</b> – Pick a state to see how many places it has and its top cities.
+        details: <b>Place Details</b> – Open any place for its address, reviews and what else is nearby, or report a problem with it.
+        add: <b>Add a Place</b> – Know a card shop or an event we're missing? Add it, and it goes on the map once a moderator checks it.
+        assistant: <b>PokeFindr Assistant</b> – Ask from your dashboard in plain words, like "vending machines near Seattle" or "upcoming card shows near Denver".
+        routes: <b>Route Planning</b> – The assistant plans a route through several stops, shows it on a map right in the chat, and opens it in Google Maps.
+        chat: <b>Your Chat Stays</b> – Your conversation with the assistant is still there when you come back, until you start a new one.
+        mcp: <b>PokeFindr in Your AI App</b> – Connect Claude, ChatGPT, Cursor and other apps to search PokeFindr from there.
+        spanish: <b>En Español</b> – PokeFindr is now available in Spanish, with distances in miles or kilometers.
+        profile: <b>Profile Pictures</b> – Add a profile picture, and manage your account on a redesigned Settings page.
+      # The release in the pop-up shown once on the signed-in pages: shorter than the page.
+      highlights:
+        design: <b>A Fresh Look</b> – PokeFindr is redesigned, in light and dark.
+        map: <b>A New Map</b> – Search anywhere, and find card shops and events too.
+        assistant: <b>PokeFindr Assistant</b> – Ask in plain words, and plan a route through several stops.
+        spanish: <b>En Español</b> – PokeFindr is now available in Spanish.
+    # The pop-up shown once on the signed-in pages after a release.
+    modal:
+      # Links to the full changelog page.
+      more: See everything that's new
       close: Got it!
   developers:
     meta:
