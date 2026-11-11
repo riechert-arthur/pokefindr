@@ -180,6 +180,10 @@ map:
     # Names the map itself.
     map: Map
     marker: Map marker
+    # Over a small map that only zooms with a modifier key (the assistant's route preview).
+    cooperativeWindows: Use Ctrl + scroll to zoom the map
+    cooperativeMac: Use ⌘ + scroll to zoom the map
+    cooperativeMobile: Use two fingers to move the map
   # The Filters button and its popover.
   filters:
     button: Filters
@@ -698,6 +702,16 @@ assistant:
     route: "Route · {count, plural, one {# stop} other {# stops}} · {distance} straight-line"
     showOnMap: Show on map
     googleMaps: Open in Google Maps
+    # The small map of a route inside its card, and the line under it.
+    preview: Route preview
+    # When the route follows the streets. {minutes} is the driving time, {distance} like "14.2 mi".
+    drive: "{minutes, number} min drive · {distance}"
+    # When it couldn't be routed along the streets.
+    straightPreview: "Straight lines: couldn't get street directions"
+    # Under the preview when some of the route's places aren't on the map anymore.
+    previewSkipped: Some stops are gone, so the route skips them.
+    # Opens the map preview on an older route card.
+    showPreview: Preview route
     # Next to a route's first stop, when it starts there instead of at the viewer.
     start: Start
     # Next to each later stop: the distance from the one before ("+2.1 mi").
