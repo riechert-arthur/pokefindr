@@ -25,6 +25,13 @@ describe("MapFilterRow (#361)", () => {
     expect(within(group).queryByRole("button", { name: "Clear filters" })).not.toBeInTheDocument()
   })
 
+  it("starts each filter with an icon (#374)", () => {
+    row({ radius: 10, retailers: ["Safeway"] })
+    for (const name of ["Within 10 mi", "Retailer: Safeway", "Clear filters"]) {
+      expect(screen.getByRole("button", { name }).querySelector("[data-filter-icon]")).not.toBeNull()
+    }
+  })
+
   it("renders nothing when no filter applies", () => {
     row({ vendingShown: false })
     expect(screen.queryByRole("group", { name: "Map filters" })).not.toBeInTheDocument()
