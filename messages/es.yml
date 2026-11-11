@@ -135,25 +135,24 @@ map:
     cooperativeMac: Usa ⌘ + desplazamiento para hacer zoom en el mapa
     cooperativeMobile: Usa dos dedos para mover el mapa
   filters:
-    button: Filtros
-    buttonCount: "{count, plural, one {Filtros, # comercio} other {Filtros, # comercios}}"
+    row: Filtros del mapa
+    within: "A menos de {radius}"
+    radiusTitle: Radio de búsqueda
+    retailer: Comercio
+    retailerCount: "{count, plural, one {# comercio} other {# comercios}}"
+    retailerPicked: "Comercio: {value}"
     vendingTitle: Máquinas expendedoras · comercio
-    vendingOff: Activa las máquinas expendedoras para filtrar por comercio.
     failed: No se pudieron cargar los comercios. Inténtalo de nuevo en un momento.
     loading: Cargando comercios…
-    shopsTitle: Tiendas de cartas
-    shopsSoon: Abiertas ahora, venden cartas sueltas, organizan eventos. Estos filtros llegarán más adelante.
-    eventsTitle: Eventos
-    eventsSoon: Esta semana, este mes, tipo de evento. Estos filtros llegarán más adelante.
     clear: Borrar
     done: Listo
+    clearAll: Borrar filtros
   results:
     title: "{places} cerca de {place}"
     titlePending: "Lugares cerca de {place}"
     you: ti
     sortedFromCenter: Ordenados por distancia desde el centro
     sortedFromYou: Ordenados por distancia desde ti
-    within: A menos de
     failed: No se pudieron cargar estos resultados
     tryAgain: Intentar de nuevo
     loading: Cargando resultados

@@ -24,7 +24,9 @@ import { LOCATION_KINDS } from "@/lib/types/locations"
 
 /** Search radii in miles, from the redesign prototype. */
 export const RADII = [5, 10, 25, 50] as const
-export const DEFAULT_RADIUS: (typeof RADII)[number] = 10
+/** A search radius in miles: one the map offers. */
+export type Radius = (typeof RADII)[number]
+export const DEFAULT_RADIUS: Radius = 10
 
 export const mapSearchParams = {
   /** The searched place's label, e.g. "Seattle, WA". */
@@ -67,6 +69,6 @@ export const roundZoom = (v: number) => Math.round(v * 10) / 10
  * radius, with every coordinate and other view cleared, so a copied link
  * never reveals where they are.
  */
-export function nearMeParams(radius: (typeof RADII)[number]): Partial<MapSearchParams> {
+export function nearMeParams(radius: Radius): Partial<MapSearchParams> {
   return { near: "me", r: radius, q: null, lat: null, lng: null, z: null, state: null, route: null }
 }

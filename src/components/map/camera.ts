@@ -14,12 +14,12 @@ const PANEL_MIN_H = 110
  * panel on phones.
  */
 export function cameraPadding(container?: HTMLElement | null, { sheet = false }: { sheet?: boolean } = {}): Required<PaddingOptions> {
-  if (typeof window === "undefined" || window.matchMedia(DESKTOP).matches) return { top: 40, bottom: 60, left: 400, right: 60 }
+  if (typeof window === "undefined" || window.matchMedia(DESKTOP).matches) return { top: 104, bottom: 60, left: 400, right: 60 }
   const panel = parseFloat(container?.style.getPropertyValue("--map-panel-h") ?? "") || 0
   const height = container?.clientHeight ?? window.innerHeight
   // `sheet`: a list (results, details) opens in the panel right after this
   // fit and grows it to its 55% cap, so reserve the cap, not its height now.
   // Otherwise the panel is about as tall as it is (search and chips).
   const bottom = sheet ? Math.max(panel, Math.round(height * PANEL_MAX_SHARE)) : Math.max(panel, PANEL_MIN_H)
-  return { top: 60, bottom: bottom + 16, left: 30, right: 30 }
+  return { top: 100, bottom: bottom + 16, left: 30, right: 30 }
 }

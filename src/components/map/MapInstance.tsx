@@ -39,7 +39,7 @@ import { useStateShading } from "./useStateShading"
 import { cameraPadding } from "./camera"
 import { MapPanel } from "./MapPanel"
 import { LocationDetails } from "./LocationDetails"
-import { RetailerFilter } from "./RetailerFilter"
+import { MapFilterRow } from "./MapFilterRow"
 import { ResultsSheet } from "./ResultsSheet"
 import { useNearbyLocations } from "./useNearbyLocations"
 import { StateSheet } from "./StateSheet"
@@ -56,7 +56,7 @@ import type { Hotspot, UpcomingEvent } from "@/lib/types/highlights"
 import { cn } from "@/lib/utils"
 import { boundsOfRadius, milesBetween, radiusCircle, US_BOUNDS } from "@/lib/map/geo"
 import { STATES } from "@/lib/map/states"
-import { DEFAULT_RADIUS, RADII, loadMapSearchParams, mapSearchParams, nearMeParams, roundCamera, roundPlace, roundZoom, type MapSearchParams } from "@/lib/map/url-state"
+import { DEFAULT_RADIUS, loadMapSearchParams, mapSearchParams, nearMeParams, roundCamera, roundPlace, roundZoom, type MapSearchParams, type Radius } from "@/lib/map/url-state"
 import { initialMapView, shownKinds, viewKey, type InitialMapView } from "@/lib/map/initial-view"
 import { INITIAL_LOAD_STATE, nextLoadState, type MapLoadState } from "./mapLoadState"
 import { track } from "@/lib/analytics"
@@ -378,14 +378,14 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   }
 
   /** The results' radius toggle: the same place, a wider or narrower circle. */
-  const handleRadiusChange = (r: (typeof RADII)[number]) => {
+  const handleRadiusChange = (r: Radius) => {
     if (!place) return
     track("filter_change", { filter: "radius", value: String(r) })
     writeView({ r }, { history: "replace" })
     mapRef.current?.fitBounds(boundsOfRadius(place.lng, place.lat, r), { padding: pad(true), maxZoom: 13, duration: 1000 })
   }
 
-  /** The Filters popover: which vending retailers to show, all of them when none are picked. */
+  /** The Retailer chip: which vending retailers to show, all of them when none are picked. */
   const handleRetailersChange = (next: string[]) => {
     track("filter_change", { filter: "retailers", value: next.length ? [...next].sort().join(",") : "all" })
     void setParams({ retailer: next.length ? next : null }, { history: "replace" })
@@ -680,10 +680,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
               }
             />
           }
-          filter={
-            <>
-              <RetailerFilter selected={retailers ?? []} onChange={handleRetailersChange} vendingShown={kindSet.has("vending")} />
-              <Button
+          actions={
+            <Button
                 type="button"
                 variant="outline"
                 size="icon"
@@ -695,7 +693,6 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
               >
                 <PlusIcon className="size-5" aria-hidden />
               </Button>
-            </>
           }
           kinds={kinds}
           kindTotals={kindTotals}
@@ -777,7 +774,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
               place && (
               <ResultsSheet
                 label={nearMe ? null : (urlView.place?.label ?? null)}
-                radius={place.radius as (typeof RADII)[number]}
+                radius={place.radius as Radius}
                 onRadiusChange={handleRadiusChange}
                 kinds={kinds}
                 nearby={nearby}
@@ -787,6 +784,15 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
               )
             )
           }
+        />
+        {/* The filters across the top, right of the panel and clear of the account menu (#361). */}
+        <MapFilterRow
+          radius={place ? (place.radius as Radius) : null}
+          onRadiusChange={handleRadiusChange}
+          vendingShown={kindSet.has("vending")}
+          retailers={retailers ?? []}
+          onRetailersChange={handleRetailersChange}
+          className={cn("absolute left-1 top-1 z-[9] sm:left-[380px] sm:top-2", session ? "right-16 sm:right-20" : "right-1 sm:right-2")}
         />
         {selected && popup && (
           <LocationPopup
@@ -798,7 +804,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
         {states && zoomedOut && (
           <StateLegend
             max={max}
-            className={cn("absolute right-3 z-[8] hidden md:block", session ? "top-20" : "top-3")}
+            className={cn("absolute right-3 z-[8] hidden md:block", session ? "top-20" : "top-16")}
           />
         )}
         <MapStatusPill
@@ -808,8 +814,8 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
           status={viewport.status}
           truncated={viewport.truncated}
           kinds={kinds}
-          // Centered on the map right of the panel; below the legend while they'd overlap.
-          className={cn("sm:left-[calc(50%+186px)]", states && zoomedOut && (session ? "md:max-xl:top-[156px]" : "md:max-xl:top-[92px]"))}
+          // Centered on the map right of the panel, under the filter row; below the legend while they'd overlap.
+          className={cn("top-14 sm:left-[calc(50%+186px)] sm:top-16", states && zoomedOut && (session ? "md:max-xl:top-[156px]" : "md:max-xl:top-[144px]"))}
         />
         {session && (
           <div className="absolute top-4 right-5 z-50">

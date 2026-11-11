@@ -7,16 +7,13 @@ import { useFormat, type Format } from "@/i18n/format"
 import { useDistance } from "@/i18n/useDistance"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { RADII } from "@/lib/map/url-state"
+import { RADII, type Radius } from "@/lib/map/url-state"
 import type { LocationFeature, LocationKind, NearbyLocations } from "@/lib/types/locations"
 import { cn } from "@/lib/utils"
 import type { NearbyState } from "./useNearbyLocations"
 import { LocationRow } from "./LocationRow"
 import { SponsoredPlacement } from "@/components/ads/SponsoredPlacement"
 import { useTranslations } from "next-intl"
-
-type Radius = (typeof RADII)[number]
 
 interface ResultsSheetProps {
   /** "Seattle, WA", or null for the viewer's own location. */
@@ -65,29 +62,6 @@ export function ResultsSheet({ label, radius, onRadiusChange, kinds, nearby, sel
               ? breakdown(fresh.counts, kinds, f)
               : label ? t("sortedFromCenter") : t("sortedFromYou")}
           </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-body text-muted-foreground" id="results-radius">
-            {t("within")}
-          </span>
-          <ToggleGroup
-            type="single"
-            required
-            value={String(radius)}
-            onValueChange={(v) => onRadiusChange(Number(v) as Radius)}
-            aria-labelledby="results-radius"
-            className="gap-0 overflow-hidden rounded-md border border-border"
-          >
-            {RADII.map((r) => (
-              <ToggleGroupItem
-                key={r}
-                value={String(r)}
-                className="h-7 rounded-none border-r border-border bg-background px-2.5 text-body font-normal tabular-nums text-foreground last:border-r-0 hover:bg-muted hover:text-foreground data-[state=on]:bg-foreground data-[state=on]:text-background"
-              >
-                {radiusText(r)}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
         </div>
       </div>
 
