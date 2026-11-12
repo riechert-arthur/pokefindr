@@ -26,9 +26,8 @@ describe("useStateShading", () => {
     const { result, rerender } = renderHook(({ retailers }) => useStateShading(kinds, retailers), {
       initialProps: { retailers: null as string[] | null },
     })
-    await waitFor(() => expect(result.current.kindTotals).toEqual({ vending: 41 }))
+    await waitFor(() => expect(result.current.total).toBe(41))
     rerender({ retailers: ["Safeway"] })
-    await waitFor(() => expect(result.current.kindTotals).toBeNull())
-    expect(result.current.total).toBeNull()
+    await waitFor(() => expect(result.current.total).toBeNull())
   })
 })

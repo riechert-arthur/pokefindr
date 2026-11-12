@@ -29,28 +29,32 @@ interface ShopDetails {
 }
 
 /**
- * A shop's website (#399) and hours (#401), from GET /api/locations/<id>:
- * the map's bulk results leave them out. Empty while it loads, or for other
- * kinds; null values when the shop has none or the request failed (the rows
- * are then left out).
+ * A shop's website (#399) and hours (#401), from GET /api/locations/<id>,
+ * unless the location already came from that route (a shared link). The
+ * map's bulk results leave them out. A value is undefined while it loads (or
+ * for other kinds), and null when the shop has none or the request failed:
+ * its row is then left out. A value the location came with is never replaced.
+ * The panel is keyed by location, so this state is per place.
  */
 function useShopDetails(id: string, kind: LocationKind, known: Partial<ShopDetails>): Partial<ShopDetails> {
-  const [fetched, setFetched] = useState<(ShopDetails & { id: string }) | null>(null)
+  const [fetched, setFetched] = useState<ShopDetails | null>(null)
   const needed = kind === "shop" && (known.website === undefined || known.hours === undefined)
   useEffect(() => {
     if (!needed) return
     const ctl = new AbortController()
-    fetch(`/api/locations/${id}`, { signal: ctl.signal })
+    fetch(`/api/locations/${encodeURIComponent(id)}`, { signal: ctl.signal })
       .then((res) => (res.ok ? (res.json() as Promise<LocationFeature>) : null))
-      .then((feature) => setFetched({ id, website: feature?.properties.website ?? null, hours: feature?.properties.hours ?? null }))
+      .then((feature) => setFetched({ website: feature?.properties.website ?? null, hours: feature?.properties.hours ?? null }))
       .catch(() => {
-        if (!ctl.signal.aborted) setFetched({ id, website: null, hours: null })
+        if (!ctl.signal.aborted) setFetched({ website: null, hours: null })
       })
     return () => ctl.abort()
   }, [id, needed])
   if (kind !== "shop") return {}
-  if (!needed) return known
-  return fetched?.id === id ? { website: fetched.website, hours: fetched.hours } : {}
+  return {
+    website: known.website !== undefined ? known.website : fetched?.website,
+    hours: known.hours !== undefined ? known.hours : fetched?.hours,
+  }
 }
 
 /**

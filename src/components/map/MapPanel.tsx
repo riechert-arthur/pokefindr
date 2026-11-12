@@ -11,8 +11,6 @@ interface MapPanelProps {
   /** Beside the search box: the Add a place button. */
   actions?: ReactNode
   kinds: readonly LocationKind[]
-  /** Each kind's US total, for the chips; null until loaded. */
-  kindTotals: Partial<Record<LocationKind, number>> | null
   onKindsChange: (kinds: LocationKind[]) => void
   /** The card under the chips (results, a state, the US); none when null. */
   sheet: ReactNode
@@ -26,7 +24,7 @@ interface MapPanelProps {
  * a 360px column down the left; on phones it sits at the bottom, at most
  * 55% of the height, and lifts the map's bottom controls above it.
  */
-export function MapPanel({ search, actions, kinds, kindTotals, onKindsChange, sheet, sheetLabel }: MapPanelProps) {
+export function MapPanel({ search, actions, kinds, onKindsChange, sheet, sheetLabel }: MapPanelProps) {
   const ref = useRef<HTMLDivElement>(null)
   const t = useTranslations("map")
 
@@ -68,7 +66,6 @@ export function MapPanel({ search, actions, kinds, kindTotals, onKindsChange, sh
             key={k}
             kind={k}
             short
-            count={kindTotals ? (kindTotals[k] ?? 0) : undefined}
             pressed={kinds.includes(k)}
             onPressedChange={(on) => toggle(k, on)}
           />

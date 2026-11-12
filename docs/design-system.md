@@ -135,7 +135,7 @@ Three folders (a test enforces the naming rules and that each component has a st
 | Component | What it is |
 |---|---|
 | `KindDot`, `KindIcon` | A kind's colored circle with icon; the bare icon in the kind's color |
-| `TypeChip` | Toggle chip to show or hide one kind, with an optional count |
+| `TypeChip` | Toggle chip to show or hide one kind: its swatch and label, no count (#403) |
 | `StatusBadge` | Live · Sample · Pending review · Sponsored |
 | `EmptyState` | What a list or panel shows when it has nothing: title, one or two sentences, an action |
 | `SponsoredSlot` | The shell for one labeled, dismissible sponsored card (`compact` or `strip`) |

@@ -59,6 +59,14 @@ describe("LocationDetails", () => {
     expect(screen.queryByText("Hours")).toBeNull()
   })
 
+  it("doesn't ask again for a website and hours the location already came with (a shared link)", () => {
+    const fetchMock = vi.fn<(url: string) => Promise<Response>>(async () => new Response(JSON.stringify({ reviews: [], features: [], counts: {}, total: 0 })))
+    vi.stubGlobal("fetch", fetchMock)
+    render(<LocationDetails location={{ ...LOCATION, id: "shop-3", kind: "shop", website: "https://cards.example/", hours: null }} backLabel="Back" onBack={vi.fn()} kinds={["shop"]} retailers={null} onOpen={vi.fn()} />)
+    expect(screen.getByRole("link", { name: "cards.example (opens in a new tab)" })).toBeInTheDocument()
+    expect(fetchMock.mock.calls.map(([url]) => url)).not.toContain("/api/locations/shop-3")
+  })
+
   it("never links a website that isn't a web address", () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ reviews: [], features: [], counts: {}, total: 0 }))))
     render(<LocationDetails location={{ ...LOCATION, kind: "shop", website: "javascript:alert(1)" }} backLabel="Back" onBack={vi.fn()} kinds={["shop"]} retailers={null} onOpen={vi.fn()} />)
