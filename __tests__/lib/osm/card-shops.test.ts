@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { isCoinOrStampDealer, overpassQuery, selectShops, toShop, type OsmElement } from "@/lib/osm/card-shops"
+import { compareShops, isCoinOrStampDealer, overpassQuery, selectShops, toShop, type OsmElement } from "@/lib/osm/card-shops"
 
 const node = (id: number, tags: Record<string, string>, at: [number, number] = [-73.99, 40.74]): OsmElement => ({ type: "node", id, lon: at[0], lat: at[1], tags })
 
@@ -71,5 +71,10 @@ describe("OSM card shops (#397)", () => {
     ])
     expect(shops.map((s) => s.externalId)).toEqual(["node/1", "node/3"])
     expect(dropped).toEqual({ coinOrStamp: [{ externalId: "node/2", name: "Federal Coin Exchange" }], unusable: ["node/4"] })
+  })
+
+  it("compares a fetch with the snapshot for --dry-run: added, removed and changed ids", () => {
+    const a = { externalId: "node/1", name: "A" }
+    expect(compareShops([a, { externalId: "node/2", name: "B" }], [{ ...a, name: "A2" }, { externalId: "node/3", name: "C" }])).toEqual({ added: ["node/3"], removed: ["node/2"], changed: ["node/1"] })
   })
 })

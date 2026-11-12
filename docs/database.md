@@ -335,8 +335,9 @@ To see the query on a map, paste it (`overpassQuery()`) into
 **Two steps.** Deploys never call Overpass:
 
 ```bash
-npm run db:fetch-osm-shops     # a person: query Overpass, write src/data/osm_card_shops.json
-npm run db:import-osm-shops    # dry run: rolled back, prints what --apply would do
+npm run db:fetch-osm-shops -- --dry-run   # query Overpass, compare with the snapshot, write nothing
+npm run db:fetch-osm-shops                # a person: write src/data/osm_card_shops.json
+npm run db:import-osm-shops -- --dry-run  # rolled back, prints what --apply would do (also the default)
 npm run db:import-osm-shops -- --apply
 ```
 

@@ -163,3 +163,14 @@ export function selectShops(elements: OsmElement[], stateAt?: (lng: number, lat:
   dropped.unusable.sort()
   return { shops: [...byId.values()].sort(byExternalId), dropped }
 }
+
+/** How a new list of shops differs from the snapshot's (`--dry-run`): OSM ids added, removed, and changed. */
+export function compareShops<T extends { externalId: string }>(before: T[], after: T[]) {
+  const old = new Map(before.map((s) => [s.externalId, JSON.stringify(s)]))
+  const now = new Map(after.map((s) => [s.externalId, JSON.stringify(s)]))
+  return {
+    added: [...now.keys()].filter((id) => !old.has(id)),
+    removed: [...old.keys()].filter((id) => !now.has(id)),
+    changed: [...now.keys()].filter((id) => old.has(id) && old.get(id) !== now.get(id)),
+  }
+}

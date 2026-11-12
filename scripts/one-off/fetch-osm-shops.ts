@@ -6,6 +6,7 @@
  * Overpass, and every change to the data is a diff someone can review.
  *
  *   npm run db:fetch-osm-shops
+ *   npm run db:fetch-osm-shops -- --dry-run      # fetch and compare with the snapshot; write nothing
  *   npm run db:fetch-osm-shops -- --out <file>
  *
  * One request for the whole US (about 1 MB). The public Overpass servers are
@@ -15,9 +16,9 @@
  * The data is © OpenStreetMap contributors, under the ODbL; the snapshot
  * carries the credit, and the app shows it wherever these shops appear.
  */
-import { writeFileSync } from "node:fs"
+import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import path from "node:path"
-import { OSM_ATTRIBUTION, OSM_COPYRIGHT_URL, overpassQuery, selectShops, type OsmElement } from "@/lib/osm/card-shops"
+import { compareShops, OSM_ATTRIBUTION, OSM_COPYRIGHT_URL, overpassQuery, selectShops, type OsmElement } from "@/lib/osm/card-shops"
 import { regionAt } from "@/server/geo/regions"
 import { ROOT_DIR } from "../db/env"
 
@@ -69,6 +70,7 @@ export function formatSnapshot({ shops, ...head }: { shops: unknown[] } & Record
 async function main() {
   const i = process.argv.indexOf("--out")
   const out = i === -1 ? SNAPSHOT_FILE : path.resolve(process.argv[i + 1])
+  const dryRun = process.argv.includes("--dry-run")
   const query = overpassQuery()
   console.log(`Asking ${OVERPASS_URL} for the US's card shops…`)
   const elements = await overpass(query)
@@ -84,8 +86,17 @@ async function main() {
     dropped,
     shops,
   }
-  writeFileSync(out, formatSnapshot(snapshot))
   console.log(`${elements.length} places: ${shops.length} shops, ${dropped.coinOrStamp.length} coin or stamp dealers and ${dropped.unusable.length} without a name or position left out.`)
+  if (existsSync(out)) {
+    const { added, removed, changed } = compareShops((JSON.parse(readFileSync(out, "utf8")) as { shops: { externalId: string }[] }).shops, shops)
+    const some = (ids: string[]) => (ids.length ? `: ${ids.slice(0, 10).join(", ")}${ids.length > 10 ? ", …" : ""}` : "")
+    console.log(`Against ${path.relative(ROOT_DIR, out)}: ${added.length} added${some(added)}; ${removed.length} removed${some(removed)}; ${changed.length} changed${some(changed)}.`)
+  }
+  if (dryRun) {
+    console.log("Dry run: nothing written. Re-run without --dry-run to write the snapshot.")
+    return
+  }
+  writeFileSync(out, formatSnapshot(snapshot))
   console.log(`Wrote ${path.relative(ROOT_DIR, out)}.`)
 }
 

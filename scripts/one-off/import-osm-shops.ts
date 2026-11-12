@@ -7,9 +7,10 @@
  * migrations' locks and `db:baseline` never replays it.
  *
  *   npm run db:import-osm-shops                        # dry run: rolled back
+ *   npm run db:import-osm-shops -- --dry-run           # the same, said explicitly
  *   npm run db:import-osm-shops -- --apply             # write
  *   npm run db:import-osm-shops -- --report <json>     # also write the report
- *   npm run db:import-osm-shops -- --rollback <run id> [--apply]
+ *   npm run db:import-osm-shops -- --rollback <run id> [--dry-run | --apply]
  *
  * In one transaction:
  * - A shop whose OSM id (`locations.external_id`, source 'osm') isn't in the
@@ -391,6 +392,7 @@ async function main() {
   const reportFile = argValue("--report")
   const rollback = argValue("--rollback")
   const apply = process.argv.includes("--apply")
+  if (apply && process.argv.includes("--dry-run")) throw new Error("--dry-run and --apply contradict each other; pass one.")
   if (!rollback && !existsSync(file)) {
     console.log(`No ${path.relative(ROOT_DIR, file)}; nothing to import.`)
     return
