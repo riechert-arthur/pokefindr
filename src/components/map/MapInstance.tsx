@@ -63,13 +63,13 @@ import { track } from "@/lib/analytics"
 import { useTranslations } from "next-intl"
 import { useStateName } from "./useStateName"
 
-/** The popup's fields, plus a shop's website when the feature came from GET /api/locations/<id> (a shared link), so the details needn't ask again (#399). */
-type SelectedLocation = Omit<LocationPopupProps, "onClose" | "onDetails"> & Pick<LocationFeature["properties"], "website">
+/** The popup's fields, plus a shop's website and hours when the feature came from GET /api/locations/<id> (a shared link), so the details needn't ask again (#399, #401). */
+type SelectedLocation = Omit<LocationPopupProps, "onClose" | "onDetails"> & Pick<LocationFeature["properties"], "website" | "hours">
 
 const toSelected = (feat: LocationFeature): SelectedLocation => {
   const [longitude, latitude] = feat.geometry.coordinates
-  const { id, retailer, address, city, state, machineID, kind, website } = feat.properties
-  return { longitude, latitude, id, retailer, address, city, state, machineID, kind, ...(website !== undefined && { website }) }
+  const { id, retailer, address, city, state, machineID, kind, website, hours } = feat.properties
+  return { longitude, latitude, id, retailer, address, city, state, machineID, kind, ...(website !== undefined && { website }), ...(hours !== undefined && { hours }) }
 }
 
 /** What the search box shows for the URL's view: the place, the state, or "Your location" (`yourLocation`). */

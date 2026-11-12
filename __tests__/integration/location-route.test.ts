@@ -22,7 +22,7 @@ describe("GET /api/locations/[id]", () => {
     expect((await get("not-an-id")).status).toBe(400)
   })
 
-  it("adds a shop's website, only for shops (#399)", async () => {
+  it("adds a shop's website and hours, only for shops (#399, #401)", async () => {
     const [shop, bare, machine] = await getDb()
       .insert(locations)
       .values([
@@ -31,9 +31,10 @@ describe("GET /api/locations/[id]", () => {
         { machineId: "Q9", retailer: "QFC", geog: { lng: -122.32, lat: 47.62 } },
       ])
       .returning()
-    await getDb().insert(cardShopDetails).values({ locationId: shop.id, website: "https://www.bleeckertrading.com/", sells: [] })
-    expect((await (await get(shop.id)).json()).properties).toMatchObject({ kind: "shop", website: "https://www.bleeckertrading.com/" })
-    expect((await (await get(bare.id)).json()).properties.website).toBeNull()
+    await getDb().insert(cardShopDetails).values({ locationId: shop.id, website: "https://www.bleeckertrading.com/", hours: "Mo-Sa 11:00-19:00; Su 12:00-18:00", sells: [] })
+    expect((await (await get(shop.id)).json()).properties).toMatchObject({ kind: "shop", website: "https://www.bleeckertrading.com/", hours: "Mo-Sa 11:00-19:00; Su 12:00-18:00" })
+    expect((await (await get(bare.id)).json()).properties).toMatchObject({ website: null, hours: null })
     expect((await (await get(machine.id)).json()).properties).not.toHaveProperty("website")
+    expect((await (await get(machine.id)).json()).properties).not.toHaveProperty("hours")
   })
 })

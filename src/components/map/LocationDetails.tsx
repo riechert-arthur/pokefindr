@@ -23,28 +23,38 @@ type LocationDetailsProps = Omit<ComponentProps<typeof DetailsSheet>, "summary" 
   onOpen: (feature: LocationFeature) => void
 }
 
+interface ShopDetails {
+  website: string | null
+  hours: string | null
+}
+
 /**
- * A shop's website (#399), from GET /api/locations/<id>, unless the location
- * already came from that route (a shared link: `known` is set). The map's
- * bulk results leave it out. Undefined while it loads, or for other kinds;
- * null when the shop has none or the request failed (the row is then left
- * out). The panel is keyed by location, so this state is per place.
+ * A shop's website (#399) and hours (#401), from GET /api/locations/<id>,
+ * unless the location already came from that route (a shared link). The
+ * map's bulk results leave them out. A value is undefined while it loads (or
+ * for other kinds), and null when the shop has none or the request failed:
+ * its row is then left out. A value the location came with is never replaced.
+ * The panel is keyed by location, so this state is per place.
  */
-function useShopWebsite(id: string, kind: LocationKind, known: string | null | undefined): string | null | undefined {
-  const [fetched, setFetched] = useState<string | null | undefined>(undefined)
-  const needed = kind === "shop" && known === undefined
+function useShopDetails(id: string, kind: LocationKind, known: Partial<ShopDetails>): Partial<ShopDetails> {
+  const [fetched, setFetched] = useState<ShopDetails | null>(null)
+  const needed = kind === "shop" && (known.website === undefined || known.hours === undefined)
   useEffect(() => {
     if (!needed) return
     const ctl = new AbortController()
     fetch(`/api/locations/${encodeURIComponent(id)}`, { signal: ctl.signal })
       .then((res) => (res.ok ? (res.json() as Promise<LocationFeature>) : null))
-      .then((feature) => setFetched(feature?.properties.website ?? null))
+      .then((feature) => setFetched({ website: feature?.properties.website ?? null, hours: feature?.properties.hours ?? null }))
       .catch(() => {
-        if (!ctl.signal.aborted) setFetched(null)
+        if (!ctl.signal.aborted) setFetched({ website: null, hours: null })
       })
     return () => ctl.abort()
   }, [id, needed])
-  return needed ? fetched : known
+  if (kind !== "shop") return {}
+  return {
+    website: known.website !== undefined ? known.website : fetched?.website,
+    hours: known.hours !== undefined ? known.hours : fetched?.hours,
+  }
 }
 
 /**
@@ -65,11 +75,11 @@ export function LocationDetails({ kinds, retailers, onOpen, ...props }: Location
   }
   const kind = toKind(props.location.kind)
   const nearby = useAlsoNearby(props.location, kinds, retailers)
-  const website = useShopWebsite(props.location.id, kind, props.location.website)
+  const shop = useShopDetails(props.location.id, kind, { website: props.location.website, hours: props.location.hours })
   return (
     <DetailsSheet
       {...props}
-      location={{ ...props.location, website }}
+      location={{ ...props.location, ...shop }}
       summary={<ReviewSummary reviews={reviews} />}
       actions={
         <Button ref={reportButton} type="button" variant="ghost" size="sm" aria-expanded={reporting} onClick={() => setReporting((on) => !on)}>

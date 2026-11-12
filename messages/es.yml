@@ -217,7 +217,16 @@ details:
     # A shop's website (#399): the link, and what a screen reader hears after it.
     website: Sitio web
     opensNewTab: "(se abre en una pestaña nueva)"
+    hours: Horario
 
+  # A shop's opening hours (#401). {hours} is like "10 AM – 6 PM", "Closed" or "Open 24 hours".
+  hours:
+    today: "Hoy · {hours}"
+    everyDay: "Todos los días · {hours}"
+    closed: Cerrado
+    allDay: Abierto las 24 horas
+    # Read after today's hours on the button that shows the whole week.
+    week: horario de la semana
 reviews:
   title: Reseñas
   summary: "{average} · {count, plural, one {# reseña} other {# reseñas}}"

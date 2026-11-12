@@ -14,11 +14,20 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** A card shop with a website (#399): a link under the location, opening in a new tab. */
-export const ShopWithWebsite: Story = { args: { location: { ...SHOP, website: "https://www.bleeckertrading.com/" } } }
+/**
+ * A card shop with a website (#399) and hours that vary through the week
+ * (#401): the hours start collapsed to today's, a click shows the week.
+ */
+export const ShopWithWebsite: Story = { args: { location: { ...SHOP, website: "https://www.bleeckertrading.com/", hours: "Mo-Th 11:00-19:00; Fr-Sa 11:00-21:00; Su 12:00-18:00" } } }
 
-/** A card shop without one: no Website row. */
-export const ShopWithoutWebsite: Story = { args: { location: { ...SHOP, website: null } } }
+/** Hours that are the same every day: one line, nothing to expand. */
+export const ShopOpenEveryDay: Story = { args: { location: { ...SHOP, website: null, hours: "Mo-Su 10:00-20:00" } } }
+
+/** Hours entered as free text (Add a place), shown as written. */
+export const ShopFreeTextHours: Story = { args: { location: { ...SHOP, website: null, hours: "Tues–Sat noon to 7, Sun by appointment" } } }
+
+/** A card shop with neither: no Website or Hours row. */
+export const ShopWithoutWebsite: Story = { args: { location: { ...SHOP, website: null, hours: null } } }
 
 /** A vending machine: retailer, address, machine ID and source. */
 export const VendingMachine: Story = {
