@@ -11,6 +11,8 @@ describe("ShopHours (#401)", () => {
     const toggle = screen.getByRole("button", { name: "Today · 10 AM – 6:30 PM hours for the week" })
     expect(toggle).toHaveAttribute("aria-expanded", "false")
     expect(screen.queryByRole("list")).toBeNull()
+    // The week is there but hidden, so aria-controls names an element.
+    expect(document.getElementById(toggle.getAttribute("aria-controls")!)).toHaveAttribute("hidden")
 
     fireEvent.click(toggle)
     expect(toggle).toHaveAttribute("aria-expanded", "true")
@@ -45,8 +47,8 @@ describe("ShopHours (#401)", () => {
   })
 
   it("shows free text, and hours it can't read, as written", () => {
-    const { rerender } = render(<ShopHours hours={"Tues–Sat noon to 7\nSun by appointment"} now={WEDNESDAY} />)
-    expect(screen.getByText(/Tues–Sat noon to 7/)).toBeInTheDocument()
+    const { rerender } = render(<ShopHours hours={"\nTues–Sat noon to 7\nSun by appointment\n"} now={WEDNESDAY} />)
+    expect(screen.getByText(/Tues–Sat noon to 7/).textContent).toBe("Tues–Sat noon to 7\nSun by appointment")
     rerender(<ShopHours hours="Mo-Sa 10:00-18:00; Dec 25 off" now={WEDNESDAY} />)
     expect(screen.getByText("Mo-Sa 10:00-18:00; Dec 25 off")).toBeInTheDocument()
   })

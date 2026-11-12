@@ -4,12 +4,12 @@
  * card shop ("Mo-Sa 10:00-18:00; Su 11:00-18:00").
  *
  * - Rules are separated by `;`, or by `,` after a time ("Mo-Fr 12:00-20:00,
- *   Sa 11:00-18:00"). Each is `[days] times`, where `times` is
+ *   Sa 11:00-18:00"). After `;` a rule replaces its days' hours; after `,`
+ *   it adds to them ("Mo-Fr 08:00-12:00, We 14:00-18:00"). Each is `[days] times`, where `times` is
  *   `HH:MM-HH:MM` (several separated by commas), `off` or `closed`.
  * - Days: `Mo` to `Su`, ranges (`Mo-Fr`, wrapping `Fr-Mo`) and lists
  *   (`Mo,We-Th`). A rule without days applies to every day.
- * - A later rule replaces an earlier one for its days; days no rule names
- *   are closed. `24/7` is open all the time.
+ * - Days no rule names are closed. `24/7` is open all the time.
  * - Holiday rules (`PH`, `SH`) are skipped, and `PH` in a day list
  *   ("Su,Mo,PH off") is dropped: we show a normal week.
  *
@@ -29,23 +29,27 @@ export type Week = Interval[][]
 const DAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"] as const
 const ALL_DAY: Interval = { start: 0, end: 24 * 60 }
 
-const DAY_SPEC = /^(Mo|Tu|We|Th|Fr|Sa|Su)(?:-(Mo|Tu|We|Th|Fr|Sa|Su))?$/
+/** One day, a range ("Mo-Fr", or wrapping "Fr-Mo"), and a list of either ("Mo, We-Th"), as regex source. */
+const DAY = `(?:${DAYS.join("|")})`
+const DAY_RANGE = `${DAY}(?:-${DAY})?`
+const DAY_LIST = `${DAY_RANGE}(?:\\s*,\\s*${DAY_RANGE})*`
+/** A rule: an optional day list, then its times. */
+const RULE = new RegExp(`^(${DAY_LIST})?\\s*(.+)$`)
+/** A comma after a time (or off), then a day or holiday: another rule, which adds to the hours. */
+const ADDITIONAL = new RegExp(`(\\d|off|closed)\\s*,\\s*(?=(?:${DAYS.join("|")}|PH|SH)\\b)`, "g")
 const TIME_SPEC = /^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/
 
-/** "Mo-Fr" → [0..4]; "Fr-Mo" → [4, 5, 6, 0]. Null if not a day spec. */
-function days(spec: string): number[] | null {
-  const out: number[] = []
-  for (const part of spec.split(",")) {
-    const m = DAY_SPEC.exec(part.trim())
-    if (!m) return null
-    const from = DAYS.indexOf(m[1] as (typeof DAYS)[number])
-    const to = m[2] ? DAYS.indexOf(m[2] as (typeof DAYS)[number]) : from
+/** A day list the RULE regex matched → day indexes: "Mo-Fr" → [0..4]; "Fr-Mo" → [4, 5, 6, 0]. */
+function days(list: string): number[] {
+  const out = new Set<number>()
+  for (const range of list.split(",")) {
+    const [from, to = from] = range.trim().split("-").map((d) => DAYS.indexOf(d.trim() as (typeof DAYS)[number]))
     for (let d = from; ; d = (d + 1) % 7) {
-      if (!out.includes(d)) out.push(d)
+      out.add(d)
       if (d === to) break
     }
   }
-  return out
+  return [...out]
 }
 
 /** "10:00-18:00,19:00-21:00" → intervals; "off"/"closed" → []. Null if not times. */
@@ -72,21 +76,20 @@ export function parseOpeningHours(text: string | null | undefined): Week | null 
   if (value === "24/7") return DAYS.map(() => [ALL_DAY])
   const week: Week = DAYS.map(() => [])
   let any = false
-  // A comma after a time, then a day, starts another rule.
-  const rules = value.replace(/(\d|off|closed)\s*,\s*(?=(?:Mo|Tu|We|Th|Fr|Sa|Su|PH|SH)\b)/g, "$1;").split(";")
-  for (const raw of rules) {
+  // "&" marks a rule after a comma: it adds to its days' hours instead of replacing them.
+  for (const raw of value.replace(ADDITIONAL, "$1;&").split(";")) {
+    const adds = raw.trim().startsWith("&")
     // Holidays in a day list ("Su,Mo,PH off") are dropped with their comma.
-    const rule = raw.trim().replace(/\b(?:PH|SH)\s*,\s*/g, "").replace(/\s*,\s*(?:PH|SH)\b/g, "")
+    const rule = raw.trim().replace(/^&/, "").trim().replace(/\b(?:PH|SH)\s*,\s*/g, "").replace(/\s*,\s*(?:PH|SH)\b/g, "")
     if (!rule) continue
     // Holiday rules: skipped, so the week shows the usual hours.
     if (/^(PH|SH)\b/.test(rule)) continue
-    // "Mo-Fr 10:00-18:00", "Mo, We-Th 15:00-20:00", "11:00-19:00", "Su off".
-    const m = /^((?:(?:Mo|Tu|We|Th|Fr|Sa|Su)(?:-(?:Mo|Tu|We|Th|Fr|Sa|Su))?\s*,\s*)*(?:Mo|Tu|We|Th|Fr|Sa|Su)(?:-(?:Mo|Tu|We|Th|Fr|Sa|Su))?)?\s*(.+)$/.exec(rule)
-    if (!m) return null
-    const which = m[1] ? days(m[1].replace(/\s+/g, "")) : [0, 1, 2, 3, 4, 5, 6]
-    const open = times(m[2].trim())
-    if (!which || !open) return null
-    for (const d of which) week[d] = open
+    const m = RULE.exec(rule)
+    const open = m && times(m[2].trim())
+    if (!m || !open) return null
+    for (const d of m[1] ? days(m[1]) : [0, 1, 2, 3, 4, 5, 6]) {
+      week[d] = adds && open.length ? [...week[d], ...open].sort((a, b) => a.start - b.start) : open
+    }
     any = true
   }
   return any ? week : null

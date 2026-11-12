@@ -44,6 +44,13 @@ describe("parseOpeningHours (#401)", () => {
     expect(parseOpeningHours("Tu-Sa 10:00-16:00; Su,Mo,PH off")!.map((d) => d.length)).toEqual([0, 1, 1, 1, 1, 1, 0])
   })
 
+  it("adds a rule after a comma to its days' hours, where a semicolon replaces them", () => {
+    const week = parseOpeningHours("Mo-Fr 08:00-12:00, We 14:00-18:00")!
+    expect(week[2]).toEqual([h("08:00", "12:00"), h("14:00", "18:00")])
+    expect(week[1]).toEqual([h("08:00", "12:00")])
+    expect(parseOpeningHours("Mo-Fr 08:00-12:00; We 14:00-18:00")![2]).toEqual([h("14:00", "18:00")])
+  })
+
   it("reads rules separated by commas after a time", () => {
     const week = parseOpeningHours("Mo-Th 10:00-19:00, Fr-Sa 10:00-20:00, Su 12:00-18:00")!
     expect(week[0]).toEqual([h("10:00", "19:00")])

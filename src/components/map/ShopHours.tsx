@@ -1,6 +1,6 @@
 "use client"
 
-import { useId, useState } from "react"
+import { useId, useMemo, useState } from "react"
 import { ChevronDownIcon } from "lucide-react"
 import { useLocale, useTranslations } from "next-intl"
 import { parseOpeningHours, sameEveryDay, weekdayIndex, type Interval } from "@/lib/locations/opening-hours"
@@ -15,14 +15,18 @@ function dayNames(locale: string): string[] {
   })
 }
 
-/** Whether the language's clock is 12-hour ("10 AM") rather than 24-hour ("10:00"). */
-const twelveHour = (locale: string) => new Intl.DateTimeFormat(locale, { hour: "numeric", timeZone: "UTC" }).resolvedOptions().hour12 === true
-
-/** "10 AM", "6:30 PM" in English; "10:00", "18:30" in Spanish (a 24-hour clock always shows its minutes). */
-function clock(locale: string, minutes: number): string {
-  const m = minutes % (24 * 60)
-  const f = new Intl.DateTimeFormat(locale, { hour: "numeric", minute: m % 60 || !twelveHour(locale) ? "2-digit" : undefined, timeZone: "UTC" })
-  return f.format(new Date(Date.UTC(2024, 0, 1, 0, m)))
+/**
+ * A clock for the language, built once: "10 AM", "6:30 PM" in English;
+ * "10:00", "18:30" in Spanish (a 24-hour clock always shows its minutes).
+ */
+function clockFor(locale: string): (minutes: number) => string {
+  const withMinutes = new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit", timeZone: "UTC" })
+  const hourOnly = new Intl.DateTimeFormat(locale, { hour: "numeric", timeZone: "UTC" })
+  const twelveHour = hourOnly.resolvedOptions().hour12 === true
+  return (minutes) => {
+    const m = minutes % (24 * 60)
+    return (m % 60 || !twelveHour ? withMinutes : hourOnly).format(new Date(Date.UTC(2024, 0, 1, 0, m)))
+  }
 }
 
 /**
@@ -37,18 +41,19 @@ export function ShopHours({ hours, now = new Date() }: { hours: string; now?: Da
   const locale = useLocale()
   const [open, setOpen] = useState(false)
   const listId = useId()
+  const clock = useMemo(() => clockFor(locale), [locale])
+  const names = useMemo(() => dayNames(locale), [locale])
   const week = parseOpeningHours(hours)
-  if (!week) return <span className="whitespace-pre-wrap">{hours}</span>
+  if (!week) return <span className="whitespace-pre-wrap">{hours.trim()}</span>
 
   const span = (day: Interval[]) => {
     if (!day.length) return t("closed")
     if (day.length === 1 && day[0].start === 0 && day[0].end >= 24 * 60) return t("allDay")
-    return day.map((i) => `${clock(locale, i.start)} – ${clock(locale, i.end)}`).join(", ")
+    return day.map((i) => `${clock(i.start)} – ${clock(i.end)}`).join(", ")
   }
   if (sameEveryDay(week)) return <span>{t("everyDay", { hours: span(week[0]) })}</span>
 
   const today = weekdayIndex(now)
-  const names = dayNames(locale)
   return (
     <div className="flex flex-col gap-1.5">
       <button
@@ -62,16 +67,15 @@ export function ShopHours({ hours, now = new Date() }: { hours: string; now?: Da
         <span className="sr-only">{t("week")}</span>
         <ChevronDownIcon className={cn("size-4 shrink-0 text-muted-foreground transition-transform motion-reduce:transition-none", open && "rotate-180")} aria-hidden />
       </button>
-      {open && (
-        <ul id={listId} className="grid gap-0.5">
+      {/* Always there, hidden while collapsed, so aria-controls names an element. */}
+      <ul id={listId} hidden={!open} className="grid gap-0.5">
           {week.map((day, i) => (
             <li key={names[i]} aria-current={i === today ? "date" : undefined} className={cn("grid grid-cols-[minmax(0,6rem)_minmax(0,1fr)] gap-2", i === today && "font-semibold")}>
               <span>{names[i]}</span>
               <span>{span(day)}</span>
             </li>
           ))}
-        </ul>
-      )}
+      </ul>
     </div>
   )
 }
