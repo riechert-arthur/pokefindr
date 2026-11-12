@@ -348,14 +348,14 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /**
  * One active, positioned location as a feature, or null (also for an id that
- * isn't a uuid). A shop's comes with its `website` (#399): only here, for the
- * details sidebar, never in the bulk queries.
+ * isn't a uuid). A shop's comes with its `website` (#399) and `hours` (#401):
+ * only here, for the details sidebar, never in the bulk queries.
  */
 export async function getLocationFeature(id: string, db: Database = getDb()): Promise<LocationFeature | null> {
   if (!UUID.test(id)) return null
   const fc = await queryFeatures(db, sql`l.id = ${id}`, 1)
   const feature = fc.features[0]
   if (!feature || feature.properties.kind !== "shop") return feature ?? null
-  const [details] = await db.select({ website: cardShopDetails.website }).from(cardShopDetails).where(eq(cardShopDetails.locationId, id)).limit(1)
-  return { ...feature, properties: { ...feature.properties, website: details?.website ?? null } }
+  const [details] = await db.select({ website: cardShopDetails.website, hours: cardShopDetails.hours }).from(cardShopDetails).where(eq(cardShopDetails.locationId, id)).limit(1)
+  return { ...feature, properties: { ...feature.properties, website: details?.website ?? null, hours: details?.hours ?? null } }
 }

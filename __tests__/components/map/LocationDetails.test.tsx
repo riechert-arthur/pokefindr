@@ -31,9 +31,9 @@ describe("LocationDetails", () => {
     expect(screen.queryByRole("complementary", { name: /Sponsored/ })).toBeNull()
   })
 
-  it("fetches a shop's website and links it under the location, in a new tab (#399)", async () => {
+  it("fetches a shop's website and hours: the link opens in a new tab, the hours start collapsed (#399, #401)", async () => {
     const fetchMock = vi.fn(async (url: string) =>
-      new Response(JSON.stringify(url === "/api/locations/shop-1" ? { type: "Feature", properties: { website: "https://www.bleeckertrading.com/" } } : { reviews: [], features: [], counts: {}, total: 0 })),
+      new Response(JSON.stringify(url === "/api/locations/shop-1" ? { type: "Feature", properties: { website: "https://www.bleeckertrading.com/", hours: "Mo-Fr 11:00-19:00; Sa-Su 12:00-18:00" } } : { reviews: [], features: [], counts: {}, total: 0 })),
     )
     vi.stubGlobal("fetch", fetchMock)
     const shop = { ...LOCATION, id: "shop-1", kind: "shop", retailer: "Bleecker Trading", machineID: "" }
@@ -43,6 +43,8 @@ describe("LocationDetails", () => {
     expect(link).toHaveAttribute("target", "_blank")
     expect(link).toHaveAttribute("rel", "noopener noreferrer nofollow")
     expect(screen.getByText("Website")).toBeInTheDocument()
+    expect(screen.getByText("Hours")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: /^Today · / })).toHaveAttribute("aria-expanded", "false")
   })
 
   it("asks for no website for a vending machine, and shows no row when a shop has none", async () => {
@@ -54,6 +56,7 @@ describe("LocationDetails", () => {
     render(<LocationDetails location={{ ...LOCATION, id: "shop-2", kind: "shop" }} backLabel="Back" onBack={vi.fn()} kinds={["shop"]} retailers={null} onOpen={vi.fn()} />)
     await vi.waitFor(() => expect(fetchMock.mock.calls.map(([url]) => url)).toContain("/api/locations/shop-2"))
     expect(screen.queryByText("Website")).toBeNull()
+    expect(screen.queryByText("Hours")).toBeNull()
   })
 
   it("never links a website that isn't a web address", () => {

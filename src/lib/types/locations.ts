@@ -14,6 +14,8 @@ export interface LocationFeatureProperties {
   kind?: LocationKind
   /** A shop's website, as entered (#399). Only from GET /api/locations/<id>, for the details sidebar; never in bulk results. */
   website?: string | null
+  /** A shop's opening hours as entered: OSM's `opening_hours` format or free text (#401). Same source as `website`. */
+  hours?: string | null
 }
 
 /** Every kind of place, as stored in `locations.kind`. */

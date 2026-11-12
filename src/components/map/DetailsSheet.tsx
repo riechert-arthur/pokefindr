@@ -8,6 +8,7 @@ import { toKind } from "@/components/pokefindr/kinds"
 import { Button } from "@/components/ui/button"
 import { milesBetween } from "@/lib/map/geo"
 import { websiteLink } from "@/lib/locations/website"
+import { ShopHours } from "./ShopHours"
 import { track } from "@/lib/analytics"
 import { useDistance } from "@/i18n/useDistance"
 import { useTranslations } from "next-intl"
@@ -25,6 +26,8 @@ export interface DetailsLocation {
   kind?: string
   /** A shop's website (#399), once the sidebar has fetched it. */
   website?: string | null
+  /** A shop's opening hours (#401), fetched with the website. */
+  hours?: string | null
 }
 
 interface DetailsSheetProps {
@@ -99,6 +102,7 @@ export function DetailsSheet({ location, backLabel, onBack, me, from, summary, a
       </a>,
     ])
   }
+  if (kind === "shop" && location.hours?.trim()) facts.push([t("facts.hours"), <ShopHours key="hours" hours={location.hours} />])
   if (me) facts.push([t("facts.fromYou"), distance(milesBetween(me.lng, me.lat, lng, lat))])
   if (from) facts.push([t("facts.distance"), t("facts.distanceFrom", { distance: distance(milesBetween(from.lng, from.lat, lng, lat)), place: from.label })])
 
