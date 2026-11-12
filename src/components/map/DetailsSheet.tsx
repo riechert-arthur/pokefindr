@@ -87,7 +87,8 @@ export function DetailsSheet({ location, backLabel, onBack, me, from, summary, a
           ...(location.address ? ([[t("facts.address"), location.address]] as [string, ReactNode][]) : []),
           [kind === "event" ? t("facts.where") : t("facts.location"), [location.city, location.state].filter(Boolean).join(", ")],
         ]
-  const website = kind === "shop" ? websiteLink(location.website) : null
+  // Only shops have one: the route sends it for shops alone (#399).
+  const website = websiteLink(location.website)
   if (website) {
     facts.push([
       t("facts.website"),

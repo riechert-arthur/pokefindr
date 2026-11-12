@@ -24,27 +24,27 @@ type LocationDetailsProps = Omit<ComponentProps<typeof DetailsSheet>, "summary" 
 }
 
 /**
- * A shop's website (#399), from GET /api/locations/<id>: the map's bulk
- * results leave it out. Undefined while it loads, or for other kinds; null
- * when the shop has none or the request failed (the row is then left out).
+ * A shop's website (#399), from GET /api/locations/<id>, unless the location
+ * already came from that route (a shared link: `known` is set). The map's
+ * bulk results leave it out. Undefined while it loads, or for other kinds;
+ * null when the shop has none or the request failed (the row is then left
+ * out). The panel is keyed by location, so this state is per place.
  */
 function useShopWebsite(id: string, kind: LocationKind, known: string | null | undefined): string | null | undefined {
-  const [fetched, setFetched] = useState<{ id: string; website: string | null } | null>(null)
+  const [fetched, setFetched] = useState<string | null | undefined>(undefined)
   const needed = kind === "shop" && known === undefined
   useEffect(() => {
     if (!needed) return
     const ctl = new AbortController()
-    fetch(`/api/locations/${id}`, { signal: ctl.signal })
+    fetch(`/api/locations/${encodeURIComponent(id)}`, { signal: ctl.signal })
       .then((res) => (res.ok ? (res.json() as Promise<LocationFeature>) : null))
-      .then((feature) => setFetched({ id, website: feature?.properties.website ?? null }))
+      .then((feature) => setFetched(feature?.properties.website ?? null))
       .catch(() => {
-        if (!ctl.signal.aborted) setFetched({ id, website: null })
+        if (!ctl.signal.aborted) setFetched(null)
       })
     return () => ctl.abort()
   }, [id, needed])
-  if (kind !== "shop") return undefined
-  if (known !== undefined) return known
-  return fetched?.id === id ? fetched.website : undefined
+  return needed ? fetched : known
 }
 
 /**
