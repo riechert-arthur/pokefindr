@@ -153,8 +153,9 @@ Migrations run in a deploy step (`npm run db:migrate`), never at app start-up.
 ### Deploying migrations
 
 `.github/workflows/migrate.yml` runs on every push to `main` (and by hand from
-the Actions tab). It runs `db:migrate`, `db:check` and then the location import
-(`db:import-locations -- --apply`, see below) on the Neon `staging` branch, then
+the Actions tab). It runs `db:migrate`, `db:check` and then the imports
+(`db:import-locations -- --apply` and `db:import-osm-shops -- --apply`, see
+below) on the Neon `staging` branch, then
 on `production` only if staging passed. One run at a time; a run
 is never cancelled halfway.
 
@@ -306,6 +307,85 @@ npm run db:import-locations -- --apply
 
 `--file <geojson>` imports another file of the same shape; `--report <json>`
 saves the counts and verification.
+
+## Card shops from OpenStreetMap
+
+About 2,090 card and game shops across the US come from OpenStreetMap (#397),
+as `kind = 'shop'` rows with `source = 'osm'`. There's no card-shop API
+elsewhere: card publishers' store locators are undocumented, and directories
+like thecardshopfinder.com forbid scraping.
+
+**Where they come from.** OSM's [Overpass API](https://overpass-api.de) (free,
+no key, fair use) answers one query for the whole US. The query and the rules
+live in `src/lib/osm/card-shops.ts`:
+
+- every `shop=collector` (most card shops, e.g. Dave & Adam's, Bleecker
+  Trading) and every `shop=games` (TCG stores, alongside board-game stores);
+- `hobby`, `comics`, `anime` and `toys` shops only when the name says cards,
+  TCG or Pokémon;
+- never a board-game cafe or club (`cafe=board_game`, `club=board_game(s)`);
+- **never a coin, stamp or bullion dealer**, which `shop=collector` also
+  covers: dropped by their `collector` tag, or by name when they have none
+  ("Hauser's Coins", "The Gold Experts"). A shop naming both stays: "Arundel
+  Cards & Coins" sells cards;
+- one copy of a shop mapped twice (the same name within 75 m, such as a
+  pin and its building): the one with more tags.
+
+To see the query on a map, paste it (`overpassQuery()`) into
+[Overpass Turbo](https://overpass-turbo.eu); issue #397 links it ready to run.
+
+**Two steps.** Deploys never call Overpass:
+
+```bash
+npm run db:fetch-osm-shops -- --dry-run   # query Overpass, compare with the snapshot, write nothing
+npm run db:fetch-osm-shops                # a person: write src/data/osm_card_shops.json
+npm run db:import-osm-shops -- --dry-run  # rolled back, prints what --apply would do (also the default)
+npm run db:import-osm-shops -- --apply
+```
+
+The fetch writes a snapshot, one shop per line, with what it dropped and why.
+Commit it, so the change is a reviewable diff; the migrate workflow then imports
+it on staging and production. The state comes from each shop's position (most
+OSM shops have no `addr:state`), via the map's state outlines.
+
+**The import** (`scripts/one-off/import-osm-shops.ts`), in one transaction:
+
+- matches rows on `(source, external_id)`, OSM's id such as `node/777464960`
+  (unique, migration 0026);
+- inserts new shops with their `card_shop_details` (website, hours; `sells`
+  stays empty), except a probable duplicate: a shop from another source
+  within 75 m with a similar name, listed for a person to merge;
+- updates shops whose OSM data changed, keeping hidden ones hidden, and
+  leaves alone any with `manual_override`: set it on a shop you fix by hand,
+  or the next deploy puts OSM's values back (as with the location import);
+- deactivates, never deletes, shops gone from OSM, since reviews may point at them;
+- writes nothing, and records no run, when nothing changed.
+
+**Rollback.** Every applied run that changed anything is a
+`location_import_runs` row, with each change's values before and after in
+`location_import_changes`:
+
+```bash
+npm run db:import-osm-shops -- --rollback <run id>            # dry run
+npm run db:import-osm-shops -- --rollback <run id> --apply
+```
+
+It restores updated and deactivated rows, deletes the shops the run inserted
+(or deactivates them if anything points at them since: reviews, reports,
+highlights, submissions or assistant views),
+and skips any row written since the run (its `updated_at` is later than the
+run's). Every applied run is also recorded in `job_runs` and listed on the
+admin's Jobs page as `osm-shop-import`. After a run that changed shops, it
+refreshes `location_region_counts`. Only the latest run can be rolled back,
+and rolling back twice does nothing. If the run's snapshot is still committed,
+revert that commit too, or the next deploy imports it again.
+
+**License.** The data is © OpenStreetMap contributors, under the
+[Open Database License](https://www.openstreetmap.org/copyright): credit it
+wherever it's shown. The map's attribution already says "Data from
+OpenStreetMap" (the basemap is OSM too). The ODbL's share-alike applies to a
+public database built on OSM data; keeping these rows separate (their own
+`source`) keeps that part separable.
 
 ## Canary locations
 

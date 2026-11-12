@@ -12,8 +12,8 @@ const cronOf = (name: string) => vercel.crons.find((c) => c.path === `/api/jobs/
 const PER_ITEM: Record<string, string> = { "submission-created": "Queue · per submission", "submission-reviewed": "Queue · per decision" }
 
 /**
- * The jobs the admin lists (#157): the location import (a deploy step, not a
- * registered job), location-sync (planned, paused until #85 finds a data
+ * The jobs the admin lists (#157): the location and card shop imports (deploy
+ * steps, not registered jobs), location-sync (planned, paused until #85 finds a data
  * source), and every registered job but the wiring check.
  */
 export function jobCatalog(): JobInfo[] {
@@ -25,6 +25,7 @@ export function jobCatalog(): JobInfo[] {
     })
   return [
     { name: "location-import", description: "Loads the official vending list into locations on each deploy", trigger: "Deploy step", runnable: false },
+    { name: "osm-shop-import", description: "Loads card shops from the OpenStreetMap snapshot on each deploy (#397)", trigger: "Deploy step", runnable: false },
     { name: "location-sync", description: "Pulls vending updates on a schedule", trigger: "Cron · daily 09:00 UTC", runnable: false, blocked: "Waiting on an approved data source (#85)" },
     ...registered,
   ]

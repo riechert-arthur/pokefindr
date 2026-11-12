@@ -32,6 +32,8 @@
     "db:pull": "drizzle-kit pull",
     "db:studio": "drizzle-kit studio",
     "db:import-locations": "tsx scripts/one-off/import-locations.ts",
+    "db:fetch-osm-shops": "tsx --conditions=react-server scripts/one-off/fetch-osm-shops.ts",
+    "db:import-osm-shops": "tsx scripts/one-off/import-osm-shops.ts",
     "firewall": "tsx scripts/firewall/apply.ts",
     "canary:plant": "tsx --conditions=react-server scripts/canary/plant.ts",
     "test-storybook": "test-storybook --url http://127.0.0.1:6006",

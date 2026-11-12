@@ -23,6 +23,7 @@
 import type { ReportAction, ReportReason, ReportResolution } from "@/lib/locations/reports"
 import {
   bigint,
+  bigserial,
   boolean,
   check,
   date,
@@ -429,9 +430,12 @@ export const locations = pgTable(
      * sent to clients. scripts/canary/plant.ts adds them.
      */
     canary: boolean("canary").notNull().default(false),
+    /** The place's id in its source, for imports that re-run (#397): `node/777464960` for OpenStreetMap. */
+    externalId: text("external_id"),
   },
   (t) => [
     uniqueIndex("locations_machine_id_key").on(t.machineId),
+    uniqueIndex("locations_source_external_id_key").on(t.source, t.externalId).where(sql`${t.externalId} is not null`),
     index("locations_vending_address_idx").on(t.state, t.addressNormalized).where(sql`${t.kind} = 'vending'`),
     index("locations_geog_gist").using("gist", t.geog),
     // The viewport query (getLocationsInBbox) filters on planar boxes (migration 0002).
@@ -439,6 +443,46 @@ export const locations = pgTable(
     // What each kind's details table points at, so its rows match the location's kind (migration 0011).
     unique("locations_id_kind_key").on(t.id, t.kind),
     ...locationChecks("locations", t),
+  ],
+)
+
+/** What an import did to a row (#397). */
+export const LOCATION_IMPORT_OPS = ["insert", "update", "deactivate"] as const
+export type LocationImportOp = (typeof LOCATION_IMPORT_OPS)[number]
+
+/** One applied import that changed anything (#397, migration 0026), so it can be rolled back. */
+export const locationImportRuns = pgTable(
+  "location_import_runs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** `locations.source` of the rows it wrote, e.g. 'osm'. */
+    source: text("source").notNull(),
+    /** sha256 of the snapshot file it read. */
+    snapshotHash: text("snapshot_hash").notNull(),
+    /** When the snapshot was fetched from the source. */
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }),
+    appliedAt: timestamp("applied_at", { withTimezone: true }).notNull().defaultNow(),
+    counts: jsonb("counts").$type<Record<string, number>>().notNull(),
+    rolledBackAt: timestamp("rolled_back_at", { withTimezone: true }),
+  },
+  (t) => [index("location_import_runs_source_applied_idx").on(t.source, t.appliedAt)],
+)
+
+/** Each row a run changed, before and after, for its rollback (#397, migration 0026). */
+export const locationImportChanges = pgTable(
+  "location_import_changes",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    runId: uuid("run_id").notNull().references(() => locationImportRuns.id, { onDelete: "cascade" }),
+    /** No foreign key: a rollback deletes the rows its run inserted, and the log outlives them. */
+    locationId: uuid("location_id").notNull(),
+    op: text("op").$type<LocationImportOp>().notNull(),
+    before: jsonb("before").$type<Record<string, unknown>>(),
+    after: jsonb("after").$type<Record<string, unknown>>().notNull(),
+  },
+  (t) => [
+    index("location_import_changes_run_idx").on(t.runId),
+    check("location_import_changes_op_check", sql`${t.op} in ('insert', 'update', 'deactivate')`),
   ],
 )
 

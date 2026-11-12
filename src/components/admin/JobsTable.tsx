@@ -118,7 +118,7 @@ export function JobsTable() {
                         </Button>
                       ) : (
                         !j.blocked &&
-                        j.name !== "location-import" && (
+                        j.trigger !== "Deploy step" && (
                           <Button size="sm" variant="ghost" disabled={busy !== null} onClick={() => void act(j, "pause")}>
                             Pause
                           </Button>
