@@ -28,14 +28,14 @@ describe("KindDot", () => {
 describe("TypeChip", () => {
   it("toggles and fills its swatch with the kind color when pressed", () => {
     const onPressedChange = vi.fn()
-    const { rerender } = render(<TypeChip kind="vending" pressed={false} count={1457} short onPressedChange={onPressedChange} />)
-    // The name starts with the visible text ("Vending 1,457"), for voice control.
-    const chip = screen.getByRole("button", { name: "Vending 1,457" })
+    const { rerender } = render(<TypeChip kind="vending" pressed={false} short onPressedChange={onPressedChange} />)
+    // Its swatch and label, no count (#403).
+    const chip = screen.getByRole("button", { name: "Vending" })
     expect(chip).toHaveAttribute("aria-pressed", "false")
-    expect(chip).toHaveTextContent("Vending")
+    expect(chip.textContent).toBe("Vending")
     fireEvent.click(chip)
     expect(onPressedChange).toHaveBeenCalledWith(true)
-    rerender(<TypeChip kind="vending" pressed count={1457} short onPressedChange={onPressedChange} />)
+    rerender(<TypeChip kind="vending" pressed short onPressedChange={onPressedChange} />)
     expect(chip).toHaveAttribute("aria-pressed", "true")
     expect(chip.querySelector("[aria-hidden]")).toHaveClass("bg-kind-vending")
   })
