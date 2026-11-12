@@ -5,7 +5,6 @@ import { useEffect, useId, useRef, type ComponentProps, type ReactNode } from "r
 import { NavigationIcon, PlusIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { StarRating } from "@/components/pokefindr/StarRating"
-import { StatusBadge } from "@/components/pokefindr/StatusBadge"
 import { SubmissionBadge, SubmissionNote } from "@/components/pokefindr/SubmissionBadge"
 import type { MySubmission } from "@/lib/submissions/schemas"
 import { DEFAULT_RADIUS, mapUrl, roundPlace } from "@/lib/map/url-state"
@@ -233,7 +232,6 @@ export function EventsTile({ events }: { events: UpcomingEvent[] | "error" | nul
   return (
     <Tile
       title={t("events.title")}
-      badge={Array.isArray(events) && events.some((e) => e.isSample) && <StatusBadge status="sample" className="whitespace-nowrap" />}
       footer={
         <Button asChild {...action}>
           <Link href={mapUrl("/map", { types: ["event"] })}>{t("events.seeOnMap")}</Link>

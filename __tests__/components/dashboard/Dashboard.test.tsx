@@ -30,7 +30,8 @@ describe("Dashboard", () => {
     expect(review).toHaveAttribute("href", "/map?location=loc-1")
     expect(screen.getByRole("link", { name: "Manage your reviews" })).toHaveAttribute("href", "/home/reviews")
     expect(await screen.findByText("Card show")).toBeInTheDocument()
-    expect(screen.getByRole("region", { name: "Upcoming events" })).toHaveTextContent("Sample")
+    // No "Sample" badge, though this event is a sample (#395).
+    expect(screen.getByRole("region", { name: "Upcoming events" })).not.toHaveTextContent("Sample")
     const submissions = screen.getByRole("region", { name: "Your submissions" })
     expect(await screen.findByRole("link", { name: /Rose City Card Exchange/ })).toHaveTextContent("Pending review")
     expect(submissions).not.toHaveTextContent("Coming soon")
