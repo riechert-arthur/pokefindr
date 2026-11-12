@@ -21,8 +21,9 @@ import path from "node:path"
 import { compareShops, OSM_ATTRIBUTION, OSM_COPYRIGHT_URL, overpassQuery, selectShops, type OsmElement } from "@/lib/osm/card-shops"
 import { regionAt } from "@/server/geo/regions"
 import { ROOT_DIR } from "../db/env"
+import { argValue } from "./args"
+import { SNAPSHOT_FILE } from "./osm-snapshot"
 
-export const SNAPSHOT_FILE = path.join(ROOT_DIR, "src/data/osm_card_shops.json")
 const OVERPASS_URL = process.env.OVERPASS_URL || "https://overpass-api.de/api/interpreter"
 const RETRIES = 4
 const RETRY_STATUSES = new Set([429, 502, 503, 504])
@@ -68,8 +69,8 @@ export function formatSnapshot({ shops, ...head }: { shops: unknown[] } & Record
 }
 
 async function main() {
-  const i = process.argv.indexOf("--out")
-  const out = i === -1 ? SNAPSHOT_FILE : path.resolve(process.argv[i + 1])
+  const outArg = argValue("--out")
+  const out = outArg ? path.resolve(outArg) : SNAPSHOT_FILE
   const dryRun = process.argv.includes("--dry-run")
   const query = overpassQuery()
   console.log(`Asking ${OVERPASS_URL} for the US's card shops…`)
@@ -82,11 +83,11 @@ async function main() {
     fetchedAt: new Date().toISOString(),
     overpass: OVERPASS_URL,
     query,
-    counts: { elements: elements.length, shops: shops.length, coinOrStamp: dropped.coinOrStamp.length, unusable: dropped.unusable.length },
+    counts: { elements: elements.length, shops: shops.length, coinOrStamp: dropped.coinOrStamp.length, unusable: dropped.unusable.length, duplicates: dropped.duplicates.length },
     dropped,
     shops,
   }
-  console.log(`${elements.length} places: ${shops.length} shops, ${dropped.coinOrStamp.length} coin or stamp dealers and ${dropped.unusable.length} without a name or position left out.`)
+  console.log(`${elements.length} places: ${shops.length} shops; left out ${dropped.coinOrStamp.length} coin or stamp dealers, ${dropped.duplicates.length} mapped twice and ${dropped.unusable.length} without a name or position.`)
   if (existsSync(out)) {
     const { added, removed, changed } = compareShops((JSON.parse(readFileSync(out, "utf8")) as { shops: { externalId: string }[] }).shops, shops)
     const some = (ids: string[]) => (ids.length ? `: ${ids.slice(0, 10).join(", ")}${ids.length > 10 ? ", …" : ""}` : "")

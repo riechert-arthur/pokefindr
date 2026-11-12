@@ -5,6 +5,7 @@
  * (scripts/one-off/import-osm-shops.ts). See docs/database.md, "Card shops
  * from OpenStreetMap".
  */
+import { milesBetween } from "@/lib/map/geo"
 import { stateCode } from "@/lib/map/states"
 
 /** `locations.source` of the shops this import writes. */
@@ -99,9 +100,9 @@ function streetAddress(tags: Record<string, string>): string | null {
   return number ? `${number} ${street}` : street
 }
 
-/** The website, with a scheme so it links: OSM often has bare `example.com`. */
+/** The website, with a scheme so it links: OSM often has bare `example.com`. The first of several (`a.com;b.com`). */
 function website(tags: Record<string, string>): string | null {
-  const url = text(tags.website) ?? text(tags["contact:website"])
+  const url = text((tags.website ?? tags["contact:website"])?.split(";")[0])
   if (!url) return null
   return /^https?:\/\//i.test(url) ? url : `https://${url}`
 }
@@ -137,15 +138,23 @@ export interface Dropped {
   coinOrStamp: { externalId: string; name: string }[]
   /** No name or no position. */
   unusable: string[]
+  /** The same shop mapped twice (a node and its building, or two nodes): the one with fewer tags. */
+  duplicates: { externalId: string; name: string; keptId: string }[]
 }
+
+/** Two places this close with the same name are one shop mapped twice. */
+export const DUPLICATE_METERS = 75
+const METERS_PER_MILE = 1609.344
+const sameName = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, "")
 
 /**
  * Turns Overpass's elements into the snapshot's shops: drops coin and stamp
- * dealers and places without a name or position, keeps each OSM id once, and
- * sorts by id so a new snapshot diffs cleanly against the last.
+ * dealers, places without a name or position, and a shop mapped twice (the
+ * same name within DUPLICATE_METERS); keeps each OSM id once; and sorts by
+ * id so a new snapshot diffs cleanly against the last.
  */
 export function selectShops(elements: OsmElement[], stateAt?: (lng: number, lat: number) => string | null): { shops: OsmShop[]; dropped: Dropped } {
-  const dropped: Dropped = { coinOrStamp: [], unusable: [] }
+  const dropped: Dropped = { coinOrStamp: [], unusable: [], duplicates: [] }
   const byId = new Map<string, OsmShop>()
   for (const el of elements) {
     const id = `${el.type}/${el.id}`
@@ -159,6 +168,22 @@ export function selectShops(elements: OsmElement[], stateAt?: (lng: number, lat:
     else byId.set(id, shop)
   }
   const byExternalId = (a: { externalId: string }, b: { externalId: string }) => (a.externalId < b.externalId ? -1 : a.externalId > b.externalId ? 1 : 0)
+  // The same name within DUPLICATE_METERS: keep the one with more tags (then the lower id), so no shop is imported twice.
+  const byName = new Map<string, OsmShop[]>()
+  for (const shop of [...byId.values()].sort(byExternalId)) {
+    const key = sameName(shop.name)
+    const kept = byName.get(key) ?? []
+    const twin = kept.find((k) => milesBetween(k.lng, k.lat, shop.lng, shop.lat) * METERS_PER_MILE <= DUPLICATE_METERS)
+    if (!twin) {
+      byName.set(key, [...kept, shop])
+      continue
+    }
+    const [keep, drop] = Object.keys(shop.tags).length > Object.keys(twin.tags).length ? [shop, twin] : [twin, shop]
+    byName.set(key, kept.map((k) => (k === twin ? keep : k)))
+    dropped.duplicates.push({ externalId: drop.externalId, name: drop.name, keptId: keep.externalId })
+    byId.delete(drop.externalId)
+  }
+  dropped.duplicates.sort(byExternalId)
   dropped.coinOrStamp.sort(byExternalId)
   dropped.unusable.sort()
   return { shops: [...byId.values()].sort(byExternalId), dropped }

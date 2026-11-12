@@ -6,7 +6,8 @@ import { afterAll, describe, expect, it } from "vitest"
 import { createMigrator } from "../../scripts/db/migrator"
 import { importOsmShops, rollbackRun } from "../../scripts/one-off/import-osm-shops"
 import type { OsmShop } from "@/lib/osm/card-shops"
-import { testDatabaseUrl } from "./testDatabase"
+import { getDb } from "@/server/db/client"
+import { insertProfiles, testDatabaseUrl } from "./testDatabase"
 
 const sql = postgres(testDatabaseUrl(), { max: 1, onnotice: () => {} })
 const { db } = createMigrator(sql)
@@ -73,6 +74,17 @@ describe("OSM card shop import (npm run db:import-osm-shops, #397)", () => {
     ])
   })
 
+  it("leaves a shop edited by hand with manual_override as it is, even gone from OSM (#398 review)", async () => {
+    await run(snapshot(shop(1), shop(2)))
+    await sql`update locations set name = 'Fixed by an admin', manual_override = true where external_id in ('node/1', 'node/2')`
+    const report = await run(snapshot(shop(1, { name: "OSM's name" })))
+    expect(report).toMatchObject({ updated: 0, deactivated: 0, overridden: 1 })
+    expect(await rows()).toEqual([
+      expect.objectContaining({ external_id: "node/1", name: "Fixed by an admin", is_active: true }),
+      expect.objectContaining({ external_id: "node/2", name: "Fixed by an admin", is_active: true }),
+    ])
+  })
+
   it("doesn't insert a shop that's probably already here from another source, and lists it", async () => {
     await sql`
       insert into locations (kind, source, name, geog, is_active)
@@ -113,6 +125,25 @@ describe("OSM card shop import (npm run db:import-osm-shops, #397)", () => {
     expect(await rows()).toEqual([
       expect.objectContaining({ external_id: "node/1", is_active: false }),
       expect.objectContaining({ external_id: "node/2", name: "Edited by an admin", is_active: true }),
+    ])
+  })
+
+  it("on rollback, keeps a shop a submission points at, and one written since the run in a column it doesn't import (#398 review)", async () => {
+    const first = await run(snapshot(shop(1), shop(2), shop(3)))
+    const [one] = await sql<{ id: string }[]>`select id from locations where external_id = 'node/1'`
+    const who = { id: crypto.randomUUID() }
+    await insertProfiles(getDb(), { id: who.id, username: "mapper", onboarded: true })
+    await sql`
+      insert into location_submissions (kind, status, payload, geog, submitted_by, location_id)
+      values ('shop', 'approved', '{}'::jsonb, ST_SetSRID(ST_MakePoint(-73.98, 40.75), 4326)::geography, ${who.id}, ${one.id})`
+    // Not a column the import writes, so only updated_at shows it changed.
+    await sql`update locations set is_official = true where external_id = 'node/2'`
+
+    const undone = await db.transaction().execute((trx) => rollbackRun(trx, first.runId!))
+    expect(undone).toMatchObject({ deleted: 1, deactivated: 1, skipped: ["node/2"] })
+    expect(await rows()).toEqual([
+      expect.objectContaining({ external_id: "node/1", is_active: false }),
+      expect.objectContaining({ external_id: "node/2", is_active: true }),
     ])
   })
 })

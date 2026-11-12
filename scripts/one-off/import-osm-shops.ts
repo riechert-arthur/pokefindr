@@ -18,7 +18,8 @@
  *   another source (a submission, the seed) is within 75 m with a similar
  *   name: that's listed as a probable duplicate for a person to merge.
  * - A shop already imported is updated when its OSM data changed. One an
- *   admin hid (hidden_at) stays hidden.
+ *   admin hid (hidden_at) stays hidden, and one with manual_override is
+ *   left as it is: set it to make a hand edit survive the next deploy.
  * - An imported shop no longer in the snapshot is deactivated, never
  *   deleted: reviews may point at it.
  * Every change is logged in `location_import_changes` under one
@@ -34,10 +35,11 @@ import { sql, type Kysely } from "kysely"
 import { OSM_SOURCE, type OsmShop } from "@/lib/osm/card-shops"
 import { loadDevEnv, migrationClient, ROOT_DIR } from "../db/env"
 import { createMigrator, inRolledBackTransaction } from "../db/migrator"
+import { argValue } from "./args"
+import { recordImportRun } from "./import-locations"
+import { SNAPSHOT_FILE } from "./osm-snapshot"
 
 type Db = Kysely<unknown>
-
-export const SNAPSHOT_FILE = path.join(ROOT_DIR, "src/data/osm_card_shops.json")
 /** A shop from another source this close, with a similar name, is probably the same shop. */
 export const DUPLICATE_METERS = 75
 const BATCH_SIZE = 500
@@ -96,6 +98,8 @@ interface Current extends ShopValues {
   id: string
   external_id: string
   hidden: boolean
+  /** Edited by hand and flagged to keep (manual_override): the import leaves it alone. */
+  overridden: boolean
 }
 
 /** The imported shops now in the table, with their details, by OSM id (or by location id). */
@@ -104,7 +108,7 @@ async function currentShops(db: Db, ids?: string[]): Promise<Current[]> {
   const { rows } = await sql<Current>`
     select l.id, l.external_id, l.name, l.address, l.city, l.state, l.postal_code,
       ST_X(l.geog::geometry) as lng, ST_Y(l.geog::geometry) as lat, l.is_active,
-      l.hidden_at is not null as hidden, d.website, d.hours, l.raw
+      l.hidden_at is not null as hidden, l.manual_override as overridden, d.website, d.hours, l.raw
     from locations l left join card_shop_details d on d.location_id = l.id
     where l.source = ${OSM_SOURCE} and l.external_id is not null
       ${ids ? sql`and l.id in (${sql.join(ids.map((id) => sql`${id}::uuid`))})` : sql``}`.execute(db)
@@ -191,6 +195,8 @@ export interface ImportReport {
   unchanged: number
   /** Kept hidden: an admin hid them, whatever OSM says. */
   hidden: number
+  /** Left as they are: edited by hand with manual_override. */
+  overridden: number
   /** Not inserted: a shop from another source is within DUPLICATE_METERS with a similar name. */
   duplicates: { externalId: string; name: string; existingId: string; existingName: string }[]
   /** Deactivated: no longer in the snapshot. */
@@ -231,10 +237,15 @@ export async function importOsmShops(db: Db, file = SNAPSHOT_FILE): Promise<Impo
   const changes: Change[] = []
   const updates: (ShopValues & { id: string })[] = []
   let hidden = 0
+  let overridden = 0
   let unchanged = 0
   for (const shop of snapshot.shops) {
     const cur = existing.get(shop.externalId)
     if (!cur) continue
+    if (cur.overridden) {
+      overridden++
+      continue
+    }
     if (cur.hidden) hidden++
     const after = valuesOf(shop, !cur.hidden)
     if (sameValues(pick(cur), after)) {
@@ -246,7 +257,7 @@ export async function importOsmShops(db: Db, file = SNAPSHOT_FILE): Promise<Impo
   }
 
   const inSnapshot = new Set(snapshot.shops.map((s) => s.externalId))
-  const gone = [...existing.values()].filter((c) => c.is_active && !inSnapshot.has(c.external_id))
+  const gone = [...existing.values()].filter((c) => c.is_active && !c.overridden && !inSnapshot.has(c.external_id))
   for (const c of gone) {
     const after = { ...pick(c), is_active: false }
     updates.push({ ...after, id: c.id })
@@ -274,7 +285,7 @@ export async function importOsmShops(db: Db, file = SNAPSHOT_FILE): Promise<Impo
     await logChanges(db, runId, changes)
   }
 
-  await verify(db, snapshot, skipped)
+  await verify(db, snapshot, new Set([...skipped, ...[...existing.values()].filter((c) => c.overridden).map((c) => c.external_id)]))
   return {
     file: path.relative(ROOT_DIR, file),
     fetchedAt: snapshot.fetchedAt,
@@ -283,12 +294,13 @@ export async function importOsmShops(db: Db, file = SNAPSHOT_FILE): Promise<Impo
     ...counts,
     unchanged,
     hidden,
+    overridden,
     duplicates,
     gone: gone.map((c) => c.external_id),
   }
 }
 
-/** Every shop in the snapshot (probable duplicates aside) is in the table as the snapshot says. Otherwise throws. */
+/** Every shop in the snapshot (probable duplicates and overridden rows aside) is in the table as the snapshot says. Otherwise throws. */
 async function verify(db: Db, snapshot: Snapshot, skipped: Set<string>): Promise<void> {
   const rows = new Map((await currentShops(db)).map((c) => [c.external_id, c]))
   const problems: string[] = []
@@ -306,7 +318,7 @@ async function verify(db: Db, snapshot: Snapshot, skipped: Set<string>): Promise
 export function summarize(r: ImportReport, apply = true): string[] {
   return [
     `Card shops from ${r.file} (OpenStreetMap, fetched ${r.fetchedAt}): ${r.shops}.`,
-    `${r.inserted} inserted, ${r.updated} updated, ${r.deactivated} deactivated (gone from OSM), ${r.unchanged} unchanged; ${r.hidden} kept hidden.`,
+    `${r.inserted} inserted, ${r.updated} updated, ${r.deactivated} deactivated (gone from OSM), ${r.unchanged} unchanged; ${r.hidden} kept hidden, ${r.overridden} left as edited (manual_override).`,
     ...(r.duplicates.length ? [`${r.duplicates.length} not inserted, probably already here: ${r.duplicates.slice(0, 10).map((d) => `${d.name} (${d.externalId}) ≈ ${d.existingName}`).join("; ")}${r.duplicates.length > 10 ? "; …" : ""}`] : []),
     !r.runId ? "Nothing changed; no run recorded." : apply ? `Logged as run ${r.runId} (roll back with --rollback ${r.runId}).` : "With --apply, these changes are logged as one run that can be rolled back.",
   ]
@@ -318,9 +330,9 @@ export interface RollbackReport {
   runId: string
   restored: number
   deleted: number
-  /** Inserted rows that gained reviews, reports or highlights since: deactivated instead of deleted. */
+  /** Inserted rows that gained reviews, reports, highlights, submissions or assistant views since: deactivated instead of deleted. */
   deactivated: number
-  /** Changed since the run (an admin's edit, a later import): left as they are. */
+  /** Changed since the run (an admin's edit, a later import, any write to the row): left as they are. */
   skipped: string[]
 }
 
@@ -340,12 +352,21 @@ export async function rollbackRun(db: Db, runId: string): Promise<RollbackReport
   const { rows: changes } = await sql<Change & { id: string }>`
     select id, location_id, op, before, after from location_import_changes where run_id = ${runId}::uuid order by id desc`.execute(db)
   const current = new Map((await currentShops(db, changes.map((c) => c.location_id))).map((c) => [c.id, c]))
+  const ids = sql.join(changes.length ? changes.map((c) => sql`${c.location_id}::uuid`) : [sql`null`])
+  // Anything that points at the place: deleting it would delete or orphan these.
   const { rows: used } = await sql<{ id: string }>`
     select distinct location_id as id from (
       select location_id from location_ratings union all select location_id from status_reports
       union all select location_id from highlights union all select location_id from report_actions
-    ) u where location_id in (${sql.join(changes.length ? changes.map((c) => sql`${c.location_id}::uuid`) : [sql`null`])})`.execute(db)
+      union all select location_id from location_submissions union all select location_id from assistant_place_views
+    ) u where location_id in (${ids})`.execute(db)
   const referenced = new Set(used.map((u) => u.id))
+  // Written since the run: the import's own writes share its transaction's time (applied_at), so a later one is
+  // someone else's. Compared in SQL, at Postgres's microseconds (a JS Date would round to milliseconds).
+  const { rows: touched } = await sql<{ id: string }>`
+    select id from locations
+    where id in (${ids}) and updated_at > (select applied_at from location_import_runs where id = ${runId}::uuid)`.execute(db)
+  const editedSince = new Set(touched.map((t) => t.id))
 
   const report: RollbackReport = { runId, restored: 0, deleted: 0, deactivated: 0, skipped: [] }
   const restore: (ShopValues & { id: string })[] = []
@@ -353,7 +374,7 @@ export async function rollbackRun(db: Db, runId: string): Promise<RollbackReport
   for (const c of changes) {
     const cur = current.get(c.location_id)
     if (!cur) continue // already gone
-    if (!sameValues(pick(cur), c.after)) {
+    if (editedSince.has(c.location_id) || !sameValues(pick(cur), c.after)) {
       report.skipped.push(cur.external_id)
       continue
     }
@@ -378,13 +399,8 @@ export async function rollbackRun(db: Db, runId: string): Promise<RollbackReport
 
 // ─── Command line ──────────────────────────────────────────────────────────
 
-function argValue(flag: string): string | undefined {
-  const i = process.argv.indexOf(flag)
-  if (i === -1) return undefined
-  const value = process.argv[i + 1]
-  if (!value || value.startsWith("--")) throw new Error(`${flag} needs a value`)
-  return value
-}
+/** `job_runs.job` for this import's runs. */
+const JOB = "osm-shop-import"
 
 async function main() {
   loadDevEnv()
@@ -402,7 +418,20 @@ async function main() {
   const { db } = createMigrator(client)
   try {
     const run = (trx: Db): Promise<ImportReport | RollbackReport> => (rollback ? rollbackRun(trx, rollback) : importOsmShops(trx, file))
-    const report = apply ? await db.transaction().execute(run) : await inRolledBackTransaction(db, run)
+    const startedAt = new Date()
+    let report: ImportReport | RollbackReport
+    try {
+      report = apply ? await db.transaction().execute(run) : await inRolledBackTransaction(db, run)
+    } catch (err) {
+      // On the admin's Jobs page, next to the location import (#157).
+      if (apply) await recordImportRun(db, startedAt, { status: "failed", error: err instanceof Error ? err.message : String(err) }, JOB)
+      throw err
+    }
+    const changed = "restored" in report ? report.restored + report.deleted + report.deactivated > 0 : report.runId !== null
+    if (apply) {
+      const { duplicates, gone, ...counts } = report as ImportReport & RollbackReport
+      await recordImportRun(db, startedAt, { status: "succeeded", result: { ...counts, ...(rollback ? { rollback: true } : { duplicates: duplicates?.length, gone: gone?.length }) } }, JOB)
+    }
     if ("restored" in report) {
       const r = report as RollbackReport
       console.log(`Rollback of ${r.runId}: ${r.restored} restored, ${r.deleted} deleted, ${r.deactivated} deactivated (in use since).`)
@@ -412,8 +441,8 @@ async function main() {
       for (const line of summarize(report as ImportReport, apply)) console.log(line)
     }
     if (reportFile) writeFileSync(reportFile, JSON.stringify({ apply, ...report }, null, 2) + "\n")
-    if (apply) {
-      // The zoomed-out map's per-state counts, as after the location import.
+    if (apply && changed) {
+      // The zoomed-out map's per-state counts, as after the location import; only when shops changed.
       await sql`refresh materialized view concurrently location_region_counts`.execute(db)
       console.log("Refreshed location_region_counts.")
     }

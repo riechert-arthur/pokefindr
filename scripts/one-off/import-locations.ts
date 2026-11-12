@@ -41,6 +41,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import { sql, type Kysely } from "kysely"
 import { loadDevEnv, migrationClient, ROOT_DIR } from "../db/env"
+import { argValue } from "./args"
 import { createMigrator, inRolledBackTransaction } from "../db/migrator"
 
 type Db = Kysely<unknown>
@@ -501,11 +502,16 @@ export function summarize(r: ImportReport): string[] {
  * it last ran and what it changed. Never fails the import: the table may not
  * exist yet on an old database.
  */
-export async function recordImportRun(db: Db, startedAt: Date, outcome: { status: "succeeded" | "failed"; result?: Record<string, unknown>; error?: string }) {
+export async function recordImportRun(
+  db: Db,
+  startedAt: Date,
+  outcome: { status: "succeeded" | "failed"; result?: Record<string, unknown>; error?: string },
+  job = "location-import",
+) {
   try {
     await sql`
       insert into job_runs (job, trigger, status, started_at, finished_at, result, error)
-      values ('location-import', 'deploy', ${outcome.status}, ${startedAt}, now(), ${outcome.result ? JSON.stringify(outcome.result) : null}::jsonb, ${outcome.error?.slice(0, 2000) ?? null})
+      values (${job}, 'deploy', ${outcome.status}, ${startedAt}, now(), cast(${outcome.result ? JSON.stringify(outcome.result) : null} as text)::jsonb, ${outcome.error?.slice(0, 2000) ?? null})
     `.execute(db)
   } catch (err) {
     console.warn("Couldn't record the run in job_runs:", err instanceof Error ? err.message : err)
@@ -513,14 +519,6 @@ export async function recordImportRun(db: Db, startedAt: Date, outcome: { status
 }
 
 // ─── Command line ──────────────────────────────────────────────────────────
-
-function argValue(flag: string): string | undefined {
-  const i = process.argv.indexOf(flag)
-  if (i === -1) return undefined
-  const value = process.argv[i + 1]
-  if (!value || value.startsWith("--")) throw new Error(`${flag} needs a value`)
-  return value
-}
 
 async function main() {
   loadDevEnv()

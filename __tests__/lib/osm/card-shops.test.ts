@@ -70,7 +70,23 @@ describe("OSM card shops (#397)", () => {
       node(4, { shop: "games" }),
     ])
     expect(shops.map((s) => s.externalId)).toEqual(["node/1", "node/3"])
-    expect(dropped).toEqual({ coinOrStamp: [{ externalId: "node/2", name: "Federal Coin Exchange" }], unusable: ["node/4"] })
+    expect(dropped).toEqual({ coinOrStamp: [{ externalId: "node/2", name: "Federal Coin Exchange" }], unusable: ["node/4"], duplicates: [] })
+  })
+
+  it("keeps one of a shop mapped twice: the same name within 75 m, the one with more tags (#398 review)", () => {
+    const building: OsmElement = { type: "way", id: 447939017, center: { lat: 40.7, lon: -74.0 }, tags: { shop: "games", name: "Frontline Games", website: "frontline.example", opening_hours: "Mo-Su 11:00-20:00" } }
+    const { shops, dropped } = selectShops([
+      node(8403596196, { shop: "games", name: "Frontline Games" }, [-74.00002, 40.70002]),
+      building,
+      // Same name, another town: a second store, kept.
+      node(5, { shop: "games", name: "Frontline Games" }, [-73.9, 40.8]),
+    ])
+    expect(shops.map((s) => s.externalId)).toEqual(["node/5", "way/447939017"])
+    expect(dropped.duplicates).toEqual([{ externalId: "node/8403596196", name: "Frontline Games", keptId: "way/447939017" }])
+  })
+
+  it("links the first of several websites", () => {
+    expect(toShop(node(9, { name: "Two Sites", website: "a.example;b.example" }))?.website).toBe("https://a.example")
   })
 
   it("compares a fetch with the snapshot for --dry-run: added, removed and changed ids", () => {
