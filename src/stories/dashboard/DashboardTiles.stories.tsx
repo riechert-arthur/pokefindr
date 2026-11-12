@@ -65,7 +65,7 @@ const submissions: MySubmission[] = [
   { ...place, id: "s3", kind: "shop", status: "rejected", rejectReason: "duplicate", name: "Mile High Cards", city: "Denver", state: "CO", locationId: null, locationActive: null },
 ]
 
-/** Every tile with content; the events are sample data, so they carry the "Sample" badge. */
+/** Every tile with content; the events are sample data, unlabeled on the tile (#395). */
 export const Filled: Story = { args: { reviews, submissions, events } }
 /** Before the reviews, submissions and events arrive. */
 export const Loading: Story = { args: { reviews: null, submissions: null, events: null } }
