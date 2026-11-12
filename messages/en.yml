@@ -285,7 +285,19 @@ details:
     distance: Distance
     # {distance} is like "0.4 mi", {place} the searched place.
     distanceFrom: "{distance} from {place}"
+    # A shop's website (#399): the link, and what a screen reader hears after it.
+    website: Website
+    opensNewTab: "(opens in a new tab)"
+    hours: Hours
 
+  # A shop's opening hours (#401). {hours} is like "10 AM – 6 PM", "Closed" or "Open 24 hours".
+  hours:
+    today: "Today · {hours}"
+    everyDay: "Every day · {hours}"
+    closed: Closed
+    allDay: Open 24 hours
+    # Read after today's hours on the button that shows the whole week.
+    week: hours for the week
 # Reviews on a place's details.
 reviews:
   title: Reviews

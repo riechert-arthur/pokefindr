@@ -63,12 +63,13 @@ import { track } from "@/lib/analytics"
 import { useTranslations } from "next-intl"
 import { useStateName } from "./useStateName"
 
-type SelectedLocation = Omit<LocationPopupProps, "onClose" | "onDetails">
+/** The popup's fields, plus a shop's website and hours when the feature came from GET /api/locations/<id> (a shared link), so the details needn't ask again (#399, #401). */
+type SelectedLocation = Omit<LocationPopupProps, "onClose" | "onDetails"> & Pick<LocationFeature["properties"], "website" | "hours">
 
 const toSelected = (feat: LocationFeature): SelectedLocation => {
   const [longitude, latitude] = feat.geometry.coordinates
-  const { id, retailer, address, city, state, machineID, kind } = feat.properties
-  return { longitude, latitude, id, retailer, address, city, state, machineID, kind }
+  const { id, retailer, address, city, state, machineID, kind, website, hours } = feat.properties
+  return { longitude, latitude, id, retailer, address, city, state, machineID, kind, ...(website !== undefined && { website }), ...(hours !== undefined && { hours }) }
 }
 
 /** What the search box shows for the URL's view: the place, the state, or "Your location" (`yourLocation`). */
@@ -151,7 +152,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const area = useMemo(() => (place ? radiusCircle(place.lng, place.lat, place.radius) : EMPTY_AREA), [place])
   const radius = useMemo(() => radiusLayers(colors), [colors])
 
-  const { states, max, total, bounds, kindTotals } = useStateShading(kindSet, retailers)
+  const { states, max, total, bounds } = useStateShading(kindSet, retailers)
   // The results list for the place (or the viewer), closest first.
   const nearby = useNearbyLocations(place, kinds, retailers)
   // A state's busiest cities, while the view is a state.
@@ -695,7 +696,6 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
               </Button>
           }
           kinds={kinds}
-          kindTotals={kindTotals}
           onKindsChange={handleKindsChange}
           sheetLabel={adding ? t("panel.add") : details ? details.retailer : place ? t("panel.results") : stateFocus ? stateName(stateFocus) : t("panel.us")}
           sheet={
