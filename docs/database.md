@@ -310,7 +310,7 @@ saves the counts and verification.
 
 ## Card shops from OpenStreetMap
 
-About 2,100 card and game shops across the US come from OpenStreetMap (#397),
+About 2,090 card and game shops across the US come from OpenStreetMap (#397),
 as `kind = 'shop'` rows with `source = 'osm'`. There's no card-shop API
 elsewhere: card publishers' store locators are undocumented, and directories
 like thecardshopfinder.com forbid scraping.
@@ -327,7 +327,9 @@ live in `src/lib/osm/card-shops.ts`:
 - **never a coin, stamp or bullion dealer**, which `shop=collector` also
   covers: dropped by their `collector` tag, or by name when they have none
   ("Hauser's Coins", "The Gold Experts"). A shop naming both stays: "Arundel
-  Cards & Coins" sells cards.
+  Cards & Coins" sells cards;
+- one copy of a shop mapped twice (the same name within 75 m, such as a
+  pin and its building): the one with more tags.
 
 To see the query on a map, paste it (`overpassQuery()`) into
 [Overpass Turbo](https://overpass-turbo.eu); issue #397 links it ready to run.
@@ -353,7 +355,9 @@ OSM shops have no `addr:state`), via the map's state outlines.
 - inserts new shops with their `card_shop_details` (website, hours; `sells`
   stays empty), except a probable duplicate: a shop from another source
   within 75 m with a similar name, listed for a person to merge;
-- updates shops whose OSM data changed, keeping hidden ones hidden;
+- updates shops whose OSM data changed, keeping hidden ones hidden, and
+  leaves alone any with `manual_override`: set it on a shop you fix by hand,
+  or the next deploy puts OSM's values back (as with the location import);
 - deactivates, never deletes, shops gone from OSM, since reviews may point at them;
 - writes nothing, and records no run, when nothing changed.
 
@@ -367,8 +371,12 @@ npm run db:import-osm-shops -- --rollback <run id> --apply
 ```
 
 It restores updated and deactivated rows, deletes the shops the run inserted
-(or deactivates them if they've since gained reviews, reports or highlights),
-and skips any row edited since the run. Only the latest run can be rolled back,
+(or deactivates them if anything points at them since: reviews, reports,
+highlights, submissions or assistant views),
+and skips any row written since the run (its `updated_at` is later than the
+run's). Every applied run is also recorded in `job_runs` and listed on the
+admin's Jobs page as `osm-shop-import`. After a run that changed shops, it
+refreshes `location_region_counts`. Only the latest run can be rolled back,
 and rolling back twice does nothing. If the run's snapshot is still committed,
 revert that commit too, or the next deploy imports it again.
 
