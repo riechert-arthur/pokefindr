@@ -12,6 +12,8 @@ export interface LocationFeatureProperties {
   state: string
   /** What kind of place this is. Absent on older data, which is all vending machines. */
   kind?: LocationKind
+  /** A shop's website, as entered (#399). Only from GET /api/locations/<id>, for the details sidebar; never in bulk results. */
+  website?: string | null
 }
 
 /** Every kind of place, as stored in `locations.kind`. */

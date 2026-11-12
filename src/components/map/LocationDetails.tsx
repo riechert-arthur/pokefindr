@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, type ComponentProps } from "react"
+import { useEffect, useRef, useState, type ComponentProps } from "react"
 import { FlagIcon } from "lucide-react"
 import { useSessionContext } from "@/components/providers/SessionProvider"
 import { can } from "@/lib/auth/entitlements"
@@ -24,6 +24,30 @@ type LocationDetailsProps = Omit<ComponentProps<typeof DetailsSheet>, "summary" 
 }
 
 /**
+ * A shop's website (#399), from GET /api/locations/<id>: the map's bulk
+ * results leave it out. Undefined while it loads, or for other kinds; null
+ * when the shop has none or the request failed (the row is then left out).
+ */
+function useShopWebsite(id: string, kind: LocationKind, known: string | null | undefined): string | null | undefined {
+  const [fetched, setFetched] = useState<{ id: string; website: string | null } | null>(null)
+  const needed = kind === "shop" && known === undefined
+  useEffect(() => {
+    if (!needed) return
+    const ctl = new AbortController()
+    fetch(`/api/locations/${id}`, { signal: ctl.signal })
+      .then((res) => (res.ok ? (res.json() as Promise<LocationFeature>) : null))
+      .then((feature) => setFetched({ id, website: feature?.properties.website ?? null }))
+      .catch(() => {
+        if (!ctl.signal.aborted) setFetched({ id, website: null })
+      })
+    return () => ctl.abort()
+  }, [id, needed])
+  if (kind !== "shop") return undefined
+  if (known !== undefined) return known
+  return fetched?.id === id ? fetched.website : undefined
+}
+
+/**
  * The details panel for one location with what belongs to it: its reviews,
  * "Report a problem" and the places nearby. Keyed by location, so state
  * resets per place.
@@ -41,9 +65,11 @@ export function LocationDetails({ kinds, retailers, onOpen, ...props }: Location
   }
   const kind = toKind(props.location.kind)
   const nearby = useAlsoNearby(props.location, kinds, retailers)
+  const website = useShopWebsite(props.location.id, kind, props.location.website)
   return (
     <DetailsSheet
       {...props}
+      location={{ ...props.location, website }}
       summary={<ReviewSummary reviews={reviews} />}
       actions={
         <Button ref={reportButton} type="button" variant="ghost" size="sm" aria-expanded={reporting} onClick={() => setReporting((on) => !on)}>

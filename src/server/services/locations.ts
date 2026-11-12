@@ -1,7 +1,7 @@
 import "server-only"
-import { sql, type SQL } from "drizzle-orm"
+import { eq, sql, type SQL } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
-import { locations } from "@/server/db/schema"
+import { cardShopDetails, locations } from "@/server/db/schema"
 import { OUTSIDE_LOWER_48, stateCode } from "@/lib/map/states"
 import type { LocationFeature, LocationFeatureCollection, LocationKind, NearbyLocations, StateCities } from "@/lib/types/locations"
 import type { Bbox } from "@/lib/locations/bbox"
@@ -346,9 +346,16 @@ export async function getLocationsInBbox(
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-/** One active, positioned location as a feature, or null (also for an id that isn't a uuid). */
+/**
+ * One active, positioned location as a feature, or null (also for an id that
+ * isn't a uuid). A shop's comes with its `website` (#399): only here, for the
+ * details sidebar, never in the bulk queries.
+ */
 export async function getLocationFeature(id: string, db: Database = getDb()): Promise<LocationFeature | null> {
   if (!UUID.test(id)) return null
   const fc = await queryFeatures(db, sql`l.id = ${id}`, 1)
-  return fc.features[0] ?? null
+  const feature = fc.features[0]
+  if (!feature || feature.properties.kind !== "shop") return feature ?? null
+  const [details] = await db.select({ website: cardShopDetails.website }).from(cardShopDetails).where(eq(cardShopDetails.locationId, id)).limit(1)
+  return { ...feature, properties: { ...feature.properties, website: details?.website ?? null } }
 }

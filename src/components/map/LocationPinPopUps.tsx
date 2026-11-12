@@ -54,7 +54,8 @@ export const LocationPopup: FC<LocationPopupProps> = ({
       onClose={onClose}
     >
       <div className="font-sans">
-        <div className={cn("mb-1 inline-flex items-center gap-1.5 text-caption font-semibold", KINDS[kind].text)}>
+        {/* The dot carries the kind's color; the words stay in the text color for contrast (#399). */}
+        <div className="mb-1 inline-flex items-center gap-1.5 text-caption font-semibold text-foreground">
           <span className={cn("size-2 rounded-full", KINDS[kind].bg)} aria-hidden />
           {tk(`${kind}.name`)}
         </div>

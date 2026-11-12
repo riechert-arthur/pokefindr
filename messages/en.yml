@@ -285,6 +285,9 @@ details:
     distance: Distance
     # {distance} is like "0.4 mi", {place} the searched place.
     distanceFrom: "{distance} from {place}"
+    # A shop's website (#399): the link, and what a screen reader hears after it.
+    website: Website
+    opensNewTab: "(opens in a new tab)"
 
 # Reviews on a place's details.
 reviews:
