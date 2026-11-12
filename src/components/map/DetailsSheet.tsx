@@ -4,9 +4,10 @@ import type { ReactNode } from "react"
 import { ArrowLeftIcon, ExternalLinkIcon, LinkIcon } from "lucide-react"
 import { toast } from "sonner"
 import { KindDot } from "@/components/pokefindr/KindDot"
-import { KINDS, toKind } from "@/components/pokefindr/kinds"
+import { toKind } from "@/components/pokefindr/kinds"
 import { Button } from "@/components/ui/button"
 import { milesBetween } from "@/lib/map/geo"
+import { websiteLink } from "@/lib/locations/website"
 import { track } from "@/lib/analytics"
 import { useDistance } from "@/i18n/useDistance"
 import { useTranslations } from "next-intl"
@@ -22,6 +23,8 @@ export interface DetailsLocation {
   state: string
   machineID: string
   kind?: string
+  /** A shop's website (#399), once the sidebar has fetched it. */
+  website?: string | null
 }
 
 interface DetailsSheetProps {
@@ -84,6 +87,19 @@ export function DetailsSheet({ location, backLabel, onBack, me, from, summary, a
           ...(location.address ? ([[t("facts.address"), location.address]] as [string, ReactNode][]) : []),
           [kind === "event" ? t("facts.where") : t("facts.location"), [location.city, location.state].filter(Boolean).join(", ")],
         ]
+  // Only shops have one: the route sends it for shops alone (#399).
+  const website = websiteLink(location.website)
+  if (website) {
+    facts.push([
+      t("facts.website"),
+      // Leaves the site, so a new tab and the external-link mark, as Discord in the rail (#369).
+      <a key="website" href={website.href} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex max-w-full items-center gap-1 text-primary underline-offset-4 hover:underline">
+        <span className="truncate">{website.label}</span>
+        <ExternalLinkIcon className="size-3.5 shrink-0" aria-hidden />
+        <span className="sr-only">{t("facts.opensNewTab")}</span>
+      </a>,
+    ])
+  }
   if (me) facts.push([t("facts.fromYou"), distance(milesBetween(me.lng, me.lat, lng, lat))])
   if (from) facts.push([t("facts.distance"), t("facts.distanceFrom", { distance: distance(milesBetween(from.lng, from.lat, lng, lat)), place: from.label })])
 
@@ -102,7 +118,8 @@ export function DetailsSheet({ location, backLabel, onBack, me, from, summary, a
           <ArrowLeftIcon aria-hidden />
           {backLabel}
         </Button>
-        <div className={`inline-flex items-center gap-2 text-caption font-semibold ${KINDS[kind].text}`}>
+        {/* The dot carries the kind's color; the words stay in the text color, since 12px text in a kind color fails contrast (#399). */}
+        <div className="inline-flex items-center gap-2 text-caption font-semibold text-foreground">
           <KindDot kind={kind} />
           {tk(`${kind}.name`)}
         </div>

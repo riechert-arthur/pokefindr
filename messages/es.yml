@@ -214,6 +214,9 @@ details:
     fromYou: Desde ti
     distance: Distancia
     distanceFrom: "{distance} desde {place}"
+    # A shop's website (#399): the link, and what a screen reader hears after it.
+    website: Sitio web
+    opensNewTab: "(se abre en una pestaña nueva)"
 
 reviews:
   title: Reseñas
