@@ -5,7 +5,6 @@ import { useEffect, useId, useRef, type ComponentProps, type ReactNode } from "r
 import { NavigationIcon, PlusIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { StarRating } from "@/components/pokefindr/StarRating"
-import { StatusBadge } from "@/components/pokefindr/StatusBadge"
 import { SubmissionBadge, SubmissionNote } from "@/components/pokefindr/SubmissionBadge"
 import type { MySubmission } from "@/lib/submissions/schemas"
 import { DEFAULT_RADIUS, mapUrl, roundPlace } from "@/lib/map/url-state"
@@ -18,9 +17,8 @@ import { useTranslations } from "next-intl"
 export const TILE_ROWS = 3
 
 /**
- * A dashboard tile, as the prototype's `.tiles .dcard`: a title (with an
- * optional badge, always at the top right), a body, and a footer pinned to the
- * bottom so the tiles' actions line up across the row. The body's
+ * A dashboard tile, as the prototype's `.tiles .dcard`: a title, a body, and
+ * a footer pinned to the bottom so the tiles' actions line up across the row. The body's
  * `grid-cols-1` (a `minmax(0, 1fr)` track) is what stops its rows from
  * widening the tile, so a long name truncates instead of overflowing (#302).
  * `min-w-0` does nothing in the dashboard's own grid, whose tracks are
@@ -29,16 +27,11 @@ export const TILE_ROWS = 3
  * `live` makes the tile a polite live region, footer included: Near you
  * announces "Locating…" on its button, then the count or the refusal.
  */
-function Tile({ title, badge, footer, live, children }: { title: string; badge?: ReactNode; footer?: ReactNode; live?: boolean; children: ReactNode }) {
+function Tile({ title, footer, live, children }: { title: string; footer?: ReactNode; live?: boolean; children: ReactNode }) {
   const id = useId()
   return (
     <section aria-labelledby={id} aria-live={live ? "polite" : undefined} className="flex min-w-0 flex-col gap-1.5 rounded-xl border border-border bg-card p-3">
-      {/* The title wraps beside the badge while each of its words fits there
-          (its basis is its min-content width); otherwise the badge moves under it. */}
-      <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
-        <h2 id={id} className="grow basis-[min-content] text-subheading text-foreground">{title}</h2>
-        {badge && <span className="shrink-0">{badge}</span>}
-      </div>
+      <h2 id={id} className="text-subheading text-foreground">{title}</h2>
       <div className="grid min-w-0 flex-1 grid-cols-1 content-start gap-1.5">
         {children}
       </div>
@@ -233,7 +226,6 @@ export function EventsTile({ events }: { events: UpcomingEvent[] | "error" | nul
   return (
     <Tile
       title={t("events.title")}
-      badge={Array.isArray(events) && events.some((e) => e.isSample) && <StatusBadge status="sample" className="whitespace-nowrap" />}
       footer={
         <Button asChild {...action}>
           <Link href={mapUrl("/map", { types: ["event"] })}>{t("events.seeOnMap")}</Link>
