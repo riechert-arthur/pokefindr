@@ -46,6 +46,10 @@ jobs:
       # transaction, after the migrations commit, so it never holds their locks.
       # Writes only changed rows; does nothing once the JSON is gone (#80).
       - run: npm run db:import-locations -- --apply
+      # Card shops from OpenStreetMap, src/data/osm_card_shops.json (#397).
+      # Same pattern: its own transaction, only changed rows, each run logged so
+      # it can be rolled back (`npm run db:import-osm-shops -- --rollback <run id>`).
+      - run: npm run db:import-osm-shops -- --apply
 
   production:
     name: Migrate production

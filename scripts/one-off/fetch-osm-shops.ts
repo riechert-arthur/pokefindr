@@ -1,0 +1,97 @@
+/**
+ * Fetches the US's card shops from OpenStreetMap's Overpass API (#397) and
+ * writes the snapshot the import reads, src/data/osm_card_shops.json.
+ *
+ * Run by a person, and the snapshot is committed: deploys never call
+ * Overpass, and every change to the data is a diff someone can review.
+ *
+ *   npm run db:fetch-osm-shops
+ *   npm run db:fetch-osm-shops -- --out <file>
+ *
+ * One request for the whole US (about 1 MB). The public Overpass servers are
+ * shared and say "at capacity" when busy, so a refusal is retried with a
+ * growing wait. OVERPASS_URL points it at another server (or your own).
+ *
+ * The data is © OpenStreetMap contributors, under the ODbL; the snapshot
+ * carries the credit, and the app shows it wherever these shops appear.
+ */
+import { writeFileSync } from "node:fs"
+import path from "node:path"
+import { OSM_ATTRIBUTION, OSM_COPYRIGHT_URL, overpassQuery, selectShops, type OsmElement } from "@/lib/osm/card-shops"
+import { regionAt } from "@/server/geo/regions"
+import { ROOT_DIR } from "../db/env"
+
+export const SNAPSHOT_FILE = path.join(ROOT_DIR, "src/data/osm_card_shops.json")
+const OVERPASS_URL = process.env.OVERPASS_URL || "https://overpass-api.de/api/interpreter"
+const RETRIES = 4
+const RETRY_STATUSES = new Set([429, 502, 503, 504])
+
+async function overpass(query: string): Promise<OsmElement[]> {
+  for (let attempt = 0; ; attempt++) {
+    let res: Response
+    try {
+      res = await fetch(OVERPASS_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "PokeFindr card shop import (github.com/riechert-arthur/pokefindr)" },
+        body: new URLSearchParams({ data: query }),
+        signal: AbortSignal.timeout(360_000),
+      })
+    } catch (err) {
+      // A dropped connection or a server that never answered: worth another try, like a busy answer.
+      const cause = err instanceof Error && err.cause instanceof Error ? `: ${err.cause.message}` : ""
+      if (attempt >= RETRIES) throw new Error(`Couldn't reach Overpass${cause}`)
+      await retryLater(attempt, `couldn't connect${cause}`)
+      continue
+    }
+    if (res.ok) {
+      const body = (await res.json()) as { elements?: OsmElement[]; remark?: string }
+      // Overpass answers 200 with a remark when the query itself timed out.
+      if (body.remark) throw new Error(`Overpass: ${body.remark}`)
+      return body.elements ?? []
+    }
+    if (!RETRY_STATUSES.has(res.status) || attempt >= RETRIES) throw new Error(`Overpass answered ${res.status}: ${(await res.text()).slice(0, 300)}`)
+    await retryLater(attempt, `busy (${res.status})`)
+  }
+}
+
+async function retryLater(attempt: number, why: string) {
+  const wait = 30_000 * 2 ** attempt
+  console.log(`Overpass: ${why}; trying again in ${wait / 1000} s.`)
+  await new Promise((r) => setTimeout(r, wait))
+}
+
+/** Pretty JSON, but one shop per line, so a new snapshot's diff shows each shop that changed. */
+export function formatSnapshot({ shops, ...head }: { shops: unknown[] } & Record<string, unknown>): string {
+  const top = JSON.stringify(head, null, 2).replace(/\n}$/, "")
+  return `${top},\n  "shops": [\n${shops.map((s) => `    ${JSON.stringify(s)}`).join(",\n")}\n  ]\n}\n`
+}
+
+async function main() {
+  const i = process.argv.indexOf("--out")
+  const out = i === -1 ? SNAPSHOT_FILE : path.resolve(process.argv[i + 1])
+  const query = overpassQuery()
+  console.log(`Asking ${OVERPASS_URL} for the US's card shops…`)
+  const elements = await overpass(query)
+  const { shops, dropped } = selectShops(elements, (lng, lat) => regionAt(lng, lat)?.region ?? null)
+  const snapshot = {
+    source: "OpenStreetMap",
+    attribution: OSM_ATTRIBUTION,
+    license: `Open Database License (ODbL) 1.0, ${OSM_COPYRIGHT_URL}`,
+    fetchedAt: new Date().toISOString(),
+    overpass: OVERPASS_URL,
+    query,
+    counts: { elements: elements.length, shops: shops.length, coinOrStamp: dropped.coinOrStamp.length, unusable: dropped.unusable.length },
+    dropped,
+    shops,
+  }
+  writeFileSync(out, formatSnapshot(snapshot))
+  console.log(`${elements.length} places: ${shops.length} shops, ${dropped.coinOrStamp.length} coin or stamp dealers and ${dropped.unusable.length} without a name or position left out.`)
+  console.log(`Wrote ${path.relative(ROOT_DIR, out)}.`)
+}
+
+if (process.argv[1]?.endsWith("fetch-osm-shops.ts")) {
+  main().catch((err) => {
+    console.error(err instanceof Error ? err.message : err)
+    process.exit(1)
+  })
+}
