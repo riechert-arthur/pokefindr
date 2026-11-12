@@ -151,7 +151,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const area = useMemo(() => (place ? radiusCircle(place.lng, place.lat, place.radius) : EMPTY_AREA), [place])
   const radius = useMemo(() => radiusLayers(colors), [colors])
 
-  const { states, max, total, bounds, kindTotals } = useStateShading(kindSet, retailers)
+  const { states, max, total, bounds } = useStateShading(kindSet, retailers)
   // The results list for the place (or the viewer), closest first.
   const nearby = useNearbyLocations(place, kinds, retailers)
   // A state's busiest cities, while the view is a state.
@@ -695,7 +695,6 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
               </Button>
           }
           kinds={kinds}
-          kindTotals={kindTotals}
           onKindsChange={handleKindsChange}
           sheetLabel={adding ? t("panel.add") : details ? details.retailer : place ? t("panel.results") : stateFocus ? stateName(stateFocus) : t("panel.us")}
           sheet={

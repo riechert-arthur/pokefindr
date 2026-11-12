@@ -2,26 +2,23 @@
 
 import { cn } from "@/lib/utils"
 import { KINDS, type LocationKind } from "./kinds"
-import { useFormat } from "@/i18n/format"
 import { useTranslations } from "next-intl"
 
 interface TypeChipProps {
   kind: LocationKind
   pressed: boolean
   onPressedChange: (pressed: boolean) => void
-  /** Shown after the label, e.g. how many of this kind are on the map. */
-  count?: number
   /** Short label for tight rows ("Vending" instead of "Vending machines"). */
   short?: boolean
   className?: string
 }
 
 /**
- * A toggle chip for showing or hiding one location kind. Off: muted swatch
- * and text. On: the swatch fills with the kind's color and the border darkens.
+ * A toggle chip for showing or hiding one location kind: its swatch and
+ * label, no count (#403). Off: muted swatch and text. On: the swatch fills
+ * with the kind's color and the border darkens.
  */
-export function TypeChip({ kind, pressed, onPressedChange, count, short, className }: TypeChipProps) {
-  const f = useFormat()
+export function TypeChip({ kind, pressed, onPressedChange, short, className }: TypeChipProps) {
   const t = useTranslations("kinds")
   const meta = KINDS[kind]
   const Icon = meta.icon
@@ -30,8 +27,6 @@ export function TypeChip({ kind, pressed, onPressedChange, count, short, classNa
     <button
       type="button"
       aria-pressed={pressed}
-      // Starts with the visible text, so voice control ("click Vending 1,457") matches.
-      aria-label={count === undefined ? label : `${label} ${f.count(count)}`}
       onClick={() => onPressedChange(!pressed)}
       data-kind={kind}
       className={cn(
@@ -51,7 +46,6 @@ export function TypeChip({ kind, pressed, onPressedChange, count, short, classNa
         <Icon className="size-[0.6875rem]" strokeWidth={2.5} />
       </span>
       {label}
-      {count !== undefined && <span className="text-caption tabular-nums text-muted-foreground">{f.count(count)}</span>}
     </button>
   )
 }
