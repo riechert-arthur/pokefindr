@@ -89,13 +89,9 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
                 </FormItem>
               )}
             />
-            {form.formState.isSubmitting ? (
-              <LoadingButton className="w-full">{t("submitting")}</LoadingButton>
-            ) : (
-              <Button type="submit" className="w-full">
-                {t("submit")}
-              </Button>
-            )}
+            <LoadingButton type="submit" className="w-full" pending={form.formState.isSubmitting} pendingLabel={t("submitting")}>
+              {t("submit")}
+            </LoadingButton>
           </form>
         </Form>
       </CardContent>
