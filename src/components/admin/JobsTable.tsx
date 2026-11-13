@@ -3,12 +3,11 @@
 import { useCallback, useEffect, useState } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { sendAdminAction } from "@/components/admin/actions"
+import { sendAdminAction } from "@/lib/admin/actions"
 import { LoadFailed } from "@/components/admin/LoadFailed"
 import { Pill, type PillTone } from "@/components/admin/Pill"
-import { td, th } from "@/components/admin/table"
+import { Td, Th } from "@/components/admin/table"
 import { resultText, type JobRow } from "@/lib/admin/jobs"
-import { cn } from "@/lib/utils"
 import { useFormat } from "@/i18n/format"
 
 /** The status pill: paused first, then how the last run ended. */
@@ -71,14 +70,14 @@ export function JobsTable() {
           <caption className="sr-only">Background jobs</caption>
           <thead className="border-b border-border bg-muted/50">
             <tr>
-              <th scope="col" className={th}>Job</th>
-              <th scope="col" className={th}>Trigger</th>
-              <th scope="col" className={th}>Last run</th>
-              <th scope="col" className={th}>Result</th>
-              <th scope="col" className={th}>Status</th>
-              <th scope="col" className={cn(th, "text-right")}>
+              <Th>Job</Th>
+              <Th>Trigger</Th>
+              <Th>Last run</Th>
+              <Th>Result</Th>
+              <Th>Status</Th>
+              <Th className="text-right">
                 <span className="sr-only">Actions</span>
-              </th>
+              </Th>
             </tr>
           </thead>
           <tbody>
@@ -87,20 +86,20 @@ export function JobsTable() {
               const run = j.lastRun
               return (
                 <tr key={j.name} className="border-b border-border last:border-b-0">
-                  <td className={td}>
+                  <Td>
                     <div className="font-mono text-caption font-semibold text-foreground">{j.name}</div>
                     <div className="text-caption text-muted-foreground">{j.description}</div>
-                  </td>
-                  <td className={td}>{j.trigger}</td>
-                  <td className={td}>{run ? f.ago(run.startedAt) : "Never ran"}</td>
-                  <td className={cn(td, "max-w-[18rem]")}>
+                  </Td>
+                  <Td>{j.trigger}</Td>
+                  <Td>{run ? f.ago(run.startedAt) : "Never ran"}</Td>
+                  <Td className="max-w-[18rem]">
                     {j.paused && !run ? j.paused : run?.status === "failed" ? <span className="text-destructive">{run.error ?? "Failed"}</span> : resultText(run?.result ?? null) || (run?.status === "running" ? "Running…" : "—")}
-                  </td>
-                  <td className={td}>
+                  </Td>
+                  <Td>
                     <Pill tone={tone}>{label}</Pill>
                     {j.paused && run && <div className="mt-1 text-caption text-muted-foreground">{j.paused}</div>}
-                  </td>
-                  <td className={cn(td, "text-right")}>
+                  </Td>
+                  <Td className="text-right">
                     <div className="flex justify-end gap-1.5 whitespace-nowrap">
                       {j.pausedHere ? (
                         <Button size="sm" variant="outline" disabled={busy} onClick={() => void act(j, "resume")}>
@@ -124,7 +123,7 @@ export function JobsTable() {
                         Run now
                       </Button>
                     </div>
-                  </td>
+                  </Td>
                 </tr>
               )
             })}

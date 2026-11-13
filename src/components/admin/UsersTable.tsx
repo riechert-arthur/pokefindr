@@ -11,14 +11,13 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { EmptyState } from "@/components/pokefindr/EmptyState"
-import { sendAdminAction } from "@/components/admin/actions"
+import { sendAdminAction } from "@/lib/admin/actions"
 import { LoadFailed } from "@/components/admin/LoadFailed"
-import { td, th } from "@/components/admin/table"
+import { Td, Th } from "@/components/admin/table"
 import { useOptionalSession, useOptionalSessionLoading } from "@/components/providers/SessionProvider"
 import { can } from "@/lib/auth/entitlements"
 import { GRANTABLE_ROLES, ROLE_LABELS, ROLES, type GrantableRole, type Role } from "@/lib/auth/roles"
 import type { UserPage, UserRow } from "@/lib/admin/users"
-import { cn } from "@/lib/utils"
 import { useFormat } from "@/i18n/format"
 
 /** Staff stand out from members; who can manage users stands out most. */
@@ -174,27 +173,27 @@ export function UsersTable() {
               <caption className="sr-only">Users</caption>
               <thead className="border-b border-border bg-muted/50">
                 <tr>
-                  <th scope="col" className={th}>Username</th>
-                  <th scope="col" className={th}>Name</th>
-                  <th scope="col" className={th}>Email</th>
-                  <th scope="col" className={th}>Role</th>
-                  <th scope="col" className={th}>Joined</th>
-                  <th scope="col" className={cn(th, "text-right")}>
+                  <Th>Username</Th>
+                  <Th>Name</Th>
+                  <Th>Email</Th>
+                  <Th>Role</Th>
+                  <Th>Joined</Th>
+                  <Th className="text-right">
                     <span className="sr-only">Actions</span>
-                  </th>
+                  </Th>
                 </tr>
               </thead>
               <tbody>
                 {page.users.map((u) => (
                   <tr key={u.id} className="border-b border-border last:border-b-0">
-                    <td className={cn(td, "font-semibold text-foreground")}>{u.username}</td>
-                    <td className={td}>{u.name}</td>
-                    <td className={cn(td, "break-all")}>{u.email}</td>
-                    <td className={td}>
+                    <Td className="font-semibold text-foreground">{u.username}</Td>
+                    <Td>{u.name}</Td>
+                    <Td className="break-all">{u.email}</Td>
+                    <Td>
                       <Badge variant={variantOf(u.role)}>{ROLE_LABELS[u.role]}</Badge>
-                    </td>
-                    <td className={td}>{f.ago(u.joinedAt)}</td>
-                    <td className={cn(td, "text-right")}>
+                    </Td>
+                    <Td>{f.ago(u.joinedAt)}</Td>
+                    <Td className="text-right">
                       {sessionLoading ? null : u.id === selfId ? (
                         <span className="text-caption text-muted-foreground">You</span>
                       ) : (
@@ -202,7 +201,7 @@ export function UsersTable() {
                           Change role
                         </Button>
                       )}
-                    </td>
+                    </Td>
                   </tr>
                 ))}
               </tbody>

@@ -8,15 +8,14 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import { EmptyState } from "@/components/pokefindr/EmptyState"
 import { KindDot } from "@/components/pokefindr/KindDot"
 import { toKind } from "@/components/pokefindr/kinds"
-import { sendAdminAction } from "@/components/admin/actions"
+import { sendAdminAction } from "@/lib/admin/actions"
 import { LoadFailed } from "@/components/admin/LoadFailed"
 import { Pill, type PillTone } from "@/components/admin/Pill"
-import { td, th } from "@/components/admin/table"
+import { Td, Th } from "@/components/admin/table"
 import { useRefreshSummary } from "@/components/admin/useRefreshSummary"
 import { REPORT_REASON_LABELS, type ReportAction } from "@/lib/locations/reports"
 import { REPORTS_HOT, type ReportedLocation } from "@/lib/admin/reports"
 import { mapUrl } from "@/lib/map/url-state"
-import { cn } from "@/lib/utils"
 import { useFormat } from "@/i18n/format"
 
 type Load = { status: "loading" } | { status: "error" } | { status: "ready"; rows: ReportedLocation[] }
@@ -84,12 +83,12 @@ export function ReportsTable() {
           <caption className="sr-only">Reported locations, open ones first</caption>
           <thead className="border-b border-border bg-muted/50">
             <tr>
-              <th scope="col" className={th}>Location</th>
-              <th scope="col" className={th}>Problem</th>
-              <th scope="col" className={th}>Reports</th>
-              <th scope="col" className={th}>Last report</th>
-              <th scope="col" className={th}>Status</th>
-              <th scope="col" className={cn(th, "text-right")}>Actions</th>
+              <Th>Location</Th>
+              <Th>Problem</Th>
+              <Th>Reports</Th>
+              <Th>Last report</Th>
+              <Th>Status</Th>
+              <Th className="text-right">Actions</Th>
             </tr>
           </thead>
           <tbody>
@@ -99,7 +98,7 @@ export function ReportsTable() {
               const open = row.status === "open"
               return (
                 <tr key={l.id} className="border-b border-border last:border-b-0">
-                  <td className={td}>
+                  <Td>
                     <div className="flex items-start gap-2.5">
                       <KindDot kind={toKind(l.kind)} className="mt-0.5" />
                       <div className="min-w-0">
@@ -108,23 +107,23 @@ export function ReportsTable() {
                         {l.machineId && <div className="font-mono text-caption text-muted-foreground">{l.machineId}</div>}
                       </div>
                     </div>
-                  </td>
-                  <td className={td}>{row.reason ? REPORT_REASON_LABELS[row.reason] : "—"}</td>
-                  <td className={td}>
+                  </Td>
+                  <Td>{row.reason ? REPORT_REASON_LABELS[row.reason] : "—"}</Td>
+                  <Td>
                     <Pill tone={open && row.open >= REPORTS_HOT ? "crit" : open ? "warn" : "idle"}>{open ? row.open : row.total}</Pill>
-                  </td>
-                  <td className={td}>
+                  </Td>
+                  <Td>
                     <div className="text-foreground">{f.ago(row.lastReportAt)}</div>
                     {row.lastAction && (
                       <div className="text-caption text-muted-foreground">
                         {DONE[row.lastAction.action].replace(/^./, (c) => c.toUpperCase())} by {row.lastAction.by}, {f.ago(row.lastAction.at)}
                       </div>
                     )}
-                  </td>
-                  <td className={td}>
+                  </Td>
+                  <Td>
                     <Pill tone={tone}>{label}</Pill>
-                  </td>
-                  <td className={cn(td, "text-right")}>
+                  </Td>
+                  <Td className="text-right">
                     <div className="flex flex-wrap justify-end gap-1.5">
                       {!l.hidden && (
                         <Link href={mapUrl("/map", { location: l.id })} target="_blank" className={buttonVariants({ variant: "ghost", size: "sm" })} aria-label={`View ${l.name} on the map`}>
@@ -149,7 +148,7 @@ export function ReportsTable() {
                         </Button>
                       )}
                     </div>
-                  </td>
+                  </Td>
                 </tr>
               )
             })}

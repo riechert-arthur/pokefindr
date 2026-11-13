@@ -18,7 +18,7 @@ import { useSessionContext } from "@/components/providers/SessionProvider"
 import { REJECT_REASONS, REJECT_REASON_LABELS, SHOP_SELLS_LABELS, type RejectReason } from "@/lib/submissions/constants"
 import { canUndo, type ModerationItem } from "@/lib/submissions/moderation"
 import { cn } from "@/lib/utils"
-import { sendAdminAction } from "@/components/admin/actions"
+import { sendAdminAction } from "@/lib/admin/actions"
 import { LoadFailed } from "@/components/admin/LoadFailed"
 import { useRefreshSummary } from "@/components/admin/useRefreshSummary"
 
