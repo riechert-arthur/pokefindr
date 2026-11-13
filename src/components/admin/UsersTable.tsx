@@ -13,7 +13,8 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { EmptyState } from "@/components/pokefindr/EmptyState"
 import { sendAdminAction } from "@/lib/admin/actions"
 import { LoadFailed } from "@/components/admin/LoadFailed"
-import { Td, Th } from "@/components/admin/table"
+import { ColumnHeader } from "@/components/admin/ColumnHeader"
+import { TableCell } from "@/components/admin/TableCell"
 import { useOptionalSession, useOptionalSessionLoading } from "@/components/providers/SessionProvider"
 import { can } from "@/lib/auth/entitlements"
 import { GRANTABLE_ROLES, ROLE_LABELS, ROLES, type GrantableRole, type Role } from "@/lib/auth/roles"
@@ -173,27 +174,27 @@ export function UsersTable() {
               <caption className="sr-only">Users</caption>
               <thead className="border-b border-border bg-muted/50">
                 <tr>
-                  <Th>Username</Th>
-                  <Th>Name</Th>
-                  <Th>Email</Th>
-                  <Th>Role</Th>
-                  <Th>Joined</Th>
-                  <Th className="text-right">
+                  <ColumnHeader>Username</ColumnHeader>
+                  <ColumnHeader>Name</ColumnHeader>
+                  <ColumnHeader>Email</ColumnHeader>
+                  <ColumnHeader>Role</ColumnHeader>
+                  <ColumnHeader>Joined</ColumnHeader>
+                  <ColumnHeader className="text-right">
                     <span className="sr-only">Actions</span>
-                  </Th>
+                  </ColumnHeader>
                 </tr>
               </thead>
               <tbody>
                 {page.users.map((u) => (
                   <tr key={u.id} className="border-b border-border last:border-b-0">
-                    <Td className="font-semibold text-foreground">{u.username}</Td>
-                    <Td>{u.name}</Td>
-                    <Td className="break-all">{u.email}</Td>
-                    <Td>
+                    <TableCell className="font-semibold text-foreground">{u.username}</TableCell>
+                    <TableCell>{u.name}</TableCell>
+                    <TableCell className="break-all">{u.email}</TableCell>
+                    <TableCell>
                       <Badge variant={variantOf(u.role)}>{ROLE_LABELS[u.role]}</Badge>
-                    </Td>
-                    <Td>{f.ago(u.joinedAt)}</Td>
-                    <Td className="text-right">
+                    </TableCell>
+                    <TableCell>{f.ago(u.joinedAt)}</TableCell>
+                    <TableCell className="text-right">
                       {sessionLoading ? null : u.id === selfId ? (
                         <span className="text-caption text-muted-foreground">You</span>
                       ) : (
@@ -201,7 +202,7 @@ export function UsersTable() {
                           Change role
                         </Button>
                       )}
-                    </Td>
+                    </TableCell>
                   </tr>
                 ))}
               </tbody>

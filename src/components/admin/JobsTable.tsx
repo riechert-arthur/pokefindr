@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button"
 import { sendAdminAction } from "@/lib/admin/actions"
 import { LoadFailed } from "@/components/admin/LoadFailed"
 import { Pill, type PillTone } from "@/components/admin/Pill"
-import { Td, Th } from "@/components/admin/table"
+import { ColumnHeader } from "@/components/admin/ColumnHeader"
+import { TableCell } from "@/components/admin/TableCell"
 import { resultText, type JobRow } from "@/lib/admin/jobs"
 import { useFormat } from "@/i18n/format"
 
@@ -70,14 +71,14 @@ export function JobsTable() {
           <caption className="sr-only">Background jobs</caption>
           <thead className="border-b border-border bg-muted/50">
             <tr>
-              <Th>Job</Th>
-              <Th>Trigger</Th>
-              <Th>Last run</Th>
-              <Th>Result</Th>
-              <Th>Status</Th>
-              <Th className="text-right">
+              <ColumnHeader>Job</ColumnHeader>
+              <ColumnHeader>Trigger</ColumnHeader>
+              <ColumnHeader>Last run</ColumnHeader>
+              <ColumnHeader>Result</ColumnHeader>
+              <ColumnHeader>Status</ColumnHeader>
+              <ColumnHeader className="text-right">
                 <span className="sr-only">Actions</span>
-              </Th>
+              </ColumnHeader>
             </tr>
           </thead>
           <tbody>
@@ -86,20 +87,20 @@ export function JobsTable() {
               const run = j.lastRun
               return (
                 <tr key={j.name} className="border-b border-border last:border-b-0">
-                  <Td>
+                  <TableCell>
                     <div className="font-mono text-caption font-semibold text-foreground">{j.name}</div>
                     <div className="text-caption text-muted-foreground">{j.description}</div>
-                  </Td>
-                  <Td>{j.trigger}</Td>
-                  <Td>{run ? f.ago(run.startedAt) : "Never ran"}</Td>
-                  <Td className="max-w-[18rem]">
+                  </TableCell>
+                  <TableCell>{j.trigger}</TableCell>
+                  <TableCell>{run ? f.ago(run.startedAt) : "Never ran"}</TableCell>
+                  <TableCell className="max-w-[18rem]">
                     {j.paused && !run ? j.paused : run?.status === "failed" ? <span className="text-destructive">{run.error ?? "Failed"}</span> : resultText(run?.result ?? null) || (run?.status === "running" ? "Running…" : "—")}
-                  </Td>
-                  <Td>
+                  </TableCell>
+                  <TableCell>
                     <Pill tone={tone}>{label}</Pill>
                     {j.paused && run && <div className="mt-1 text-caption text-muted-foreground">{j.paused}</div>}
-                  </Td>
-                  <Td className="text-right">
+                  </TableCell>
+                  <TableCell className="text-right">
                     <div className="flex justify-end gap-1.5 whitespace-nowrap">
                       {j.pausedHere ? (
                         <Button size="sm" variant="outline" disabled={busy} onClick={() => void act(j, "resume")}>
@@ -123,7 +124,7 @@ export function JobsTable() {
                         Run now
                       </Button>
                     </div>
-                  </Td>
+                  </TableCell>
                 </tr>
               )
             })}
