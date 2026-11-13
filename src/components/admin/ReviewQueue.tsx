@@ -18,6 +18,8 @@ import { useSessionContext } from "@/components/providers/SessionProvider"
 import { REJECT_REASONS, REJECT_REASON_LABELS, SHOP_SELLS_LABELS, type RejectReason } from "@/lib/submissions/constants"
 import { canUndo, type ModerationItem } from "@/lib/submissions/moderation"
 import { cn } from "@/lib/utils"
+import { sendAdminAction } from "@/components/admin/actions"
+import { LoadFailed } from "@/components/admin/LoadFailed"
 import { useRefreshSummary } from "@/components/admin/useRefreshSummary"
 
 type Load = { status: "loading" } | { status: "forbidden" } | { status: "error" } | { status: "ready"; queue: ModerationItem[]; decided: ModerationItem[] }
@@ -63,12 +65,7 @@ export function ReviewQueue() {
   const decide = async (item: ModerationItem, body: { action: "approve" } | { action: "reject"; reason: RejectReason } | { action: "undo" }) => {
     setBusy(true)
     try {
-      const res = await fetch(`/api/admin/submissions/${item.id}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        toast.error(data.error ?? "That didn't work. Try again.")
-        return void refresh()
-      }
+      if (!(await sendAdminAction(`/api/admin/submissions/${item.id}`, body))) return void refresh()
       const name = item.fields.name ?? "It"
       if (body.action === "undo") toast(`${name} is back in the queue`)
       else
@@ -100,9 +97,7 @@ export function ReviewQueue() {
   if (load.status === "error")
     return (
       <Shell>
-        <EmptyState icon={TriangleAlertIcon} title="Couldn't load the queue" action={<Button onClick={() => void refresh()}>Try again</Button>}>
-          Check your connection, then try again.
-        </EmptyState>
+        <LoadFailed what="the queue" onRetry={() => void refresh()} />
       </Shell>
     )
 

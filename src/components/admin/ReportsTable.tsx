@@ -2,13 +2,16 @@
 
 import { Link } from "@/i18n/navigation"
 import { useCallback, useEffect, useState } from "react"
-import { FlagIcon, TriangleAlertIcon } from "lucide-react"
+import { FlagIcon } from "lucide-react"
 import { toast } from "sonner"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { EmptyState } from "@/components/pokefindr/EmptyState"
 import { KindDot } from "@/components/pokefindr/KindDot"
 import { toKind } from "@/components/pokefindr/kinds"
+import { sendAdminAction } from "@/components/admin/actions"
+import { LoadFailed } from "@/components/admin/LoadFailed"
 import { Pill, type PillTone } from "@/components/admin/Pill"
+import { td, th } from "@/components/admin/table"
 import { useRefreshSummary } from "@/components/admin/useRefreshSummary"
 import { REPORT_REASON_LABELS, type ReportAction } from "@/lib/locations/reports"
 import { REPORTS_HOT, type ReportedLocation } from "@/lib/admin/reports"
@@ -27,9 +30,6 @@ const STATUS: Record<ReportedLocation["status"], [PillTone, string]> = {
 
 const DONE: Record<ReportAction, string> = { dismiss: "dismissed", fix: "marked fixed", hide: "hidden", reopen: "reopened" }
 
-const th = "px-3 py-2.5 text-left text-caption font-semibold text-muted-foreground"
-const td = "px-3 py-3 align-top text-body"
-
 /**
  * Moderation → Reports (#153), as in the prototype: each reported location
  * once, open ones first and most reported first, with what to do about it.
@@ -39,7 +39,7 @@ export function ReportsTable() {
   const f = useFormat()
   const refreshSummary = useRefreshSummary()
   const [load, setLoad] = useState<Load>({ status: "loading" })
-  const [busy, setBusy] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
 
   const refresh = useCallback(async () => {
     try {
@@ -54,12 +54,9 @@ export function ReportsTable() {
   useEffect(() => void refresh(), [refresh])
 
   const act = async (row: ReportedLocation, action: ReportAction) => {
-    setBusy(row.location.id)
+    setBusy(true)
     try {
-      const res = await fetch(`/api/admin/reports/${row.location.id}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action }) })
-      const data = (await res.json().catch(() => ({}))) as { error?: string }
-      if (!res.ok) toast.error(data.error ?? "That didn't work. Try again.")
-      else
+      if (await sendAdminAction(`/api/admin/reports/${row.location.id}`, { action }))
         toast.success(`${row.location.name || "The location"}: ${DONE[action]}`, {
           description: action === "hide" ? "It's off the map for everyone." : action === "reopen" && row.status === "hidden" ? "It's back on the map." : undefined,
           ...(action !== "reopen" && { action: { label: "Undo", onClick: () => void act({ ...row, status: "dismissed" }, "reopen") } }),
@@ -67,17 +64,12 @@ export function ReportsTable() {
       await refresh()
       refreshSummary()
     } finally {
-      setBusy(null)
+      setBusy(false)
     }
   }
 
   if (load.status === "loading") return <p className="text-body text-muted-foreground">Loading reports…</p>
-  if (load.status === "error")
-    return (
-      <EmptyState icon={TriangleAlertIcon} title="Couldn't load reports" action={<Button onClick={() => void refresh()}>Try again</Button>}>
-        Check your connection, then try again.
-      </EmptyState>
-    )
+  if (load.status === "error") return <LoadFailed what="reports" onRetry={() => void refresh()} />
   if (load.rows.length === 0)
     return (
       <EmptyState icon={FlagIcon} title="Nothing reported">
@@ -105,7 +97,6 @@ export function ReportsTable() {
               const { location: l } = row
               const [tone, label] = STATUS[row.status]
               const open = row.status === "open"
-              const disabled = busy !== null
               return (
                 <tr key={l.id} className="border-b border-border last:border-b-0">
                   <td className={td}>
@@ -142,18 +133,18 @@ export function ReportsTable() {
                       )}
                       {open ? (
                         <>
-                          <Button size="sm" variant="outline" disabled={disabled} onClick={() => void act(row, "dismiss")}>
+                          <Button size="sm" variant="outline" disabled={busy} onClick={() => void act(row, "dismiss")}>
                             Dismiss
                           </Button>
-                          <Button size="sm" variant="outline" disabled={disabled} onClick={() => void act(row, "fix")}>
+                          <Button size="sm" variant="outline" disabled={busy} onClick={() => void act(row, "fix")}>
                             Mark fixed
                           </Button>
-                          <Button size="sm" variant="destructive" disabled={disabled} onClick={() => void act(row, "hide")}>
+                          <Button size="sm" variant="destructive" disabled={busy} onClick={() => void act(row, "hide")}>
                             Hide location
                           </Button>
                         </>
                       ) : (
-                        <Button size="sm" variant="outline" disabled={disabled} onClick={() => void act(row, "reopen")}>
+                        <Button size="sm" variant="outline" disabled={busy} onClick={() => void act(row, "reopen")}>
                           Reopen
                         </Button>
                       )}
