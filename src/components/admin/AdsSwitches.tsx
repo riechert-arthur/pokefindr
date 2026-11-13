@@ -1,11 +1,10 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { MegaphoneIcon, TriangleAlertIcon } from "lucide-react"
+import { MegaphoneIcon } from "lucide-react"
 import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
-import { EmptyState } from "@/components/pokefindr/EmptyState"
+import { LoadFailed } from "@/components/admin/LoadFailed"
 import { Pill } from "@/components/admin/Pill"
 import type { SponsorPlacement } from "@/config/banners"
 
@@ -24,7 +23,7 @@ type Data = { placements: Record<SponsorPlacement, boolean>; sponsors: string[] 
  */
 export function AdsSwitches() {
   const [data, setData] = useState<Data | null | "error">(null)
-  const [busy, setBusy] = useState<SponsorPlacement | null>(null)
+  const [busy, setBusy] = useState(false)
   const load = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/ads", { cache: "no-store" })
@@ -39,24 +38,19 @@ export function AdsSwitches() {
 
   const flip = async (id: SponsorPlacement, on: boolean, title: string) => {
     if (busy) return
-    setBusy(id)
+    setBusy(true)
     try {
       const res = await fetch(`/api/admin/ads/${id}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ enabled: on }) })
       if (!res.ok) toast.error("That didn't work. Try again.")
       else toast.success(on ? `${title}: on` : `${title}: off`, { description: on ? "It shows the sponsored card again from the next page load." : "It no longer shows the sponsored card from the next page load." })
       await load()
     } finally {
-      setBusy(null)
+      setBusy(false)
     }
   }
 
   if (data === null) return <p className="text-body text-muted-foreground">Loading placements…</p>
-  if (data === "error")
-    return (
-      <EmptyState icon={TriangleAlertIcon} title="Couldn't load the placements" action={<Button onClick={() => void load()}>Try again</Button>}>
-        Check your connection, then try again.
-      </EmptyState>
-    )
+  if (data === "error") return <LoadFailed what="the placements" onRetry={() => void load()} />
 
   return (
     <div className="flex flex-col gap-3">
@@ -75,7 +69,7 @@ export function AdsSwitches() {
             <Switch
               checked={on}
               aria-labelledby={`ad-${p.id}`}
-              aria-disabled={busy !== null || undefined}
+              aria-disabled={busy || undefined}
               onCheckedChange={(next) => void flip(p.id, next, p.title)}
               // The prototype's sizes and colors: off on the border color, on in success.
               className="h-[22px] w-[38px] data-[state=checked]:bg-success data-[state=unchecked]:bg-border aria-disabled:opacity-50"

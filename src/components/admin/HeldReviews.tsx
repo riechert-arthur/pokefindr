@@ -2,7 +2,7 @@
 
 import { Link } from "@/i18n/navigation"
 import { useCallback, useEffect, useState } from "react"
-import { InboxIcon, MessageSquareWarningIcon, TriangleAlertIcon, Undo2Icon } from "lucide-react"
+import { InboxIcon, MessageSquareWarningIcon, Undo2Icon } from "lucide-react"
 import { toast } from "sonner"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { EmptyState } from "@/components/pokefindr/EmptyState"
@@ -10,6 +10,8 @@ import { KindDot } from "@/components/pokefindr/KindDot"
 import { toKind } from "@/components/pokefindr/kinds"
 import { StarRating } from "@/components/pokefindr/StarRating"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { sendAdminAction } from "@/lib/admin/actions"
+import { LoadFailed } from "@/components/admin/LoadFailed"
 import { Pill, type PillTone } from "@/components/admin/Pill"
 import { useRefreshSummary } from "@/components/admin/useRefreshSummary"
 import { useSessionContext } from "@/components/providers/SessionProvider"
@@ -41,7 +43,7 @@ export function HeldReviews() {
   const { session } = useSessionContext()
   const [load, setLoad] = useState<Load>({ status: "loading" })
   const [tab, setTab] = useState<"held" | "decided">("held")
-  const [busy, setBusy] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
 
   const refresh = useCallback(async () => {
     try {
@@ -56,13 +58,11 @@ export function HeldReviews() {
   useEffect(() => void refresh(), [refresh])
 
   const act = async (review: HeldReview, action: Action) => {
-    setBusy(review.id)
+    setBusy(true)
     try {
-      const res = await fetch(`/api/admin/reviews/${review.id}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action }) })
-      const data = (await res.json().catch(() => ({}))) as { error?: string }
-      if (!res.ok) toast.error(data.error ?? "That didn't work. Try again.")
-      else if (action === "undo") toast(`${review.author}'s review is back in the queue`)
-      else
+      const done = await sendAdminAction(`/api/admin/reviews/${review.id}`, { action })
+      if (done && action === "undo") toast(`${review.author}'s review is back in the queue`)
+      else if (done)
         toast.success(action === "approve" ? `${review.author}'s review is published` : `${review.author}'s review was removed`, {
           description: action === "approve" ? "Everyone can see it now." : "Only its author still sees it.",
           action: { label: "Undo", onClick: () => void act(review, "undo") },
@@ -73,17 +73,13 @@ export function HeldReviews() {
       console.error("[admin] couldn't decide the review", err)
       toast.error("That didn't work. Check your connection and try again.")
     } finally {
-      setBusy(null)
+      setBusy(false)
     }
   }
 
   if (load.status === "loading") return <p className="text-body text-muted-foreground">Loading reviews…</p>
-  if (load.status === "error")
-    return (
-      <EmptyState icon={TriangleAlertIcon} title="Couldn't load reviews" action={<Button onClick={() => void refresh()}>Try again</Button>}>
-        Check your connection, then try again.
-      </EmptyState>
-    )
+  if (load.status === "error") return <LoadFailed what="reviews" onRetry={() => void refresh()} />
+
 
   return (
     <div className="flex flex-col gap-3">
@@ -107,7 +103,6 @@ export function HeldReviews() {
                 <ul className="flex flex-col gap-2">
                   {items.map((r) => {
                     const own = r.writtenByViewer && !can(session?.role, "moderation.decideOwn")
-                    const disabled = busy !== null
                     const [tone, verdict] = r.check ? (r.check.failed ? (["idle", "Check didn't run"] as [PillTone, string]) : VERDICT[r.check.verdict]) : (["idle", "Not checked"] as [PillTone, string])
                     return (
                       <li key={r.id} className="flex flex-col gap-2.5 rounded-xl border border-border bg-card p-4">
@@ -145,16 +140,16 @@ export function HeldReviews() {
                               <span className="text-caption text-muted-foreground">You wrote this one, so another moderator has to review it.</span>
                             ) : (
                               <>
-                                <Button size="sm" variant="outline" disabled={disabled} onClick={() => void act(r, "approve")}>
+                                <Button size="sm" variant="outline" disabled={busy} onClick={() => void act(r, "approve")}>
                                   Approve
                                 </Button>
-                                <Button size="sm" variant="destructive" disabled={disabled} onClick={() => void act(r, "remove")}>
+                                <Button size="sm" variant="destructive" disabled={busy} onClick={() => void act(r, "remove")}>
                                   Remove
                                 </Button>
                               </>
                             )
                           ) : canUndo(r.moderatedAt) ? (
-                            <Button size="sm" variant="outline" disabled={disabled} onClick={() => void act(r, "undo")}>
+                            <Button size="sm" variant="outline" disabled={busy} onClick={() => void act(r, "undo")}>
                               <Undo2Icon aria-hidden />
                               Undo
                             </Button>
