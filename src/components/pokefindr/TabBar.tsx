@@ -5,7 +5,7 @@ import { Link, usePathname } from "@/i18n/navigation"
 import { useEffect } from "react"
 import { CirclePlusIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { isCurrentPath, NAV, type NavItem } from "./navItems"
+import { isCurrentPath, NAV, type NavItem } from "@/lib/nav-items"
 
 /** Opens the map's add-a-place flow: the tab bar's own item. */
 const ADD: NavItem = { href: "/map?add=1", label: "addPlace", icon: CirclePlusIcon }

@@ -11,7 +11,7 @@ import { ThemeToggle } from "@/components/pokefindr/ThemeToggle"
 import { minWidth } from "@/lib/design/breakpoints"
 import { SUPPORT_URL } from "@/lib/links"
 import { cn } from "@/lib/utils"
-import { isCurrentPath, NAV, type NavItem } from "./navItems"
+import { isCurrentPath, NAV, type NavItem } from "@/lib/nav-items"
 
 /** The dashboard's own pages. */
 const MAIN: NavItem[] = [NAV.home, NAV.chat, NAV.map]
