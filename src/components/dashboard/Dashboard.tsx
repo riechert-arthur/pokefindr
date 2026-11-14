@@ -11,7 +11,7 @@ import type { RegionCount } from "@/lib/types/locations"
 import { cn } from "@/lib/utils"
 import { DASHBOARD_COLUMN } from "./column"
 import { DashboardFrame } from "./DashboardFrame"
-import { EventsTile, NearYouTile, ReviewsTile, SubmissionsTile, type MyReview, type NearState } from "./DashboardTiles"
+import { EventsTile, NearYouTile, ReviewsTile, SubmissionsTile, type MyReview, type NearState, type TileData } from "./DashboardTiles"
 import { useFormat } from "@/i18n/format"
 import { useTranslations } from "next-intl"
 
@@ -42,38 +42,29 @@ export function Dashboard({ assistant }: DashboardProps) {
   const f = useFormat()
   const t = useTranslations("dashboard")
   const [vending, setVending] = useState<number | null>(null)
-  const [reviews, setReviews] = useState<MyReview[] | "error" | null>(null)
-  const [submissions, setSubmissions] = useState<MySubmission[] | "error" | null>(null)
-  const [events, setEvents] = useState<UpcomingEvent[] | "error" | null>(null)
+  const [reviews, setReviews] = useState<TileData<MyReview>>(null)
+  const [submissions, setSubmissions] = useState<TileData<MySubmission>>(null)
+  const [events, setEvents] = useState<TileData<UpcomingEvent>>(null)
   const [near, setNear] = useState<NearState>({ status: "idle" })
   const [viewer, setViewer] = useState<Viewer | null>(null)
 
   useEffect(() => {
     const ctl = new AbortController()
-    const quiet = (err: unknown) => {
-      if (!ctl.signal.aborted) console.error("[home] couldn't load a tile", err)
+    /** Fetches one tile's data. If that fails while the dashboard is still open, logs it and calls `onError`. */
+    function load<R>(url: string, onLoad: (res: R) => void, onError?: () => void) {
+      getJson<R>(url, ctl.signal)
+        .then(onLoad)
+        .catch((err) => {
+          if (ctl.signal.aborted) return
+          console.error("[home] couldn't load a tile", err)
+          onError?.()
+        })
     }
-    getJson<{ counts: RegionCount[] }>("/api/locations/aggregates", ctl.signal)
-      .then(({ counts }) => setVending(counts.filter((c) => c.country === "US" && c.kind === "vending").reduce((n, c) => n + c.count, 0)))
-      .catch(quiet)
-    getJson<{ reviews: MyReview[] }>("/api/my-reviews", ctl.signal)
-      .then((r) => setReviews(r.reviews))
-      .catch((err) => {
-        quiet(err)
-        if (!ctl.signal.aborted) setReviews("error")
-      })
-    getJson<{ submissions: MySubmission[] }>("/api/submissions?mine", ctl.signal)
-      .then((r) => setSubmissions(r.submissions))
-      .catch((err) => {
-        quiet(err)
-        if (!ctl.signal.aborted) setSubmissions("error")
-      })
-    getJson<Highlights>("/api/highlights", ctl.signal)
-      .then((h) => setEvents(h.events))
-      .catch((err) => {
-        quiet(err)
-        if (!ctl.signal.aborted) setEvents("error")
-      })
+    // No count, no error: the intro just leaves the number out.
+    load<{ counts: RegionCount[] }>("/api/locations/aggregates", ({ counts }) => setVending(counts.filter((c) => c.country === "US" && c.kind === "vending").reduce((n, c) => n + c.count, 0)))
+    load<{ reviews: MyReview[] }>("/api/my-reviews", (r) => setReviews(r.reviews), () => setReviews("error"))
+    load<{ submissions: MySubmission[] }>("/api/submissions?mine", (r) => setSubmissions(r.submissions), () => setSubmissions("error"))
+    load<Highlights>("/api/highlights", (h) => setEvents(h.events), () => setEvents("error"))
     return () => ctl.abort()
   }, [])
 

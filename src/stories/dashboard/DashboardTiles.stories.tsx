@@ -1,14 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite"
 import { expect } from "storybook/test"
 import { NextIntlClientProvider } from "next-intl"
-import { EventsTile, NearYouTile, ReviewsTile, SubmissionsTile, type MyReview, type NearState } from "@/components/dashboard/DashboardTiles"
+import { EventsTile, NearYouTile, ReviewsTile, SubmissionsTile, type MyReview, type NearState, type TileData } from "@/components/dashboard/DashboardTiles"
 import type { MySubmission } from "@/lib/submissions/schemas"
 import type { UpcomingEvent } from "@/lib/types/highlights"
 import { MESSAGES } from "@/i18n/all-messages"
 import { inDays, longEvents, longReviews } from "./fixtures"
 
 /** The four tiles under the assistant on /home, in the dashboard's grid. */
-function Tiles({ columns = 4, near = { status: "idle" }, reviews, submissions = [], events }: { columns?: 1 | 2 | 4; near?: NearState; reviews: MyReview[] | "error" | null; submissions?: MySubmission[] | "error" | null; events: UpcomingEvent[] | "error" | null }) {
+function Tiles({ columns = 4, near = { status: "idle" }, reviews, submissions = [], events }: { columns?: 1 | 2 | 4; near?: NearState; reviews: TileData<MyReview>; submissions?: TileData<MySubmission>; events: TileData<UpcomingEvent> }) {
   // The grid's narrowest width at each column count, as in Dashboard.tsx: 748 px
   // (780 px less px-4) for 4 columns, 448 px (a 480 px window) for 2, and 288 px
   // (a 320 px phone) for 1.
