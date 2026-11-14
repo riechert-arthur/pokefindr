@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest"
 import { message, render, screen, within } from "../../helpers/intl"
-import { EventsTile, NearYouTile, ReviewsTile, SubmissionsTile, TILE_ROWS, type MyReview } from "@/components/dashboard/DashboardTiles"
+import { EventsTile, NearYouTile, ReviewsTile, SubmissionsTile, TILE_ROWS } from "@/components/dashboard/DashboardTiles"
+import type { MyReview } from "@/lib/reviews/my-review"
 import type { MySubmission } from "@/lib/submissions/schemas"
 import type { UpcomingEvent } from "@/lib/types/highlights"
 import { LONG_NAME } from "@/stories/dashboard/fixtures"
 
-const review = (i: number, name = `Place ${i}`): MyReview => ({ id: `r${i}`, rating: 4, comment: null, location: { id: `l${i}`, name, city: "Santa Clara", state: "CA" } })
+const review = (i: number, name = `Place ${i}`): MyReview => ({ id: `r${i}`, rating: 4, comment: null, created: null, status: "published", location: { id: `l${i}`, name, description: null, city: "Santa Clara", state: "CA" } })
 const event = (i: number): UpcomingEvent => ({ id: `e${i}`, title: `Event ${i}`, startsAt: "2026-11-14T18:00:00Z", endsAt: null, city: "Denver", state: "CO", lng: -104.99, lat: 39.74, isSample: false })
 
 describe("ReviewsTile", () => {

@@ -3,6 +3,7 @@ import { and, desc, eq, or, sql } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
 import { locationRatings, locations, profiles, reviewModerationChecks, users } from "@/server/db/schema"
 import type { ReviewStatus } from "@/lib/reviews/moderation"
+import type { MyReview } from "@/lib/reviews/my-review"
 import type { ContentModerator, ModerationResult } from "@/server/ports/moderator"
 import { moderate, REVIEW_CHECK_TIMEOUT_MS } from "./content-moderation"
 
@@ -170,7 +171,7 @@ export async function addReview(
 }
 
 /** The user's own reviews, newest first, with the reviewed location's name. */
-export async function listUserReviews(userId: string, db: Database = getDb()) {
+export async function listUserReviews(userId: string, db: Database = getDb()): Promise<MyReview[]> {
   const rows = await db
     .select({
       id: locationRatings.id,
@@ -193,7 +194,7 @@ export async function listUserReviews(userId: string, db: Database = getDb()) {
     id: r.id,
     rating: r.rating,
     comment: r.text,
-    created: r.createdAt,
+    created: r.createdAt?.toISOString() ?? null,
     status: r.status,
     // Imported machines have a retailer but no name.
     location: { id: r.locationId, name: r.name ?? r.retailer, description: r.description, city: r.city, state: r.state },

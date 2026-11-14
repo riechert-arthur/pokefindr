@@ -11,22 +11,12 @@ import {
 import axios from "axios";
 import { subscribeAuth } from "@/lib/auth/broadcast";
 import { clearAllChats } from "@/lib/assistant/saved-chat";
-import type { Role } from "@/lib/auth/roles";
+import type { PublicProfile } from "@/lib/types/session";
 
-export interface AuthUser {
-  id: string;
-  username: string;
-  full_name: string;
-  metadata: Record<string, unknown>;
-  /** member, moderator or admin (migration 0012). */
-  role?: Role;
-  /** Their profile picture (#290), or null for initials. */
-  image?: string | null;
-}
 
 export interface SessionContextType {
-  session: AuthUser | null;
-  setSession: React.Dispatch<React.SetStateAction<AuthUser | null>>;
+  session: PublicProfile | null;
+  setSession: React.Dispatch<React.SetStateAction<PublicProfile | null>>;
   isLoading: boolean;
 }
 
@@ -37,13 +27,13 @@ const SessionContext = createContext<SessionContextType | undefined>(
 export const SessionContextProvider: FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [session, setSession] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<PublicProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const fetchSession = () => {
     setIsLoading(true);
     axios
-      .get<{ user: AuthUser }>("/api/auth/user", { withCredentials: true })
+      .get<{ user: PublicProfile }>("/api/auth/user", { withCredentials: true })
       .then((res) => setSession(res.data.user))
       .catch(() => setSession(null))
       .finally(() => setIsLoading(false));
