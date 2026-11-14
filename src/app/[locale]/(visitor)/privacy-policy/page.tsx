@@ -1,6 +1,8 @@
 import type { FC } from "react"
 import { setPageLocale, type LocaleParams } from "@/i18n/static"
-import { EnglishOnlyNotice } from "@/components/EnglishOnlyNotice"
+import { LegalDocument } from "@/components/legal/LegalDocument"
+import { LegalHeading } from "@/components/legal/LegalHeading"
+import { ContactEmail } from "@/components/legal/ContactEmail"
 import { englishOnlyMetadata } from "@/i18n/seo"
 import type { Metadata } from "next"
 
@@ -12,15 +14,10 @@ export async function generateMetadata(): Promise<Metadata> {
   })
 }
 
-
 const PrivacyPolicyPage: FC<LocaleParams> = async ({ params }) => {
   await setPageLocale(params)
   return (
-    <div lang="en" className="max-w-3xl mx-auto p-6 text-foreground">
-      <EnglishOnlyNotice href="/privacy-policy" />
-      <h1 className="text-3xl font-bold mb-4">PRIVACY NOTICE</h1>
-      <p className="mb-4">Last updated November 11, 2026</p>
-
+    <LegalDocument href="/privacy-policy" title="PRIVACY NOTICE" updated="November 11, 2026">
       <p className="mb-4">
         This privacy notice for <strong>PokeFindr</strong> (
         &quot;Company,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;
@@ -50,12 +47,7 @@ const PrivacyPolicyPage: FC<LocaleParams> = async ({ params }) => {
         understand your privacy rights and choices. If you do not agree with our
         policies and practices, please do not use our Services. If you still
         have questions or concerns, please contact us at{" "}
-        <a
-          href="mailto:riechertarthur@gmail.com"
-          className="text-primary hover:underline"
-        >
-          riechertarthur@gmail.com
-        </a>
+        <ContactEmail />
         .
       </p>
 
@@ -112,18 +104,11 @@ const PrivacyPolicyPage: FC<LocaleParams> = async ({ params }) => {
       </p>
       <p className="mb-4">
         <strong>How do I exercise my rights?</strong> You can contact us at{" "}
-        <a
-          href="mailto:riechertarthur@gmail.com"
-          className="text-primary hover:underline"
-        >
-          riechertarthur@gmail.com
-        </a>
+        <ContactEmail />
         .
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        1. WHAT INFORMATION DO WE COLLECT?
-      </h2>
+      <LegalHeading>1. WHAT INFORMATION DO WE COLLECT?</LegalHeading>
       <p className="mb-4">
         <strong>Personal Information You Disclose to Us:</strong>
         <br />
@@ -177,9 +162,7 @@ const PrivacyPolicyPage: FC<LocaleParams> = async ({ params }) => {
         technologies.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        2. HOW DO WE PROCESS YOUR INFORMATION?
-      </h2>
+      <LegalHeading>2. HOW DO WE PROCESS YOUR INFORMATION?</LegalHeading>
       <p className="mb-4">
         We process your information to operate, maintain, and improve our
         Services; provide location-based features; analyze usage through Vercel
@@ -187,116 +170,79 @@ const PrivacyPolicyPage: FC<LocaleParams> = async ({ params }) => {
         provide affiliate marketing links; and respond to your inquiries.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        3. WHAT LEGAL BASES DO WE RELY ON?
-      </h2>
+      <LegalHeading>3. WHAT LEGAL BASES DO WE RELY ON?</LegalHeading>
       <p className="mb-4">
         We process personal information for our legitimate business interests,
         to fulfill contractual obligations (e.g., responding to your inquiries),
         and to comply with applicable U.S. laws.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        4. WHEN AND WITH WHOM DO WE SHARE YOUR PERSONAL INFORMATION?
-      </h2>
+      <LegalHeading>4. WHEN AND WITH WHOM DO WE SHARE YOUR PERSONAL INFORMATION?</LegalHeading>
       <p className="mb-4">
         We may share your personal information with service providers (hosting,
         Vercel Analytics, Google AdSense, Mapbox, Anthropic for the assistant,
         and in the future affiliate partners) and legal authorities as required.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        5. WHAT IS OUR STANCE ON THIRD-PARTY WEBSITES?
-      </h2>
+      <LegalHeading>5. WHAT IS OUR STANCE ON THIRD-PARTY WEBSITES?</LegalHeading>
       <p className="mb-4">
         Our Services may contain links to third-party websites. We are not
         responsible for their privacy practices. Review their policies before
         providing personal information.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        6. DO WE USE COOKIES AND OTHER TRACKING TECHNOLOGIES?
-      </h2>
+      <LegalHeading>6. DO WE USE COOKIES AND OTHER TRACKING TECHNOLOGIES?</LegalHeading>
       <p className="mb-4">
         Third-party services like Vercel Analytics and Google AdSense may use
         cookies or similar technologies. You can manage your cookie preferences
         through your browser settings.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        7. DO WE COLLECT INFORMATION FROM MINORS?
-      </h2>
+      <LegalHeading>7. DO WE COLLECT INFORMATION FROM MINORS?</LegalHeading>
       <p className="mb-4">
         We do not knowingly collect personal information from children under 18.
         If you believe we have, please contact us to request deletion.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        8. WHAT ARE YOUR PRIVACY RIGHTS (FOR CALIFORNIA RESIDENTS)?
-      </h2>
+      <LegalHeading>8. WHAT ARE YOUR PRIVACY RIGHTS (FOR CALIFORNIA RESIDENTS)?</LegalHeading>
       <p className="mb-4">
         California residents have rights under CCPA, including the right to
         know, delete, and opt out of certain forms of data sharing. Contact us
         at{" "}
-        <a
-          href="mailto:riechertarthur@gmail.com"
-          className="text-primary hover:underline"
-        >
-          riechertarthur@gmail.com
-        </a>{" "}
+        <ContactEmail />{" "}
         to exercise these rights.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        9. HOW LONG DO WE KEEP YOUR INFORMATION?
-      </h2>
+      <LegalHeading>9. HOW LONG DO WE KEEP YOUR INFORMATION?</LegalHeading>
       <p className="mb-4">
         We retain personal information only as long as needed for the purposes
         described in this notice, unless otherwise required by law.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        10. HOW DO WE KEEP YOUR INFORMATION SAFE?
-      </h2>
+      <LegalHeading>10. HOW DO WE KEEP YOUR INFORMATION SAFE?</LegalHeading>
       <p className="mb-4">
         We use industry-standard security measures, but cannot guarantee
         absolute security.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        11. DO WE MAKE UPDATES TO THIS NOTICE?
-      </h2>
+      <LegalHeading>11. DO WE MAKE UPDATES TO THIS NOTICE?</LegalHeading>
       <p className="mb-4">
         We may update this privacy notice periodically. The updated version will
         have a revised &quot;Last updated&quot; date.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        12. HOW CAN YOU CONTACT US ABOUT THIS NOTICE?
-      </h2>
+      <LegalHeading>12. HOW CAN YOU CONTACT US ABOUT THIS NOTICE?</LegalHeading>
       <p className="mb-4">
         If you have questions or comments, contact us at{" "}
-        <a
-          href="mailto:riechertarthur@gmail.com"
-          className="text-primary hover:underline"
-        >
-          riechertarthur@gmail.com
-        </a>
+        <ContactEmail />
         .
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        13. HOW CAN YOU REVIEW, UPDATE, OR DELETE THE DATA WE COLLECT?
-      </h2>
+      <LegalHeading>13. HOW CAN YOU REVIEW, UPDATE, OR DELETE THE DATA WE COLLECT?</LegalHeading>
       <p className="mb-4">
         To request to review, update, or delete your personal information,
         please contact us at
-        <a
-          href="mailto:riechertarthur@gmail.com"
-          className="text-primary hover:underline ml-1"
-        >
-          riechertarthur@gmail.com
-        </a>
+        <ContactEmail className="ml-1" />
         .
       </p>
 
@@ -304,7 +250,7 @@ const PrivacyPolicyPage: FC<LocaleParams> = async ({ params }) => {
         By using PokeFindr, you acknowledge that you have read and understood
         this Privacy Notice.
       </p>
-    </div>
+    </LegalDocument>
   )
 }
 
