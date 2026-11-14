@@ -62,6 +62,7 @@ import { INITIAL_LOAD_STATE, nextLoadState, type MapLoadState } from "./mapLoadS
 import { track } from "@/lib/analytics"
 import { useTranslations } from "next-intl"
 import { useStateName } from "./useStateName"
+import { placeLine } from "@/lib/locations/address"
 
 /** The popup's fields, plus a shop's website and hours when the feature came from GET /api/locations/<id> (a shared link), so the details needn't ask again (#399, #401). */
 type SelectedLocation = Omit<LocationPopupProps, "onClose" | "onDetails"> & Pick<LocationFeature["properties"], "website" | "hours">
@@ -429,7 +430,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
   const openHotspot = (h: Hotspot) =>
     handleSearchPick({ type: "area", area: { label: `${h.city}, ${h.state}`, lng: h.lng, lat: h.lat, kind: "city", state: h.state } })
   const openEvent = (e: UpcomingEvent) =>
-    handleSearchPick({ type: "area", area: { label: [e.city, e.state].filter(Boolean).join(", ") || e.title, lng: e.lng, lat: e.lat, kind: "city", state: e.state } })
+    handleSearchPick({ type: "area", area: { label: placeLine(e.city, e.state) || e.title, lng: e.lng, lat: e.lat, kind: "city", state: e.state } })
   const openState = (code: string) =>
     handleSearchPick({ type: "area", area: { label: stateName(code), lng: 0, lat: 0, kind: "state", state: code } })
 

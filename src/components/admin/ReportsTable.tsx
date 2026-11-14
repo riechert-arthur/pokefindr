@@ -18,6 +18,7 @@ import { REPORT_REASON_LABELS, type ReportAction } from "@/lib/locations/reports
 import { REPORTS_HOT, type ReportedLocation } from "@/lib/admin/reports"
 import { mapUrl } from "@/lib/map/url-state"
 import { useFormat } from "@/i18n/format"
+import { addressLine } from "@/lib/locations/address"
 
 type Load = { status: "loading" } | { status: "error" } | { status: "ready"; rows: ReportedLocation[] }
 
@@ -104,7 +105,7 @@ export function ReportsTable() {
                       <KindDot kind={toKind(l.kind)} className="mt-0.5" />
                       <div className="min-w-0">
                         <div className="font-semibold text-foreground">{l.name || "Unnamed"}</div>
-                        <div className="text-caption text-muted-foreground">{[l.address, [l.city, l.state].filter(Boolean).join(", ")].filter(Boolean).join(", ")}</div>
+                        <div className="text-caption text-muted-foreground">{addressLine(l)}</div>
                         {l.machineId && <div className="font-mono text-caption text-muted-foreground">{l.machineId}</div>}
                       </div>
                     </div>
