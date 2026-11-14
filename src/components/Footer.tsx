@@ -1,18 +1,10 @@
 import { Link } from "@/i18n/navigation"
 import { useTranslations } from "next-intl"
 import { Logo } from "@/components/brand/Logo"
-import { SUPPORT_URL } from "@/lib/links"
+import { SITE_LINKS, type SiteLink } from "@/lib/links"
 import { LanguageSwitcher } from "@/components/pokefindr/LanguageSwitcher"
 
-const LINKS = [
-  { name: "map", href: "/map" },
-  { name: "blog", href: "/blog" },
-  { name: "support", href: SUPPORT_URL },
-  { name: "changelog", href: "/changelog" },
-  { name: "developers", href: "/developers" },
-  { name: "privacy", href: "/privacy-policy" },
-  { name: "terms", href: "/terms-of-service" },
-] as const
+const LINKS: SiteLink[] = ["map", "blog", "support", "changelog", "developers", "privacy", "terms"]
 
 /** The site footer, as in the prototype: the logo, the main links and the not-affiliated notice. */
 export function Footer() {
@@ -24,9 +16,9 @@ export function Footer() {
           <Logo variant="full" size={32} />
         </Link>
         <nav aria-label={t("footer.navLabel")} className="flex flex-wrap gap-[18px] text-body">
-          {LINKS.map((l) => (
-            <Link key={l.name} href={l.href} className="text-muted-foreground hover:text-foreground">
-              {t(`nav.${l.name}`)}
+          {LINKS.map((name) => (
+            <Link key={name} href={SITE_LINKS[name]} className="text-muted-foreground hover:text-foreground">
+              {t(`nav.${name}`)}
             </Link>
           ))}
         </nav>
