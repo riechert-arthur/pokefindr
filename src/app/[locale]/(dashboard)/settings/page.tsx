@@ -1,19 +1,18 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { MailIcon, MenuIcon } from "lucide-react"
+import { MailIcon } from "lucide-react"
 import { toast } from 'sonner'
 import { ThemeToggle } from "@/components/pokefindr/ThemeToggle"
 import { LanguageSwitcher } from "@/components/pokefindr/LanguageSwitcher"
 import axios from 'axios'
 import { useTranslations } from 'next-intl'
 import { useSidebar } from '@/components/providers/SidebarContextProvider'
-import { APP_NAV_ID } from '@/components/pokefindr/AppRail'
+import { OpenNavButton } from '@/components/pokefindr/OpenNavButton'
 import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { ProfileField } from "@/components/pokefindr/ProfileField"
 import { ProfilePictureField } from "@/components/pokefindr/ProfilePictureField"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSessionContext } from '@/components/providers/SessionProvider'
 import { ClearAssistantHistory } from '@/components/assistant/ClearAssistantHistory'
@@ -42,7 +41,7 @@ const FIELDS = [
 export default function SettingsPage() {
   const submitErrorMessage = useSubmitErrorMessage()
   const t = useTranslations('settings')
-  const { isSidebarOpen, toggleSidebar } = useSidebar()
+  const { isSidebarOpen } = useSidebar()
   const { session, setSession, isLoading: sessionLoading } = useSessionContext()
 
   const [settings, setSettings]     = useState<Settings>({ fullName: '', email: '', username: '' })
@@ -125,9 +124,7 @@ export default function SettingsPage() {
     <div className={isSidebarOpen ? 'max-sm:ml-16' : undefined}>
       <header className="absolute inset-x-0 top-0 z-10 flex h-16 border-b border-border">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Button variant="ghost" size="icon" onClick={toggleSidebar} className="mr-2 sm:hidden" aria-label={t("openNav")} aria-controls={APP_NAV_ID} aria-expanded={isSidebarOpen}>
-            <MenuIcon aria-hidden className="text-muted-foreground" />
-          </Button>
+          <OpenNavButton className="mr-2" />
           <div />
           <div className="flex items-center gap-x-8">
             {session ? <UserMenu userName={session.username} imageUrl={session.image} /> : sessionLoading && <Skeleton className="size-9 rounded-full" />}
