@@ -1,5 +1,4 @@
 import "server-only"
-import type { Role } from "@/lib/auth/roles"
 import { and, eq, gt, ne, sql, type SQLWrapper } from "drizzle-orm"
 import { getDb, type Database } from "@/server/db/client"
 import { profiles, subscriptions, usernameHolds, users } from "@/server/db/schema"
@@ -7,20 +6,9 @@ import type { SessionTier } from "@/server/auth/session"
 import { getImageStore } from "@/server/container"
 import { deleteOwnedImage, type ImageStore } from "@/server/ports/image-store"
 import type { Locale } from "@/i18n/routing"
+import type { PublicProfile } from "@/lib/types/session"
 
-/** What the client's session context gets (the shape /api/auth/user has always returned). */
-export interface PublicProfile {
-  id: string
-  username: string
-  full_name: string | null
-  metadata: unknown
-  /** member, moderator or admin: what the app shows (an Admin link); the API checks it again. */
-  role: Role
-  /** The language they picked (#182), or null. */
-  locale: Locale | null
-  /** Their profile picture (#290): uploaded, or from Google or Discord. Null shows initials. */
-  image: string | null
-}
+export type { PublicProfile }
 
 export class UsernameTakenError extends Error {
   constructor() {

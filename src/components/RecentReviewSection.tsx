@@ -3,26 +3,11 @@ import React from 'react'
 import { SquarePenIcon, Trash2Icon } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { StarRating } from '@/components/pokefindr/StarRating'
-
-export interface Review {
-  id: string
-  rating: number
-  comment: string
-  /** "held" until a moderator approves it, "removed" if one took it down (#253). */
-  status?: "published" | "held" | "removed"
-  location: {
-    name: string
-    address: string
-  }
-  images: string[]
-  user: {
-    imageUrl: string
-  }
-}
+import type { MyReview } from '@/lib/reviews/my-review'
 
 interface RecentReviewsSectionProps {
-  reviews: Review[]
-  onEdit: (review: Review) => void
+  reviews: MyReview[]
+  onEdit: (review: MyReview) => void
   onDelete: (id: string) => void
 }
 
@@ -43,7 +28,6 @@ export const RecentReviewsSection: React.FC<RecentReviewsSectionProps> = ({ revi
               <div className="flex items-center gap-x-4 border-b border-border  p-4">
                 <div className="flex-1">
                   <div className="text-sm/6 font-medium text-foreground">{review.location.name}</div>
-                  <div className="text-xs text-muted-foreground">{review.location.address}</div>
                 </div>
                 <StarRating rating={review.rating} starSize={20} />
               </div>
@@ -52,7 +36,6 @@ export const RecentReviewsSection: React.FC<RecentReviewsSectionProps> = ({ revi
                 {review.status === "held" && <p className="mb-1.5 text-xs font-semibold text-warning">{t("pending")}</p>}
                 {review.status === "removed" && <p className="mb-1.5 text-xs font-semibold text-muted-foreground">{t("removed")}</p>}
                 <p className="text-sm text-foreground">{review.comment}</p>
-                {/* Images could go here */}
               </div>
 
               <div className="flex items-center justify-end gap-x-2 border-t border-border  p-4">
