@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite"
 import { expect } from "storybook/test"
 import { NextIntlClientProvider } from "next-intl"
-import { EventsTile, NearYouTile, ReviewsTile, SubmissionsTile, type MyReview, type NearState, type TileData } from "@/components/dashboard/DashboardTiles"
+import { EventsTile, NearYouTile, ReviewsTile, SubmissionsTile, type NearState, type TileData } from "@/components/dashboard/DashboardTiles"
+import type { MyReview } from "@/lib/reviews/my-review"
 import type { MySubmission } from "@/lib/submissions/schemas"
 import type { UpcomingEvent } from "@/lib/types/highlights"
 import { MESSAGES } from "@/i18n/all-messages"
@@ -49,9 +50,9 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 const reviews: MyReview[] = [
-  { id: "r1", rating: 4, comment: "Stocked Tuesday", location: { id: "l1", name: "Safeway", city: "Seattle", state: "WA" } },
-  { id: "r2", rating: 3.5, comment: null, location: { id: "l2", name: "Target", city: "Bellevue", state: "WA" } },
-  { id: "r3", rating: 5, comment: "Two machines by the exit", location: { id: "l3", name: "Fred Meyer", city: "Redmond", state: "WA" } },
+  { id: "r1", rating: 4, comment: "Stocked Tuesday", created: null, status: "published", location: { id: "l1", name: "Safeway", description: null, city: "Seattle", state: "WA" } },
+  { id: "r2", rating: 3.5, comment: null, created: null, status: "published", location: { id: "l2", name: "Target", description: null, city: "Bellevue", state: "WA" } },
+  { id: "r3", rating: 5, comment: "Two machines by the exit", created: null, status: "published", location: { id: "l3", name: "Fred Meyer", description: null, city: "Redmond", state: "WA" } },
 ]
 const events: UpcomingEvent[] = [
   { id: "e1", title: "Card show", startsAt: inDays(3), endsAt: null, city: "Denver", state: "CO", lng: -104.99, lat: 39.74, isSample: true },

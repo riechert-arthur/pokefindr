@@ -6,6 +6,7 @@ import { NavigationIcon, PlusIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { StarRating } from "@/components/pokefindr/StarRating"
 import { SubmissionBadge, SubmissionNote } from "@/components/pokefindr/SubmissionBadge"
+import type { MyReview } from "@/lib/reviews/my-review"
 import type { MySubmission } from "@/lib/submissions/schemas"
 import { DEFAULT_RADIUS, mapUrl, roundPlace } from "@/lib/map/url-state"
 import type { UpcomingEvent } from "@/lib/types/highlights"
@@ -129,13 +130,6 @@ export function NearYouTile({ near, onLocate }: { near: NearState; onLocate: () 
       )}
     </Tile>
   )
-}
-
-export interface MyReview {
-  id: string
-  rating: number
-  comment: string | null
-  location: { id: string; name: string | null; city: string | null; state: string | null }
 }
 
 export function ReviewsTile({ reviews }: { reviews: TileData<MyReview> }) {

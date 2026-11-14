@@ -25,7 +25,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { useSidebar } from '@/components/providers/SidebarContextProvider'
 import { APP_NAV_ID } from '@/components/pokefindr/AppRail'
-import { RecentReviewsSection, Review } from '@/components/RecentReviewSection'
+import { RecentReviewsSection } from '@/components/RecentReviewSection'
+import type { MyReview } from '@/lib/reviews/my-review'
 import { z } from 'zod/v3'
 import { StarRating } from '@/components/pokefindr/StarRating'
 import { useSessionContext } from '@/components/providers/SessionProvider'
@@ -47,10 +48,10 @@ export default function ReviewsPage() {
   const reviewSchema = useMemo(() => makeReviewSchema(t), [t])
   const tDashboard = useTranslations('dashboard')
   const { isSidebarOpen } = useSidebar()
-  const [reviews, setReviews] = useState<Review[]>([])
+  const [reviews, setReviews] = useState<MyReview[]>([])
   const [loading, setLoading] = useState(true)
   const [editOpen, setEditOpen] = useState(false)
-  const [current, setCurrent] = useState<Review | null>(null)
+  const [current, setCurrent] = useState<MyReview | null>(null)
   const { session, isLoading } = useSessionContext()
   const { toggleSidebar } = useSidebar()
 
@@ -62,7 +63,7 @@ export default function ReviewsPage() {
   useEffect(() => {
     ;(async () => {
       try {
-        const res = await axios.get<{ reviews: Review[] }>('/api/my-reviews', {
+        const res = await axios.get<{ reviews: MyReview[] }>('/api/my-reviews', {
           withCredentials: true,
         })
         setReviews(res.data.reviews)
@@ -84,16 +85,16 @@ export default function ReviewsPage() {
     }
   }
 
-  const handleEdit = (review: Review) => {
+  const handleEdit = (review: MyReview) => {
     setCurrent(review)
-    form.reset({ rating: review.rating, text: review.comment })
+    form.reset({ rating: review.rating, text: review.comment ?? '' })
     setEditOpen(true)
   }
 
   const saveEdit = form.handleSubmit(async (values) => {
     if (!current) return
     try {
-      const res = await axios.patch<{ status?: Review['status'] }>(
+      const res = await axios.patch<{ status?: MyReview['status'] }>(
         `/api/reviews/${current.id}`,
         { text: values.text, rating: values.rating },
         { withCredentials: true }
