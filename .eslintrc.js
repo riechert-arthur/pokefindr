@@ -200,6 +200,7 @@ module.exports = {
         "src/lib/admin/**",
         "src/app/[[]locale]/(visitor)/privacy-policy/**",
         "src/app/[[]locale]/(visitor)/terms-of-service/**",
+        "src/components/legal/**",
       ],
       rules: { "no-restricted-syntax": ["error", ...ENV_RULES, ...COLOR_RULES] },
     },

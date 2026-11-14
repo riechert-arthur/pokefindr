@@ -43,6 +43,18 @@ function Tile({ title, footer, live, children }: { title: string; footer?: React
 
 const muted = "text-caption text-muted-foreground"
 
+/** A tile's rows: `null` while they load, `"error"` if they couldn't. */
+export type TileData<T> = T[] | "error" | null
+
+/** A tile's body: "Loading…", its error or empty message, or its first rows. */
+function TileRows<T>({ data, error, empty, children }: { data: TileData<T>; error: string; empty: string; children: (row: T) => ReactNode }) {
+  const t = useTranslations("dashboard.tiles")
+  if (data === null) return <p className={muted}>{t("loading")}</p>
+  if (data === "error") return <p className={muted}>{error}</p>
+  if (data.length === 0) return <p className={muted}>{empty}</p>
+  return <>{data.slice(0, TILE_ROWS).map(children)}</>
+}
+
 /**
  * One review or event: a title line and a caption line, linking to the map.
  * The hover highlight has its own padding, so it doesn't touch the text.
@@ -120,7 +132,7 @@ export function NearYouTile({ near, onLocate }: { near: NearState; onLocate: () 
   )
 }
 
-export function ReviewsTile({ reviews }: { reviews: MyReview[] | "error" | null }) {
+export function ReviewsTile({ reviews }: { reviews: TileData<MyReview> }) {
   const t = useTranslations("dashboard.tiles")
   return (
     <Tile
@@ -132,14 +144,8 @@ export function ReviewsTile({ reviews }: { reviews: MyReview[] | "error" | null 
         </Button>
       }
     >
-      {reviews === null ? (
-        <p className={muted}>{t("loading")}</p>
-      ) : reviews === "error" ? (
-        <p className={muted}>{t("reviews.error")}</p>
-      ) : reviews.length === 0 ? (
-        <p className={muted}>{t("reviews.empty")}</p>
-      ) : (
-        reviews.slice(0, TILE_ROWS).map((r) => (
+      <TileRows data={reviews} error={t("reviews.error")} empty={t("reviews.empty")}>
+        {(r) => (
           <TileRow
             key={r.id}
             href={mapUrl("/map", { location: r.location.id })}
@@ -152,8 +158,8 @@ export function ReviewsTile({ reviews }: { reviews: MyReview[] | "error" | null 
               </>
             }
           />
-        ))
-      )}
+        )}
+      </TileRows>
     </Tile>
   )
 }
@@ -173,7 +179,7 @@ function submissionHref(s: MySubmission) {
   return "/map"
 }
 
-export function SubmissionsTile({ submissions }: { submissions: MySubmission[] | "error" | null }) {
+export function SubmissionsTile({ submissions }: { submissions: TileData<MySubmission> }) {
   const t = useTranslations("dashboard.tiles")
   return (
     <Tile
@@ -187,14 +193,8 @@ export function SubmissionsTile({ submissions }: { submissions: MySubmission[] |
         </Button>
       }
     >
-      {submissions === null ? (
-        <p className={muted}>{t("loading")}</p>
-      ) : submissions === "error" ? (
-        <p className={muted}>{t("submissions.error")}</p>
-      ) : submissions.length === 0 ? (
-        <p className={muted}>{t("submissions.body")}</p>
-      ) : (
-        submissions.slice(0, TILE_ROWS).map((s) => (
+      <TileRows data={submissions} error={t("submissions.error")} empty={t("submissions.body")}>
+        {(s) => (
           <TileRow
             key={s.id}
             href={submissionHref(s)}
@@ -208,13 +208,13 @@ export function SubmissionsTile({ submissions }: { submissions: MySubmission[] |
               </>
             }
           />
-        ))
-      )}
+        )}
+      </TileRows>
     </Tile>
   )
 }
 
-export function EventsTile({ events }: { events: UpcomingEvent[] | "error" | null }) {
+export function EventsTile({ events }: { events: TileData<UpcomingEvent> }) {
   const f = useFormat()
   const t = useTranslations("dashboard.tiles")
   return (
@@ -226,22 +226,16 @@ export function EventsTile({ events }: { events: UpcomingEvent[] | "error" | nul
         </Button>
       }
     >
-      {events === null ? (
-        <p className={muted}>{t("loading")}</p>
-      ) : events === "error" ? (
-        <p className={muted}>{t("events.error")}</p>
-      ) : events.length === 0 ? (
-        <p className={muted}>{t("events.empty")}</p>
-      ) : (
-        events.slice(0, TILE_ROWS).map((e) => (
+      <TileRows data={events} error={t("events.error")} empty={t("events.empty")}>
+        {(e) => (
           <TileRow
             key={e.id}
             href={mapUrl("/map", { q: [e.city, e.state].filter(Boolean).join(", ") || e.title, lng: e.lng, lat: e.lat, r: DEFAULT_RADIUS, types: ["event"] })}
             title={e.title}
             caption={<span className="min-w-0 truncate">{[f.eventWhen(e.startsAt, e.endsAt), e.city].filter(Boolean).join(" · ")}</span>}
           />
-        ))
-      )}
+        )}
+      </TileRows>
     </Tile>
   )
 }
