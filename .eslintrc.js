@@ -191,11 +191,13 @@ module.exports = {
       rules: { "no-restricted-syntax": ["error", ...ENV_RULES, ...COLOR_RULES, ...TOAST_RULES] },
     },
     {
-      // English only (docs/i18n.md): the admin pages, and the privacy policy
-      // and terms (shown in English with a note on other languages).
+      // English only (docs/i18n.md): the admin pages and their helpers, and
+      // the privacy policy and terms (shown in English with a note on other
+      // languages).
       files: [
         "src/app/[[]locale]/(admin)/**",
         "src/components/admin/**",
+        "src/lib/admin/**",
         "src/app/[[]locale]/(visitor)/privacy-policy/**",
         "src/app/[[]locale]/(visitor)/terms-of-service/**",
       ],

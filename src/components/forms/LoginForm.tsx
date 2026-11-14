@@ -2,7 +2,6 @@
 
 import { Link, useRouter } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -120,16 +119,9 @@ export function LoginForm({
                       </Link>
                     }
                   />
-                  {!form.formState.isSubmitting && (
-                    <Button type="submit" className="w-full">
-                      {t("login.submit")}
-                    </Button>
-                  )}
-                  {form.formState.isSubmitting && (
-                    <LoadingButton className="w-full">
-                      {t("login.submitting")}
-                    </LoadingButton>
-                  )}
+                  <LoadingButton type="submit" className="w-full" pending={form.formState.isSubmitting} pendingLabel={t("login.submitting")}>
+                    {t("login.submit")}
+                  </LoadingButton>
                 </div>
                 <div className="text-center text-sm">
                   {t.rich("login.noAccount", {

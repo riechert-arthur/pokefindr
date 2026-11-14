@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useId, useRef, useState } from "react"
-import { SearchIcon, TriangleAlertIcon, UsersIcon } from "lucide-react"
+import { SearchIcon, UsersIcon } from "lucide-react"
 import { toast } from "sonner"
 import { Badge, type BadgeProps } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,15 +11,15 @@ import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { EmptyState } from "@/components/pokefindr/EmptyState"
+import { sendAdminAction } from "@/lib/admin/actions"
+import { LoadFailed } from "@/components/admin/LoadFailed"
+import { ColumnHeader } from "@/components/admin/ColumnHeader"
+import { TableCell } from "@/components/admin/TableCell"
 import { useOptionalSession, useOptionalSessionLoading } from "@/components/providers/SessionProvider"
 import { can } from "@/lib/auth/entitlements"
 import { GRANTABLE_ROLES, ROLE_LABELS, ROLES, type GrantableRole, type Role } from "@/lib/auth/roles"
 import type { UserPage, UserRow } from "@/lib/admin/users"
-import { cn } from "@/lib/utils"
 import { useFormat } from "@/i18n/format"
-
-const th = "px-3 py-2.5 text-left text-caption font-semibold text-muted-foreground"
-const td = "px-3 py-3 align-top text-body"
 
 /** Staff stand out from members; who can manage users stands out most. */
 const variantOf = (role: Role): BadgeProps["variant"] => (can(role, "users.manage") ? "default" : can(role, "moderation.view") ? "secondary" : "outline")
@@ -114,12 +114,7 @@ export function UsersTable() {
     if (!editing) return
     setSaving(true)
     try {
-      const res = await fetch(`/api/admin/users/${editing.id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ role: picked }) })
-      const data = (await res.json().catch(() => ({}))) as { error?: string }
-      if (!res.ok) {
-        toast.error(data.error ?? "That didn't work. Try again.")
-        return
-      }
+      if (!(await sendAdminAction(`/api/admin/users/${editing.id}`, { role: picked }, "PATCH"))) return
       toast.success(`${editing.username} is now ${aRole(picked)}`)
       // Under a role filter, someone who no longer has that role leaves the list.
       const stays = filter === "all" || filter === picked
@@ -167,9 +162,7 @@ export function UsersTable() {
       {page === null ? (
         <p className="text-body text-muted-foreground">Loading users…</p>
       ) : page === "error" ? (
-        <EmptyState icon={TriangleAlertIcon} title="Couldn't load users" action={<Button onClick={() => void load()}>Try again</Button>}>
-          Check your connection, then try again.
-        </EmptyState>
+        <LoadFailed what="users" onRetry={() => void load()} />
       ) : page.users.length === 0 ? (
         <EmptyState icon={UsersIcon} title="No users found">
           {search ? "Nobody matches that search." : "Nobody has that role."}
@@ -181,27 +174,27 @@ export function UsersTable() {
               <caption className="sr-only">Users</caption>
               <thead className="border-b border-border bg-muted/50">
                 <tr>
-                  <th scope="col" className={th}>Username</th>
-                  <th scope="col" className={th}>Name</th>
-                  <th scope="col" className={th}>Email</th>
-                  <th scope="col" className={th}>Role</th>
-                  <th scope="col" className={th}>Joined</th>
-                  <th scope="col" className={cn(th, "text-right")}>
+                  <ColumnHeader>Username</ColumnHeader>
+                  <ColumnHeader>Name</ColumnHeader>
+                  <ColumnHeader>Email</ColumnHeader>
+                  <ColumnHeader>Role</ColumnHeader>
+                  <ColumnHeader>Joined</ColumnHeader>
+                  <ColumnHeader className="text-right">
                     <span className="sr-only">Actions</span>
-                  </th>
+                  </ColumnHeader>
                 </tr>
               </thead>
               <tbody>
                 {page.users.map((u) => (
                   <tr key={u.id} className="border-b border-border last:border-b-0">
-                    <td className={cn(td, "font-semibold text-foreground")}>{u.username}</td>
-                    <td className={td}>{u.name}</td>
-                    <td className={cn(td, "break-all")}>{u.email}</td>
-                    <td className={td}>
+                    <TableCell className="font-semibold text-foreground">{u.username}</TableCell>
+                    <TableCell>{u.name}</TableCell>
+                    <TableCell className="break-all">{u.email}</TableCell>
+                    <TableCell>
                       <Badge variant={variantOf(u.role)}>{ROLE_LABELS[u.role]}</Badge>
-                    </td>
-                    <td className={td}>{f.ago(u.joinedAt)}</td>
-                    <td className={cn(td, "text-right")}>
+                    </TableCell>
+                    <TableCell>{f.ago(u.joinedAt)}</TableCell>
+                    <TableCell className="text-right">
                       {sessionLoading ? null : u.id === selfId ? (
                         <span className="text-caption text-muted-foreground">You</span>
                       ) : (
@@ -209,7 +202,7 @@ export function UsersTable() {
                           Change role
                         </Button>
                       )}
-                    </td>
+                    </TableCell>
                   </tr>
                 ))}
               </tbody>

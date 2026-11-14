@@ -2,7 +2,6 @@
 
 import { cn } from "@/lib/utils"
 import { useForm } from "react-hook-form"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -81,16 +80,9 @@ export function RegistrationForm({
                   <AuthField control={form.control} name="email" label={t("fields.email")} type="email" placeholder={t("fields.emailPlaceholder")} autoComplete="email" />
                   <AuthField control={form.control} name="password" label={t("fields.password")} type="password" autoComplete="new-password" />
                   <AuthField control={form.control} name="passwordVerification" label={t("fields.verifyPassword")} type="password" autoComplete="new-password" />
-                  {!form.formState.isSubmitting && (
-                    <Button type="submit" className="w-full">
-                      {t("signup.submit")}
-                    </Button>
-                  )}
-                  {form.formState.isSubmitting && (
-                    <LoadingButton className="w-full">
-                      {t("signup.submitting")}
-                    </LoadingButton>
-                  )}
+                  <LoadingButton type="submit" className="w-full" pending={form.formState.isSubmitting} pendingLabel={t("signup.submitting")}>
+                    {t("signup.submit")}
+                  </LoadingButton>
                 </div>
                 <div className="text-center text-sm">
                   {t.rich("signup.haveAccount", {

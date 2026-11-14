@@ -1,9 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { TriangleAlertIcon } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { EmptyState } from "@/components/pokefindr/EmptyState"
+import { LoadFailed } from "@/components/admin/LoadFailed"
 import { KINDS, KIND_ORDER } from "@/components/pokefindr/kinds"
 import type { Coverage } from "@/lib/admin/coverage"
 import { cn } from "@/lib/utils"
@@ -50,12 +48,7 @@ export function CoverageView() {
   useEffect(load, [load])
 
   if (data === null) return <p className="text-body text-muted-foreground">Loading coverage…</p>
-  if (data === "error")
-    return (
-      <EmptyState icon={TriangleAlertIcon} title="Couldn't load coverage" action={<Button onClick={load}>Try again</Button>}>
-        Check your connection, then try again.
-      </EmptyState>
-    )
+  if (data === "error") return <LoadFailed what="coverage" onRetry={load} />
 
   return (
     <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
