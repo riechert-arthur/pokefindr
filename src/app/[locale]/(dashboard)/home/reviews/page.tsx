@@ -2,7 +2,6 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
-import { MenuIcon } from "lucide-react"
 import axios from 'axios'
 import { useTranslations } from 'next-intl'
 import {
@@ -24,7 +23,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { useSidebar } from '@/components/providers/SidebarContextProvider'
-import { APP_NAV_ID } from '@/components/pokefindr/AppRail'
+import { OpenNavButton } from '@/components/pokefindr/OpenNavButton'
 import { RecentReviewsSection, Review } from '@/components/RecentReviewSection'
 import { z } from 'zod/v3'
 import { StarRating } from '@/components/pokefindr/StarRating'
@@ -52,7 +51,6 @@ export default function ReviewsPage() {
   const [editOpen, setEditOpen] = useState(false)
   const [current, setCurrent] = useState<Review | null>(null)
   const { session, isLoading } = useSessionContext()
-  const { toggleSidebar } = useSidebar()
 
   const form = useForm<ReviewFormValues>({
     resolver: zodResolver(reviewSchema),
@@ -120,9 +118,7 @@ export default function ReviewsPage() {
       {/* header */}
       <header className="absolute inset-x-0 top-0 z-40 flex h-16 border-b border-border">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <button onClick={toggleSidebar} className="sm:hidden mr-2 p-1 rounded" aria-label={tDashboard("openNav")} aria-controls={APP_NAV_ID} aria-expanded={isSidebarOpen}>
-            <MenuIcon className="size-6 text-muted-foreground hover:text-primary/80" />
-          </button>
+          <OpenNavButton className="mr-2" />
           <div />
           <div className="flex items-center gap-x-8">
             {/*<button className="-m-2.5 p-2.5 text-muted-foreground hover:text-foreground">

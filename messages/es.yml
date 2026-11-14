@@ -71,7 +71,6 @@ map:
   search:
     placeholder: Busca una ciudad o dirección
     yourLocation: Tu ubicación
-    openNavigation: Abrir navegación
     areaWithin: "{places} a menos de {radius}"
   add: Agregar una tienda de cartas o un evento
   panel:
@@ -403,6 +402,7 @@ nav:
   appNavigation: Navegación de la app
   tabs: Pestañas
   logoHome: Inicio de PokeFindr
+  openNavigation: Abrir navegación
   closeNavigation: Cerrar navegación
   userMenu:
     trigger: "Menú de la cuenta de {name}"
@@ -457,7 +457,6 @@ ads:
   hiddenBody: Seguirán ocultos durante el resto de esta visita.
 
 dashboard:
-  openNav: Abrir navegación
   openMap: Abrir mapa
   guest: Invitado
   greeting: ¿Qué estás buscando hoy?
@@ -592,7 +591,6 @@ assistant:
 moderate:
   title: Moderar
   intro: Revisa los lugares nuevos antes de que aparezcan en el mapa, revisa las reseñas que retuvo la revisión automática y atiende los problemas que la gente reporta.
-  openNav: Abrir navegación
   tabs:
     queue: Cola de revisión
     reviews: Reseñas
@@ -603,7 +601,6 @@ settings:
   title: Configuración general
   loadingProfile: Cargando tu perfil…
   loadFailed: No pudimos cargar tu perfil. Revisa tu conexión y vuelve a cargar la página.
-  openNav: Abrir navegación
   profile:
     title: Perfil
     body: Tu nombre de usuario aparece junto a tus reseñas. Tu nombre y tu correo son privados.

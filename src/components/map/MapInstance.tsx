@@ -18,10 +18,10 @@ import {
 import { useViewportLocations, type ViewportMap } from "./useViewportLocations"
 import { MapStatusPill } from "./MapStatusPill"
 import { LocateControl } from "./LocateControl"
-import { MenuIcon, PlusIcon } from "lucide-react"
+import { PlusIcon } from "lucide-react"
 import { useRouter } from "@/i18n/navigation"
 import { PlaceSearch, type PlacePick } from "@/components/search/PlaceSearch"
-import { APP_NAV_ID } from "@/components/pokefindr/AppRail"
+import { OpenNavButton } from "@/components/pokefindr/OpenNavButton"
 import { Button } from "@/components/ui/button"
 import { LOCATION_KINDS, type LocationFeature, type LocationFeatureProperties, type LocationKind } from "@/lib/types/locations"
 import { LocationPopup, type LocationPopupProps } from "./LocationPinPopUps"
@@ -666,18 +666,7 @@ const MapInstance: FC<MapInstanceProps> = ({ view, location }) => {
               near={searchNear}
               locations
               leading={
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleSidebar}
-                  className="-ml-1.5 size-8 shrink-0 sm:hidden"
-                  aria-label={t("search.openNavigation")}
-                  aria-controls={APP_NAV_ID}
-                  aria-expanded={isSidebarOpen}
-                >
-                  <MenuIcon className="size-5" aria-hidden />
-                </Button>
+                <OpenNavButton className="-ml-1.5 size-8 shrink-0" />
               }
             />
           }

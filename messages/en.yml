@@ -101,8 +101,6 @@ map:
     placeholder: Search city or address
     # In the search box after "Near me".
     yourLocation: Your location
-    # The menu button left of the search box, on phones.
-    openNavigation: Open navigation
     # Beside a suggested city: "41 places within 10 mi".
     areaWithin: "{places} within {radius}"
   # The + button beside the search box.
@@ -512,6 +510,8 @@ nav:
   tabs: Tabs
   # The logo at the top of the rail, a link to the landing page.
   logoHome: PokeFindr home
+  # Phones: the menu button in a page's header that opens the slide-in rail.
+  openNavigation: Open navigation
   # Phones: the button that closes the slide-in rail.
   closeNavigation: Close navigation
   userMenu:
@@ -593,8 +593,6 @@ ads:
 
 # The signed-in home (/home): a greeting, the assistant, suggestions and tiles.
 dashboard:
-  # The header's menu button on phones; opens the app's navigation.
-  openNav: Open navigation
   openMap: Open map
   # Shown in the user menu while the session has no username yet.
   guest: Guest
@@ -771,7 +769,6 @@ moderate:
   # Page and browser-tab title.
   title: Moderate
   intro: Review new places before they go on the map, check reviews the automatic check held, and act on problems people reported.
-  openNav: Open navigation
   tabs:
     queue: Review queue
     reviews: Reviews
@@ -785,7 +782,6 @@ settings:
   title: General settings
   loadingProfile: Loading your profile…
   loadFailed: We couldn't load your profile. Check your connection and reload the page.
-  openNav: Open navigation
   profile:
     title: Profile
     body: Your username shows next to your reviews. Your name and email stay private.

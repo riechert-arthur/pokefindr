@@ -1,11 +1,10 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { MenuIcon } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
-import { APP_NAV_ID } from "@/components/pokefindr/AppRail"
+import { OpenNavButton } from "@/components/pokefindr/OpenNavButton"
 import { UserMenu } from "@/components/pokefindr/UserMenu"
 import { useSessionContext } from "@/components/providers/SessionProvider"
 import { useSidebar } from "@/components/providers/SidebarContextProvider"
@@ -18,7 +17,7 @@ import { useSidebar } from "@/components/providers/SidebarContextProvider"
 export function DashboardFrame({ children }: { children: ReactNode }) {
   const t = useTranslations("dashboard")
   const { session } = useSessionContext()
-  const { isSidebarOpen, toggleSidebar } = useSidebar()
+  const { isSidebarOpen } = useSidebar()
   return (
     <div className={isSidebarOpen ? "h-full max-sm:ml-16" : "h-full"}>
       <div className="relative isolate flex h-full min-w-0 flex-col overflow-hidden">
@@ -27,9 +26,7 @@ export function DashboardFrame({ children }: { children: ReactNode }) {
           className="pointer-events-none absolute inset-x-[-10%] top-[-30%] -z-10 h-[70%] opacity-35 blur-[70px] [background:radial-gradient(35%_45%_at_30%_40%,hsl(var(--brand)/0.5),transparent_70%),radial-gradient(35%_45%_at_70%_35%,hsl(var(--brand-2)/0.45),transparent_70%)]"
         />
         <header className="flex items-center gap-1.5 px-4 py-3 sm:px-5">
-          <button type="button" onClick={toggleSidebar} className="mr-1 rounded p-1 sm:hidden" aria-label={t("openNav")} aria-controls={APP_NAV_ID} aria-expanded={isSidebarOpen}>
-            <MenuIcon className="size-6 text-muted-foreground" aria-hidden />
-          </button>
+          <OpenNavButton className="mr-1" />
           <span className="flex-1" />
           <Button asChild variant="ghost" size="sm">
             <Link href="/map">{t("openMap")}</Link>
