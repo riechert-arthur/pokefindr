@@ -9,15 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import {
-  Form,
-  FormField,
-  FormControl,
-  FormItem,
-  FormMessage,
-  FormLabel,
-} from "@/components/ui/form"
+import { Form } from "@/components/ui/form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod/v3"
 import { useForm } from "react-hook-form"
@@ -26,6 +18,7 @@ import { LoadingButton } from "@/components/wrappers/LoadingButton"
 import type { AuthSchemas } from "@/lib/schemas"
 import { useTranslations } from "next-intl"
 import type { Locale } from "@/i18n/routing"
+import { AuthField } from "./AuthField"
 import { useAuthSchemas } from "./useAuthSchemas"
 import { Terms } from "./Terms"
 import axios from "axios"
@@ -114,40 +107,17 @@ export function LoginForm({
               <div className="grid gap-6">
                 <OAuthButtons providers={providers} next={next} />
                 <div className="grid gap-6">
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="grid gap-3">
-                          <FormLabel>{t("fields.email")}</FormLabel>
-                          <FormControl>
-                            <Input placeholder={t("fields.emailPlaceholder")} {...field} />
-                          </FormControl>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
+                  <AuthField control={form.control} name="email" label={t("fields.email")} placeholder={t("fields.emailPlaceholder")} />
+                  <AuthField
                     control={form.control}
                     name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="grid gap-3">
-                          <div className="flex items-center">
-                            <FormLabel>{t("fields.password")}</FormLabel>
-                            <Link href="/forgot-password" className="ml-auto text-sm underline-offset-4 hover:underline">
-                              {t("login.forgot")}
-                            </Link>
-                          </div>
-                          <FormControl>
-                            <Input type="password" {...field} />
-                          </FormControl>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    label={t("fields.password")}
+                    type="password"
+                    labelExtra={
+                      <Link href="/forgot-password" className="ml-auto text-sm underline-offset-4 hover:underline">
+                        {t("login.forgot")}
+                      </Link>
+                    }
                   />
                   <LoadingButton type="submit" className="w-full" pending={form.formState.isSubmitting} pendingLabel={t("login.submitting")}>
                     {t("login.submit")}

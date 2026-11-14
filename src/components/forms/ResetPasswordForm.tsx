@@ -8,11 +8,11 @@ import axios from "axios"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+import { Form } from "@/components/ui/form"
 import { LoadingButton } from "@/components/wrappers/LoadingButton"
 import type { AuthSchemas } from "@/lib/schemas"
 import { useTranslations } from "next-intl"
+import { AuthField } from "./AuthField"
 import { useAuthSchemas } from "./useAuthSchemas"
 
 type ResetPasswordValues = z.infer<AuthSchemas["resetPasswordSchema"]>
@@ -59,36 +59,8 @@ export function ResetPasswordForm({ token }: { token: string | null }) {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6">
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="grid gap-3">
-                    <FormLabel>{t("password")}</FormLabel>
-                    <FormControl>
-                      <Input type="password" autoComplete="new-password" {...field} />
-                    </FormControl>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="passwordVerification"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="grid gap-3">
-                    <FormLabel>{t("repeat")}</FormLabel>
-                    <FormControl>
-                      <Input type="password" autoComplete="new-password" {...field} />
-                    </FormControl>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <AuthField control={form.control} name="password" label={t("password")} type="password" autoComplete="new-password" />
+            <AuthField control={form.control} name="passwordVerification" label={t("repeat")} type="password" autoComplete="new-password" />
             <LoadingButton type="submit" className="w-full" pending={form.formState.isSubmitting} pendingLabel={t("submitting")}>
               {t("submit")}
             </LoadingButton>

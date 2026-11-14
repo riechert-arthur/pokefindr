@@ -7,12 +7,12 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod/v3"
 import axios from "axios"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+import { Form } from "@/components/ui/form"
 import { LoadingButton } from "@/components/wrappers/LoadingButton"
 import { useSubmitError } from "@/lib/forms"
 import type { AuthSchemas } from "@/lib/schemas"
 import { useLocale, useTranslations } from "next-intl"
+import { AuthField } from "./AuthField"
 import { useAuthSchemas } from "./useAuthSchemas"
 
 type ForgotPasswordValues = z.infer<AuthSchemas["forgotPasswordSchema"]>
@@ -55,21 +55,7 @@ export function ForgotPasswordForm() {
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="grid gap-3">
-                      <FormLabel>{t("fields.email")}</FormLabel>
-                      <FormControl>
-                        <Input type="email" autoComplete="email" placeholder={t("fields.emailPlaceholder")} {...field} />
-                      </FormControl>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <AuthField control={form.control} name="email" label={t("fields.email")} type="email" autoComplete="email" placeholder={t("fields.emailPlaceholder")} />
               <LoadingButton type="submit" className="w-full" pending={form.formState.isSubmitting} pendingLabel={t("forgotPassword.submitting")}>
                 {t("forgotPassword.submit")}
               </LoadingButton>

@@ -9,21 +9,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
+import { Form } from "@/components/ui/form"
 import { z } from "zod/v3"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useSubmitError } from "@/lib/forms"
 import { LoadingButton } from "@/components/wrappers/LoadingButton"
 import type { AuthSchemas } from "@/lib/schemas"
 import { useTranslations } from "next-intl"
+import { AuthField } from "./AuthField"
 import { useAuthSchemas } from "./useAuthSchemas"
 import { Terms } from "./Terms"
 
@@ -56,13 +49,7 @@ export function RegistrationForm({
 
   async function onSubmit(values: RegistrationValues) {
     try {
-      await axios.post("/api/auth/signup", {
-        email: values.email,
-        password: values.password,
-        passwordVerification: values.passwordVerification,
-        username: values.username,
-        name: values.name,
-      })
+      await axios.post("/api/auth/signup", values)
 
       // Not signed in yet: that happens after the email is confirmed.
       router.push("/confirm")
@@ -88,81 +75,11 @@ export function RegistrationForm({
               <div className="grid gap-6">
                 <OAuthButtons providers={providers} />
                 <div className="grid gap-6">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="grid gap-3">
-                          <FormLabel>{t("fields.name")}</FormLabel>
-                          <FormControl>
-                            <Input placeholder={t("fields.namePlaceholder")} autoComplete="name" {...field} />
-                          </FormControl>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="grid gap-3">
-                          <FormLabel>{t("fields.username")}</FormLabel>
-                          <FormControl>
-                            <Input placeholder={t("fields.usernamePlaceholder")} autoComplete="username" {...field} />
-                          </FormControl>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="grid gap-3">
-                          <FormLabel>{t("fields.email")}</FormLabel>
-                          <FormControl>
-                            <Input type="email" placeholder={t("fields.emailPlaceholder")} autoComplete="email" {...field} />
-                          </FormControl>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="grid gap-3">
-                          <FormLabel>{t("fields.password")}</FormLabel>
-                          <FormControl>
-                            <Input type="password" autoComplete="new-password" {...field} />
-                          </FormControl>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="passwordVerification"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="grid gap-3">
-                          <FormLabel>{t("fields.verifyPassword")}</FormLabel>
-                          <FormControl>
-                            <Input type="password" autoComplete="new-password" {...field} />
-                          </FormControl>
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <AuthField control={form.control} name="name" label={t("fields.name")} placeholder={t("fields.namePlaceholder")} autoComplete="name" />
+                  <AuthField control={form.control} name="username" label={t("fields.username")} placeholder={t("fields.usernamePlaceholder")} autoComplete="username" />
+                  <AuthField control={form.control} name="email" label={t("fields.email")} type="email" placeholder={t("fields.emailPlaceholder")} autoComplete="email" />
+                  <AuthField control={form.control} name="password" label={t("fields.password")} type="password" autoComplete="new-password" />
+                  <AuthField control={form.control} name="passwordVerification" label={t("fields.verifyPassword")} type="password" autoComplete="new-password" />
                   <LoadingButton type="submit" className="w-full" pending={form.formState.isSubmitting} pendingLabel={t("signup.submitting")}>
                     {t("signup.submit")}
                   </LoadingButton>
