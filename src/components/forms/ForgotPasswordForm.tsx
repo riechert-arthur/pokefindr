@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod/v3"
 import axios from "axios"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
@@ -71,13 +70,9 @@ export function ForgotPasswordForm() {
                   </FormItem>
                 )}
               />
-              {form.formState.isSubmitting ? (
-                <LoadingButton className="w-full">{t("forgotPassword.submitting")}</LoadingButton>
-              ) : (
-                <Button type="submit" className="w-full">
-                  {t("forgotPassword.submit")}
-                </Button>
-              )}
+              <LoadingButton type="submit" className="w-full" pending={form.formState.isSubmitting} pendingLabel={t("forgotPassword.submitting")}>
+                {t("forgotPassword.submit")}
+              </LoadingButton>
               <div className="text-center text-sm">
                 {t.rich("forgotPassword.remembered", {
                   link: (chunks) => (

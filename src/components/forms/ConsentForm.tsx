@@ -60,13 +60,9 @@ export function ConsentForm({ client, username, permissions }: { client: { name:
           {t.rich("warning", { host: client.redirectHost, b: (chunks) => <span className="font-medium text-foreground">{chunks}</span> })}
         </p>
         <div className="grid gap-3">
-          {sending === "allow" ? (
-            <LoadingButton className="w-full">{t("allowing")}</LoadingButton>
-          ) : (
-            <Button type="button" className="w-full" disabled={sending !== null} onClick={() => answer(true)}>
-              {t("allow")}
-            </Button>
-          )}
+          <LoadingButton type="button" className="w-full" pending={sending === "allow"} pendingLabel={t("allowing")} disabled={sending !== null} onClick={() => answer(true)}>
+            {t("allow")}
+          </LoadingButton>
           <Button type="button" variant="outline" className="w-full" disabled={sending !== null} onClick={() => answer(false)}>
             {sending === "deny" ? t("cancelling") : t("cancel")}
           </Button>
