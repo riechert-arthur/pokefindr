@@ -12,6 +12,7 @@ import { ShopHours } from "./ShopHours"
 import { track } from "@/lib/analytics"
 import { useDistance } from "@/i18n/useDistance"
 import { useTranslations } from "next-intl"
+import { addressLine, placeLine } from "@/lib/locations/address"
 
 /** The location the panel is about: a map feature's properties and point. */
 export interface DetailsLocation {
@@ -55,10 +56,6 @@ export function directionsUrl({ retailer, address, city, state }: DetailsLocatio
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
 }
 
-/** The line under the title: the street address, or the city for places without one. */
-const subtitle = ({ address, city, state }: DetailsLocation) => [address, city, state].filter(Boolean).join(", ")
-
-
 /**
  * A location's details in the map's left panel, as in the prototype: back to
  * the list it came from, the kind, name and address, Directions and Copy
@@ -80,7 +77,7 @@ export function DetailsSheet({ location, backLabel, onBack, me, from, summary, a
             <>
               {location.address}
               <br />
-              {[location.city, location.state].filter(Boolean).join(", ")}
+              {placeLine(location.city, location.state)}
             </>,
           ],
           [t("facts.machineId"), location.machineID ? <span className="font-mono">{location.machineID}</span> : <span className="text-muted-foreground">{t("facts.notListed")}</span>],
@@ -88,7 +85,7 @@ export function DetailsSheet({ location, backLabel, onBack, me, from, summary, a
         ]
       : [
           ...(location.address ? ([[t("facts.address"), location.address]] as [string, ReactNode][]) : []),
-          [kind === "event" ? t("facts.where") : t("facts.location"), [location.city, location.state].filter(Boolean).join(", ")],
+          [kind === "event" ? t("facts.where") : t("facts.location"), placeLine(location.city, location.state)],
         ]
   // Only shops have one: the route sends it for shops alone (#399).
   const website = websiteLink(location.website)
@@ -128,7 +125,7 @@ export function DetailsSheet({ location, backLabel, onBack, me, from, summary, a
           {tk(`${kind}.name`)}
         </div>
         <h2 className="text-heading text-foreground">{location.retailer}</h2>
-        <p className="text-body text-muted-foreground">{subtitle(location)}</p>
+        <p className="text-body text-muted-foreground">{addressLine(location)}</p>
         {summary}
         <div className="flex flex-wrap gap-1.5 pt-1">
           <Button asChild size="sm">

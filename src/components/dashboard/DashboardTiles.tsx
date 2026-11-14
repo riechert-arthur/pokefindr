@@ -8,11 +8,12 @@ import { StarRating } from "@/components/pokefindr/StarRating"
 import { SubmissionBadge, SubmissionNote } from "@/components/pokefindr/SubmissionBadge"
 import type { MyReview } from "@/lib/reviews/my-review"
 import type { MySubmission } from "@/lib/submissions/schemas"
-import { DEFAULT_RADIUS, mapUrl, roundPlace } from "@/lib/map/url-state"
+import { DEFAULT_RADIUS, eventMapUrl, mapUrl, roundPlace } from "@/lib/map/url-state"
 import type { UpcomingEvent } from "@/lib/types/highlights"
 import { useFormat } from "@/i18n/format"
 import { useDistance } from "@/i18n/useDistance"
 import { useTranslations } from "next-intl"
+import { placeLine } from "@/lib/locations/address"
 
 /** How many rows a tile lists (reviews, submissions, events), so the tiles stay the same height. */
 export const TILE_ROWS = 3
@@ -154,7 +155,7 @@ export function ReviewsTile({ reviews }: { reviews: TileData<MyReview> }) {
               <>
                 {/* The stars keep their room; the text beside them ends in an ellipsis (#302). */}
                 <StarRating rating={r.rating} starSize={11} className="shrink-0" />
-                <span className="min-w-0 truncate">{r.comment || [r.location.city, r.location.state].filter(Boolean).join(", ")}</span>
+                <span className="min-w-0 truncate">{r.comment || placeLine(r.location.city, r.location.state)}</span>
               </>
             }
           />
@@ -164,7 +165,7 @@ export function ReviewsTile({ reviews }: { reviews: TileData<MyReview> }) {
   )
 }
 
-const submissionPlace = (s: MySubmission) => [s.city, s.state].filter(Boolean).join(", ")
+const submissionPlace = (s: MySubmission) => placeLine(s.city, s.state)
 /** Live and still on the map: the place itself. */
 const isLive = (s: MySubmission) => s.status === "approved" && Boolean(s.locationId) && s.locationActive !== false
 
@@ -230,7 +231,7 @@ export function EventsTile({ events }: { events: TileData<UpcomingEvent> }) {
         {(e) => (
           <TileRow
             key={e.id}
-            href={mapUrl("/map", { q: [e.city, e.state].filter(Boolean).join(", ") || e.title, lng: e.lng, lat: e.lat, r: DEFAULT_RADIUS, types: ["event"] })}
+            href={eventMapUrl(e)}
             title={e.title}
             caption={<span className="min-w-0 truncate">{[f.eventWhen(e.startsAt, e.endsAt), e.city].filter(Boolean).join(" · ")}</span>}
           />

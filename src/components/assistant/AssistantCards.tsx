@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { KindDot } from "@/components/pokefindr/KindDot"
 import { StatusBadge } from "@/components/pokefindr/StatusBadge"
 import { KIND_ORDER } from "@/components/pokefindr/kinds"
-import { DEFAULT_RADIUS, RADII, mapUrl, roundPlace } from "@/lib/map/url-state"
+import { eventMapUrl, RADII, mapUrl, roundPlace } from "@/lib/map/url-state"
 import { safeHref } from "@/lib/assistant/safe-link"
 import { RoutePreview } from "./RoutePreview"
 import { track } from "@/lib/analytics"
@@ -13,6 +13,7 @@ import type { AssistantCard, AssistantPlace } from "@/lib/types/assistant"
 import { useFormat } from "@/i18n/format"
 import { useDistance } from "@/i18n/useDistance"
 import { useTranslations } from "next-intl"
+import { placeLine } from "@/lib/locations/address"
 
 /** The prototype's `.acard`: a bordered card with a muted header and an optional footer of actions. */
 function Card({ title, children, footer }: { title: ReactNode; children: ReactNode; footer?: ReactNode }) {
@@ -178,11 +179,11 @@ export function AssistantCardView({ card, newestRoute = false }: { card: Assista
                 <b className="truncate font-semibold text-foreground">{e.title}</b>
                 {e.sample && <StatusBadge status="sample" />}
               </span>
-              <span className={sub}>{[f.eventWhen(e.startsAt, e.endsAt), [e.city, e.state].filter(Boolean).join(", ")].filter(Boolean).join(" · ")}</span>
+              <span className={sub}>{[f.eventWhen(e.startsAt, e.endsAt), placeLine(e.city, e.state)].filter(Boolean).join(" · ")}</span>
             </span>
             {e.miles !== undefined && <span className={dist}>{distance(e.miles)}</span>}
             <Button asChild variant="ghost" size="sm">
-              <Link href={mapUrl("/map", { q: [e.city, e.state].filter(Boolean).join(", ") || e.title, lng: roundPlace(e.lng), lat: roundPlace(e.lat), r: DEFAULT_RADIUS, types: ["event"] })} aria-label={t("onMap", { name: e.title })}>
+              <Link href={eventMapUrl(e)} aria-label={t("onMap", { name: e.title })}>
                 {t("map")}
               </Link>
             </Button>

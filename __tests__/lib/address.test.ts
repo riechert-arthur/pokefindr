@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { MACHINE_ID, normalizeAddress, normalizeMachineId } from "@/lib/locations/address"
+import { addressLine, MACHINE_ID, normalizeAddress, normalizeMachineId, placeLine } from "@/lib/locations/address"
 
 describe("normalizeAddress", () => {
   it("matches the issue's example: suffixes and directions spelled out or not", () => {
@@ -32,5 +32,22 @@ describe("machine IDs", () => {
     expect(MACHINE_ID.test("Q00245")).toBe(true)
     expect(MACHINE_ID.test("Q0245")).toBe(false)
     expect(MACHINE_ID.test("00245")).toBe(false)
+  })
+})
+
+describe("placeLine and addressLine", () => {
+  it("joins the parts that are known", () => {
+    expect(placeLine("Seattle", "WA")).toBe("Seattle, WA")
+    expect(placeLine("Seattle", null)).toBe("Seattle")
+    expect(placeLine(null, "WA")).toBe("WA")
+    expect(placeLine("", undefined)).toBe("")
+  })
+
+  it("puts the street address in front", () => {
+    expect(addressLine({ address: "1820 SE Hawthorne Blvd", city: "Portland", state: "OR" })).toBe("1820 SE Hawthorne Blvd, Portland, OR")
+    expect(addressLine({ address: "1820 SE Hawthorne Blvd", city: null, state: "OR" })).toBe("1820 SE Hawthorne Blvd, OR")
+    expect(addressLine({ address: null, city: "Portland", state: "OR" })).toBe("Portland, OR")
+    expect(addressLine({ address: "1820 SE Hawthorne Blvd" })).toBe("1820 SE Hawthorne Blvd")
+    expect(addressLine({})).toBe("")
   })
 })

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 import path from "node:path"
 import { describe, expect, it } from "vitest"
-import { loadMapSearchParams, mapUrl, nearMeParams } from "@/lib/map/url-state"
+import { eventMapUrl, loadMapSearchParams, mapUrl, nearMeParams } from "@/lib/map/url-state"
 import { initialMapView, shownKinds, viewKey } from "@/lib/map/initial-view"
 import { boundsOf, boundsOfRadius, US_BOUNDS } from "@/lib/map/geo"
 import { STATES } from "@/lib/map/states"
@@ -97,5 +97,21 @@ describe("nearMeParams", () => {
   it("puts near=me and the radius in the URL and clears every coordinate", () => {
     expect(nearMeParams(10)).toEqual({ near: "me", r: 10, q: null, lat: null, lng: null, z: null, state: null, route: null })
     expect(mapUrl("/map?q=Seattle&lat=47.6&lng=-122.3&z=9", nearMeParams(25))).toBe("/map?r=25&near=me")
+  })
+})
+
+describe("eventMapUrl", () => {
+  const event = { title: "League Cup", city: "Seattle", state: "WA", lng: -122.3321, lat: 47.6062 }
+
+  it("searches the map to the event's city, with events shown", () => {
+    expect(eventMapUrl(event)).toBe(mapUrl("/map", { q: "Seattle, WA", lng: -122.3321, lat: 47.6062, r: 10, types: ["event"] }))
+  })
+
+  it("uses the title without a city or state", () => {
+    expect(loadMapSearchParams(new URLSearchParams(eventMapUrl({ ...event, city: "", state: "" }).split("?")[1])).q).toBe("League Cup")
+  })
+
+  it("rounds the coordinates as a place's are", () => {
+    expect(eventMapUrl({ ...event, lng: -122.332149, lat: 47.606249 })).toBe(eventMapUrl(event))
   })
 })

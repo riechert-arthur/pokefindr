@@ -17,6 +17,7 @@ import { STATE_ZONES, browserZone, formatInZone, zoneName, zonedToIso } from "@/
 import { track } from "@/lib/analytics"
 import { useLocale, useTranslations } from "next-intl"
 import { useApiError } from "@/i18n/useApiError"
+import { addressLine } from "@/lib/locations/address"
 
 type InputProps = ComponentProps<typeof Input>
 
@@ -470,7 +471,7 @@ function Review({ kind, draft }: { kind: SubmissionKind; draft: Draft }) {
     ...(kind === "event"
       ? ([[t("review.venue"), draft.venue], [t("review.when"), [[when(draft.startsAt), when(draft.endsAt)].filter(Boolean).join(" – "), draft.startsAt ? zoneName(zone, locale) : ""].filter(Boolean).join(", ")]] as [string, string][])
       : []),
-    [t("review.address"), [draft.address, [draft.city, draft.state].filter(Boolean).join(", ")].filter(Boolean).join(", ")],
+    [t("review.address"), addressLine(draft)],
     ...(kind === "shop"
       ? ([[t("review.website"), draft.website], [t("review.hours"), draft.hours], [t("review.sells"), draft.sells.map((s) => t(`sells.${s as ShopSells}`)).join(", ")]] as [string, string][])
       : ([[t("review.link"), draft.link], [t("review.entry"), draft.cost ? t(`fields.${draft.cost}`) : ""]] as [string, string][])),

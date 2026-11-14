@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils"
 import { sendAdminAction } from "@/lib/admin/actions"
 import { LoadFailed } from "@/components/admin/LoadFailed"
 import { useRefreshSummary } from "@/components/admin/useRefreshSummary"
+import { addressLine, placeLine } from "@/lib/locations/address"
 
 type Load = { status: "loading" } | { status: "forbidden" } | { status: "error" } | { status: "ready"; queue: ModerationItem[]; decided: ModerationItem[] }
 
@@ -138,7 +139,7 @@ export function ReviewQueue() {
                                 {item.status === "rejected" && <StatusBadge status="sample">Rejected</StatusBadge>}
                               </span>
                               <span className="block truncate text-body text-muted-foreground">
-                                {[item.fields.city, item.fields.state].filter(Boolean).join(", ")} · by {item.submittedBy} · {ago(item.reviewedAt ?? item.createdAt)}
+                                {placeLine(item.fields.city, item.fields.state)} · by {item.submittedBy} · {ago(item.reviewedAt ?? item.createdAt)}
                               </span>
                             </span>
                             {item.status === "pending" && flags(item) > 0 && (
@@ -192,7 +193,7 @@ function Detail({ item, busy, onDecide }: { item: ModerationItem; busy: boolean;
   const f = item.fields
   const facts: [string, string][] = [
     ["Kind", KINDS[item.kind].one.replace(/^./, (c) => c.toUpperCase())],
-    ["Address", [f.address, [f.city, f.state].filter(Boolean).join(", ")].filter(Boolean).join(", ")],
+    ["Address", addressLine(f)],
     ...(item.kind === "shop"
       ? ([["Website", f.website ?? ""], ["Hours", f.hours ?? ""], ["Sells", (f.sells ?? []).map((s) => SHOP_SELLS_LABELS[s as keyof typeof SHOP_SELLS_LABELS] ?? s).join(", ")]] as [string, string][])
       : ([["Venue", f.venue ?? ""], ["When", [when(f.startsAt), when(f.endsAt)].filter(Boolean).join(" – ")], ["Link", f.link ?? ""], ["Entry", f.isFree === undefined ? "" : f.isFree ? "Free" : "Paid"]] as [string, string][])),

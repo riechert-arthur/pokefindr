@@ -54,3 +54,11 @@ export const MACHINE_ID = /^Q\d{5}$/
 
 /** "q00245 " → "Q00245". */
 export const normalizeMachineId = (id: string) => id.trim().toUpperCase()
+
+type Part = string | null | undefined
+
+/** "Seattle, WA": the city and state that are known, or "" for neither. */
+export const placeLine = (city: Part, state: Part) => [city, state].filter(Boolean).join(", ")
+
+/** "1820 SE Hawthorne Blvd, Portland, OR": the street address, city and state that are known. */
+export const addressLine = ({ address, city, state }: { address?: Part; city?: Part; state?: Part }) => [address, placeLine(city, state)].filter(Boolean).join(", ")

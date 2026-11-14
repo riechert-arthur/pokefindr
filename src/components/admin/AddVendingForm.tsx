@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { KindDot } from "@/components/pokefindr/KindDot"
 import { Pill } from "@/components/admin/Pill"
 import { useRefreshSummary } from "@/components/admin/useRefreshSummary"
-import { MACHINE_ID, normalizeMachineId } from "@/lib/locations/address"
+import { addressLine, MACHINE_ID, normalizeMachineId } from "@/lib/locations/address"
 import { OVERLAP_LABELS, formatPin, parseCityState, parsePin, type VendingOverlap } from "@/lib/admin/vending"
 import { mapUrl } from "@/lib/map/url-state"
 import { cn } from "@/lib/utils"
@@ -315,7 +315,7 @@ export function AddVendingForm() {
                   <div className="text-body">
                     <span className="font-semibold text-foreground">{o.retailer}</span> <span className="font-mono text-caption text-muted-foreground">{o.machineId}</span>
                   </div>
-                  <div className="text-caption text-muted-foreground">{[o.address, [o.city, o.state].filter(Boolean).join(", ")].filter(Boolean).join(", ")}</div>
+                  <div className="text-caption text-muted-foreground">{addressLine(o)}</div>
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {o.reasons.map((r) => (
                       <Pill key={r} tone="crit">

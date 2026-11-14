@@ -20,6 +20,7 @@ import { CATEGORY_LABELS, type HeldReview, type ModerationVerdict } from "@/lib/
 import { canUndo } from "@/lib/submissions/moderation"
 import { mapUrl } from "@/lib/map/url-state"
 import { useFormat } from "@/i18n/format"
+import { placeLine } from "@/lib/locations/address"
 
 type Load = { status: "loading" } | { status: "error" } | { status: "ready"; held: HeldReview[]; decided: HeldReview[] }
 type Action = "approve" | "remove" | "undo"
@@ -111,7 +112,7 @@ export function HeldReviews() {
                           <div className="min-w-0 flex-1">
                             <div className="font-semibold text-foreground">{r.location.name || "Unnamed"}</div>
                             <div className="text-caption text-muted-foreground">
-                              {[r.location.city, r.location.state].filter(Boolean).join(", ")} · by {r.author} · {f.ago(r.createdAt)}
+                              {placeLine(r.location.city, r.location.state)} · by {r.author} · {f.ago(r.createdAt)}
                             </div>
                           </div>
                           <StarRating rating={r.rating} starSize={14} label={`${r.rating} out of 5`} />
