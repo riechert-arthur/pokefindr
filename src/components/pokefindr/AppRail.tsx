@@ -2,8 +2,8 @@
 
 import { useTranslations } from "next-intl"
 import { Link, usePathname } from "@/i18n/navigation"
-import { useEffect, useRef, useState, type ComponentType, type Ref, type SVGProps } from "react"
-import { BookOpenIcon, ExternalLinkIcon, MessagesSquareIcon, HouseIcon, InboxIcon, MapPinIcon, SettingsIcon, ShieldIcon } from "lucide-react"
+import { useEffect, useRef, useState, type Ref } from "react"
+import { BookOpenIcon, ExternalLinkIcon, SettingsIcon } from "lucide-react"
 import { Logo } from "@/components/brand/Logo"
 import { DiscordIcon } from "@/components/icons/DiscordIcon"
 import { LanguageSwitcher } from "@/components/pokefindr/LanguageSwitcher"
@@ -11,32 +11,16 @@ import { ThemeToggle } from "@/components/pokefindr/ThemeToggle"
 import { minWidth } from "@/lib/design/breakpoints"
 import { SUPPORT_URL } from "@/lib/links"
 import { cn } from "@/lib/utils"
-
-type NavLabel = "home" | "chat" | "blog" | "map" | "discord" | "settings" | "moderate" | "admin"
-
-interface RailItem {
-  href: string
-  /** Its label in the catalog's `nav` messages. */
-  label: NavLabel
-  icon: ComponentType<SVGProps<SVGSVGElement>>
-  external?: boolean
-}
+import { isCurrentPath, NAV, type NavItem } from "@/lib/nav-items"
 
 /** The dashboard's own pages. */
-const MAIN: RailItem[] = [
-  { href: "/home", label: "home", icon: HouseIcon },
-  // The assistant's conversation (#391).
-  { href: "/chat", label: "chat", icon: MessagesSquareIcon },
-  { href: "/map", label: "map", icon: MapPinIcon },
-]
+const MAIN: NavItem[] = [NAV.home, NAV.chat, NAV.map]
 
 /** The blog is a site page, outside the dashboard (no rail there), so it sits at the bottom with Discord, not with the dashboard's pages (#387). Never current here. */
-const BLOG: RailItem = { href: "/blog", label: "blog", icon: BookOpenIcon }
+const BLOG: NavItem = { href: "/blog", label: "blog", icon: BookOpenIcon }
 
-const DISCORD: RailItem = { href: SUPPORT_URL, label: "discord", icon: DiscordIcon, external: true }
-const SETTINGS: RailItem = { href: "/settings", label: "settings", icon: SettingsIcon }
-const MODERATE: RailItem = { href: "/moderate", label: "moderate", icon: InboxIcon }
-const ADMIN: RailItem = { href: "/admin", label: "admin", icon: ShieldIcon }
+const DISCORD: NavItem = { href: SUPPORT_URL, label: "discord", icon: DiscordIcon, external: true }
+const SETTINGS: NavItem = { href: "/settings", label: "settings", icon: SettingsIcon }
 
 /** Desktop rail widths: 64px collapsed (its place in the layout), 208px expanded. */
 const EXPANDED_WIDTH = "w-52"
@@ -82,7 +66,7 @@ function focusVisible(el: EventTarget | null) {
   }
 }
 
-function RailLink({ item, current, expanded }: { item: RailItem; current: boolean; expanded: boolean }) {
+function RailLink({ item, current, expanded }: { item: NavItem; current: boolean; expanded: boolean }) {
   const t = useTranslations("nav")
   const Icon = item.icon
   return (
@@ -137,7 +121,7 @@ interface AppRailProps {
 export function AppRail({ signedIn = false, canModerate = false, isAdmin = false, expanded: held, className, ref }: AppRailProps) {
   const t = useTranslations("nav")
   const pathname = usePathname()
-  const isCurrent = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
+  const isCurrent = (href: string) => isCurrentPath(pathname, href)
 
   const [hovered, setHovered] = useState(false)
   const [focused, setFocused] = useState(false)
@@ -230,8 +214,8 @@ export function AppRail({ signedIn = false, canModerate = false, isAdmin = false
         {MAIN.map((item) => (
           <RailLink key={item.href} item={item} current={isCurrent(item.href)} expanded={expanded} />
         ))}
-        {canModerate && <RailLink item={MODERATE} current={isCurrent(MODERATE.href)} expanded={expanded} />}
-        {isAdmin && <RailLink item={ADMIN} current={isCurrent(ADMIN.href)} expanded={expanded} />}
+        {canModerate && <RailLink item={NAV.moderate} current={isCurrent(NAV.moderate.href)} expanded={expanded} />}
+        {isAdmin && <RailLink item={NAV.admin} current={isCurrent(NAV.admin.href)} expanded={expanded} />}
         <div className="mt-auto flex flex-col items-start gap-2">
           <RailLink item={BLOG} current={false} expanded={expanded} />
           <RailLink item={DISCORD} current={false} expanded={expanded} />

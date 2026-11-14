@@ -2,23 +2,13 @@
 
 import { useTranslations } from "next-intl"
 import { Link, usePathname } from "@/i18n/navigation"
-import { useEffect, type ComponentType, type SVGProps } from "react"
-import { CirclePlusIcon, HouseIcon, InboxIcon, MapPinIcon, MessagesSquareIcon, ShieldIcon } from "lucide-react"
+import { useEffect } from "react"
+import { CirclePlusIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { isCurrentPath, NAV, type NavItem } from "@/lib/nav-items"
 
-interface Tab {
-  href: string
-  /** Its label in the catalog's `nav` messages. */
-  label: "home" | "chat" | "map" | "addPlace" | "moderate" | "admin"
-  icon: ComponentType<SVGProps<SVGSVGElement>>
-}
-
-const HOME: Tab = { href: "/home", label: "home", icon: HouseIcon }
-const CHAT: Tab = { href: "/chat", label: "chat", icon: MessagesSquareIcon }
-const MAP: Tab = { href: "/map", label: "map", icon: MapPinIcon }
-const ADD: Tab = { href: "/map?add=1", label: "addPlace", icon: CirclePlusIcon }
-const MODERATE: Tab = { href: "/moderate", label: "moderate", icon: InboxIcon }
-const ADMIN: Tab = { href: "/admin", label: "admin", icon: ShieldIcon }
+/** Opens the map's add-a-place flow: the tab bar's own item. */
+const ADD: NavItem = { href: "/map?add=1", label: "addPlace", icon: CirclePlusIcon }
 
 interface TabBarProps {
   /** Shows "Add a place", once the add flow exists (R4). */
@@ -39,7 +29,7 @@ interface TabBarProps {
 export function TabBar({ canAdd = false, canModerate = false, isAdmin = false, className }: TabBarProps) {
   const t = useTranslations("nav")
   const pathname = usePathname()
-  const tabs = [HOME, CHAT, MAP, ...(canAdd ? [ADD] : []), ...(canModerate ? [MODERATE] : []), ...(isAdmin ? [ADMIN] : [])]
+  const tabs: NavItem[] = [NAV.home, NAV.chat, NAV.map, ...(canAdd ? [ADD] : []), ...(canModerate ? [NAV.moderate] : []), ...(isAdmin ? [NAV.admin] : [])]
 
   useEffect(() => {
     document.documentElement.classList.add("has-tabbar")
@@ -56,7 +46,7 @@ export function TabBar({ canAdd = false, canModerate = false, isAdmin = false, c
       style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
     >
       {tabs.map((tab) => {
-        const current = pathname === tab.href || pathname.startsWith(`${tab.href}/`)
+        const current = isCurrentPath(pathname, tab.href)
         const Icon = tab.icon
         return (
           <Link
