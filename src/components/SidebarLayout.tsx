@@ -26,6 +26,8 @@ export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
   const { isSidebarOpen, toggleSidebar } = useSidebar()
   const { session } = useSessionContext()
   const railRef = useRef<HTMLElement>(null)
+  const canModerate = can(session?.role, "moderation.view")
+  const isAdmin = can(session?.role, "admin.open")
 
   // The phone drawer: opening it moves focus in, Escape closes it, and
   // closing it (Escape, the chevron or the menu button) returns focus to
@@ -50,8 +52,8 @@ export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
         <AppRail
           ref={railRef}
           signedIn={Boolean(session)}
-          canModerate={can(session?.role, "moderation.view")}
-          isAdmin={can(session?.role, "admin.open")}
+          canModerate={canModerate}
+          isAdmin={isAdmin}
           className={cn(
             "z-50 transition-[transform,visibility] duration-300 motion-reduce:transition-none",
             "max-sm:fixed max-sm:inset-y-0 max-sm:left-0 max-sm:shadow-xl",
@@ -75,7 +77,7 @@ export const SidebarLayout: FC<SidebarLayoutProps> = ({ children }) => {
         {/* relative: pages' absolute headers start at the rail's edge, not under it. */}
         <main className="relative z-10 min-w-0 flex-1 overflow-auto bg-muted/50 dark:bg-background">{children}</main>
       </div>
-      <TabBar canAdd canModerate={can(session?.role, "moderation.view")} isAdmin={can(session?.role, "admin.open")} className="sm:hidden" />
+      <TabBar canAdd canModerate={canModerate} isAdmin={isAdmin} className="sm:hidden" />
     </div>
   )
 }
