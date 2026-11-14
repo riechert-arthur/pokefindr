@@ -1,7 +1,9 @@
 import { Link } from "@/i18n/navigation"
 import type { FC } from "react"
 import { setPageLocale, type LocaleParams } from "@/i18n/static"
-import { EnglishOnlyNotice } from "@/components/EnglishOnlyNotice"
+import { LegalDocument } from "@/components/legal/LegalDocument"
+import { LegalHeading } from "@/components/legal/LegalHeading"
+import { ContactEmail } from "@/components/legal/ContactEmail"
 import { englishOnlyMetadata } from "@/i18n/seo"
 import type { Metadata } from "next"
 
@@ -13,15 +15,10 @@ export async function generateMetadata(): Promise<Metadata> {
   })
 }
 
-
 const TermsOfServicePage: FC<LocaleParams> = async ({ params }) => {
   await setPageLocale(params)
   return (
-    <div lang="en" className="max-w-3xl mx-auto p-6 text-foreground">
-      <EnglishOnlyNotice href="/terms-of-service" />
-      <h1 className="text-3xl font-bold mb-4">TERMS OF SERVICE</h1>
-      <p className="mb-4">Last updated November 9, 2026</p>
-
+    <LegalDocument href="/terms-of-service" title="TERMS OF SERVICE" updated="November 9, 2026">
       <p className="mb-4">
         These Terms of Service (&quot;Terms&quot;) govern your use of the
         PokeFindr website (&quot;Website,&quot; &quot;we,&quot; &quot;us,&quot;
@@ -30,9 +27,7 @@ const TermsOfServicePage: FC<LocaleParams> = async ({ params }) => {
         immediately.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        1. USE OF THE WEBSITE
-      </h2>
+      <LegalHeading>1. USE OF THE WEBSITE</LegalHeading>
       <p className="mb-4">
         PokeFindr provides an online resource to help users locate Pokémon
         vending machines and display the closest one based on the user&apos;s
@@ -51,15 +46,13 @@ const TermsOfServicePage: FC<LocaleParams> = async ({ params }) => {
         Website&apos;s operation or security.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">2. NO PAID FEATURES</h2>
+      <LegalHeading>2. NO PAID FEATURES</LegalHeading>
       <p className="mb-4">
         At this time, PokeFindr does not offer any paid features or services.
         Access to the Website and its content is provided free of charge.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        3. INTELLECTUAL PROPERTY
-      </h2>
+      <LegalHeading>3. INTELLECTUAL PROPERTY</LegalHeading>
       <p className="mb-4">
         All content on the Website, including text, graphics, and other
         materials, is provided for informational purposes. PokeFindr does not
@@ -75,9 +68,7 @@ const TermsOfServicePage: FC<LocaleParams> = async ({ params }) => {
         for your personal viewing and non-commercial use.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        4. AFFILIATE MARKETING
-      </h2>
+      <LegalHeading>4. AFFILIATE MARKETING</LegalHeading>
       <p className="mb-4">
         In the future, PokeFindr may participate in affiliate marketing
         programs. This means that we may include affiliate links to third-party
@@ -87,9 +78,7 @@ const TermsOfServicePage: FC<LocaleParams> = async ({ params }) => {
         practices of third-party websites, products, or services.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        5. DISCLAIMER OF WARRANTIES
-      </h2>
+      <LegalHeading>5. DISCLAIMER OF WARRANTIES</LegalHeading>
       <p className="mb-4">
         THE WEBSITE IS PROVIDED ON AN &quot;AS IS&quot; AND &quot;AS
         AVAILABLE&quot; BASIS. TO THE FULLEST EXTENT PERMITTED BY LAW, POKEFINDR
@@ -103,9 +92,7 @@ const TermsOfServicePage: FC<LocaleParams> = async ({ params }) => {
         INFORMATION PROVIDED IS COMPLETE, ACCURATE, OR CURRENT.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        6. LIMITATION OF LIABILITY
-      </h2>
+      <LegalHeading>6. LIMITATION OF LIABILITY</LegalHeading>
       <p className="mb-4">
         TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL POKEFINDR OR
         ITS AFFILIATES BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
@@ -115,9 +102,7 @@ const TermsOfServicePage: FC<LocaleParams> = async ({ params }) => {
         USE OF (OR INABILITY TO ACCESS OR USE) THE WEBSITE.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        7. THIRD-PARTY LINKS AND CONTENT
-      </h2>
+      <LegalHeading>7. THIRD-PARTY LINKS AND CONTENT</LegalHeading>
       <p className="mb-4">
         The Website may contain links to third-party websites or services. These
         are provided for convenience and do not constitute an endorsement by
@@ -126,9 +111,7 @@ const TermsOfServicePage: FC<LocaleParams> = async ({ params }) => {
         interaction with any third-party resources is solely at your own risk.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        8. GOVERNING LAW AND ARBITRATION
-      </h2>
+      <LegalHeading>8. GOVERNING LAW AND ARBITRATION</LegalHeading>
       <p className="mb-4">
         These Terms and any dispute arising out of or related to them or the use
         of the Website shall be governed by the laws of the United States and
@@ -143,9 +126,7 @@ const TermsOfServicePage: FC<LocaleParams> = async ({ params }) => {
         enforceable in any court of competent jurisdiction.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        9. CHANGES TO THESE TERMS
-      </h2>
+      <LegalHeading>9. CHANGES TO THESE TERMS</LegalHeading>
       <p className="mb-4">
         We may update these Terms at any time by posting a revised version on
         the Website. The &quot;Last updated&quot; date at the top will indicate
@@ -153,7 +134,7 @@ const TermsOfServicePage: FC<LocaleParams> = async ({ params }) => {
         any changes, you agree to the updated Terms.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">10. THE ASSISTANT</h2>
+      <LegalHeading>10. THE ASSISTANT</LegalHeading>
       <p className="mb-4">
         The assistant on your dashboard writes its answers with an AI model.
         Answers can be wrong or out of date, so check a place on the map before
@@ -165,9 +146,7 @@ const TermsOfServicePage: FC<LocaleParams> = async ({ params }) => {
         location data in bulk.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">
-        11. AUTOMATED ACCESS AND DATA COLLECTION
-      </h2>
+      <LegalHeading>11. AUTOMATED ACCESS AND DATA COLLECTION</LegalHeading>
       <p className="mb-4">
         You may not collect PokeFindr&apos;s location data, or copy it in bulk,
         by automated means. This includes crawlers, scrapers, bots and scripts,
@@ -190,16 +169,11 @@ const TermsOfServicePage: FC<LocaleParams> = async ({ params }) => {
         access and take further action.
       </p>
 
-      <h2 className="text-2xl font-semibold mt-8 mb-4">12. CONTACT US</h2>
+      <LegalHeading>12. CONTACT US</LegalHeading>
       <p className="mb-4">
         If you have any questions or concerns about these Terms, please contact
         us at{" "}
-        <a
-          href="mailto:riechertarthur@gmail.com"
-          className="text-primary hover:underline"
-        >
-          riechertarthur@gmail.com
-        </a>
+        <ContactEmail />
         .
       </p>
 
@@ -207,7 +181,7 @@ const TermsOfServicePage: FC<LocaleParams> = async ({ params }) => {
         By accessing or using PokeFindr, you acknowledge that you have read,
         understood, and agree to be bound by these Terms of Service.
       </p>
-    </div>
+    </LegalDocument>
   )
 }
 
